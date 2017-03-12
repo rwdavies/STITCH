@@ -35,7 +35,8 @@ then
     cd samtools-${samv}
     ./configure
     make all
-    cd ../
+    cd ../../
+    ## add soft link
     dir=`pwd`
     rm -f samtools
     ln -s ${dir}/dependencies/samtools-${samv}/samtools ${dir}/samtools
@@ -53,7 +54,12 @@ then
     then
 	wget "${ancillary_http}htslib-${htslibv}.tar.bz2"
     fi
-    cd ../
+    bzip2 -df htslib-${htslibv}.tar.bz2
+    tar -xvf htslib-${htslibv}.tar
+    cd htslib-${htslibv}
+    ./configure
+    make all
+    cd ../../
     ## add soft link
     dir=`pwd`
     rm -f bgzip
