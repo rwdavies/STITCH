@@ -6,3 +6,5 @@ bgzip
 *.o
 *.so
 .Rhistory
+.DS_Store
+dependencies
