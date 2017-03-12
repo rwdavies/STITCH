@@ -28,6 +28,7 @@ R CMD INSTALL ./releases/STITCH_1.2.9.tar.gz
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
 tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --posfile=pos.txt --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
+# if this works the file stitch.chr19.vcf.gz will be created
 ```
 
 ### Interactive start
