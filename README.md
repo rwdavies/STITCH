@@ -1,4 +1,4 @@
-STITCH - Sequencing To Imputation Through Construction Haplotypes
+STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
 **__Current Version: 1.2.9__**
 Release date: March 10, 2017
