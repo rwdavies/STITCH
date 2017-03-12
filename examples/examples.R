@@ -23,6 +23,7 @@ for(key in c("--file=", "--f=")) {
         setwd(file.path(script_dir, "../"))
     }
 }
+Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
 
 library("STITCH")
 
@@ -308,7 +309,6 @@ STITCH(
 
 # Mouse example 11 - Run on CRAM files
 setwd(mouse_datadir)
-Sys.setenv( PATH = paste0(mouse_datadir, "/samtools-1.3.1/:", Sys.getenv("PATH")))
 ### Either un-comment below and convert
 ### Or use downloaded mouse CRAM files
 #system("mkdir crams")
