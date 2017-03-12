@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
 **__Current Version: 1.2.9__**
-Release date: March 10, 2017
+Release date: March 12, 2017
 
 Changes in latest version
 
@@ -12,6 +12,8 @@ Changes in latest version
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
 STITCH is an R program for reference panel free, read aware, low coverage sequencing genotype imputation. STITCH runs on a set of samples with sequencing reads in BAM format, as well as a list of positions to genotype, and outputs imputed genotypes in VCF format.
+
+For the old website, please see http://www.well.ox.ac.uk/~rwdavies/stitch.html
 
 ## Installation and quick start on real data example
 
