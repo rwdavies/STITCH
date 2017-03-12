@@ -56,7 +56,7 @@ Tests in STITCH are split into unit or acceptance run using ```./scripts/test-un
 
 ## Citation
 
-Davies, R. W., Flint J, Myers S., Mott R. Rapid genotype imputation from sequence without reference panels. ** Nat. Genet. ** 48, 965-969 (2016)
+Davies, R. W., Flint J, Myers S., Mott R. Rapid genotype imputation from sequence without reference panels. *Nat. Genet.* 48, 965-969 (2016)
 
 ## Contact and bug reports
 
@@ -68,7 +68,7 @@ For more detailed questions or other concerns please contact Robert Davies rober
 
 ## Note on the selection of K and nGen
 
-A fuller description is given the supplement of the paper given in the [citation](#Citation), and this is worth a read for anyone planning to use the method in their work.
+A fuller description is given the supplement of the paper given in the [citation](#citation), and this is worth a read for anyone planning to use the method in their work.
 
 K is the number of ancestral haplotypes in the model. Larger K allows for more accurate imputation for large samples and coverages, but takes longer and accuracy may suffer with lower coverage. It is usually wise to try a few values of K and assess performance using either external validation, or the distribution of quality scores (e.g. mean / median INFO score). It is likely wise to choose K that both gives you the best performance (accuracy, correlation or quality score distribution) within computational constraints, while also ensuring K is not too large given your sequencing coverage (e.g. try to ensure that each ancestral haplotype gets at least a certain average X of coverage, say 10X, given your number of samples and average depth). 
 
