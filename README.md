@@ -21,7 +21,7 @@ Install R if not already installed. Then
 ```
 git clone https://github.com/rwdavies/STITCH.git
 cd STITCH
-./scripts/install-dependecies.sh
+./scripts/install-dependencies.sh
 R CMD INSTALL ./releases/STITCH_1.2.9.tar.gz
 
 # test on CFW mouse data
