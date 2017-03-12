@@ -152,21 +152,20 @@ expect_equal(sum(sapply(sapply(c(4, 30), function(x) grep(x, a)), length) == 0),
 message("test that STITCH CLI parses character vector correctly")
 stdout_file <- tempfile()
 stderr_file <- tempfile()
-command <- paste0(
-    cli_output_file,
-    paste0("--chr=", data_package$chr),
-    paste0("--bamlist=", data_package$bamlist),
-    paste0("--posfile=", data_package$posfile),
-    paste0("--outputdir=", data_package$outputdir),
-    paste0("--reference_haplotype_file=", refpack$reference_haplotype_file),
-    paste0("--reference_legend_file=", refpack$reference_legend_file),
-    paste0("--reference_sample_file=", refpack$reference_sample_file),
-    "--reference_populations='c(\"CEU\",\"GBR\")'",
-    "--K=2",
-    "--nGen=100"
-)
-print(command)
 out <- system2(
+    cli_output_file,
+    args = c(
+        paste0("--chr=", data_package$chr),
+        paste0("--bamlist=", data_package$bamlist),
+        paste0("--posfile=", data_package$posfile),
+        paste0("--outputdir=", data_package$outputdir),
+        paste0("--reference_haplotype_file=", refpack$reference_haplotype_file),
+        paste0("--reference_legend_file=", refpack$reference_legend_file),
+        paste0("--reference_sample_file=", refpack$reference_sample_file),
+        "--reference_populations='c(\"CEU\",\"GBR\")'",
+        "--K=2",
+        "--nGen=100"
+    ),
     stdout = stdout_file, stderr = stderr_file
 )
 expect_equal(0, out)
