@@ -3,3 +3,5 @@ test-results/
 *~
 samtools
 bgzip
+*.o
+*.so
