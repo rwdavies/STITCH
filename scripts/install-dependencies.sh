@@ -17,9 +17,11 @@ samv=1.3.1
 htslibv=1.3.2
 mkdir -p dependencies
 
+force_install=${1:-nope}
 zero_if_samtools_not_installed=`which samtools | wc -l`
-if [ $zero_if_samtools_not_installed == 0 ]
+if [ $zero_if_samtools_not_installed == 0 ] || [ $force_install == "samtools" ]
 then
+    echo install samtools
     cd dependencies
     if [ $one_if_curl_installed == 1 ]
     then
@@ -40,8 +42,9 @@ then
 fi
 
 zero_if_bgzip_not_installed=`which bgzip | wc -l` 
-if [ $zero_if_bgzip_not_installed == 0 ]
+if [ $zero_if_bgzip_not_installed == 0 ] || [ $force_install == "bgzip" ]
 then
+    echo install bgzip
     cd dependencies
     if [ $one_if_curl_installed == 1 ]
     then
