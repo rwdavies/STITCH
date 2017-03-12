@@ -1,0 +1,39 @@
+Package: STITCH
+Type: Package
+Title: STITCH - Sequencing To Imputation Through Constructing
+        Haplotypes
+Version: 1.2.9
+Date: 2017-03-12
+Author: Robert William Davies
+Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
+Description: STITCH performs imputation of individuals sequenced to low coverage
+    in a read aware fashion without a reference panel.
+Installation: To install, first install dependencies, then run the
+        install.packages command, pointing to the downloaded tarball
+        (STITCH.tar.gz)
+Getting started: A minimum run requires the following options to be
+        set: the chromosome being run (chr); a path to a file with a
+        set of bi-allelic SNP sites (posfile); a choice of K, the
+        number of internally modelled haplotypes (K); a path to an
+        output directory (outputdir); a path to a temporary directory,
+        ideally on fast disks or a RAM disk (tempdir); a list of bam
+        files (bamlist); and the number of generations since founding
+        (nGen), which can be approximated from a choice of K for wild
+        populations from 4 * Ne / K. Additional useful options relate
+        to what region to impute (regionStart, regionEnd, buffer),
+        whether to use validation data to benchmark imputation
+        (genfile), the number of cores to use (nCores), whether
+        imputation is run on a server or cluster (environment), the
+        number of EM iterations (niterations), whether to run in
+        diploid or pseudoHaploid mode (method), and if run in
+        pseudoHaploid mode, what iteration to switch from pseudoHaploid
+        to diploid (switchModelIteration).
+Depends: parallel, Rsamtools
+Imports: Rcpp
+LinkingTo: Rcpp, RcppArmadillo
+Packaged: 2017-02-14 13:27:59 UTC; rdavies
+RoxygenNote: 5.0.1
+License: GPL | file LICENSE
+SystemRequirements: C++11
+NeedsCompilation: yes
+Suggests: testthat
