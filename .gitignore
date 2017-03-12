@@ -1,0 +1,5 @@
+test-data/
+test-results/
+*~
+samtools
+bgzip
