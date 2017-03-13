@@ -3,9 +3,10 @@
 * **chr** What chromosome to run. Should match BAM header
 * **posfile**  Where to find file with positions to run. File is tab separated with no header, one row per SNP, with col 1 = chromosome, col 2 = physical position (sorted from smallest to largest), col 3 = reference base, col 4 = alternate base. Bases are capitalized. STITCH only handles bi-allelic SNPs
 * **K**  Integer, how many founder / mosaic haplotypes to use
+* **nGen** Estimated number of generations since founding. In uncertain, estimate using 4 * Ne / K, where Ne is the effective population size
 * **outputdir**  What output directory to use / where output files go
-* **bamlist** Path to file with BAM file locations. File is one row per entry, path to BAM files. BAM index files should exist in same directory as for each BAM, suffixed either .bam.bai or .bai
-* **cramlist** Same as bamlist, but path is to CRAM locations. If used, requires reference variable to be set with path to fasta file
+* **bamlist** (one of bamlist or cramlist required) Path to file with BAM file locations. File is one row per entry, path to BAM files. BAM index files should exist in same directory as for each BAM, suffixed either .bam.bai or .bai
+* **cramlist** (one of bamlist or cramlist required) Same as bamlist, but path is to CRAM locations. If used, requires reference variable to be set with path to fasta file
 
 ### Optional
 
