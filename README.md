@@ -54,6 +54,10 @@ From the command line, ```STITCH --help```. To pass vectors using the command li
 
 In the examples directory, there is a script which contains examples using real mouse and human data. One can either run this interactively in R, or run all examples using ```./examples/example.R```.
 
+## License
+
+STITCH and the code in this repo is available under a GPL3 license. For more information please see the [LICENSE](LICENSE).
+
 ## Testing
 
 Tests in STITCH are split into unit or acceptance run using ```./scripts/test-unit.sh``` and ```./scripts/test-acceptance.sh```. To run all tests use ```./scripts/all-tests.sh```, which also builds and installs a release version of STITCH.
