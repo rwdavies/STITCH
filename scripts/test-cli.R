@@ -22,7 +22,10 @@ source("STITCH/R/test-drivers.R")
 
 ## make CLI file
 cli_output_file <- "STITCH.R"
-make_STITCH_cli("STITCH/R/functions.R", cli_output_file)
+make_STITCH_cli(
+    function_file = "STITCH/R/functions.R",
+    cli_output_file = cli_output_file
+)
 system(paste0("chmod +x ", cli_output_file))
 
 
@@ -124,7 +127,7 @@ expect_equal(length(grep("Build vcf from input", stdout)), 1)
 expect_equal(length(grep("teration", stdout)), 0)
 
 
-message("test that STITCH CLI parses integer vector correctly")
+message("test that STITCH CLI parses integer vector refillIterations correctly")
 stdout_file <- tempfile()
 stderr_file <- tempfile()
 out <- system2(
@@ -143,9 +146,34 @@ out <- system2(
 expect_equal(0, out)
 ## check this occured
 stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+
 a <- stdout[grep("refill infrequently used haplotypes", stdout)]
 expect_equal(sum(sapply(sapply(c(4, 30), function(x) grep(x, a)), length) == 0), 0)
 
+
+
+message("test that STITCH CLI uses default integer vector correctly")
+stdout_file <- tempfile()
+stderr_file <- tempfile()
+out <- system2(
+    cli_output_file,
+    args = c(
+        paste0("--chr=", data_package$chr),
+        paste0("--bamlist=", data_package$bamlist),
+        paste0("--posfile=", data_package$posfile),
+        paste0("--outputdir=", data_package$outputdir),
+        "--K=2",
+        "--nGen=100"
+    ),
+    stdout = stdout_file, stderr = stderr_file
+)
+expect_equal(0, out)
+## check this occured
+stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
+a <- stdout[grep("refill infrequently used haplotypes", stdout)]
+## manually know default is 6, 10, 14, 18
+expect_equal(sum(sapply(sapply(c(6, 10, 14, 18), function(x) grep(x, a)), length) == 0), 0)
 
 
 

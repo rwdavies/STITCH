@@ -5,6 +5,7 @@ make_STITCH_cli <- function(
     function_file,
     cli_output_file
 ) {
+
     a <- readLines(function_file, n = 200)
     params <- a[grep("param", a)]
     params <- params[-grep("##", params)]
@@ -59,7 +60,9 @@ make_STITCH_cli <- function(
     )
     for(param in param_names) {
         default <- defaults[[param]]
-        if (length(default) == 4) {
+        ori_default_length <- 1
+        if (length(default) > 1) {
+            ori_default_length <- length(default)
             default <- paste0(default, collapse = ",")
         }
         cat(
@@ -79,6 +82,10 @@ make_STITCH_cli <- function(
             }
             if (default == "\"server\"") {
                 default_string <- "server"
+            }
+            if (ori_default_length > 1) {
+                default_string <- default
+                default <- paste0("\"", default, "\"")
             }
             ## determine what it is - numeric or otherwise
             cat(

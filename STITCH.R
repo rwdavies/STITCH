@@ -158,8 +158,8 @@ option_list <- list(
     make_option(
         "--shuffleHaplotypeIterations",
         type = "character",
-        help = "Iterations on which to perform heuristic attempt to shuffle founder haplotypes for better fit. To disable set to NA. [default c(4,8,12,16)] ",
-        default = c(4,8,12,16)
+        help = "Iterations on which to perform heuristic attempt to shuffle founder haplotypes for better fit. To disable set to NA. [default c(4, 8, 12, 16)] ",
+        default = "c(4, 8, 12, 16)"
     ), 
     make_option(
         "--splitReadIterations",
@@ -255,7 +255,7 @@ option_list <- list(
         "--refillIterations",
         type = "character",
         help = "When to try and refill some of the less frequently used haplotypes [default c(6, 10, 14, 18)] ",
-        default = c(6, 10, 14, 18)
+        default = "c(6, 10, 14, 18)"
     ), 
     make_option(
         "--downsampleSamples",

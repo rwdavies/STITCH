@@ -90,7 +90,7 @@ STITCH <- function(
     iSizeUpperLimit = as.integer(600),
     bqFilter = as.integer(17),
     niterations = 40,
-    shuffleHaplotypeIterations = c(4,8,12,16),
+    shuffleHaplotypeIterations = c(4, 8, 12, 16),
     splitReadIterations = 25,
     nCores = 1,
     expRate = 0.5,
@@ -809,7 +809,7 @@ validate_shuffleHaplotypeIterations <- function(shuffleHaplotypeIterations, nite
     if (is.na(shuffleHaplotypeIterations[1]) == FALSE) {
         x <- niterations - shuffleHaplotypeIterations
         if (sum (x < 5) > 0)
-            stop(paste0("The parameter niterations is set to ", niterations, " and shuffleHaplotypeIterations is set to c(", paste(refillIterations, collapse = ","), "). shuffleHaplotypeIterations (trying to reshuffle the ancestral haplotypes to minimize switching among ancestral haplotypes in analyzed samples) has a small but beneficial improvement on imputation performance, but due to methods involve, will initially lead to a decrease in imputation performance for the next few EM iterations. Please set niterations > (max(shuffleHaplotypeIterations) + 4), or if you want to use a small number of iterations, it is recommended you disable shuffleHaplotypeIterations by setting this parameter equal to NA"))
+            stop(paste0("The parameter niterations is set to ", niterations, " and shuffleHaplotypeIterations is set to c(", paste(shuffleHaplotypeIterations, collapse = ","), "). shuffleHaplotypeIterations (trying to reshuffle the ancestral haplotypes to minimize switching among ancestral haplotypes in analyzed samples) has a small but beneficial improvement on imputation performance, but due to methods involve, will initially lead to a decrease in imputation performance for the next few EM iterations. Please set niterations > (max(shuffleHaplotypeIterations) + 4), or if you want to use a small number of iterations, it is recommended you disable shuffleHaplotypeIterations by setting this parameter equal to NA"))
     }
 }
 
@@ -4693,7 +4693,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     ##
     ## look at switching
     ##
-    if(nbreaks>0) {
+    if(nbreaks > 0) {
         out <- getBetterSwitchesSimple(fromMat=fromMat,nbreaks=nbreaks,K=K,T=T,eHapsFuture=gammaSum,alphaMatFuture=alphaMatSum,iteration=iteration, breaks = breaks, rStart = rStart, rEnd = rEnd)
         gammaSum <- out$eHapsFuture
         alphaMatSum <- out$alphaMatFuture
@@ -4701,8 +4701,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     ##
     ## look at refilling - round 1
     ##
-    if(is.na(match(iteration,refillIterations))==FALSE)
-    {
+    if(is.na(match(iteration, refillIterations)) == FALSE) {
         print(paste("Iteration - ",iteration," - refill infrequently used haplotypes",sep=""))
         out=refillSimple(hapSum=hapSum,T=T,K=K,eHapsCurrent=gammaSum,N=N)
         eHapsCurrent=out$eHapsCurrent
