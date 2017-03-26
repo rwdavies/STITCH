@@ -4,6 +4,7 @@ set -e
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 ./scripts/install-r-dependencies.R
+./scripts/install-SeqLib.sh
 
 export PATH=${PATH}:`pwd`/
 
