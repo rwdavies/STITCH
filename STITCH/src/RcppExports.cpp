@@ -45,7 +45,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_cigar_split
-Rcpp::List cpp_cigar_split(std::vector <std::string> strings);
+List cpp_cigar_split(std::vector <std::string> strings);
 RcppExport SEXP STITCH_cpp_cigar_split(SEXP stringsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -142,14 +142,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_read_reassign
-Rcpp::List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, Rcpp::List sampleReadsRaw, int verbose);
+List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleReadsRaw, int verbose);
 RcppExport SEXP STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP sampleReadsRawSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::ivec >::type ord(ordSEXP);
     Rcpp::traits::input_parameter< arma::ivec >::type qnameInteger_ord(qnameInteger_ordSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type sampleReadsRaw(sampleReadsRawSEXP);
+    Rcpp::traits::input_parameter< List >::type sampleReadsRaw(sampleReadsRawSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, sampleReadsRaw, verbose));
     return rcpp_result_gen;
