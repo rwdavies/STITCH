@@ -170,6 +170,7 @@ STITCH <- function(
     ##
     validate_chr(chr)
     validate_nGen(nGen)
+    validate_nCores(nCores)
     validate_posfile(posfile)
     validate_K(K)
     validate_outputdir(outputdir)
@@ -651,6 +652,16 @@ validate_chr <- function(chr) {
         stop("Please specify chr, the chromosome to impute")
 }
 
+
+validate_nCores <- function(nCores) {
+    if (is.numeric(nCores) == FALSE) {
+        stop("nCores must be an integer")
+    }
+    if (nCores < 1)
+        stop("nCores must be greater than or equal to 1")
+    if (round(nCores) != nCores)
+        stop("nCores must be an integer")
+}
 
 validate_nGen <- function(nGen) {
     nGen_error <- paste0(
@@ -2739,6 +2750,37 @@ getWhereToRefill=function(hapSum,T,hapFreqMin)
 
 
 
+get_RG_lines_from_SeqLib <- function(file) {
+    header_string <- get_header_using_SeqLib(file)
+    x <- strsplit(header_string, "\n")[[1]]
+    return(x[substr(x, 1, 3) == "@RG"])
+}
+
+convert_sam_header_rg_tags_to_sample_name <- function(header) {
+    rg_spots <- lapply(header, strsplit, split = "\t")
+    if (length(rg_spots) == 0)
+        stop(paste0("There is no @RG tag (with sample name) for:", file))
+    sm <- sapply(rg_spots, function(x) {
+        rg <- x[[1]]
+        sm <- substr(rg[substr(rg, 1, 3) == "SM:"], 4, 1000)
+        return(sm)
+    })
+    if (length(unique(sm)) > 1)
+        stop(paste0("There is more than one sample name in the header for:", file))
+    return(sm[1])
+}
+
+get_sample_name_from_bam_file_using_external_samtools <- function(file) {
+    header <- system(paste0("samtools view -H ", file, " | grep ^@RG"), intern = TRUE)
+    return(convert_sam_header_rg_tags_to_sample_name(header))
+}
+
+get_sample_name_from_bam_file_using_SeqLib <- function(file) {
+    header <- get_RG_lines_from_SeqLib(file)
+    return(convert_sam_header_rg_tags_to_sample_name(header))
+}
+
+
 
 ## for a set of bam or cram files
 ## use samtools to get the names of the samples
@@ -2755,21 +2797,7 @@ get_sample_names_from_bam_or_cram_files <- function(
     sampleNames <- mclapply(
         files,
         mc.cores = nCores,
-        function(file) {
-        header <- system(paste0("samtools view -H ", file, " | grep ^@RG"), intern = TRUE)
-        ##header <- header[substr(header, 1, 3) == "@RG"]
-        rg_spots <- lapply(header, strsplit, split = "\t")
-        if (length(rg_spots) == 0)
-            stop(paste0("There is no @RG tag (with sample name) for:", file))
-        sm <- sapply(rg_spots, function(x) {
-            rg <- x[[1]]
-            sm <- substr(rg[substr(rg, 1, 3) == "SM:"], 4, 1000)
-            return(sm)
-        })
-        if (length(unique(sm)) > 1)
-            stop(paste0("There is more than one sample name in the header for:", file))
-        return(sm[1])
-    }
+        get_sample_name_from_bam_file_using_SeqLib
     )
 
     sampleNames <- as.character(unlist(sampleNames))
@@ -2905,7 +2933,7 @@ split_cigar_string <- function(
 ## for a bam, either return the bam name,
 ## or if a cram file, first decompress to bam format
 ## in the temporary directory
-get_bam_name_and_convert_cram <- function(
+get_bam_name_and_maybe_convert_cram <- function(
     iBam,
     bam_files,
     cram_files,
@@ -2913,27 +2941,32 @@ get_bam_name_and_convert_cram <- function(
     tempdir,
     chr,
     chrStart,
-    chrEnd
+    chrEnd,
+    method_to_use_to_get_raw_data
 ) {
     if (length(bam_files) > 0) {
         bamName <- bam_files[iBam]
         if (file.exists(bamName) == FALSE)
-            stop(paste0("cannot find bam:", bamName))
+            stop(paste0("cannot find file:", bamName))
     } else if (length(cram_files) > 0) {
         cramName <- cram_files[iBam]
         if (file.exists(cramName) == FALSE)
-            stop(paste0("cannot find bam:", cramName))
-        tempBam <- paste0(tempdir, "/sample", iBam, ".bam")
-        ## note - chrStart and chrEnd are appropriate
-        system(paste0(
-            "samtools view -h ", cramName,
-            " -T ", reference, " ",
-            chr, ":", chrStart, "-", chrEnd, " | ",
-            "samtools view -b > ",
-            tempBam
-        ))
-        system(paste0("samtools index ", tempBam))
-        bamName <- tempBam
+            stop(paste0("cannot find file:", cramName))
+        if (method_to_use_to_get_raw_data == "Rsamtools") {
+            tempBam <- paste0(tempdir, "/sample", iBam, ".bam")
+            ## note - chrStart and chrEnd are appropriate
+            system(paste0(
+                "samtools view -h ", cramName,
+                " -T ", reference, " ",
+                chr, ":", chrStart, "-", chrEnd, " | ",
+                "samtools view -b > ",
+                tempBam
+            ))
+            system(paste0("samtools index ", tempBam))
+            bamName <- tempBam
+        } else {
+            bamName <- cramName
+        }
     } else {
         stop("Both bam_files and cram_files are empty")
     }
@@ -2977,24 +3010,24 @@ get_sampleReadsRaw <- function(
 ) {
 
     ## get more info read as well
-    mapq <- as.integer(sampleData[[1]]$mapq)
-    isize <- sampleData[[1]]$isize
+    mapq <- as.integer(sampleData$mapq)
+    isize <- sampleData$isize
     ## figure out which ones we dont want - remove
     keep <- FALSE == (
         mapq < bqFilter |
         ( abs(isize) > iSizeUpperLimit & is.na(isize)==FALSE)
     )
-    cigarRead <- sampleData[[1]]$cigar
+    cigarRead <- sampleData$cigar
     for(l in c("P", "=", "X"))
         keep[grep(l, cigarRead)] <- FALSE
     mapq <- mapq[keep]
     isize <- isize[keep]
-    posRead <- as.integer(sampleData[[1]]$pos)[keep]
-    cigarRead <- sampleData[[1]]$cigar[keep]
-    seqRead <- as.character(sampleData[[1]]$seq)[keep]
-    qualRead <- as.character(sampleData[[1]]$qual)[keep]
-    qname <- sampleData[[1]]$qname[keep]
-    strand <- as.character(sampleData[[1]]$strand)[keep]
+    posRead <- as.integer(sampleData$pos)[keep]
+    cigarRead <- sampleData$cigar[keep]
+    seqRead <- as.character(sampleData$seq)[keep]
+    qualRead <- as.character(sampleData$qual)[keep]
+    qname <- sampleData$qname[keep]
+    strand <- as.character(sampleData$strand)[keep]
     rm(sampleData)
 
     out <- split_cigar_string(
@@ -3214,6 +3247,33 @@ combineReadsAcrossRegions <- function(sampleReadsAcrossRegions) {
 }
 
 
+
+get_sample_data_from_Rsamtools <- function(
+    chr,
+    window_start,
+    window_end,
+    bamName
+) {
+    ## necessary Rsamtools stuff
+    flag <- scanBamFlag(isPaired = NA, isProperPair = NA, isUnmappedQuery = FALSE, hasUnmappedMate = NA, isMinusStrand = NA, isMateMinusStrand = NA, isFirstMateRead = NA, isSecondMateRead = NA, isSecondaryAlignment = NA, isNotPassingQualityControls = FALSE, isDuplicate = FALSE)
+    ##isNotPrimaryRead = NA
+    what <- c("qname","strand","pos","seq","qual","cigar","isize","mapq")
+    eval(parse(text = (
+        paste0("which = RangesList(\"",chr,"\"=",
+               "IRanges(", window_start,",", window_end,"))")
+    )))
+    param <- ScanBamParam(flag = flag, which = which, what = what)
+    idx <- get_index_for_bamName(bamName)
+    sampleData <- scanBam(
+        file = bamName,
+        index = idx,
+        param = param
+    )[[1]]
+    return(sampleData)
+}
+
+
+
 ## takes a lot of inputs
 ## converts a BAM file for one subject
 ## into sampleReads, saved into
@@ -3223,9 +3283,9 @@ loadBamAndConvert <- function(
     L,
     pos,
     T,
-    bam_files,
+    bam_files = NULL,
     cram_files = NULL,
-    reference = NULL,
+    reference = "",
     iSizeUpperLimit = 600,
     bqFilter = 17,
     chr,
@@ -3240,7 +3300,8 @@ loadBamAndConvert <- function(
     chrEnd,
     chrLength = NA,
     save_sampleReadsInfo = FALSE,
-    width_of_loading_window = 1000000 ## what sized chunks to load things in, for RAM reasons
+    width_of_loading_window = 1000000, ## what sized chunks to load things in, for RAM reasons
+    method_to_use_to_get_raw_data = "SeqLib"
 ) {
 
     sampleReadsInfo <- NULL ## unless otherwise created
@@ -3253,12 +3314,7 @@ loadBamAndConvert <- function(
             )
         )
 
-    ## necessary Rsamtools stuff
-    flag <- scanBamFlag(isPaired = NA, isProperPair = NA, isUnmappedQuery = FALSE, hasUnmappedMate = NA, isMinusStrand = NA, isMateMinusStrand = NA, isFirstMateRead = NA, isSecondMateRead = NA, isSecondaryAlignment = NA, isNotPassingQualityControls = FALSE, isDuplicate = FALSE)
-    ##isNotPrimaryRead = NA
-    what <- c("qname","strand","pos","seq","qual","cigar","isize","mapq", "flag")
-
-    bamName <- get_bam_name_and_convert_cram(
+    file_name <- get_bam_name_and_maybe_convert_cram(
         iBam,
         bam_files,
         cram_files,
@@ -3266,10 +3322,9 @@ loadBamAndConvert <- function(
         tempdir,
         chr,
         chrStart,
-        chrEnd
+        chrEnd,
+        method_to_use_to_get_raw_data
     )
-
-    idx <- get_index_for_bamName(bamName)
 
     loading_windows <- determine_loading_windows(
         chrStart, chrEnd, chrLength, width_of_loading_window
@@ -3279,19 +3334,22 @@ loadBamAndConvert <- function(
         window_start <- loading_windows$start[i_region]
         window_end <- loading_windows$end[i_region]
 
-        eval(parse(text = (
-            paste0("which = RangesList(\"",chr,"\"=",
-                   "IRanges(", window_start,",", window_end,"))")
-        )))
-
-        param <- ScanBamParam(flag=flag, which=which, what=what)
-        sampleData <- scanBam(
-            file = bamName,
-            index = idx,
-            param = param
-        )
-
-        if (length(sampleData[[1]]$qname) > 0) {
+        if (method_to_use_to_get_raw_data == "Rsamtools") {
+            sampleData <- get_sample_data_from_Rsamtools(
+                chr = chr,
+                window_start = window_start,
+                window_end = window_end,
+                bamName = file_name
+            )
+        } else if (method_to_use_to_get_raw_data == "SeqLib") {
+            sampleData <- get_sample_data_from_SeqLib(
+                region = paste0(chr, ":", window_start, "-", window_end),
+                file_name = file_name,
+                reference = reference
+            )
+        }
+            
+        if (length(sampleData$qname) > 0) {
             out <- get_sampleReadsRaw(
                 sampleData,
                 bqFilter,
@@ -3340,8 +3398,9 @@ loadBamAndConvert <- function(
         sampleReadsInfo <- out$sampleReadsInfo
     }
 
-    if (length(cram_files) > 1)
-        system(paste0("rm ", tempdir, "sample", iBam, ".ba*"))
+    if (method_to_use_to_get_raw_data == "Rsamtools")
+        if (length(cram_files) > 1)
+            system(paste0("rm ", tempdir, "sample", iBam, ".ba*"))
 
     out <- downsample(
         sampleReads = sampleReads,

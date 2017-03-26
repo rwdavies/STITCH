@@ -158,4 +158,3 @@ Results in properly formatted version
 \author{
 Robert Davies
 }
-

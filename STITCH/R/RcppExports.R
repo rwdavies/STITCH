@@ -2,6 +2,16 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
+get_header_using_SeqLib <- function(file_name) {
+    .Call('STITCH_get_header_using_SeqLib', PACKAGE = 'STITCH', file_name)
+}
+
+#' @export
+get_sample_data_from_SeqLib <- function(region, file_name, reference = "") {
+    .Call('STITCH_get_sample_data_from_SeqLib', PACKAGE = 'STITCH', region, file_name, reference)
+}
+
+#' @export
 increment2N <- function(yT, xT, y, z) {
     .Call('STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
 }

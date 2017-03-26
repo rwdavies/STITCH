@@ -6,6 +6,30 @@
 
 using namespace Rcpp;
 
+// get_header_using_SeqLib
+std::string get_header_using_SeqLib(std::string file_name);
+RcppExport SEXP STITCH_get_header_using_SeqLib(SEXP file_nameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_name(file_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_header_using_SeqLib(file_name));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_sample_data_from_SeqLib
+Rcpp::List get_sample_data_from_SeqLib(std::string region, std::string file_name, std::string reference);
+RcppExport SEXP STITCH_get_sample_data_from_SeqLib(SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< std::string >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reference(referenceSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_sample_data_from_SeqLib(region, file_name, reference));
+    return rcpp_result_gen;
+END_RCPP
+}
 // increment2N
 Rcpp::NumericVector increment2N(int yT, int xT, Rcpp::NumericVector y, Rcpp::NumericVector z);
 RcppExport SEXP STITCH_increment2N(SEXP yTSEXP, SEXP xTSEXP, SEXP ySEXP, SEXP zSEXP) {
@@ -21,7 +45,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_cigar_split
-List cpp_cigar_split(std::vector <std::string> strings);
+Rcpp::List cpp_cigar_split(std::vector <std::string> strings);
 RcppExport SEXP STITCH_cpp_cigar_split(SEXP stringsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -118,14 +142,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_read_reassign
-List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleReadsRaw, int verbose);
+Rcpp::List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, Rcpp::List sampleReadsRaw, int verbose);
 RcppExport SEXP STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP sampleReadsRawSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::ivec >::type ord(ordSEXP);
     Rcpp::traits::input_parameter< arma::ivec >::type qnameInteger_ord(qnameInteger_ordSEXP);
-    Rcpp::traits::input_parameter< List >::type sampleReadsRaw(sampleReadsRawSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type sampleReadsRaw(sampleReadsRawSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, sampleReadsRaw, verbose));
     return rcpp_result_gen;

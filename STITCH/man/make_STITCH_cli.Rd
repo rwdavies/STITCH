@@ -11,4 +11,3 @@ make_STITCH_cli(function_file, cli_output_file)
 
 \item{stitch_cli_file}{where output goes}
 }
-
