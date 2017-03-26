@@ -8,3 +8,4 @@ bgzip
 .Rhistory
 .DS_Store
 dependencies
+benchmark-results
