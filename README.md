@@ -23,7 +23,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-EXPORT SEQLIB_ROOT=`pwd`
+export SEQLIB_ROOT=`pwd`/SeqLib/
 R CMD INSTALL ./releases/STITCH_1.3.0.tar.gz
 
 # test on CFW mouse data
