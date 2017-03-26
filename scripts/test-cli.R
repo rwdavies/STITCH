@@ -77,7 +77,8 @@ out <- system2(
         paste0("--outputdir=", data_package$outputdir),
         "--K=2",
         "--nGen=100",
-        "--buffer=NA"
+        "--buffer=NA",
+        "--nCores=1"
     ),
     stdout = stdout_file, stderr = stderr_file
 )
