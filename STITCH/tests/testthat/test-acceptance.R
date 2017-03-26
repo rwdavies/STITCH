@@ -19,6 +19,18 @@ refpack <- make_reference_package(
     chr = chr
 )
 
+data_package_crams <- make_acceptance_test_data_package(
+    n_samples = 10,
+    n_snps = n_snps,
+    n_reads = 4,
+    seed = 1,
+    chr = chr,
+    K = 2,
+    phasemaster = phasemaster,
+    use_crams = TRUE
+)
+
+
 chr <- "X"
 phasemasterX <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
 data_packageX <- make_acceptance_test_data_package(
@@ -518,6 +530,39 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
     check_vcf_against_phase(
         vcf = vcf,
         phase = data_package$phase[keep, , ],
+        tol = 0.2
+    )
+
+})
+
+
+test_that("STITCH diploid works under default parameters using CRAM files", {
+    skip_test_if_TRUE(run_acceptance_tests)
+
+    sink("/dev/null")
+
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package_crams$chr,
+        cramlist = data_package_crams$cramlist,
+        reference = data_package_crams$ref,
+        posfile = data_package_crams$posfile,
+        outputdir = data_package_crams$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1
+    )
+
+    vcf <- read.table(
+        file.path(data_package_crams$outputdir, paste0("stitch.", data_package_crams$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
         tol = 0.2
     )
 
