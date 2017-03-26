@@ -55,13 +55,34 @@ test_that("loading windows can be properly calculated for given chrStart and chr
 })
 
 
+test_that("C++ APIs give same sample name for BAM files", {
+    sample_name <- "jimmy"
+    bam_name <- make_simple_bam(
+        file_stem = file.path(tempdir(), sample_name),
+        sam = make_simple_sam_text(sample_name = sample_name)
+    )
+    samtools_name <- get_sample_name_from_bam_file_using_external_samtools(bam_name)
+    seqLib_name <- get_sample_name_from_bam_file_using_SeqLib(bam_name)    
+    expect_equal(samtools_name, seqLib_name)
+})
 
+
+test_that("C++ APIs give same sample name for CRAM files", {
+    sample_name <- "jimmy"
+    cram_name <- make_simple_cram(
+        file_stem = file.path(tempdir(), sample_name),
+        sam = make_simple_sam_text(sample_name = sample_name)
+    )$cram_file
+    samtools_name <- get_sample_name_from_bam_file_using_external_samtools(cram_name)
+    seqLib_name <- get_sample_name_from_bam_file_using_SeqLib(cram_name)
+    expect_equal(samtools_name, seqLib_name)
+})
 
 
 
 
     
-test_that("sample names can be properly retrieved", {
+test_that("sample names can be properly retrieved from BAM files", {
 
     sample_names <- c("file1", "file2")
     bam_names <- sapply(sample_names, function(sample_name) {
@@ -87,6 +108,34 @@ test_that("sample names can be properly retrieved", {
     )
     
 })
+
+test_that("sample names can be properly retrieved from CRAM files", {
+
+    sample_names <- c("file1", "file2")
+    cram_names <- sapply(sample_names, function(sample_name) {
+        cram_name <- make_simple_cram(
+            file_stem = file.path(tempdir(), sample_name),
+            sam = make_simple_sam_text(sample_name = sample_name)
+        )$cram_file
+        return(cram_name)
+    })
+    
+    cramlist <- tempfile()
+    write_names_to_disk(cram_names, cramlist)
+
+    acquired_sample_names <- get_sample_names(
+        cramlist = cramlist,
+        save = FALSE,
+        verbose = FALSE
+    )$sampleNames
+    
+    expect_equal(
+        acquired_sample_names,
+        sample_names
+    )
+    
+})
+
 
 
 test_that("sample names can be properly retrieved, even if @RG is found somewhere else in the header, like in a program statement", {
@@ -471,23 +520,24 @@ test_that("sampleReadsRaw can be converted to sampleReads and also strand inform
 
 
 test_that("sample BAM can be properly interpreted", {
-    
+
+    ## recall - whole ref is A otherwise
     chr <- 10
     pos <- cbind(
         CHR = rep(chr, 7),
         POS = c(9, 11, 13, 15, 17, 19, 21),
-        REF = c("A", "A", "A", "A", "A", "A", "A"),
+        REF = c("G", "G", "G", "G", "G", "G", "G"),
         ALT = c("C", "C", "C", "C", "C", "C", "C")
     )
     ## https://github.com/samtools/hts-specs/blob/master/SAMv1.pdf
-    
+   
     bam_file <- make_simple_bam(
         file_stem = file.path(tempdir(), "simple"),
         sam = make_simple_sam_text(
             list(
                 c("r001", "0", chr, "17", "60",
                   "6M", "*", "0", "0",
-                  "AACCAA", "::::::")
+                  "GACCGA", "::::::")
             ), 
             chr
         )
@@ -520,7 +570,8 @@ test_that("sample BAM can be properly interpreted", {
         tempdir = tempdir(),
         chr = chr,
         chrStart = 1,
-        chrEnd = 100
+        chrEnd = 100,
+        method_to_use_to_get_raw_data = "SeqLib" #Rsamtools
     )
     
     load(file_sampleReads(tempdir(), 1, regionName))
@@ -531,6 +582,7 @@ test_that("sample BAM can be properly interpreted", {
     )
 
 })
+
 
 
 test_that("BAM with two reads can be properly interpreted", {
@@ -918,3 +970,76 @@ test_that("BAM with no informative reads is properly interpreted", {
     )
 
 })
+
+
+test_that("sample CRAM can be properly interpreted", {
+    
+    chr <- 10
+    pos <- cbind(
+        CHR = rep(chr, 7),
+        POS = c(9, 11, 13, 15, 17, 19, 21),
+        REF = c("A", "A", "A", "A", "A", "A", "A"),
+        ALT = c("C", "C", "C", "C", "C", "C", "C")
+    )
+    ## https://github.com/samtools/hts-specs/blob/master/SAMv1.pdf
+    
+    out <- make_simple_cram(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "17", "60",
+                  "6M", "*", "0", "0",
+                  "AACCAA", "::::::")
+            ), 
+            chr
+        ),
+        pos = pos
+    )
+    cram_file <- out$cram_file
+    ref <- out$ref
+    
+    ## 1: 0-based number of SNPs
+    ## 2: 0-based central SNP
+    ## 3: bq, - = ref, + = alt
+    ## 4: 0-based position in pos
+    expected_sample_reads <- list(
+        list(
+            2, 5,
+            matrix(c(-25, 25, -25), ncol = 1),
+            matrix(c(4, 5, 6), ncol = 1)
+        )
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        cram_files = cram_file,
+        reference = ref,
+        N = 1,
+        sampleNames = "test-name",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100
+    )
+    
+    load(file_sampleReads(tempdir(), 1, regionName))
+    
+    expect_equal(
+        sampleReads,
+        expected_sample_reads
+    )
+
+})
+
+
+
+
+
+
+
