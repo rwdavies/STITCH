@@ -39,6 +39,50 @@ make_simple_bam <- function(
     return(paste0(file_stem, ".bam"))
 }
 
+make_ref_from_sam <- function(sam, pos = NULL) {
+    h <- strsplit(sam, "\n")[[1]]
+    b <- strsplit(h[grep("@SQ", h)], "\t")[[1]]
+    chr_name <- strsplit(b[grep("SN", b)], "SN:")[[1]][2]
+    chr_length <- as.integer(strsplit(b[grep("LN", b)], "LN:")[[1]][2])
+    ref <- paste0(rep("A", chr_length), collapse = "")
+    if (is.null(pos) == FALSE) {
+        for(i_row in 1:nrow(pos)) {
+            x <- as.integer(pos[i_row, 2])
+            substr(ref, x, x) <- as.character(pos[i_row, "REF"])
+        }
+    }
+    ref_fa <- paste0(">", chr_name, "\n", ref, "\n")
+    return(ref_fa)
+}
+
+## for now - just make simple ref with As
+## later, do more intelligent thing of making sure ref is in agreement
+make_simple_cram <- function(
+    file_stem,
+    sam,
+    pos = NULL
+) {
+    cat(make_ref_from_sam(sam, pos), file = paste0(file_stem, ".fa"))
+    cat(sam, file = paste0(file_stem, ".sam"))
+    system2(
+        "samtools",
+        args = c(
+            "view", "-T", paste0(file_stem, ".fa"), "-C",
+            "-o", paste0(file_stem, ".cram"),
+            paste0(file_stem, ".sam")
+        ),
+        stderr = FALSE
+    )
+    file.remove(paste0(file_stem, ".sam"))
+    system2("samtools", c("index", paste0(file_stem, ".cram")))
+    return(
+        list(
+            cram_file = paste0(file_stem, ".cram"),
+            ref = paste0(file_stem, ".fa")
+        )
+    )
+}
+
 write_names_to_disk <- function(
     bam_names,
     bamlist
@@ -153,16 +197,21 @@ make_acceptance_test_data_package <- function(
     phasemaster = NULL,
     reads_span_n_snps = NULL,
     n_cores = 1,
-    tmpdir = tempdir()
+    tmpdir = tempdir(),
+    use_crams = FALSE
 ) {
 
     if (is.null(reads_span_n_snps))
         reads_span_n_snps <- n_snps
 
     outputdir <- tempfile(pattern = "dir", tmpdir = tmpdir)
-    bamdir <- file.path(outputdir, "bams")
+    if (use_crams) {
+        rawdir <- file.path(outputdir, "crams")
+    } else {
+        rawdir <- file.path(outputdir, "bams")
+    }
     dir.create(outputdir)
-    dir.create(bamdir)
+    dir.create(rawdir)
 
     posfile <- file.path(outputdir, "posfile.txt")
     pos <- make_posfile(posfile, n_snps = n_snps, chr = chr)
@@ -192,7 +241,7 @@ make_acceptance_test_data_package <- function(
     sample_names <- sapply(1:n_samples, function(i_sample)
         return(paste0("samp", i_sample)))
 
-    bam_files <- sapply(1:n_samples, function(i_sample) {
+    sample_files <- lapply(1:n_samples, function(i_sample) {
         reads <- mclapply(
             1:n_reads,
             mc.cores = n_cores,
@@ -210,23 +259,56 @@ make_acceptance_test_data_package <- function(
         })
         reads <- reads[order(as.integer(sapply(reads, function(x) x[[4]])))]
         sample_name <- sample_names[i_sample]
-        bam_file <- make_simple_bam(
-            file_stem = file.path(bamdir, sample_name),
-            sam = make_simple_sam_text(
-                reads,
-                chr,
-                sample_name = sample_name,
-                chr_length = max(pos[, 2]) + 1
+        if (use_crams) {
+            out <- make_simple_cram(
+                file_stem = file.path(rawdir, sample_name),
+                sam = make_simple_sam_text(
+                    reads,
+                    chr,
+                    sample_name = sample_name,
+                    chr_length = max(pos[, 2]) + 1
+                ),
+                pos = pos
             )
-        )
-        return(bam_file)
+        } else {
+            out <- make_simple_bam(
+                file_stem = file.path(rawdir, sample_name),
+                sam = make_simple_sam_text(
+                    reads,
+                    chr,
+                    sample_name = sample_name,
+                    chr_length = max(pos[, 2]) + 1
+                )
+            )
+        }
+        return(out)
     })
 
-    bamlist <- file.path(outputdir, "bamlist.txt")
-    write.table(matrix(bam_files, ncol = 1), file = bamlist, row.names = FALSE, col.names = FALSE, quote = FALSE)
+    if (use_crams) {
+        cramlist <- file.path(outputdir, "cramlist.txt")
+        bamlist <- NULL
+        samplelist <- cramlist
+        ref <- sample_files[[1]]$ref        
+        sample_files <- sapply(sample_files, function(x) x$cram_file)
+        bam_files <- NULL
+    } else {
+        ref <- NULL
+        cramlist <- NULL
+        bamlist <- file.path(outputdir, "bamlist.txt")
+        samplelist <- bamlist
+        sample_files <- sapply(sample_files, function(x) x)
+        bam_files <- sample_files
+    }
+    write.table(
+        matrix(sample_files, ncol = 1),
+        file = samplelist, row.names = FALSE, col.names = FALSE,
+        quote = FALSE
+    )
 
     return(list(
         bamlist = bamlist,
+        cramlist = cramlist,
+        ref = ref,
         posfile = posfile,
         genfile = genfile,
         bamlist = bamlist,
