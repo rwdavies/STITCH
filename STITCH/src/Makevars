@@ -1,3 +1,6 @@
-SEQ_ROOT=../../SeqLib/
-PKG_CPPFLAGS = -I$(SEQ_ROOT)/ -I$(SEQ_ROOT)/htslib/
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SEQ_ROOT)/src/libseqlib.a $(SEQ_ROOT)/bwa/libbwa.a $(SEQ_ROOT)/fermi-lite/libfml.a $(SEQ_ROOT)/htslib/libhts.a -fPIC
+## TODO: OK, R seems to install by moving the package to a new location
+## so make SEQLIB_ROOT a system variable
+## TODO: figure out proper Makevars / configure way to do this
+
+PKG_CPPFLAGS = -I$(SEQLIB_ROOT)/ -I$(SEQLIB_ROOT)/htslib/
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SEQLIB_ROOT)/bwa/libbwa.a $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/fermi-lite/libfml.a $(SEQLIB_ROOT)/htslib/libhts.a -fPIC

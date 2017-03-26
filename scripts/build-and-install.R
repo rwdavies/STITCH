@@ -12,11 +12,13 @@ for(key in c("--file=", "--f=")) {
 
 ## specify package
 pkg <- "STITCH"
+Sys.setenv(SEQLIB_ROOT = file.path(getwd(), "SeqLib"))
 
 ## documentation
 devtools::document(pkg = pkg)
 
 ## make the tarball
+print("Build")
 package_tarball <- devtools::build(pkg = pkg, manual = TRUE)
 version <- unlist(
     strsplit(unlist(strsplit(basename(package_tarball), "STITCH_")), ".tar.gz")
