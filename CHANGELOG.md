@@ -1,3 +1,6 @@
+* v1.3.0
+	* Use SeqLib instead of Rsamtools to get read inforamtion. This speeds up analysis of BAM files and significantly speeds up analysis of CRAM files
+	* Use SeqLib instead of samtools to get sample names
 * v1.2.9
 	* Add command line wrapper for STITCH to facilitate running from the command line
 	* Reduce RAM when working on large regions of the genome (e.g. chromosomes) by loading raw data 1 Mbp at a time

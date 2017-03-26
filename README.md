@@ -1,13 +1,12 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.2.9__**
-Release date: March 12, 2017
+**__Current Version: 1.3.0__**
+Release date: March 26, 2017
 
 Changes in latest version
 
-1. Add command line wrapper for STITCH to facilitate running from the command line
-2. Reduce RAM when working on large regions of the genome (e.g. chromosomes) by loading raw data 1 Mbp at a time
-3. Change examples script to only showcase examples and not installing dependencies
+1. Use SeqLib instead of Rsamtools to get read inforamtion. This speeds up analysis of BAM files and significantly speeds up analysis of CRAM files
+2. Use SeqLib instead of samtools to get sample names
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -21,10 +20,11 @@ For the old website, please see http://www.well.ox.ac.uk/~rwdavies/stitch.html
 
 Install R if not already installed. Then
 ```
-git clone https://github.com/rwdavies/STITCH.git
+git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.2.9.tar.gz
+EXPORT SEQLIB_ROOT=`pwd`
+R CMD INSTALL ./releases/STITCH_1.3.0.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
