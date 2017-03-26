@@ -8,9 +8,9 @@ script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 STITCH_HOME=`pwd`
 export PATH=`pwd`/:${PATH}
-mkdir benchmark-results
+mkdir -p benchmark-results
 
-# 1.2.4 1.2.9 
+# 1.2.5 1.2.9 
 for version in 1.3.0
 do
     cd ${STITCH_HOME}
@@ -20,6 +20,7 @@ do
     r_libs=`R --slave -e ".libPaths()[1]" | awk '{print substr($0, 5, 1000)}' | tr -d '"'`
     rm -r -f ${r_libs}/00LOCK-STITCH
     echo ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
+    export SEQLIB_ROOT=${STITCH_HOME}/SeqLib/
     R CMD INSTALL ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
     cd ${STITCH_HOME}/test-data/mouse_data/
     for use in CRAMS BAMS
