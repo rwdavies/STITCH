@@ -10,10 +10,12 @@ set -e
 logfile=`mktemp`
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
-export PATH=${PATH}:`pwd`/
+export PATH=`pwd`/:${PATH}
 
 logfile="temp.txt"
-R --slave -e 'suppressPackageStartupMessages(devtools::test("STITCH"))' 2>&1 | tee ${logfile}
+# suppressPackageStartupMessages
+# --slave
+R -e 'devtools::document("STITCH"); devtools::test("STITCH")' 2>&1 | tee ${logfile}
 
 # somehow this gives 0 exit code on parse failure
 started_if_1=`cat ${logfile} | grep 'Testing STITCH' | wc -l`
