@@ -567,3 +567,40 @@ test_that("STITCH diploid works under default parameters using CRAM files", {
     )
 
 })
+
+
+
+
+
+test_that("STITCH with generateInputOnly actually only generates input", {
+    skip_test_if_TRUE(run_acceptance_tests)
+
+    sink("/dev/null")
+
+    set.seed(10)
+    local_outputdir <- tempfile()
+    dir.create(local_outputdir)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = local_outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        generateInputOnly = TRUE
+    )
+
+    expect_equal(
+        FALSE,
+        file.exists(file.path(local_outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")))
+    )
+    inputdir_contents <- dir(file.path(local_outputdir, "input"))
+    expect_equal(
+        sort(inputdir_contents),
+        sort(paste0("sample.", 1:10, ".input.", data_package$chr, ".RData"))
+    )
+
+
+})

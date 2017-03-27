@@ -319,6 +319,9 @@ STITCH <- function(
     ## either generate the data, or load it from before
     ##
     generate_or_refactor_input(regenerateInput = regenerateInput, bundling_info = bundling_info, L = L, pos = pos, T = T, bam_files = bam_files, cram_files = cram_files, reference = reference, iSizeUpperLimit = iSizeUpperLimit, bqFilter = bqFilter, chr = chr, outputdir = outputdir, N = N, downsampleToCov = downsampleToCov, sampleNames = sampleNames, inputdir = inputdir, useSoftClippedBases = useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, generateInputOnly = generateInputOnly, environment = environment, nCores = nCores, save_sampleReadsInfo = save_sampleReadsInfo)
+    ## if only generating input data, we are done
+    if (generateInputOnly)
+        return(NULL)
 
 
 
@@ -2315,11 +2318,16 @@ generate_or_refactor_input <- function(
         ## handles both bundled and unbundled inputs
         out <- generate_input(bundling_info = bundling_info, L = L, pos = pos, T = T, bam_files = bam_files, cram_files = cram_files, reference = reference, iSizeUpperLimit = iSizeUpperLimit, bqFilter = bqFilter, chr = chr, N = N, downsampleToCov = downsampleToCov, sampleNames = sampleNames, inputdir = inputdir, useSoftClippedBases = useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, environment = environment, nCores = nCores, save_sampleReadsInfo = save_sampleReadsInfo)
         if(generateInputOnly==TRUE) {
-            save(pos,file=paste(outputdir,"RData/pos.",regionName,".RData",sep=""))
-            print(paste0("Done generating input - ",date()))
+            save(
+                pos,
+                file = file.path(
+                    outputdir, "RData",
+                    paste0("pos.", regionName ,".RData")
+                )
+            )
             return(NULL)
         }
-    } else { # regenerateInput = FALSE
+        } else { # regenerateInput = FALSE
         if (length(bundling_info) > 0) {
             rebundle_input(
                 inputdir = inputdir,
