@@ -11,7 +11,6 @@ logfile=`mktemp`
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 export PATH=`pwd`/:${PATH}
-export SEQLIB_ROOT=`pwd`/SeqLib/
 
 logfile="temp.txt"
 # suppressPackageStartupMessages

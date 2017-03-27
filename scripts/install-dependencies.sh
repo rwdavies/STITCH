@@ -4,13 +4,11 @@ set -e
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 ./scripts/install-r-dependencies.R
-./scripts/install-SeqLib.sh
 
 export PATH=${PATH}:`pwd`/
 
 # Install bgzip and optionally samtools into dependencies
 # symlink them into the STITCH directory
-# Install SeqLib in place, use in compilation
 
 # only bother if library files not presen
 one_if_curl_installed=`which curl | wc -l`
