@@ -1,3 +1,7 @@
+* v1.3.1
+	* Move SeqLib installation into Makevars to harmonize installation configuration with R
+	* Fix generateInputOnly to only generate input then stop
+	* Fix bug that arose when a sample has reads but no reads meeting the mapping quality or isize threshold requirements
 * v1.3.0
 	* Use SeqLib instead of Rsamtools to get read inforamtion. This speeds up analysis of BAM files and significantly speeds up analysis of CRAM files
 	* Use SeqLib instead of samtools to get sample names

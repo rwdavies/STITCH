@@ -1,12 +1,13 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.3.0__**
-Release date: March 26, 2017
+**__Current Version: 1.3.1__**
+Release date: March 27, 2017
 
 Changes in latest version
 
-1. Use SeqLib instead of Rsamtools to get read inforamtion. This speeds up analysis of BAM files and significantly speeds up analysis of CRAM files
-2. Use SeqLib instead of samtools to get sample names
+1. Move SeqLib installation into Makevars to harmonize installation configuration with R
+2. Fix generateInputOnly to only generate input then stop
+3. Fix bug that arose when a sample has reads but no reads meeting the mapping quality or isize threshold requirements
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -23,8 +24,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-export SEQLIB_ROOT=`pwd`/SeqLib/
-R CMD INSTALL ./releases/STITCH_1.3.0.tar.gz
+R CMD INSTALL ./releases/STITCH_1.3.1.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
@@ -33,16 +33,15 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
 # if this works the file stitch.chr19.vcf.gz will be created
 ```
-If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/).
+If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience any other compilation issues, please raise an issue.
 
 ### Interactive start
 1. Install R if not already installed.
 2. Install R dependencies parallel, Rcpp and RcppArmadillo from CRAN (using the "install.packages" option within R)
 3. Install [bgzip](http://www.htslib.org/) and make it available to your [PATH](https://en.wikipedia.org/wiki/PATH_(variable)). This can be done using a system installation, or doing a local installation and either modifying the PATH variable using code like ```export PATH=/path/to/dir-with-bgzip-binary/:$PATH```, or through R, doing something like ```Sys.setenv( PATH = paste0("/path/to/dir-with-bgzip-binary/:", Sys.getenv("PATH")))```. You'll know samtools is available if you run something like ```system("which bgzip")``` in R and get the path to bgzip
-4. Install SeqLib, either by running the script ```scripts/install-SeqLib.sh```, or by looking at the script and installing in a similar fashion.
-5. Install STITCH. First, download the latest STITCH tar.gz from the releases folder above. Next, set the path to SeqLib using ```SEQLIB_ROOT=/path/to/Seqlib-folder/```. Finally install by opening R and using install.packages, giving install.packages the path to the downloaded STITCH tar.gz
-6. Download example dataset [STITCH_example_2016_05_10.tgz](http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz).
-7. Run STITCH. Open R, change your working directory using setwd() to the directory where the example tar.gz was unzipped, and then run ```STITCH(tempdir = tempdir(), chr = "chr19", bamlist = "bamlist.txt", posfile = "pos.txt", genfile = "gen.txt", outputdir = paste0(getwd(), "/"), K = 4, nGen = 100, nCores = 1)```. Once complete, a VCF should appear in the current working directory named stitch.chr19.vcf.gz
+4. Install STITCH. First, download the latest STITCH tar.gz from the releases folder above. Second, install by opening R and using install.packages, giving install.packages the path to the downloaded STITCH tar.gz. This should install SeqLib automatically as well.
+5. Download example dataset [STITCH_example_2016_05_10.tgz](http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz).
+6. Run STITCH. Open R, change your working directory using setwd() to the directory where the example tar.gz was unzipped, and then run ```STITCH(tempdir = tempdir(), chr = "chr19", bamlist = "bamlist.txt", posfile = "pos.txt", genfile = "gen.txt", outputdir = paste0(getwd(), "/"), K = 4, nGen = 100, nCores = 1)```. Once complete, a VCF should appear in the current working directory named stitch.chr19.vcf.gz
 
 ## Help, command line interface and common options
 
