@@ -653,6 +653,60 @@ test_that("BAM with two reads can be properly interpreted", {
 })
 
 
+test_that("sample BAM with reads but only mapping quality 0 reads can be properly interpreted", {
+
+    ## recall - whole ref is A otherwise
+    chr <- 10
+    pos <- cbind(
+        CHR = rep(chr, 7),
+        POS = c(9, 11, 13, 15, 17, 19, 21),
+        REF = c("G", "G", "G", "G", "G", "G", "G"),
+        ALT = c("C", "C", "C", "C", "C", "C", "C")
+    )
+    ## https://github.com/samtools/hts-specs/blob/master/SAMv1.pdf
+
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "17", "0",
+                  "6M", "*", "0", "0",
+                  "GACCGA", "::::::")
+            ),
+            chr
+        )
+    )
+
+    ## only mq0, so expect empty
+    expected_sample_reads <- make_fake_sampleReads()
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100,
+        method_to_use_to_get_raw_data = "SeqLib" #Rsamtools
+    )
+
+    load(file_sampleReads(tempdir(), 1, regionName))
+
+    expect_equal(
+        sampleReads,
+        expected_sample_reads
+    )
+
+})
+
 
 test_that("BAM with two part split read is properly interpreted", {
     

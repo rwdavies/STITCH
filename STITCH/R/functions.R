@@ -3020,6 +3020,12 @@ get_sampleReadsRaw <- function(
     cigarRead <- sampleData$cigar
     for(l in c("P", "=", "X"))
         keep[grep(l, cigarRead)] <- FALSE
+
+    ## if there are no reads to keep
+    ## return NULL, and parse correctly afterwards
+    if (sum(keep) == 0)
+        return(NULL)
+    
     mapq <- mapq[keep]
     isize <- isize[keep]
     posRead <- as.integer(sampleData$pos)[keep]
@@ -3359,6 +3365,8 @@ loadBamAndConvert <- function(
                 pos,
                 useSoftClippedBases
             )
+            if (is.null(out))
+                out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)                
         } else {
             out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)
         }
