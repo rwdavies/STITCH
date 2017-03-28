@@ -41,7 +41,13 @@ system(paste0("mv ", package_tarball, " ", release_package_tarball))
 package_tarball <- release_package_tarball
 
 ## install from tarball
-install.packages(package_tarball)
+result <- tryCatch({
+    install.packages(package_tarball)
+}, warning = function(w) {
+    stop(paste0(pkg, " installation failed"))
+}, error = function(e) {
+    stop(paste0(pkg, " installation failed"))       
+})
 
 ## build PDF
 pdf_name <- file.path("releases", paste0("STITCH_", version, ".pdf"))
