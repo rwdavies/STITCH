@@ -1,3 +1,5 @@
+* v1.3.2
+	* Increase likelihood of succesfull compilation by chaging Makevars to compile SeqLib and htslib with the same configuration as R
 * v1.3.1
 	* Move SeqLib installation into Makevars to harmonize installation configuration with R
 	* Fix generateInputOnly to only generate input then stop

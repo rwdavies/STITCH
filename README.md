@@ -1,13 +1,11 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.3.1__**
-Release date: March 27, 2017
+**__Current Version: 1.3.2__**
+Release date: March 29, 2017
 
 Changes in latest version
 
-1. Move SeqLib installation into Makevars to harmonize installation configuration with R
-2. Fix generateInputOnly to only generate input then stop
-3. Fix bug that arose when a sample has reads but no reads meeting the mapping quality or isize threshold requirements
+1. Increase likelihood of succesfull compilation by chaging Makevars to compile SeqLib and htslib with the same configuration as R
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -24,7 +22,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.3.1.tar.gz
+R CMD INSTALL ./releases/STITCH_1.3.2.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
@@ -33,7 +31,8 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
 # if this works the file stitch.chr19.vcf.gz will be created
 ```
-If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience any other compilation issues, please raise an issue.
+If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience other compilation issues, please raise an issue. To experiment with configuration options during compilation, you can edit ```STITCH/src/Makevars``` then build a package and install using ```./scripts/build-and-install.sh``` or test using ```./scripts/test-unit.sh```.
+
 
 ### Interactive start
 1. Install R if not already installed.
