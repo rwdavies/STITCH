@@ -68,6 +68,8 @@ test_that("STITCH diploid works under default parameters", {
         nCores = 1
     )
 
+    sink()
+    
     vcf <- read.table(
         file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
         header = FALSE,
@@ -77,6 +79,50 @@ test_that("STITCH diploid works under default parameters", {
     check_vcf_against_phase(
         vcf = vcf,
         phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
+test_that("STITCH diploid works under default parameters with nCores = 40 and N = 25", {
+    skip_test_if_TRUE(run_acceptance_tests)
+
+    sink("/dev/null")
+
+    set.seed(10)
+    data_package25 <- make_acceptance_test_data_package(
+        n_samples = 25,
+        n_snps = n_snps,
+        n_reads = 4,
+        seed = 1,
+        chr = chr,
+        K = 2,
+        phasemaster = phasemaster
+    )
+    
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package25$chr,
+        bamlist = data_package25$bamlist,
+        posfile = data_package25$posfile,
+        outputdir = data_package25$outputdir,
+        K = 4,
+        nGen = 100,
+        nCores = 40
+    )
+
+    sink()
+    
+    vcf <- read.table(
+        file.path(data_package25$outputdir, paste0("stitch.", data_package25$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package25$phase,
         tol = 0.2
     )
 
