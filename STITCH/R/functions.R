@@ -3149,28 +3149,6 @@ get_chromosome_length <- function(iBam, bam_files, cram_files, chr) {
     return(seq[1, 2])
 }
 
-## for some given chrStart, chrEnd
-## and some desired window size
-## choose how to do chunking
-determine_loading_windows <- function(
-    chrStart,
-    chrEnd,
-    chrLength,
-    width_of_loading_window = 1e6
-) {
-    if (is.na(chrStart)) {
-        chrEnd <- chrLength
-        chrStart <- 1
-    }
-    load_window_start <- seq(chrStart, chrEnd, width_of_loading_window)
-    load_window_end <- c(load_window_start[-1] - 1, chrEnd)
-    return(
-        list(
-            start = load_window_start,
-            end = load_window_end
-        )
-    )
-}
 
 
 
@@ -3245,8 +3223,7 @@ loadBamAndConvert <- function(
     chrStart,
     chrEnd,
     chrLength = NA,
-    save_sampleReadsInfo = FALSE,
-    width_of_loading_window = 1000000 ## what sized chunks to load things in, for RAM reasons
+    save_sampleReadsInfo = FALSE
 ) {
 
     sampleReadsInfo <- NULL ## unless otherwise created
@@ -3270,44 +3247,24 @@ loadBamAndConvert <- function(
         chrEnd
     )
 
-    loading_windows <- determine_loading_windows(
-        chrStart, chrEnd, chrLength, width_of_loading_window
+    ref <- as.character(pos[, "REF"])
+    alt <- as.character(pos[, "ALT"])
+    out <- get_sampleReadsRaw_from_SeqLib(
+        useSoftClippedBases = useSoftClippedBases,
+        bqFilter = bqFilter,
+        iSizeUpperLimit = iSizeUpperLimit,
+        ref = ref,
+        alt = alt,
+        T = T,
+        L = L,
+        region = paste0(chr, ":", chrStart, "-", chrEnd),
+        file_name = file_name,
+        reference = reference
     )
-
-    sampleReadsAcrossRegions <- lapply(1:length(loading_windows$start), function(i_region) {
-        window_start <- loading_windows$start[i_region]
-        window_end <- loading_windows$end[i_region]
-
-        ref <- as.character(pos[, "REF"])
-        alt <- as.character(pos[, "ALT"])
-        out <- get_sampleReadsRaw_from_SeqLib(
-            useSoftClippedBases = useSoftClippedBases,
-            bqFilter = bqFilter,
-            iSizeUpperLimit = iSizeUpperLimit,
-            ref = ref,
-            alt = alt,
-            T = T,
-            L = L,
-            region = paste0(chr, ":", window_start, "-", window_end),
-            file_name = file_name,
-            reference = reference
-        )
-        save(out, file = paste0("~/temp.", window_start, ".RData"))
-        
-        return(
-            list(
-                sampleReadsRaw = out$sampleReadsRaw,
-                qname = out$qname,
-                strand = out$strand
-            )
-        )
-    })
-
-    out <- combineReadsAcrossRegions(sampleReadsAcrossRegions)
     sampleReadsRaw <- out$sampleReadsRaw
     qname <- out$qname
     strand <- out$strand
-    
+        
 
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
