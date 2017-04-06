@@ -171,53 +171,6 @@ test_that("sample names can be properly retrieved, even if @RG is found somewher
 })
 
 
-test_that("simple read cigar strings are split properly", {
-    cigarRead <- c("101M", "101M")
-    splitCigarRead <- split_cigar_string(
-            cigarRead = cigarRead
-    )$splitCigarRead
-    expect_equal(    
-        splitCigarRead,
-        list(
-            list(101, "M"),
-            list(101, "M")
-        )
-    )
-})
-
-
-test_that("complicated cigar strings are split properly", {
-    cigarRead <- c("11M12I13M", "14M15D16M")
-    splitCigarRead <- split_cigar_string(
-            cigarRead = cigarRead
-    )$splitCigarRead
-    expected_result <- list(
-        list(c(11, 12, 13), c("M", "I", "M")),
-        list(c(14, 15, 16), c("M", "D", "M"))
-    )
-    expect_equal(    
-        splitCigarRead,
-        expected_result        
-    )
-})
-
-
-test_that("a mixture of complicated and uncomplicated cigar strings are split properly", {
-    cigarRead <- c("11M12I13M", "14M15D16M", "101M", "102M")
-    splitCigarRead <- split_cigar_string(
-            cigarRead = cigarRead
-    )$splitCigarRead
-    expected_result <- list(
-        list(c(11, 12, 13), c("M", "I", "M")),
-        list(c(14, 15, 16), c("M", "D", "M")),
-        list(101, "M"),
-        list(102, "M")
-    )
-    expect_equal(    
-        splitCigarRead,
-        expected_result        
-    )
-})
 
 
 
@@ -519,7 +472,7 @@ test_that("sampleReadsRaw can be converted to sampleReads and also strand inform
 
 
 
-test_that("sample BAM can be properly interpreted", {
+test_that("BAM with one read can be properly interpreted", {
 
     ## recall - whole ref is A otherwise
     chr <- 10
@@ -564,14 +517,13 @@ test_that("sample BAM can be properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-8",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
         chr = chr,
         chrStart = 1,
-        chrEnd = 100,
-        method_to_use_to_get_raw_data = "SeqLib" #Rsamtools
+        chrEnd = 100
     )
     
     load(file_sampleReads(tempdir(), 1, regionName))
@@ -634,7 +586,7 @@ test_that("BAM with two reads can be properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-7",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -653,7 +605,7 @@ test_that("BAM with two reads can be properly interpreted", {
 })
 
 
-test_that("sample BAM with reads but only mapping quality 0 reads can be properly interpreted", {
+test_that("BAM with reads but only mapping quality 0 reads can be properly interpreted", {
 
     ## recall - whole ref is A otherwise
     chr <- 10
@@ -680,6 +632,7 @@ test_that("sample BAM with reads but only mapping quality 0 reads can be properl
     ## only mq0, so expect empty
     expected_sample_reads <- make_fake_sampleReads()
 
+    sink("/dev/null")    
     regionName <- "region-name"
     loadBamAndConvert(
         iBam = 1,
@@ -688,16 +641,16 @@ test_that("sample BAM with reads but only mapping quality 0 reads can be properl
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-mq-0",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
         chr = chr,
         chrStart = 1,
-        chrEnd = 100,
-        method_to_use_to_get_raw_data = "SeqLib" #Rsamtools
+        chrEnd = 100
     )
-
+    sink()
+    
     load(file_sampleReads(tempdir(), 1, regionName))
 
     expect_equal(
@@ -748,7 +701,7 @@ test_that("BAM with two part split read is properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-6",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -813,7 +766,7 @@ test_that("BAM with three part split read is properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-5",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -894,7 +847,7 @@ test_that("BAM with several informative and uninformative reads is properly inte
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-4",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -950,7 +903,7 @@ test_that("BAM with no reads is properly handled", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-3",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -1008,7 +961,7 @@ test_that("BAM with no informative reads is properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-2",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -1024,6 +977,193 @@ test_that("BAM with no informative reads is properly interpreted", {
     )
 
 })
+
+
+test_that("BAM with one read can use bases in soft clipping", {
+
+    ## recall - whole ref is A otherwise
+    chr <- 10
+    pos <- cbind(
+        CHR = rep(chr, 7),
+        POS = c(9, 11, 13, 15, 17, 19, 21),
+        REF = c("G", "G", "G", "G", "G", "G", "G"),
+        ALT = c("C", "C", "C", "C", "C", "C", "C")
+    )
+
+    ## https://samtools.github.io/hts-specs/SAMv1.pdf
+    ## recall that soft clipped reads give first non-soft clipped position
+    ## so below, 17 is the start of the non-soft clipped part
+    ## so the read including soft clipping starts at 15
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "17", "60",
+                  "2S2M2S", "*", "0", "0",
+                  "ccCCgg", "::::::")
+            ), 
+            chr
+        )
+    )
+    
+    ## 1: 0-based number of SNPs
+    ## 2: 0-based central SNP
+    ## 3: bq, - = ref, + = alt
+    ## 4: 0-based position in pos
+    expected_sample_reads <- list(
+        list(
+            2, 4,
+            matrix(c(25, 25, -25), ncol = 1),
+            matrix(c(3, 4, 5), ncol = 1)
+        )
+    )
+
+    
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-1",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100,
+        useSoftClippedBases = TRUE
+    )
+    
+    load(file_sampleReads(tempdir(), 1, regionName))
+    expect_equal(sampleReads, expected_sample_reads)
+
+})
+
+
+
+test_that("BAM with one read can remove bases in soft clipping", {
+
+    ## recall - whole ref is A otherwise
+    chr <- 10
+    pos <- cbind(
+        CHR = rep(chr, 7),
+        POS = c(9, 11, 13, 15, 17, 19, 21),
+        REF = c("G", "G", "G", "G", "G", "G", "G"),
+        ALT = c("C", "C", "C", "C", "C", "C", "C")
+    )
+
+    ## https://samtools.github.io/hts-specs/SAMv1.pdf
+    ## recall that both soft and hard clipped reads have the same number of bases as qualities scores
+    ## recall that soft clipped reads give first non-soft clipped position
+    ## so below, 14 is the start of the non-soft clipped part
+    ## so the read including soft clipping starts at (1-based) 10
+    ## include different qualities as well to confirm exact position
+    bqs <- paste0(sapply(58 + 0:10, function(x) rawToChar(as.raw(x))), collapse = "")
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "14", "60",
+                  "4S4M3S", "*", "0", "0",
+                  "ggccGGGGccc", bqs)
+            ), 
+            chr
+        )
+    )
+    
+    expected_sample_reads <- list(
+        list(
+            1, NA,
+            matrix(c(-30, -32), ncol = 1),
+            matrix(c(3, 4), ncol = 1)
+        )
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-BAM-soft",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100,
+        useSoftClippedBases = FALSE
+    )
+    
+    load(file_sampleReads(tempdir(), 1, regionName))
+    sampleReads[[1]][2] <- NA
+    expect_equal(sampleReads, expected_sample_reads)
+
+})
+
+
+test_that("BAM with hard clipped bases are not used", {
+
+    ## recall - whole ref is A otherwise
+    chr <- 10
+    pos <- cbind(
+        CHR = rep(chr, 7),
+        POS = c(9, 11, 13, 15, 17, 19, 21),
+        REF = c("G", "G", "G", "G", "G", "G", "G"),
+        ALT = c("C", "C", "C", "C", "C", "C", "C")
+    )
+
+    ## https://samtools.github.io/hts-specs/SAMv1.pdf
+    ## so hard clipped bases are not included as sequence or in the pos
+    ## so 17 means 17, and C is the first base there
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "17", "60",
+                  "5H4M5H", "*", "0", "0",
+                  "CCGG", "::::")
+            ), 
+            chr
+        )
+    )
+    
+    expected_sample_reads <- list(
+        list(
+            1, NA,
+            matrix(c(25, -25), ncol = 1),
+            matrix(c(4, 5), ncol = 1)
+        )
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-BAM-hard",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100,
+    )
+    
+    load(file_sampleReads(tempdir(), 1, regionName))
+    sampleReads[[1]][2] <- NA
+    expect_equal(sampleReads, expected_sample_reads)
+
+})
+
 
 
 test_that("sample CRAM can be properly interpreted", {
@@ -1073,7 +1213,7 @@ test_that("sample CRAM can be properly interpreted", {
         cram_files = cram_file,
         reference = ref,
         N = 1,
-        sampleNames = "test-name",
+        sampleNames = "test-name-0",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -1090,10 +1230,3 @@ test_that("sample CRAM can be properly interpreted", {
     )
 
 })
-
-
-
-
-
-
-
