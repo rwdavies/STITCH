@@ -4083,8 +4083,8 @@ getOutputBlockRange <- function(
     sampleRange,
     outputBlockSize
 ) {
-    if (sum(sampleRange == c(1, 1)) == 2)
-        return(c(0, 1))
+    if (sampleRange[1] == sampleRange[2])
+        return(c(sampleRange[1] - 1, sampleRange[2]))
     d <- sampleRange[2] - sampleRange[1]
     if(outputBlockSize > d)
         outputBlockSize = d
