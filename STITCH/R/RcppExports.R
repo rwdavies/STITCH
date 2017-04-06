@@ -42,11 +42,6 @@ pseudoHaploid_update_model_9 <- function(pRgivenH1, pRgivenH2, eMatHap_t1, eMatH
 }
 
 #' @export
-reformatReads <- function(mapq, readStart, readEnd, numberOfReads, T, L, seqRead, qualRead, ref, alt, splitCigarRead, lengthOfSplitCigarRead, bqFilter, verbose) {
-    .Call('STITCH_reformatReads', PACKAGE = 'STITCH', mapq, readStart, readEnd, numberOfReads, T, L, seqRead, qualRead, ref, alt, splitCigarRead, lengthOfSplitCigarRead, bqFilter, verbose)
-}
-
-#' @export
 forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput) {
     .Call('STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput)
 }

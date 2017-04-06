@@ -120,30 +120,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// reformatReads
-Rcpp::List reformatReads(arma::ivec mapq, arma::ivec readStart, arma::ivec readEnd, const int numberOfReads, const int T, arma::ivec L, Rcpp::CharacterVector seqRead, Rcpp::CharacterVector qualRead, Rcpp::CharacterVector ref, Rcpp::CharacterVector alt, Rcpp::List splitCigarRead, arma::ivec lengthOfSplitCigarRead, const int bqFilter, const int verbose);
-RcppExport SEXP STITCH_reformatReads(SEXP mapqSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP numberOfReadsSEXP, SEXP TSEXP, SEXP LSEXP, SEXP seqReadSEXP, SEXP qualReadSEXP, SEXP refSEXP, SEXP altSEXP, SEXP splitCigarReadSEXP, SEXP lengthOfSplitCigarReadSEXP, SEXP bqFilterSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::ivec >::type mapq(mapqSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type readStart(readStartSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type readEnd(readEndSEXP);
-    Rcpp::traits::input_parameter< const int >::type numberOfReads(numberOfReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type T(TSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type L(LSEXP);
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type seqRead(seqReadSEXP);
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type qualRead(qualReadSEXP);
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type ref(refSEXP);
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type alt(altSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type splitCigarRead(splitCigarReadSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type lengthOfSplitCigarRead(lengthOfSplitCigarReadSEXP);
-    Rcpp::traits::input_parameter< const int >::type bqFilter(bqFilterSEXP);
-    Rcpp::traits::input_parameter< const int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(reformatReads(mapq, readStart, readEnd, numberOfReads, T, L, seqRead, qualRead, ref, alt, splitCigarRead, lengthOfSplitCigarRead, bqFilter, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
 // forwardBackwardDiploid
 Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput);
 RcppExport SEXP STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP whatToReturnSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP) {

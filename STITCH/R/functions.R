@@ -447,13 +447,14 @@ STITCH <- function(
     reference_panel_SNPs <- out$reference_panel_SNPs
 
 
-
+    
     ##
     ## run EM algorithm here
     ##
     print(paste("Begin EM - ", date()))
     date <- date()
     save(date, file = file.path(outputdir, "RData", paste0("startEM.", regionName, ".RData")))
+    print(paste0("Number of samples - ", N))
     print(paste0("Number of SNPs - ", T))
     ## actually run now
     iteration <- max(0, startIterations)
@@ -2513,7 +2514,7 @@ generate_input <- function(
         print(out[[which(sapply(out, length) > 0)[1]]])
         stop("There has been an error generating the input. Please see error message above")
     }
-    print(paste0("Done geneating inputs - ", date()))
+    print(paste0("Done generating inputs - ", date()))
     return(NULL)
 }
 
@@ -2943,113 +2944,6 @@ deal_with_soft_clipped_bases <- function(splitCigarRead, useSoftClippedBases, po
 }
 
 
-## get data from Rsamtools / SeqLib
-## build sampleReadsRaw from C++
-## with one entry per line of the BAM file (read)
-## when it intersects a SNP
-get_sampleReadsRaw <- function(
-    useSoftClippedBases,                               
-    bqFilter,
-    iSizeUpperLimit,
-    ref,
-    alt,
-    T,
-    L,
-    region,
-    file_name,
-    reference
-) {
-
-    sampleData <- get_sample_data_from_SeqLib(
-        region = region,
-        file_name = file_name,
-        reference = reference
-    )
-    
-    if (length(sampleData$qname) == 0) {    
-        out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)
-        return(out)
-    }
-    
-    ## get more info read as well
-    mapq <- as.integer(sampleData$mapq)
-    isize <- sampleData$isize
-    ## figure out which ones we dont want - remove
-    keep <- FALSE == (
-        mapq < bqFilter |
-        ( abs(isize) > iSizeUpperLimit & is.na(isize)==FALSE)
-    )
-    cigarRead <- sampleData$cigar
-    for(l in c("P", "=", "X"))
-        keep[grep(l, cigarRead)] <- FALSE
-
-    ## if there are no reads to keep
-    ## return NULL, and parse correctly afterwards
-    if (sum(keep) == 0) {
-        out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)
-        return(out)
-    }
-    
-    mapq <- mapq[keep]
-    isize <- isize[keep]
-    posRead <- as.integer(sampleData$pos)[keep]
-    cigarRead <- unlist(sampleData$cigar[keep])
-    seqRead <- as.character(sampleData$seq)[keep]
-    qualRead <- as.character(sampleData$qual)[keep]
-    qname <- sampleData$qname[keep]
-    strand <- as.character(sampleData$strand)[keep]
-    rm(sampleData)
-
-    splitCigarRead <- cpp_cigar_split_many(cigarRead)
-
-    out <- deal_with_soft_clipped_bases(
-        splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead
-    )
-    splitCigarRead <- out$splitCigarRead
-    posRead <- out$posRead
-    seqRead <- out$seqRead
-    qualRead <- out$qualRead
-    
-    lengthOfSplitCigarRead <- as.integer(unlist(lapply(splitCigarRead,function(x) length(x[[1]])-1))) # 0 BASED
-
-    readLength <- sapply(
-        splitCigarRead,
-        function(x)
-        sum(
-            x[[1]][FALSE==is.na(match(x[[2]], c("M","D")))]
-        )
-    )
-    readStart <- posRead # includes this first base
-    readEnd <- readStart + readLength - 1 # includes final base
-
-    ##
-    ## push through c++ function
-    ##
-    sampleReadsRaw <- reformatReads(
-        mapq = mapq,
-        readStart = readStart,
-        readEnd = readEnd,
-        numberOfReads = as.integer(length(mapq)),
-        T = T,
-        L = L,
-        seqRead = seqRead,
-        qualRead = qualRead,
-        ref = ref,
-        alt = alt,
-        splitCigarRead = splitCigarRead,
-        lengthOfSplitCigarRead = lengthOfSplitCigarRead,
-        bqFilter = bqFilter,
-        verbose = as.integer(0)
-    )
-
-    return(
-        list(
-            sampleReadsRaw = sampleReadsRaw,
-            qname = qname,
-            strand = strand
-        )
-    )
-}
 
 
 
@@ -3189,13 +3083,19 @@ loadBamAndConvert <- function(
 
     sampleReadsInfo <- NULL ## unless otherwise created
 
-    if ((iBam %% 100) == 0)
+    if ((iBam %% 100) == 0) {
+        if (length(bam_files) > 0) {
+            what <- "BAM"
+        } else {
+            what <- "CRAM"
+        }
         print(
             paste0(
-                "load and convert bam ",
-                iBam, " of ",N , ", ", date()
+                "Load and convert ", what, " ",
+                iBam, " of ", N , ", ", date()
             )
         )
+    }
 
     file_name <- get_bam_name_and_maybe_convert_cram(
         iBam,
@@ -3226,7 +3126,6 @@ loadBamAndConvert <- function(
     qname <- out$qname
     strand <- out$strand
         
-
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
             name = sampleNames[iBam],
