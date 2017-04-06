@@ -801,19 +801,19 @@ test_that("BAM with several informative and uninformative reads is properly inte
             list(
                 c("r000", "0", chr, "5", "60",
                   "2M", "*", "0", "0",
-                  "AA", "::"),
+                  "AA", ":;"),
                 c("r001", "0", chr, "9", "60",
                   "2M", "*", "0", "0",
-                  "AA", "::"),
+                  "AA", ";:"),
                 c("r002", "0", chr, "11", "60",
                   "2M", "*", "0", "0",
-                  "CC", "::"),
+                  "CC", "AB"),
                 c("r001", "0", chr, "11", "60",
                   "2M", "*", "0", "0",
-                  "CC", "::"),
+                  "CC", "<="),
                 c("r002", "0", chr, "13", "60",
                   "2M", "*", "0", "0",
-                  "TT", "::"),                
+                  "TT", "BC"),                
                 c("r003", "0", chr, "21", "60",
                   "2M", "*", "0", "0",
                   "AA", "::")
@@ -822,14 +822,14 @@ test_that("BAM with several informative and uninformative reads is properly inte
         )
     )
     expected_sample_reads <- list(
-        list(
+        list( ##r001
             1, NA, ## NA as can be random
-            matrix(c(-25, 25), ncol = 1),
+            matrix(c(-26, 27), ncol = 1),
             matrix(c(0, 1), ncol = 1)
         ),
-        list(
+        list( ## r002
             1, NA, ## NA as is random between 1, 2
-            matrix(c(25, 25), ncol = 1),
+            matrix(c(32, 33), ncol = 1),
             matrix(c(1, 2), ncol = 1)
         ),
         list(
@@ -860,7 +860,7 @@ test_that("BAM with several informative and uninformative reads is properly inte
     load(file_sampleReads(tempdir(), 1, regionName))
     sampleReads[[1]][[2]] <- NA ## manually blank out
     sampleReads[[2]][[2]] <- NA ## manually blank out    
-    
+
     expect_equal(
         sampleReads,
         expected_sample_reads
