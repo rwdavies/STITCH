@@ -158,7 +158,6 @@ STITCH <- function(
     ## external dependency checks
     ##
     check_program_dependency("rsync")
-    check_program_dependency("samtools")
     check_program_dependency("bgzip")
 
 
@@ -2867,73 +2866,6 @@ refillSimple <- function(hapSum,T,K,eHapsCurrent,N) {
 
 
 
-## the cigar string comes as a long character vector
-## reconfigure this into lists to be able to use in C++
-## in retrospect, could probably have done this as part
-## of other giant C++ function, but oh well
-##
-## cigarRead is a vector of cigars
-## like "101M" or "10M2I3M4D" etc
-split_cigar_string <- function(
-    cigarRead,
-    useSoftClippedBases = FALSE,
-    posRead = NULL,
-    seqRead = NULL
-) {
-    ## now in C++
-    splitCigarRead <- cpp_cigar_split(unlist(cigarRead))
-    ##
-    ## deal with soft and hard clipped bases
-    ##
-    s <- sapply(splitCigarRead, function(x) sum(x[[2]]=="S"))
-    h <- sapply(splitCigarRead, function(x) sum(x[[2]]=="H"))
-    if(sum(s)>0) {
-      if(useSoftClippedBases==TRUE) {
-        ## adjust position at the start appropriately if first is S
-        w <- sapply(splitCigarRead, function(x) x[[2]][1]=="S")
-        ## get position of those that start with an S
-        x <- sapply(splitCigarRead[w], function(x) x[[1]][1])
-        ## substract the starts back by that
-        posRead[w] <- posRead[w] - x
-        ## change all the S's to M's
-        splitCigarRead <- lapply(splitCigarRead, function(x) {
-          x[[2]][x[[2]]=="S"]="M"
-          return(x)
-        })
-      } else {
-        ## here we want to get rid of them
-        ## we need to effectively hard clip them
-        ## the sequence at the end is irrelevant
-        w <- sapply(splitCigarRead, function(x) x[[2]][1]=="S")
-        if (sum(w) > 0) {
-          seqRead[w] <- sapply(which(w), function(i) {
-            s1 <- seqRead[i]
-            scr <- splitCigarRead[[i]]
-            to_remove <- scr[[1]][1]
-            return(substr(s1, 1+to_remove,nchar(s1)))
-          })
-          ## now - remove them from the start
-          splitCigarRead[w] <- lapply(splitCigarRead[w], function(x) {
-            k <- x[[2]]!="S"
-            return(list(x[[1]][k], x[[2]][k]))
-          })
-        }
-      }
-    }
-    ## done looking at soft clipped bases
-    lengthOfSplitCigarRead <- as.integer(unlist(lapply(splitCigarRead,function(x) length(x[[1]])-1))) # 0 BASED
-    ## hmm, looks like I can basically ignore hard clipped ones
-    ## the src function will skip them
-    ## and they aren't part of the alignment
-    return(
-        list(
-            splitCigarRead = splitCigarRead,
-            lengthOfSplitCigarRead = lengthOfSplitCigarRead,
-            posRead = posRead,
-            seqRead = seqRead
-        )
-    )
-}
 
 
 
@@ -2949,8 +2881,7 @@ get_bam_name_and_maybe_convert_cram <- function(
     tempdir,
     chr,
     chrStart,
-    chrEnd,
-    method_to_use_to_get_raw_data
+    chrEnd
 ) {
     if (length(bam_files) > 0) {
         bamName <- bam_files[iBam]
@@ -2960,21 +2891,7 @@ get_bam_name_and_maybe_convert_cram <- function(
         cramName <- cram_files[iBam]
         if (file.exists(cramName) == FALSE)
             stop(paste0("cannot find file:", cramName))
-        if (method_to_use_to_get_raw_data == "Rsamtools") {
-            tempBam <- paste0(tempdir, "/sample", iBam, ".bam")
-            ## note - chrStart and chrEnd are appropriate
-            system(paste0(
-                "samtools view -h ", cramName,
-                " -T ", reference, " ",
-                chr, ":", chrStart, "-", chrEnd, " | ",
-                "samtools view -b > ",
-                tempBam
-            ))
-            system(paste0("samtools index ", tempBam))
-            bamName <- tempBam
-        } else {
-            bamName <- cramName
-        }
+        bamName <- cramName
     } else {
         stop("Both bam_files and cram_files are empty")
     }
@@ -3001,22 +2918,59 @@ get_index_for_bamName <- function(bamName) {
 }
 
 
+deal_with_soft_clipped_bases <- function(splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead) {
+    for(iRead in 1:length(seqRead)) {
+        out <- cpp_deal_with_soft_clipped_bases(
+            splitCigarRead = splitCigarRead[[iRead]],
+            useSoftClippedBases = useSoftClippedBases,
+            posRead = posRead[iRead],
+            seqRead = seqRead[iRead],
+            qualRead = qualRead[iRead]
+        )
+        splitCigarRead[[iRead]] <- out$splitCigarRead
+        posRead[iRead] <- out$posRead
+        seqRead[iRead] <- out$seqRead
+        qualRead[iRead] <- out$qualRead
+    }
+    return(
+        list(
+            splitCigarRead = splitCigarRead ,
+            posRead = posRead,
+            seqRead = seqRead,
+            qualRead = qualRead
+        )
+    )
+}
 
 
-## with data out of Rsamtools
-## build first sampleReads from C++
-## with one entry per line of the BAM file,
+## get data from Rsamtools / SeqLib
+## build sampleReadsRaw from C++
+## with one entry per line of the BAM file (read)
 ## when it intersects a SNP
 get_sampleReadsRaw <- function(
-    sampleData,
+    useSoftClippedBases,                               
     bqFilter,
     iSizeUpperLimit,
+    ref,
+    alt,
     T,
     L,
-    pos,
-    useSoftClippedBases
+    region,
+    file_name,
+    reference
 ) {
 
+    sampleData <- get_sample_data_from_SeqLib(
+        region = region,
+        file_name = file_name,
+        reference = reference
+    )
+    
+    if (length(sampleData$qname) == 0) {    
+        out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)
+        return(out)
+    }
+    
     ## get more info read as well
     mapq <- as.integer(sampleData$mapq)
     isize <- sampleData$isize
@@ -3031,29 +2985,32 @@ get_sampleReadsRaw <- function(
 
     ## if there are no reads to keep
     ## return NULL, and parse correctly afterwards
-    if (sum(keep) == 0)
-        return(NULL)
+    if (sum(keep) == 0) {
+        out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)
+        return(out)
+    }
     
     mapq <- mapq[keep]
     isize <- isize[keep]
     posRead <- as.integer(sampleData$pos)[keep]
-    cigarRead <- sampleData$cigar[keep]
+    cigarRead <- unlist(sampleData$cigar[keep])
     seqRead <- as.character(sampleData$seq)[keep]
     qualRead <- as.character(sampleData$qual)[keep]
     qname <- sampleData$qname[keep]
     strand <- as.character(sampleData$strand)[keep]
     rm(sampleData)
 
-    out <- split_cigar_string(
-        cigarRead,
-        useSoftClippedBases,
-        posRead,
-        seqRead
+    splitCigarRead <- cpp_cigar_split_many(cigarRead)
+
+    out <- deal_with_soft_clipped_bases(
+        splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead
     )
     splitCigarRead <- out$splitCigarRead
-    lengthOfSplitCigarRead <- out$lengthOfSplitCigarRead
     posRead <- out$posRead
     seqRead <- out$seqRead
+    qualRead <- out$qualRead
+    
+    lengthOfSplitCigarRead <- as.integer(unlist(lapply(splitCigarRead,function(x) length(x[[1]])-1))) # 0 BASED
 
     readLength <- sapply(
         splitCigarRead,
@@ -3068,8 +3025,6 @@ get_sampleReadsRaw <- function(
     ##
     ## push through c++ function
     ##
-    ref <- as.character(pos[, "REF"])
-    alt <- as.character(pos[, "ALT"])
     sampleReadsRaw <- reformatReads(
         mapq = mapq,
         readStart = readStart,
@@ -3262,29 +3217,6 @@ combineReadsAcrossRegions <- function(sampleReadsAcrossRegions) {
 
 
 
-get_sample_data_from_Rsamtools <- function(
-    chr,
-    window_start,
-    window_end,
-    bamName
-) {
-    ## necessary Rsamtools stuff
-    flag <- scanBamFlag(isPaired = NA, isProperPair = NA, isUnmappedQuery = FALSE, hasUnmappedMate = NA, isMinusStrand = NA, isMateMinusStrand = NA, isFirstMateRead = NA, isSecondMateRead = NA, isSecondaryAlignment = NA, isNotPassingQualityControls = FALSE, isDuplicate = FALSE)
-    ##isNotPrimaryRead = NA
-    what <- c("qname","strand","pos","seq","qual","cigar","isize","mapq")
-    eval(parse(text = (
-        paste0("which = RangesList(\"",chr,"\"=",
-               "IRanges(", window_start,",", window_end,"))")
-    )))
-    param <- ScanBamParam(flag = flag, which = which, what = what)
-    idx <- get_index_for_bamName(bamName)
-    sampleData <- scanBam(
-        file = bamName,
-        index = idx,
-        param = param
-    )[[1]]
-    return(sampleData)
-}
 
 
 
@@ -3314,8 +3246,7 @@ loadBamAndConvert <- function(
     chrEnd,
     chrLength = NA,
     save_sampleReadsInfo = FALSE,
-    width_of_loading_window = 1000000, ## what sized chunks to load things in, for RAM reasons
-    method_to_use_to_get_raw_data = "SeqLib"
+    width_of_loading_window = 1000000 ## what sized chunks to load things in, for RAM reasons
 ) {
 
     sampleReadsInfo <- NULL ## unless otherwise created
@@ -3336,8 +3267,7 @@ loadBamAndConvert <- function(
         tempdir,
         chr,
         chrStart,
-        chrEnd,
-        method_to_use_to_get_raw_data
+        chrEnd
     )
 
     loading_windows <- determine_loading_windows(
@@ -3348,36 +3278,22 @@ loadBamAndConvert <- function(
         window_start <- loading_windows$start[i_region]
         window_end <- loading_windows$end[i_region]
 
-        if (method_to_use_to_get_raw_data == "Rsamtools") {
-            sampleData <- get_sample_data_from_Rsamtools(
-                chr = chr,
-                window_start = window_start,
-                window_end = window_end,
-                bamName = file_name
-            )
-        } else if (method_to_use_to_get_raw_data == "SeqLib") {
-            sampleData <- get_sample_data_from_SeqLib(
-                region = paste0(chr, ":", window_start, "-", window_end),
-                file_name = file_name,
-                reference = reference
-            )
-        }
-            
-        if (length(sampleData$qname) > 0) {
-            out <- get_sampleReadsRaw(
-                sampleData,
-                bqFilter,
-                iSizeUpperLimit,
-                T,
-                L,
-                pos,
-                useSoftClippedBases
-            )
-            if (is.null(out))
-                out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)                
-        } else {
-            out <- list(sampleReadsRaw = NULL, qname = NULL, strand = NULL)
-        }
+        ref <- as.character(pos[, "REF"])
+        alt <- as.character(pos[, "ALT"])
+        out <- get_sampleReadsRaw_from_SeqLib(
+            useSoftClippedBases = useSoftClippedBases,
+            bqFilter = bqFilter,
+            iSizeUpperLimit = iSizeUpperLimit,
+            ref = ref,
+            alt = alt,
+            T = T,
+            L = L,
+            region = paste0(chr, ":", window_start, "-", window_end),
+            file_name = file_name,
+            reference = reference
+        )
+        save(out, file = paste0("~/temp.", window_start, ".RData"))
+        
         return(
             list(
                 sampleReadsRaw = out$sampleReadsRaw,
@@ -3391,6 +3307,7 @@ loadBamAndConvert <- function(
     sampleReadsRaw <- out$sampleReadsRaw
     qname <- out$qname
     strand <- out$strand
+    
 
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
@@ -3413,10 +3330,6 @@ loadBamAndConvert <- function(
         sampleReads <- out$sampleReads
         sampleReadsInfo <- out$sampleReadsInfo
     }
-
-    if (method_to_use_to_get_raw_data == "Rsamtools")
-        if (length(cram_files) > 1)
-            system(paste0("rm ", tempdir, "sample", iBam, ".ba*"))
 
     out <- downsample(
         sampleReads = sampleReads,

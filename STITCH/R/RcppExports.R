@@ -7,18 +7,33 @@ get_header_using_SeqLib <- function(file_name) {
 }
 
 #' @export
+get_read_span <- function(cigarLengthVec, cigarTypeVec) {
+    .Call('STITCH_get_read_span', PACKAGE = 'STITCH', cigarLengthVec, cigarTypeVec)
+}
+
+#' @export
+cpp_cigar_split_many <- function(strings) {
+    .Call('STITCH_cpp_cigar_split_many', PACKAGE = 'STITCH', strings)
+}
+
+#' @export
+cpp_deal_with_soft_clipped_bases <- function(splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead) {
+    .Call('STITCH_cpp_deal_with_soft_clipped_bases', PACKAGE = 'STITCH', splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead)
+}
+
+#' @export
 get_sample_data_from_SeqLib <- function(region, file_name, reference = "") {
     .Call('STITCH_get_sample_data_from_SeqLib', PACKAGE = 'STITCH', region, file_name, reference)
 }
 
 #' @export
-increment2N <- function(yT, xT, y, z) {
-    .Call('STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
+get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference = "") {
+    .Call('STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference)
 }
 
 #' @export
-cpp_cigar_split <- function(strings) {
-    .Call('STITCH_cpp_cigar_split', PACKAGE = 'STITCH', strings)
+increment2N <- function(yT, xT, y, z) {
+    .Call('STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
 }
 
 #' @export

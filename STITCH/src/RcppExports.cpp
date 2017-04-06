@@ -17,6 +17,44 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_read_span
+int get_read_span(std::vector<int> cigarLengthVec, std::vector<std::string> cigarTypeVec);
+RcppExport SEXP STITCH_get_read_span(SEXP cigarLengthVecSEXP, SEXP cigarTypeVecSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type cigarLengthVec(cigarLengthVecSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type cigarTypeVec(cigarTypeVecSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_read_span(cigarLengthVec, cigarTypeVec));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_cigar_split_many
+Rcpp::List cpp_cigar_split_many(std::vector <std::string> strings);
+RcppExport SEXP STITCH_cpp_cigar_split_many(SEXP stringsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector <std::string> >::type strings(stringsSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_cigar_split_many(strings));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_deal_with_soft_clipped_bases
+Rcpp::List cpp_deal_with_soft_clipped_bases(Rcpp::List splitCigarRead, bool useSoftClippedBases, int posRead, std::string seqRead, std::string qualRead);
+RcppExport SEXP STITCH_cpp_deal_with_soft_clipped_bases(SEXP splitCigarReadSEXP, SEXP useSoftClippedBasesSEXP, SEXP posReadSEXP, SEXP seqReadSEXP, SEXP qualReadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type splitCigarRead(splitCigarReadSEXP);
+    Rcpp::traits::input_parameter< bool >::type useSoftClippedBases(useSoftClippedBasesSEXP);
+    Rcpp::traits::input_parameter< int >::type posRead(posReadSEXP);
+    Rcpp::traits::input_parameter< std::string >::type seqRead(seqReadSEXP);
+    Rcpp::traits::input_parameter< std::string >::type qualRead(qualReadSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_deal_with_soft_clipped_bases(splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_sample_data_from_SeqLib
 Rcpp::List get_sample_data_from_SeqLib(std::string region, std::string file_name, std::string reference);
 RcppExport SEXP STITCH_get_sample_data_from_SeqLib(SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP) {
@@ -27,6 +65,26 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type file_name(file_nameSEXP);
     Rcpp::traits::input_parameter< std::string >::type reference(referenceSEXP);
     rcpp_result_gen = Rcpp::wrap(get_sample_data_from_SeqLib(region, file_name, reference));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_sampleReadsRaw_from_SeqLib
+Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, const std::vector<std::string> ref, const std::vector<std::string> alt, const int T, const std::vector<int> L, std::string region, std::string file_name, std::string reference);
+RcppExport SEXP STITCH_get_sampleReadsRaw_from_SeqLib(SEXP useSoftClippedBasesSEXP, SEXP bqFilterSEXP, SEXP iSizeUpperLimitSEXP, SEXP refSEXP, SEXP altSEXP, SEXP TSEXP, SEXP LSEXP, SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const bool >::type useSoftClippedBases(useSoftClippedBasesSEXP);
+    Rcpp::traits::input_parameter< const int >::type bqFilter(bqFilterSEXP);
+    Rcpp::traits::input_parameter< const int >::type iSizeUpperLimit(iSizeUpperLimitSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string> >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string> >::type alt(altSEXP);
+    Rcpp::traits::input_parameter< const int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< const std::vector<int> >::type L(LSEXP);
+    Rcpp::traits::input_parameter< std::string >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< std::string >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reference(referenceSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_sampleReadsRaw_from_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -41,17 +99,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type z(zSEXP);
     rcpp_result_gen = Rcpp::wrap(increment2N(yT, xT, y, z));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cpp_cigar_split
-List cpp_cigar_split(std::vector <std::string> strings);
-RcppExport SEXP STITCH_cpp_cigar_split(SEXP stringsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector <std::string> >::type strings(stringsSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_cigar_split(strings));
     return rcpp_result_gen;
 END_RCPP
 }

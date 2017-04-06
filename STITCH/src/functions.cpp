@@ -40,35 +40,6 @@ Rcpp::NumericVector increment2N(int yT, int xT, Rcpp::NumericVector y, Rcpp::Num
 }
 
 
-//' @export
-// [[Rcpp::export]]
-List cpp_cigar_split(std::vector <std::string> strings) {
-  int num_strings = strings.size();
-  List out(num_strings);
-  
-  for(int i=0; i < num_strings; i++ ) {
-
-    // loop over, if a digit, add
-    int p = 0; // now 0-based
-    std::vector<int> t5;
-    std::vector<char> t6;
-    for(std::size_t j=0; j < strings[i].length(); j++) {
-      if (! isdigit( strings[i].substr(j, 1)[0] )) {
-	// std::cout << "i=" << i << ", j=" << j << ", p=" << p << " \\n";
-          t5.push_back( std::stoi(strings[i].substr(p, j-p)) );
-	t6.push_back( strings[i].substr(j, 1)[0]);
-	p = j + 1;
-      }
-    }
-      
-    out[i] = List::create(t5, t6);
-    //sampleReads.push_back(Rcpp::List::create(pR.size()-1,0,qR,pR,iRead));
-      
-  }
-  
-  return out;
-}
-
 
 
 ////Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const arma::mat& eMatHap_t1, const arma::mat& eMatHap_t2, const arma::mat& gamma_t1, const arma::mat& gamma_t2, int K, const arma::ivec& srp) {
