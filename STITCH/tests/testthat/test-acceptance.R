@@ -83,6 +83,48 @@ test_that("STITCH diploid works under default parameters", {
 })
 
 
+test_that("STITCH diploid works under default parameters with N = 25 and nCores = 40", {
+    skip_test_if_TRUE(run_acceptance_tests)
+
+    sink("/dev/null")
+    
+    data_package25 <- make_acceptance_test_data_package(
+        n_samples = 25,
+        n_snps = n_snps,
+        n_reads = 4,
+        seed = 1,
+        chr = chr,
+        K = 2,
+        phasemaster = phasemaster
+    )
+    
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package25$chr,
+        bamlist = data_package25$bamlist,
+        posfile = data_package25$posfile,
+        outputdir = data_package25$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 40
+    )
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
 test_that("STITCH pseudoHaploid works under default parameters", {
     skip_test_if_TRUE(run_acceptance_tests)
     sink("/dev/null")
