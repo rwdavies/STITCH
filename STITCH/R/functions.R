@@ -3153,45 +3153,6 @@ get_chromosome_length <- function(iBam, bam_files, cram_files, chr) {
 
 
 
-combineReadsAcrossRegions <- function(sampleReadsAcrossRegions) {
-
-    ## there can be a different number of reads compared to length of qname
-    n_regions <- length(sampleReadsAcrossRegions)
-    reads_per_region_srr <- sapply(sampleReadsAcrossRegions, function(x) return(length(x$sampleReadsRaw)))
-    reads_per_region_qname <- sapply(sampleReadsAcrossRegions, function(x) return(length(x$qname)))
-    reads_before_region_srr <- c(0, cumsum(reads_per_region_srr))
-    reads_before_region_qname <- c(0, cumsum(reads_per_region_qname))
-
-    n_reads <- sum(reads_per_region_srr)
-
-    if (sum(n_reads) == 0) {
-
-        sampleReadsRaw <- NULL
-        qname <- NULL
-        strand <- NULL
-
-    } else {
-
-        read_comes_from_region <- unlist(lapply(1:n_regions, function(i_region) return(rep(i_region, reads_per_region_srr[i_region]))))
-        sampleReadsRaw <- lapply(1:n_reads, function(iRead) {
-            i_region <- read_comes_from_region[iRead]
-            iReadInRegion <- iRead - reads_before_region_srr[i_region]
-            sampleRead <- sampleReadsAcrossRegions[[i_region]]$sampleReadsRaw[[iReadInRegion]]
-            sampleRead[[5]] <- sampleRead[[5]] + reads_before_region_qname[i_region]
-            return(sampleRead)
-        })
-        qname <- unlist(lapply(sampleReadsAcrossRegions, function(x) x$qname))
-        strand <- unlist(lapply(sampleReadsAcrossRegions, function(x) x$strand))
-
-    }
-    return(
-        list(
-            sampleReadsRaw = sampleReadsRaw,
-            qname = qname,
-            strand = strand
-        )
-    )
-}
 
 
 
