@@ -722,6 +722,64 @@ test_that("BAM with two part split read is properly interpreted", {
 })
 
 
+test_that("BAM with two part overlapping split read is properly interpreted", {
+    
+    chr <- 10
+    pos <- cbind(
+        CHR = c(chr, chr, chr), 
+        POS = c(9, 11, 13),
+        REF = c("A", "A", "A"),
+        ALT = c("G", "C", "T")
+    )
+    ## https://github.com/samtools/hts-specs/blob/master/SAMv1.pdf    
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "9", "60",
+                  "6M", "*", "0", "0",
+                  "AAAAAA", ":;<=>?"), #25-30
+                c("r001", "0", chr, "10", "60",
+                  "5M", "*", "0", "0",
+                  "ACATA", "@ABCD") # 31-35
+            ), 
+            chr
+        )
+    )
+    expected_sample_reads <- list(
+        list(
+            4, 1,
+            matrix(c(-25, -27, -29, 32, 34), ncol = 1),
+            matrix(c(0, 1, 2, 1, 2), ncol = 1)
+        )
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-two-part-split-overlapping",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100
+    )
+    
+    load(file_sampleReads(tempdir(), 1, regionName))
+    expect_equal(
+        sampleReads,
+        expected_sample_reads
+    )
+
+})
+
+
 test_that("BAM with three part split read is properly interpreted", {
     
     chr <- 10
@@ -1168,7 +1226,7 @@ test_that("BAM with hard clipped bases are not used", {
 
 
 
-test_that("sample CRAM can be properly interpreted", {
+test_that("CRAM with one read can be properly interpreted", {
     
     chr <- 10
     pos <- cbind(
