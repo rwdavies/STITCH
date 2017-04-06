@@ -1,3 +1,5 @@
+* v1.3.3
+	* Fix bug that occured when the number of samples is similar to or less than nCores
 * v1.3.2
 	* Increase likelihood of succesfull compilation by chaging Makevars to compile SeqLib and htslib with the same configuration as R
 * v1.3.1
