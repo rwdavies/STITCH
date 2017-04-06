@@ -1,3 +1,6 @@
+## base qualities in character form, from 25-35 inclusive
+## bqs <- paste0(sapply(25 + 33 + 0:10, function(x) rawToChar(as.raw(x))), collapse = "")
+
 test_that("loading windows can be properly calculated for NA chrStart and chrEnd", {
     ## if NA, load entire chromosome?
     out <- determine_loading_windows(
@@ -490,7 +493,7 @@ test_that("BAM with one read can be properly interpreted", {
             list(
                 c("r001", "0", chr, "17", "60",
                   "6M", "*", "0", "0",
-                  "GACCGA", "::::::")
+                  "GACCGA", ":;<=>?")
             ), 
             chr
         )
@@ -503,7 +506,7 @@ test_that("BAM with one read can be properly interpreted", {
     expected_sample_reads <- list(
         list(
             2, 5,
-            matrix(c(-25, 25, -25), ncol = 1),
+            matrix(c(-25, 27, -29), ncol = 1),
             matrix(c(4, 5, 6), ncol = 1)
         )
     )
@@ -517,7 +520,7 @@ test_that("BAM with one read can be properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-8",
+        sampleNames = "test-name-one-read",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -553,10 +556,10 @@ test_that("BAM with two reads can be properly interpreted", {
             list(
                 c("r001", "0", chr, "9", "60",
                   "6M", "*", "0", "0",
-                  "AACCTT", "::::::"),
+                  "AACCTT", ":;<=>?"), # 25-30
                 c("r002", "0", chr, "11", "60",
                   "3M", "*", "0", "0",
-                  "CCT", ":::")
+                  "CCT", "@AB") # 31, 32, 33
             ), 
             chr
         )
@@ -568,12 +571,12 @@ test_that("BAM with two reads can be properly interpreted", {
     expected_sample_reads <- list(
         list(
             2, 1,
-            matrix(c(-25, 25, 25), ncol = 1),
+            matrix(c(-25, 27, 29), ncol = 1),
             matrix(c(0, 1, 2), ncol = 1)
         ),
         list(
             1, NA,
-            matrix(c(25, 25), ncol = 1),
+            matrix(c(31, 33), ncol = 1),
             matrix(c(1, 2), ncol = 1)
         )
     )
@@ -586,7 +589,7 @@ test_that("BAM with two reads can be properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-7",
+        sampleNames = "test-name-two-reads",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -677,10 +680,10 @@ test_that("BAM with two part split read is properly interpreted", {
             list(
                 c("r001", "0", chr, "7", "60",
                   "3M", "*", "0", "0",
-                  "AAA", ":::"),
+                  "AAA", ":;<"), #25, 26, 27
                 c("r001", "0", chr, "11", "60",
                   "3M", "*", "0", "0",
-                  "CCT", ":::")
+                  "CCT", "=>?") # 28, 29, 30
             ), 
             chr
         )
@@ -688,7 +691,7 @@ test_that("BAM with two part split read is properly interpreted", {
     expected_sample_reads <- list(
         list(
             2, 1,
-            matrix(c(-25, 25, 25), ncol = 1),
+            matrix(c(-27, 28, 30), ncol = 1),
             matrix(c(0, 1, 2), ncol = 1)
         )
     )
@@ -701,7 +704,7 @@ test_that("BAM with two part split read is properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-6",
+        sampleNames = "test-name-two-part-split",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -735,13 +738,13 @@ test_that("BAM with three part split read is properly interpreted", {
             list(
                 c("r001", "0", chr, "9", "60",
                   "2M", "*", "0", "0",
-                  "AA", "::"),
-                c("r001", "0", chr, "11", "60",
+                  "AA", ":;"), # 25, 26
+                c("r001", "0", chr, "10", "60",
                   "2M", "*", "0", "0",
-                  "CC", "::"),
+                  "CC", "<="), # 27, 28
                 c("r001", "0", chr, "13", "60",
                   "2M", "*", "0", "0",
-                  "TT", "::")
+                  "TT", ">?") # 29, 30
             ), 
             chr
         )
@@ -753,7 +756,7 @@ test_that("BAM with three part split read is properly interpreted", {
     expected_sample_reads <- list(
         list(
             2, 1,
-            matrix(c(-25, 25, 25), ncol = 1),
+            matrix(c(-25, 28, 29), ncol = 1),
             matrix(c(0, 1, 2), ncol = 1)
         )
     )
@@ -766,7 +769,7 @@ test_that("BAM with three part split read is properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-5",
+        sampleNames = "test-name-three-part",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -847,7 +850,7 @@ test_that("BAM with several informative and uninformative reads is properly inte
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-4",
+        sampleNames = "test-name-several",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -903,7 +906,7 @@ test_that("BAM with no reads is properly handled", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-3",
+        sampleNames = "test-name-no-reads",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -961,7 +964,7 @@ test_that("BAM with no informative reads is properly interpreted", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-2",
+        sampleNames = "test-name-no-informative-reads",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -1000,7 +1003,7 @@ test_that("BAM with one read can use bases in soft clipping", {
             list(
                 c("r001", "0", chr, "17", "60",
                   "2S2M2S", "*", "0", "0",
-                  "ccCCgg", "::::::")
+                  "ccCCgg", ":;<=>?") # bqs 25-30
             ), 
             chr
         )
@@ -1013,7 +1016,7 @@ test_that("BAM with one read can use bases in soft clipping", {
     expected_sample_reads <- list(
         list(
             2, 4,
-            matrix(c(25, 25, -25), ncol = 1),
+            matrix(c(25, 27, -29), ncol = 1),
             matrix(c(3, 4, 5), ncol = 1)
         )
     )
@@ -1027,7 +1030,7 @@ test_that("BAM with one read can use bases in soft clipping", {
         T = as.integer(nrow(pos)),
         bam_files = bam_file,
         N = 1,
-        sampleNames = "test-name-1",
+        sampleNames = "test-name-1-read-soft-clipped",
         inputdir = tempdir(),
         regionName = regionName,
         tempdir = tempdir(),
@@ -1061,14 +1064,13 @@ test_that("BAM with one read can remove bases in soft clipping", {
     ## so below, 14 is the start of the non-soft clipped part
     ## so the read including soft clipping starts at (1-based) 10
     ## include different qualities as well to confirm exact position
-    bqs <- paste0(sapply(58 + 0:10, function(x) rawToChar(as.raw(x))), collapse = "")
     bam_file <- make_simple_bam(
         file_stem = file.path(tempdir(), "simple"),
         sam = make_simple_sam_text(
             list(
                 c("r001", "0", chr, "14", "60",
                   "4S4M3S", "*", "0", "0",
-                  "ggccGGGGccc", bqs)
+                  "ggccGGGGccc", ":;<=>?@ABCD")
             ), 
             chr
         )
@@ -1127,7 +1129,7 @@ test_that("BAM with hard clipped bases are not used", {
             list(
                 c("r001", "0", chr, "17", "60",
                   "5H4M5H", "*", "0", "0",
-                  "CCGG", "::::")
+                  "CCGG", ":;<=")
             ), 
             chr
         )
@@ -1136,7 +1138,7 @@ test_that("BAM with hard clipped bases are not used", {
     expected_sample_reads <- list(
         list(
             1, NA,
-            matrix(c(25, -25), ncol = 1),
+            matrix(c(25, -27), ncol = 1),
             matrix(c(4, 5), ncol = 1)
         )
     )
@@ -1183,7 +1185,7 @@ test_that("sample CRAM can be properly interpreted", {
             list(
                 c("r001", "0", chr, "17", "60",
                   "6M", "*", "0", "0",
-                  "AACCAA", "::::::")
+                  "AACCAA", ":;<=>?")
             ), 
             chr
         ),
@@ -1199,7 +1201,7 @@ test_that("sample CRAM can be properly interpreted", {
     expected_sample_reads <- list(
         list(
             2, 5,
-            matrix(c(-25, 25, -25), ncol = 1),
+            matrix(c(-25, 27, -29), ncol = 1),
             matrix(c(4, 5, 6), ncol = 1)
         )
     )
