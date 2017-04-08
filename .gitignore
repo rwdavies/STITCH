@@ -3,6 +3,7 @@ test-results/
 *~
 samtools
 bgzip
+bcftools
 *.o
 *.so
 .Rhistory
