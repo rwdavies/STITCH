@@ -1,3 +1,5 @@
+* v1.3.4
+	* Speed up BAM/CRAM input processing by reformatting reads on the fly
 * v1.3.3
 	* Fix bug that occured when the number of samples is similar to or less than nCores
 * v1.3.2
