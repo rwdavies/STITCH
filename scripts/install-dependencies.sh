@@ -15,6 +15,7 @@ one_if_curl_installed=`which curl | wc -l`
 one_if_wget_installed=`which wget | wc -l`
 ancillary_http="http://www.well.ox.ac.uk/~rwdavies/ancillary/"
 samv=1.3.1
+bcftoolsv=1.3.1
 htslibv=1.3.2
 mkdir -p dependencies
 
@@ -45,6 +46,32 @@ then
     rm -f samtools
     ln -s ${dir}/dependencies/samtools-${samv}/samtools ${dir}/samtools
 fi
+
+
+force_install=${1:-nope}
+if [ $force_install == "bcftools" ]
+then
+    echo install bcftools
+    cd dependencies
+    if [ $one_if_curl_installed == 1 ]
+    then
+	curl "${ancillary_http}bcftools-${bcftoolsv}.tar.bz2" -o "bcftools-${bcftoolsv}.tar.bz2"
+    elif [ $one_if_wget_installed == 1 ]
+    then
+	wget "${ancillary_http}bcftools-${bcftoolsv}.tar.bz2"
+    fi
+    bzip2 -df bcftools-${bcftoolsv}.tar.bz2
+    tar -xvf bcftools-${bcftoolsv}.tar
+    cd bcftools-${bcftoolsv}
+    make all
+    cd ../../
+    ## add soft link
+    dir=`pwd`
+    rm -f bcftools
+    ln -s ${dir}/dependencies/bcftools-${bcftoolsv}/bcftools ${dir}/bcftools
+fi
+
+
 
 zero_if_bgzip_not_installed=`which bgzip | wc -l` 
 if [ $zero_if_bgzip_not_installed == 0 ] || [ $force_install == "bgzip" ]
