@@ -171,6 +171,7 @@ STITCH <- function(
     validate_nGen(nGen)
     validate_nCores(nCores)
     validate_posfile(posfile)
+    validate_genfile(genfile)    
     validate_K(K)
     validate_outputdir(outputdir)
     validate_tempdir(tempdir)
@@ -682,9 +683,18 @@ validate_nGen <- function(nGen) {
         stop("nGen must be greater than 0")
 }
 
-validate_posfile <- function(posfile)
+validate_posfile <- function(posfile) {
     if(posfile=="")
         stop("Please specify posfile, the file with sites to impute over")
+    if (file.exists(posfile) == FALSE)
+        stop(paste0("Cannot find supplied posfile:", posfile))
+}
+
+validate_genfile <- function(genfile) {
+    if(genfile!="")
+        if (file.exists(genfile) == FALSE)
+            stop(paste0("Cannot find supplied genfile:", genfile))
+}
 
 validate_K <- function(K)
     if(K=="")
@@ -696,7 +706,7 @@ validate_outputdir <- function(outputdir)
 
 validate_tempdir <- function(tempdir) {
     if (is.na(tempdir) == FALSE) {
-        if(tempdir=="")
+        if (tempdir=="")
             stop(
                 paste0(
                     "Please specify tempdir. If in doubt, use tempdir = tempdir()"
@@ -756,7 +766,17 @@ validate_regionStart_regionEnd_and_buffer <- function(regionStart, regionEnd, bu
     }
 }
 
-validate_bamlist_and_cramlist_for_input_generation <- function(regenerateInput, originalRegionName, bamlist, cramlist, regionStart, regionEnd, buffer, regenerateInputWithDefaultValues, reference = NULL) {
+validate_bamlist_and_cramlist_for_input_generation <- function(
+    regenerateInput = TRUE,
+    originalRegionName = NA,
+    bamlist = "",
+    cramlist = "",
+    regionStart = NA,
+    regionEnd = NA,
+    buffer = NA,
+    regenerateInputWithDefaultValues = FALSE,
+    reference = NULL
+) {
     if (regenerateInput == FALSE) {
         if (is.na(originalRegionName) == TRUE)
             stop("if regenerateInput is FALSE (i.e. using existing data), you must supply the original region name (must not be NA) to load the input properly. Also don't forget to supply the position file used to make the original input data")
@@ -767,6 +787,16 @@ validate_bamlist_and_cramlist_for_input_generation <- function(regenerateInput, 
     } else {
         if (bamlist == "" & cramlist == "")
             stop("If regenerateInput is TRUE, please supply either bamlist or cramlist")
+        if (cramlist == "") {
+            if (file.exists(bamlist) == FALSE) {
+                stop(paste0("Cannot find bamlist:", bamlist))
+            }
+        }
+        if (bamlist == "") {
+            if (file.exists(cramlist) == FALSE) {
+                stop(paste0("Cannot find cramlist:", cramlist))
+            }
+        }
     }
     if (cramlist != "") {
         if (bamlist != "")
@@ -851,20 +881,28 @@ initialize_directories <- function(
     if (is.na(tempdir)) {
         tempdir <- tempdir()
     }
-    tempdir <- paste0(tempdir, "/", paste(toupper(letters[sample(26,10,replace=TRUE)]),collapse=""),"/")
+    tempdir <- paste0(tempdir, "/", paste(toupper(letters[sample(26,10,replace=TRUE)]),collapse=""), "/")
     if (keepTempDir == TRUE)
         print(paste0("tempdir=", tempdir))
-    out <- sapply(
-        c(tempdir,
-          outputdir,
-          file.path(outputdir, "RData"),
-          file.path(outputdir, "debug"),
-          file.path(outputdir, "plots"),
-          file.path(outputdir, "input")
-          ),
-        function(dir)
-        dir.create(dir, showWarnings = FALSE)
+    dirs_to_create <- c(
+        tempdir,
+        outputdir,
+        file.path(outputdir, "RData"),
+        file.path(outputdir, "debug"),
+        file.path(outputdir, "plots"),
+        file.path(outputdir, "input")
     )
+    for(dir in dirs_to_create) {
+        dir.create(dir, showWarnings = FALSE)
+        ## throw error if there was a failure to create the folder
+        ## indicates some file system problems, e.g. slow NFS
+        if (dir.exists(dir) == FALSE) {
+            stop(paste0(
+                "Unable to make the required directory ", dir, " while running. ",
+                "You can try re-starting STITCH, but if the problem consists, please contact your system administrator."
+            ))
+        }
+    }
     inputdir <- file.path(outputdir, "input")
     return(
         list(
@@ -2802,6 +2840,10 @@ get_sample_names_from_bam_or_cram_files <- function(
     if (verbose)
         print(paste0("Get ", file_type, " sample names - ", date()))
 
+    for(file in files)
+        if (file.exists(file) == FALSE)
+            stop(paste0("Cannot find ", file_type, " file:", file))
+    
     sampleNames <- mclapply(
         files,
         mc.cores = nCores,
@@ -2887,11 +2929,11 @@ get_bam_name_and_maybe_convert_cram <- function(
     if (length(bam_files) > 0) {
         bamName <- bam_files[iBam]
         if (file.exists(bamName) == FALSE)
-            stop(paste0("cannot find file:", bamName))
+            stop(paste0("Cannot find file:", bamName))
     } else if (length(cram_files) > 0) {
         cramName <- cram_files[iBam]
         if (file.exists(cramName) == FALSE)
-            stop(paste0("cannot find file:", cramName))
+            stop(paste0("Cannot find file:", cramName))
         bamName <- cramName
     } else {
         stop("Both bam_files and cram_files are empty")
@@ -3562,42 +3604,67 @@ subsetSNPsFunction=function(N,subsetSNPsfile,regionName,tempdir,L,environment,nC
 
 
 
+get_depth_per_SNP_for_sampleReads <- function(sampleReads = NULL, pb_pos = NULL) {
+    if (is.null(pb_pos))
+        pb_pos <- unlist(lapply(sampleReads, function(x) x[[4]])) ## 0-based
+    ## get depth for every sites
+    depth_per_SNP <- increment2N(
+        y = as.numeric(rep(1, length(pb_pos))),
+        z = as.numeric(pb_pos),
+        yT = as.integer(length(pb_pos)),
+        xT = as.integer(max(pb_pos))
+    )
+    return(depth_per_SNP)
+}
 
 
-### function to downsample BAMs as necessary
+## remove reads as necessary
+## to ensure that for that sample, there is no greater than downsampleToCov coverage
+## this is not done in the most intelligent way, but what should be a fast way for R
+## removing SNPs with >50X coverage shouldn't affect a low coverage imputation method much
 downsample <- function(
     sampleReads,
     iBam,
     downsampleToCov,
     sampleNames,
-    sampleReadsInfo
+    sampleReadsInfo,
+    verbose = TRUE
 ) {
-    ## first, figure out if reads need to be downsampled
-    y <- unlist(lapply(sampleReads,function(x) x[[2]]))
-    ## quick counts of each
-    z <- table(y)
-    z1 <- as.numeric(names(z)[z>downsampleToCov])
-    if(length(z1)>0) {
-        ## match each against
-        z2 <- match(z1,y)
-        z3 <- z2[is.na(z2)==FALSE]
-        ## get counts of each
-        counts=as.numeric(z[match(z1,names(z))])
-        ## get positions of these elements
-        ## keep a list of those to remove
-        toRemove=array(FALSE,length(sampleReads))
-        for(i in 1:length(z1)) {
-            w=z3[i] # which read position to work on
-            c=counts[i] # the counts
-            range=w:(w+c-1)# the position range
-            ## downsample here
-            toRemove[range]=TRUE
-            toRemove[sample(range,downsampleToCov,replace=FALSE)]=FALSE
-            ## done!
+    ## get every position found in the reads
+    pb_pos <- unlist(lapply(sampleReads, function(x) x[[4]])) ## 0-based
+    ## get depth at every site
+    depth_per_SNP <- get_depth_per_SNP_for_sampleReads(pb_pos = pb_pos)
+    ## determine which are bad SNPs that require downsampling
+    offending_SNPs <- which(depth_per_SNP > downsampleToCov) ## 1-based
+    if (length(offending_SNPs) > 0) {
+        ## for offending SNPs, figure out what reads intersect them
+        a <- sapply(sampleReads, function(x) return(length(x[[3]])))
+        pb_read <- unlist(lapply(1:length(a), function(x) rep(x, a[x]))) - 1 ## 0-based
+        ## figure out what are the offending bases, and hence reads, that need to be considered
+        which_bases <- is.na(match(pb_pos, offending_SNPs - 1)) == FALSE
+        reads_per_SNP <- tapply(pb_read[which_bases], pb_pos[which_bases], I) ## hopefully not slow
+        toRemove <- array(FALSE, length(sampleReads))
+        ## now - loop over offending SNPs, if still offending, remove reads
+        for(bad_snp in offending_SNPs) {
+            ## check again
+            if (depth_per_SNP[bad_snp] > downsampleToCov) {
+                reads_at_SNP <- reads_per_SNP[[as.character(bad_snp - 1)]] ## 0-based
+                ## remove from consideration if they've been removed already
+                reads_at_SNP <- reads_at_SNP[toRemove[reads_at_SNP + 1] == FALSE]
+                ## now, remove reads at random that intersect this SNP until desired coverage reached
+                extra_coverage <- depth_per_SNP[bad_snp] - downsampleToCov
+                reads_to_remove <- sample(reads_at_SNP, extra_coverage, replace = FALSE)
+                toRemove[reads_to_remove + 1] <- TRUE
+                ## modify depth_per_SNP appropriately from removing all those reads
+                for(r in (reads_to_remove + 1)) {
+                    w <- sampleReads[[r]][[4]] + 1 # 1-based
+                    depth_per_SNP[w] <- depth_per_SNP[w] - 1
+                }
+            }
         }
-        ## print out
-        print(paste0("WARNING - downsample sample ",sampleNames[iBam]," - ",sum(toRemove)," of ",length(sampleReads)," reads removed "))
-        ##
+        ## done!
+        if (verbose)
+            print(paste0("WARNING - downsample sample ",sampleNames[iBam]," - ",sum(toRemove)," of ",length(sampleReads)," reads removed "))
         sampleReads <- sampleReads[toRemove == FALSE]
         sampleReadsInfo <- sampleReadsInfo[toRemove == FALSE, ]
     }

@@ -28,6 +28,21 @@ test_that("C++ APIs give same sample name for CRAM files", {
 
 
 
+test_that("an error is thrown when supplied BAM file does not exist", {
+
+    file_that_does_not_exist <- tempfile()
+
+    expect_error(
+        get_sample_names_from_bam_or_cram_files(
+            file_that_does_not_exist,
+            nCores = 1,
+            file_type = "BAM",
+            verbose = FALSE
+        ),
+        paste0("Cannot find BAM file:", file_that_does_not_exist)
+    )
+    
+})
 
     
 test_that("sample names can be properly retrieved from BAM files", {

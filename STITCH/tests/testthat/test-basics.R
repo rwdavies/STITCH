@@ -71,3 +71,58 @@ test_that("if vcf_output_name is NULL, vcf_output_name is constructed in the def
         )
     )
 })
+
+
+test_that("an error is thrown when writing to an unwrittable directory", {
+
+    unwritable_outputdir <- tempfile("test")
+    dir.create(unwritable_outputdir)
+    system(paste0("chmod 000 ", unwritable_outputdir))
+    unwritable_outputdir <- file.path(unwritable_outputdir, "outputdir")
+
+    expect_error(
+        initialize_directories(
+            tempdir = tempdir(),
+            keepTempDir = FALSE,
+            outputdir = unwritable_outputdir
+        ),
+        paste0(
+            "Unable to make the required directory ",
+            unwritable_outputdir,
+            " while running. You can try re-starting STITCH, but if the problem consists, please contact your system administrator."
+        )
+    )
+
+})
+
+
+test_that("an error is thown when bamlist does not exist", {
+
+    bamlist_that_does_not_exist <- tempfile()
+    expect_error(
+        validate_bamlist_and_cramlist_for_input_generation(
+            regenerateInput = TRUE,
+            bamlist = bamlist_that_does_not_exist
+        ),
+        paste0("Cannot find bamlist:", bamlist_that_does_not_exist)
+    )
+    
+})
+
+
+test_that("an error is thown when cramlist does not exist", {
+
+    cramlist_that_does_not_exist <- tempfile()
+    ref <- tempfile()
+    system(paste0("touch ", ref))
+    
+    expect_error(
+        validate_bamlist_and_cramlist_for_input_generation(
+            regenerateInput = TRUE,
+            cramlist = cramlist_that_does_not_exist,
+            reference = ref
+        ),
+        paste0("Cannot find cramlist:", cramlist_that_does_not_exist)
+    )
+    
+})

@@ -6,6 +6,14 @@ test_that("pos is properly loaded and interpreted", {
     expect_equal(loaded_pos, pos)
 })
 
+test_that("an error is thrown when posfile is supplied but does not exist", {
+    posfile <- file.path(tempfile(), "not_a_file")
+    expect_error(
+        validate_posfile(posfile),
+        paste0("Cannot find supplied posfile:", posfile)
+    )
+})
+
 test_that("pos works for chromosome with chr in it", {
     posfile <- tempfile()
     pos <- make_posfile(posfile, n_snps = 3, chr = rep("chr1", 3))
@@ -139,6 +147,12 @@ test_that("pos file with other character in alt throws an error", {
 ### test gen
 test_that("gen returns null if no file is given", {
     expect_equal(get_and_validate_gen(""), NULL)
+})
+
+
+test_that("an error is thrown if genfile does not exist", {
+    genfile <- file.path(tempfile(), "not_a_file")
+    expect_error(validate_genfile(genfile), paste0("Cannot find supplied genfile:", genfile))
 })
 
 
