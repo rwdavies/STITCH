@@ -45,8 +45,9 @@ option_list <- list(
     )
 )
 
-raw_data_dir <- "/data/smew1/rdavies/stitch_development/whole_chr_testing/"
+raw_data_dir <- "/data/smew1/rdavies/stitch_development/truth/"
 megamugadir <- file.path(raw_data_dir, "megamuga")
+affydir <- file.path(raw_data_dir, "affy")
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
 
 ## vcf_file <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/whole_chr_CFW_1.3.3/stitch.chr19.vcf.gz"; chr <- "chr19"; compare_against <- "megamuga"

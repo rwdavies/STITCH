@@ -169,12 +169,12 @@ get_affymetrix_calls_for_chr <- function(chr) {
         message("Get Affymetrix calls for chr")
 
     calls <- fread(
-        "grep -v '^#' /data/smew1/rdavies/stitch_development/whole_chr_testing/quant-norm.pm-only.brlmm-p.calls.txt",
+        paste0("grep -v '^#' ", file.path(affydir, "quant-norm.pm-only.brlmm-p.calls.txt")),
         data.table = FALSE,
         showProgress = FALSE        
     )
     annot <- fread(
-        "grep -v '^#' /data/smew1/rdavies/stitch_development/whole_chr_testing/MOUSEDIVm520650.na33.annot.csv",
+        paste0("grep -v '^#' ", file.path(affydir, "MOUSEDIVm520650.na33.annot.csv")),
         data.table = FALSE,
         showProgress = FALSE
     )
@@ -188,9 +188,9 @@ get_affymetrix_calls_for_chr <- function(chr) {
     both <- merge(annot, calls, by = "probeset_id")
     rownames(both) <- paste(both[, "chr"], both[, "pos"], both[, "allele_A"], both[, "allele_B"], sep = "-")
 
-    info <- read.table("/data/smew1/rdavies/stitch_development/whole_chr_testing/Animal_info.txt",header=FALSE)
+    info <- read.table(file.path(affydir, "Animal_info.txt"), header = FALSE)
     colnames(info) <- c("cel_name","name","cel_files","location","batch1","batch2","gender")
-    report2 <- read.table("/data/smew1/rdavies/stitch_development/whole_chr_testing/quant-norm.pm-only.brlmm-p.report.txt",header=TRUE)    
+    report2 <- read.table(file.path(affydir, "quant-norm.pm-only.brlmm-p.report.txt"),header=TRUE)    
     keep_samples <- is.na(match(report2[, "cel_files"], info[, "cel_files"])) == FALSE
     old_names <- info[, "cel_files"]
     new_names <- paste0(as.character(info[, "cel_name"]), "_recal")
@@ -239,8 +239,7 @@ get_dosages_for_vcf <- function(vcf_file, subjects, chr, calls) {
     if (verbose)    
         message("Get dosages for VCF")
 
-    if (file.exists(paste0(vcf_file, ".tbi")) == FALSE)
-        system(paste0("tabix ", vcf_file))
+    system(paste0("tabix -f ", vcf_file))
 
     subjects_file <- tempfile()
     write.table(

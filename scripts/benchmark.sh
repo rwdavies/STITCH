@@ -10,7 +10,8 @@ STITCH_HOME=`pwd`
 export PATH=`pwd`/:${PATH}
 mkdir -p benchmark-results
 
-for version in 1.2.5 1.2.9 1.3.2 1.3.4
+#1.2.5 1.2.9 1.3.2 1.3.4
+for version in 1.3.4 1.3.5
 do
     cd ${STITCH_HOME}
     echo start $version
