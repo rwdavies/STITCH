@@ -1,3 +1,7 @@
+* v1.3.5
+	* Throw an error if there are problems initializing directories
+	* Better error messages for missing files
+	* Change downsample behaviour to require no more than downsampleToCov at all SNPs for a sample and not just lead SNPs in a read
 * v1.3.4
 	* Speed up BAM/CRAM input processing by reformatting reads on the fly
 * v1.3.3

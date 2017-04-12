@@ -1,11 +1,13 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.3.4__**
-Release date: April 8, 2017
+**__Current Version: 1.3.5__**
+Release date: April 12, 2017
 
 Changes in latest version
 
-1. Speed up BAM/CRAM input processing by reformatting reads on the fly
+1. Throw an error if there are problems initializing directories
+2. Better error messages for missing files
+3. Change downsample behaviour to require no more than downsampleToCov at all SNPs for a sample and not just lead SNPs in a read
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -22,7 +24,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.3.4.tar.gz
+R CMD INSTALL ./releases/STITCH_1.3.5.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
