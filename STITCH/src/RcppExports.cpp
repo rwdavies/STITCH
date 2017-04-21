@@ -88,6 +88,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_make_sampleReads_from_hap
+Rcpp::List rcpp_make_sampleReads_from_hap(const Rcpp::IntegerVector non_NA_cols, const int reference_phred, const Rcpp::IntegerVector reference_hap);
+RcppExport SEXP STITCH_rcpp_make_sampleReads_from_hap(SEXP non_NA_colsSEXP, SEXP reference_phredSEXP, SEXP reference_hapSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type non_NA_cols(non_NA_colsSEXP);
+    Rcpp::traits::input_parameter< const int >::type reference_phred(reference_phredSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type reference_hap(reference_hapSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_sampleReads_from_hap(non_NA_cols, reference_phred, reference_hap));
+    return rcpp_result_gen;
+END_RCPP
+}
 // increment2N
 Rcpp::NumericVector increment2N(int yT, int xT, Rcpp::NumericVector y, Rcpp::NumericVector z);
 RcppExport SEXP STITCH_increment2N(SEXP yTSEXP, SEXP xTSEXP, SEXP ySEXP, SEXP zSEXP) {

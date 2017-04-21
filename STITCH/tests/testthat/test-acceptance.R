@@ -69,7 +69,7 @@ test_that("STITCH diploid works under default parameters", {
     )
 
     sink()
-    
+
     vcf <- read.table(
         file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
         header = FALSE,
@@ -100,7 +100,7 @@ test_that("STITCH diploid works under default parameters with nCores = 40 and N 
         K = 2,
         phasemaster = phasemaster
     )
-    
+
     STITCH(
         tempdir = tempdir(),
         chr = data_package25$chr,
@@ -113,7 +113,7 @@ test_that("STITCH diploid works under default parameters with nCores = 40 and N 
     )
 
     sink()
-    
+
     vcf <- read.table(
         file.path(data_package25$outputdir, paste0("stitch.", data_package25$chr, ".vcf.gz")),
         header = FALSE,
@@ -133,7 +133,7 @@ test_that("STITCH diploid works under default parameters with N = 25 and nCores 
     skip_test_if_TRUE(run_acceptance_tests)
 
     sink("/dev/null")
-    
+
     data_package25 <- make_acceptance_test_data_package(
         n_samples = 25,
         n_snps = n_snps,
@@ -143,7 +143,7 @@ test_that("STITCH diploid works under default parameters with N = 25 and nCores 
         K = 2,
         phasemaster = phasemaster
     )
-    
+
     set.seed(10)
     STITCH(
         tempdir = tempdir(),
@@ -690,5 +690,109 @@ test_that("STITCH with generateInputOnly actually only generates input", {
         sort(paste0("sample.", 1:10, ".input.", data_package$chr, ".RData"))
     )
 
+
+})
+
+
+test_that("STITCH can impute with reference panels with only 1 iteration if the initialize with reference data", {
+    skip_test_if_TRUE(run_acceptance_tests)
+    sink("/dev/null")
+
+    n_snps <- 5
+    chr <- 10
+    set.seed(10)
+    refpack <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = 1,
+        reference_populations = c("CEU", "GBR"),
+        chr = chr
+    )
+    phasemaster <- refpack$reference_haplotypes
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 10,
+        n_snps = n_snps,
+        n_reads = 4,
+        seed = 1,
+        chr = chr,
+        K = 4,
+        phasemaster = phasemaster
+    )
+
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        reference_haplotype_file = refpack$reference_haplotype_file,
+        reference_legend_file = refpack$reference_legend_file,
+        refillIterations = NA,
+        shuffleHaplotypeIterations = NA,
+        K = 4,
+        nGen = 100,
+        nCores = 1,
+        niterations = 1
+    )
+    sink()
+
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.3 ## meh, a bit looser
+    )
+
+})
+
+test_that("STITCH errors if niterations=1 with reference panel and posfile is not the same as reference legend", {
+    skip_test_if_TRUE(run_acceptance_tests)
+    sink("/dev/null")
+
+    n_snps <- 5
+    chr <- 10
+    set.seed(10)
+    refpack <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = 1,
+        reference_populations = c("CEU", "GBR"),
+        chr = chr
+    )
+    K <- 4
+    phasemaster <- matrix(c(rep(0, n_snps + 1), rep(1, n_snps + 1)), ncol = K)
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 10,
+        n_snps = n_snps + 1,
+        n_reads = 4,
+        seed = 1,
+        chr = chr,
+        K = K,
+        phasemaster = phasemaster
+    )
+
+    expect_error(
+        STITCH(
+            tempdir = tempdir(),
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            outputdir = data_package$outputdir,
+            reference_haplotype_file = refpack$reference_haplotype_file,
+            reference_legend_file = refpack$reference_legend_file,
+            refillIterations = NA,
+            shuffleHaplotypeIterations = NA,
+            K = 4,
+            nGen = 100,
+            nCores = 1,
+            niterations = 1
+        ),
+        "You have selected to use reference haplotypes with niterations=1, which requires exact matching of reference legend SNPs and posfile SNPs. However, posfile SNP with pos-ref-alt 6-A-G was not found in reference legend"
+    )
+    sink()
 
 })

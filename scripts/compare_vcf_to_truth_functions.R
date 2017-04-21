@@ -30,7 +30,7 @@ get_megamuga_calls_for_chr <- function(chr) {
         data.table = FALSE,
         showProgress = FALSE
     )
-    
+
     ##
     ## turn into a matrix
     ##
@@ -48,7 +48,7 @@ get_megamuga_calls_for_chr <- function(chr) {
     gp <- array(0,c(nSNP,N,3)) # the cluster probabilities
     colnames(g) <- samples[,"Name"]
     rownames(g) <- snps[,"Name"]
-    
+
     ## try filling it in
     for(i in 1:N) {
         samp <- colnames(g)[i]
@@ -117,7 +117,7 @@ get_megamuga_calls_for_chr <- function(chr) {
 ## take the list of megamuga objects
 ## convert to the "calls" format for affy
 convert_megamuga_to_calls <- function(megamuga, chr) {
-    if (verbose)    
+    if (verbose)
         message("Convert megamuga genotypes to calls")
 
     ## calls requires both chr and pos
@@ -130,7 +130,7 @@ convert_megamuga_to_calls <- function(megamuga, chr) {
     megaSamples <- megamuga$megaSamples
 
     ## re-size and re-name megaG
-    ## Q_CFW-SW___49.0e_recal    
+    ## Q_CFW-SW___49.0e_recal
     ## subset both megaG and megaSamples to Oxford CFW samples
     samples <- megaSamples[grep(".", megaSamples[, "betterName"], fixed = TRUE), "Name"]
     megaG <- megaG[, match(samples, colnames(megaG))]
@@ -165,13 +165,13 @@ convert_megamuga_to_calls <- function(megamuga, chr) {
 ## get all CFW samples for a chromosome
 ## return in a matrix with row = SNP, column = individual
 get_affymetrix_calls_for_chr <- function(chr) {
-    if (verbose)    
+    if (verbose)
         message("Get Affymetrix calls for chr")
 
     calls <- fread(
         paste0("grep -v '^#' ", file.path(affydir, "quant-norm.pm-only.brlmm-p.calls.txt")),
         data.table = FALSE,
-        showProgress = FALSE        
+        showProgress = FALSE
     )
     annot <- fread(
         paste0("grep -v '^#' ", file.path(affydir, "MOUSEDIVm520650.na33.annot.csv")),
@@ -190,14 +190,14 @@ get_affymetrix_calls_for_chr <- function(chr) {
 
     info <- read.table(file.path(affydir, "Animal_info.txt"), header = FALSE)
     colnames(info) <- c("cel_name","name","cel_files","location","batch1","batch2","gender")
-    report2 <- read.table(file.path(affydir, "quant-norm.pm-only.brlmm-p.report.txt"),header=TRUE)    
+    report2 <- read.table(file.path(affydir, "quant-norm.pm-only.brlmm-p.report.txt"),header=TRUE)
     keep_samples <- is.na(match(report2[, "cel_files"], info[, "cel_files"])) == FALSE
     old_names <- info[, "cel_files"]
     new_names <- paste0(as.character(info[, "cel_name"]), "_recal")
 
     ## subset both to include necessary columns + desired columns
     keep_cols <- c(
-        colnames(annot), 
+        colnames(annot),
         colnames(both)[is.na(match(colnames(both), old_names)) == FALSE]
     )
     both <- both[, keep_cols]
@@ -212,7 +212,7 @@ get_affymetrix_calls_for_chr <- function(chr) {
 ## remove SNPs that perform poorly
 ## not bothering with sites close to the array for now
 filter_calls_for_chr <- function(calls) {
-    if (verbose)    
+    if (verbose)
         message("Filter array calls for chr")
     arrayCounts <- cbind(
         rowSums(calls == 0, na.rm=TRUE),
@@ -222,11 +222,11 @@ filter_calls_for_chr <- function(calls) {
     arrayHWE <- apply(arrayCounts, 1, calculate_hwe_p)
     N <- length(grep("Q_", colnames(calls)))
     missing <- rowSums(is.na(calls)) / N
-    ## (distance < 12) |    
+    ## (distance < 12) |
     remove <-
         (missing > 0.05) |
         (arrayHWE < 1e-10)
-    if (verbose)    
+    if (verbose)
         message(paste0("Removing ", sum(remove), " out of ", length(remove), " SNPs"))
     calls <- calls[remove == FALSE, ]
     return(calls)
@@ -234,73 +234,117 @@ filter_calls_for_chr <- function(calls) {
 
 
 ## for a VCF
-## extract all SNPs for the subjects of interest, and return all calls
-get_dosages_for_vcf <- function(vcf_file, subjects, chr, calls) {
-    if (verbose)    
+## return calls as appropriate
+## possibly filter on subjects and SNPs
+get_dosages_for_vcf <- function(
+    vcf_file,
+    chr,
+    subjects = NULL,
+    calls = NULL,
+    use_fread = TRUE,
+    tabix = TRUE
+) {
+
+    if (verbose)
         message("Get dosages for VCF")
 
-    system(paste0("tabix -f ", vcf_file))
+    if (tabix)
+        system(paste0("tabix -f ", vcf_file))
 
-    subjects_file <- tempfile()
-    write.table(
-        matrix(subjects, ncol = 1), row.names = FALSE, col.names = FALSE, quote = FALSE,
-        file = subjects_file
-    )
-    vcf_for_subjects <- tempfile()
-    regions_file <- tempfile()
-    regions <- calls[, c("chr", "pos")]
-    write.table(
-        regions, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t",
-        file = regions_file
-    )
-    
-    command <- paste0(
-        "./bcftools view ",
-        "-S ", subjects_file, " ",
-        "-R ", regions_file, " ",
-        vcf_file, " ", chr
-    )
+    comamnd <- paste0("./bcftools  view ")
+
+    if (is.null(subjects) == FALSE) {
+        subjects_file <- tempfile()
+        command <- paste0(command, "-S ", subjects_file, " ")
+        write.table(
+            matrix(subjects, ncol = 1), row.names = FALSE, col.names = FALSE, quote = FALSE,
+            file = subjects_file
+        )
+    }
+    if (is.null(calls) == FALSE) {
+        regions_file <- tempfile()
+        command <- paste0(command, "-R ", regions_file, " ")
+        regions <- calls[, c("chr", "pos")]
+        write.table(
+            regions, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t",
+            file = regions_file
+        )
+    }
+
+    command <- paste0(command, " ", vcf_file, " ", chr)
+
     if (verbose)
         message("Extract and load VCF")
-    vcf <- fread(command, data.table = FALSE)
-    
-    if (length( table(vcf[, "FORMAT"])) != 1)
-        stop("VCF format not the same for all SNPs - fix R code")
+    if (use_fread) {
+        vcf <- fread(command, data.table = FALSE)
+    }  else {
+        vcf <- read.table(vcf_file)
+        colnames(vcf) <- strsplit(system(paste0("gunzip -c ", vcf_file, " | grep '^#CHROM'"), intern = TRUE), "\t")[[1]]
+    }
 
-    format <- vcf[1, "FORMAT"]
-    ds <- which(strsplit(format, ":")[[1]] == "DS")
-    if (length(ds) == 0)
-        stop("Cannot find dosage column")
+    n_snps <- nrow(vcf)
+    format <- strsplit(as.character(vcf[, "FORMAT"]), ":")
+    gt_spot <- lapply(format, function(x) which(x == "GT"))
+    gp_spot <- lapply(format, function(x) which(x == "GP"))
+    ds_spot <- lapply(format, function(x) which(x == "DS"))
 
-    if (verbose)    
+    if (verbose)
         message("Extract dosages from loaded VCF")
     dosages <- array(NA, c(nrow(vcf), ncol(vcf) - 9))
     colnames(dosages) <- colnames(vcf)[(10):ncol(vcf)]
     rownames(dosages) <- paste(vcf[, "#CHROM"], vcf[, "POS"], vcf[, "REF"], vcf[, "ALT"], sep = "-")
+
     for(i_samp in 1:ncol(dosages)) {
         samp <- colnames(dosages)[i_samp]
-        dosages[, samp] <- as.numeric(sapply(strsplit(vcf[, samp], ":"), function(x) x[ds]))
+        ## first, get DS if it exists
+        a <- strsplit(as.character(vcf[, i_col]), ":")
+        for(i_snp in 1:nrow(vcf)) {
+            b <- a[[i_snp]]
+            x1 <- ds_spot[[i_snp]]
+            x2 <- gp_spot[[i_snp]]
+            x3 <- gt_spot[[i_snp]]
+            if (length(x1) == 1) {
+                dosages[i_snp, samp] <- as.numeric(b[x1])
+            } else if (length(x2) == 1) {
+                c <- as.numeric(strsplit(b[x2], ",")[[1]])
+                dosages[i_snp, samp] <- sum(c[2] + c[3] * 2)
+            } else if (length(x3) == 1) {
+                dosages[i_snp, samp] <- c(NA, 0, 1, 2)[
+                    match(b[x3], c("./.", "0/0", "0/1", "1/1"))
+                ]
+            }
+        }
     }
 
-    if (verbose)    
+    if (verbose)
         message("Extract meta information from VCF")
-    info <- strsplit(vcf[, "INFO"], ":")
+    info <- strsplit(as.character(vcf[, "INFO"]), ":")
     dosages_meta <- t(sapply(info, function(x) {
         y <- strsplit(x, ";")[[1]]
         return(c(
-            eaf = as.numeric(strsplit(y[[grep("EAF", y)]], "=")[[1]][2]),
-            info = as.numeric(strsplit(y[[grep("INFO", y)]], "=")[[1]][2]),
-            hwe = as.numeric(strsplit(y[[grep("HWE", y)]], "=")[[1]][2])
+            hwe = get_col_from_info(y, col = "HWE="),
+            eaf = get_col_from_info(y, col = "EAF="),
+            info = get_col_from_info(y, col = "INFO_SCORE=")
         ))
     }))
     rownames(dosages_meta) <- rownames(dosages)
 
     return(list(dosages = dosages, dosages_meta = dosages_meta))
+
+}
+
+get_col_from_info <- function(y, col = "EAF=") {
+    z <- substr(y, 1, nchar(col)) == col
+    if (sum(z) == 1) {
+        return(as.numeric(strsplit(y[z], "=")[[1]][2]))
+    } else {
+        return(NA)
+    }
 }
 
 
 compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
-    if (verbose)    
+    if (verbose)
         message("Compare array calls and dosages")
 
     ## actually, only merge on first two items
@@ -308,12 +352,12 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
     c1 <- t(sapply(strsplit(rownames(calls), "-"), I))
     c2 <- t(sapply(strsplit(rownames(dosages), "-"), I))
     d1 <- paste0(c1[, 1], c1[, 2], sep = "-")
-    d2 <- paste0(c2[, 1], c2[, 2], sep = "-")    
+    d2 <- paste0(c2[, 1], c2[, 2], sep = "-")
 
     joint <- intersect(d1, d2)
     callsS <- calls[match(joint, d1), ]
     dosagesS <- dosages[match(joint, d2), ]
-    dosages_metaS <- dosages_meta[match(joint, d2), ]        
+    dosages_metaS <- dosages_meta[match(joint, d2), ]
 
     c1 <- colnames(callsS)
     c2 <- colnames(dosagesS)
@@ -346,5 +390,7 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
 
     message("r2 for various MAF ranges for SNPs that pass QC")
     print(tapply(r2[pass_qc], cut(maf[pass_qc], c(0, 0.01, 0.05, 0.1, 0.2, 0.5)), mean, na.rm=TRUE))
-    
+
 }
+
+

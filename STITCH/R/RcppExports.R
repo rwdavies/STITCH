@@ -32,6 +32,11 @@ get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeU
 }
 
 #' @export
+rcpp_make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
+    .Call('STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
+}
+
+#' @export
 increment2N <- function(yT, xT, y, z) {
     .Call('STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
 }

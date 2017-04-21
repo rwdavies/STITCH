@@ -171,7 +171,7 @@ STITCH <- function(
     validate_nGen(nGen)
     validate_nCores(nCores)
     validate_posfile(posfile)
-    validate_genfile(genfile)    
+    validate_genfile(genfile)
     validate_K(K)
     validate_outputdir(outputdir)
     validate_tempdir(tempdir)
@@ -439,7 +439,7 @@ STITCH <- function(
     ##
     ## initialize variables
     ##
-    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, T = T, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer)
+    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, T = T, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations)
     sigmaCurrent <- out$sigmaCurrent
     eHapsCurrent <- out$eHapsCurrent
     alphaMatCurrent <- out$alphaMatCurrent
@@ -448,7 +448,8 @@ STITCH <- function(
     reference_panel_SNPs <- out$reference_panel_SNPs
 
 
-    
+
+
     ##
     ## run EM algorithm here
     ##
@@ -836,8 +837,6 @@ validate_reference_files <- function(reference_haplotype_file, reference_legend_
         stop(paste0("Cannot find reference_legend_file:", reference_legend_file))
     if (reference_haplotype_file != "" & file.exists(reference_haplotype_file) == FALSE)
         stop(paste0("Cannot find reference_haplotype_file:", reference_haplotype_file))
-  if (reference_haplotype_file != "" & niterations == 1)
-      stop ("You have selected niterations = 1 with reference haplotypes. Since the reference panel may be missing sites in the posfile, and since these sites will be initialized at random, please use at least two iterations to ensure genotypes at these sites will not be noise")
 }
 
 
@@ -1469,7 +1468,8 @@ initialize_parameters <- function(
   maxRate,
   regionStart,
   regionEnd,
-  buffer
+  buffer,
+  niterations
 ) {
 
     print(paste0("Begin parameter initialization, ", date()))
@@ -1502,9 +1502,10 @@ initialize_parameters <- function(
             regionStart = regionStart,
             regionEnd = regionEnd,
             buffer = buffer,
-            chr = chr
+            chr = chr,
+            niterations = niterations
         )
-        reference_panel_SNPs <- is.na(reference_haps[, 1])
+        reference_panel_SNPs <- is.na(reference_haps[, 1]) == FALSE
 
         compare_reference_haps_against_alleleCount(
             alleleCount = alleleCount,
@@ -1793,65 +1794,72 @@ single_reference_iteration <- function(
 }
 
 
-
-
-make_fake_sample_reads_from_haplotypes <- function(
-  reference_haps,
-  nCores,
-  reference_bundling_info,
-  tempdir,
-  N_haps,
-  reference_phred,
-  regionName
-) {
-
-  print(paste0("Begin convert reference haplotypes to internal input format, ", date()))
-
-  sampleRanges <- getSampleRange(N_haps, nCores)
-  non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
-
-  out <- mclapply(
-    sampleRanges,
-    mc.cores = nCores,
-    function(sampleRange) {
-    for(iSample in sampleRange[1]:sampleRange[2]) {
-      sampleReads <- lapply(
+make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
+    sampleReads <- lapply(
         non_NA_cols,
         function(x) {
-          return(list(
+        return(list(
             0, x - 1,
-            reference_phred * (2 * reference_haps[x, iSample] - 1),
+            reference_phred * (2 * reference_hap[x] - 1),
             x - 1
-          ))
-        }
-      )
-      save(
-        sampleReads,
-        file = file_referenceSampleReads(tempdir, iSample, regionName)
-      )
-      if (length(reference_bundling_info) > 0) {
-        last_in_bundle <- reference_bundling_info$matrix[iSample, "last_in_bundle"]
-        if (last_in_bundle == 1) {
-          bundle_inputs_after_generation(
-            bundling_info = reference_bundling_info,
-            iBam = iSample,
-            dir = tempdir,
-            regionName = regionName,
-            what = "referenceSampleReads"
-          )
-        }
-      }
+        ))
     }
-    return(NULL)
-  })
+    )
+    return(sampleReads)
+}
 
-  error_check <- sapply(out, class) == "try-error"
-  if (sum(error_check) > 0) {
-    print(out[[which(error_check)[1]]])
-    stop("There has been an error generating the input. Please see error message above")
-  }
+make_fake_sample_reads_from_haplotypes <- function(
+    reference_haps,
+    nCores,
+    reference_bundling_info,
+    tempdir,
+    N_haps,
+    reference_phred,
+    regionName
+) {
 
-  print(paste0("End convert reference haplotypes to internal input format, ", date()))
+    print(paste0("Begin convert reference haplotypes to internal input format, ", date()))
+
+    sampleRanges <- getSampleRange(N_haps, nCores)
+    non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
+
+    out <- mclapply(
+        sampleRanges,
+        mc.cores = nCores,
+        function(sampleRange) {
+        for(iSample in sampleRange[1]:sampleRange[2]) {
+            sampleReads <- rcpp_make_sampleReads_from_hap(
+                non_NA_cols,
+                reference_phred,
+                reference_hap = reference_haps[, iSample]
+            )
+            save(
+                sampleReads,
+                file = file_referenceSampleReads(tempdir, iSample, regionName)
+            )
+            if (length(reference_bundling_info) > 0) {
+                last_in_bundle <- reference_bundling_info$matrix[iSample, "last_in_bundle"]
+                if (last_in_bundle == 1) {
+                    bundle_inputs_after_generation(
+                        bundling_info = reference_bundling_info,
+                        iBam = iSample,
+                        dir = tempdir,
+                        regionName = regionName,
+                        what = "referenceSampleReads"
+                    )
+                }
+            }
+        }
+        return(NULL)
+    })
+
+    error_check <- sapply(out, class) == "try-error"
+    if (sum(error_check) > 0) {
+        print(out[[which(error_check)[1]]])
+        stop("There has been an error generating the input. Please see error message above")
+    }
+
+    print(paste0("End convert reference haplotypes to internal input format, ", date()))
 
 }
 
@@ -1958,6 +1966,18 @@ load_reference_legend <- function(
 }
 
 
+validate_pos_and_legend_snps_for_niterations_equals_1 <- function(legend_snps, pos_snps, niterations) {
+    if (niterations == 1) {
+        x <- is.na(match(legend_snps, pos_snps))
+        if (sum(x) > 0)
+            stop(paste0("You have selected to use reference haplotypes with niterations=1, which requires exact matching of reference legend SNPs and posfile SNPs. However, reference legend SNP with pos-ref-alt ", legend_snps[which.max(x)], " was not found in posfile"))
+        x <- is.na(match(pos_snps, legend_snps))
+        if (sum(x) > 0)
+            stop(paste0("You have selected to use reference haplotypes with niterations=1, which requires exact matching of reference legend SNPs and posfile SNPs. However, posfile SNP with pos-ref-alt ", pos_snps[which.max(x)], " was not found in reference legend"))
+    }
+    return(NULL)
+}
+
 ## extract the relevant rows from the reference haplotypes file
 ## do this using awk to avoid loading way too many sites
 extract_validate_and_load_haplotypes <- function(
@@ -1967,7 +1987,8 @@ extract_validate_and_load_haplotypes <- function(
     position_in_haps_file,
     regionName,
     tempdir,
-    colClasses
+    colClasses,
+    niterations
 ) {
 
     print(paste0("Extract reference haplotypes, ",date()))
@@ -1982,6 +2003,7 @@ extract_validate_and_load_haplotypes <- function(
 
     both_snps <- intersect(legend_snps, pos_snps)
 
+    validate_pos_and_legend_snps_for_niterations_equals_1(legend_snps, pos_snps, niterations)
     print_and_validate_reference_snp_stats(pos_snps, legend_snps, both_snps)
 
     ## only extract those we need
@@ -2055,7 +2077,8 @@ get_haplotypes_from_reference <- function(
   regionStart = NA,
   regionEnd = NA,
   buffer = NA,
-  chr
+  chr,
+  niterations = 40
 ) {
 
     print(paste0("Begin get haplotypes from reference, ", date()))
@@ -2090,7 +2113,8 @@ get_haplotypes_from_reference <- function(
         position_in_haps_file,
         regionName,
         tempdir,
-        colClasses
+        colClasses,
+        niterations
     )
 
     print(paste0("Succesfully extracted ", ncol(haps), " haplotypes from reference data, ", date()))
@@ -2843,7 +2867,7 @@ get_sample_names_from_bam_or_cram_files <- function(
     for(file in files)
         if (file.exists(file) == FALSE)
             stop(paste0("Cannot find ", file_type, " file:", file))
-    
+
     sampleNames <- mclapply(
         files,
         mc.cores = nCores,
@@ -3167,7 +3191,7 @@ loadBamAndConvert <- function(
     sampleReadsRaw <- out$sampleReadsRaw
     qname <- out$qname
     strand <- out$strand
-        
+
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
             name = sampleNames[iBam],
@@ -6062,8 +6086,9 @@ write_vcf_after_EM <- function(
         "INFO_SCORE=", round(info, 5), ";",
         "HWE=", hwe
     )
-    if (sum(reference_panel_SNPs) > 0)
+    if (sum(reference_panel_SNPs) > 0) {
         INFO <- paste0(INFO, ";REF_PANEL=", as.integer(reference_panel_SNPs))
+    }
     write.table(
         matrix(paste(pos[,1], pos[,2], ".", pos[,3], pos[,4], ".", "PASS", INFO, "GT:GP:DS", sep="\t"), ncol=1),
         file = gzfile(output_vcf_left),
