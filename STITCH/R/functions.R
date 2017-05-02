@@ -3678,11 +3678,14 @@ downsample <- function(
                 ## remove those than span SNPs more than once
                 t <- table(reads_at_SNP)
                 reads_to_remove_multi_span <- as.integer(names(t)[t > 1])
+                reads_single_span <- as.integer(names(t)[t == 1])
                 cov_due_to_multi_span_reads <- sum(is.na(match(reads_at_SNP, reads_to_remove_multi_span)) == FALSE)
                 ## now, remove reads at random that intersect this SNP until desired coverage reached
                 extra_coverage <- depth_per_SNP[bad_snp] - downsampleToCov - cov_due_to_multi_span_reads
                 if (extra_coverage > 0) {
-                    reads_to_remove_single_span <- sample(reads_at_SNP, extra_coverage, replace = FALSE)
+                    reads_to_remove_single_span <- sample(
+                        reads_single_span, extra_coverage, replace = FALSE
+                    )
                 } else {
                     reads_to_remove_single_span <- NULL
                 }
