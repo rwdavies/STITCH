@@ -8,13 +8,15 @@ make_simple_sam_text <- function(
     entries = NULL,
     chr = 1,
     sample_name = "sample_name",
-    chr_length = 45
+    chr_length = 45,
+    include_rg_tag = TRUE
 ) {
     out <- paste0(
         "@HD\tVN:1.5\tSO:coordinate\n",
-        "@SQ\tSN:", chr, "\tLN:", chr_length, "\n",
-        "@RG\tID:7369_8x15\tSM:", sample_name, "\n"
+        "@SQ\tSN:", chr, "\tLN:", chr_length, "\n"
     )
+    if (include_rg_tag)
+        out <- paste0(out, "@RG\tID:7369_8x15\tSM:", sample_name, "\n")
     if (length(entries) > 0)
         for(entry in entries)
             out <- paste0(out, paste0(entry, collapse = "\t"), "\n")

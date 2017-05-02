@@ -171,3 +171,57 @@ test_that("downsample works with fake sampleReads ", {
 
 })
 
+
+
+test_that("downsampling respects reads that overlap the same SNPs with 1 long read per site", {
+
+    sampleReads <- list(
+        list(1, 0, matrix(c(-25, -25), ncol = 1), matrix(c(0, 1), ncol = 1)),
+        list(1, 0, matrix(c(-25, -25), ncol = 1), matrix(c(0, 1), ncol = 1)),
+        list(4, 0, matrix(rep(5, 5), ncol = 1), matrix(rep(0, 5), ncol = 1))
+    )
+    sampleReadsInfo <- data.frame(
+        qname = c("read1", "read2", "read3"),
+        strand = c("+", "-", "+")
+    )
+        
+    set.seed(1)
+    out <- downsample(
+        sampleReads,
+        iBam = 1,
+        downsampleToCov = 2,
+        sampleNames = "sample",
+        sampleReadsInfo = sampleReadsInfo,
+        verbose = FALSE
+    )
+    expect_equal(out$sampleReads, sampleReads[1:2])
+
+})
+
+
+test_that("downsampling respects reads that overlap the same SNPs with 2 or more long reads per site", {
+
+    sampleReads <- list(
+        list(1, 0, matrix(c(-25, -25), ncol = 1), matrix(c(0, 1), ncol = 1)),
+        list(1, 0, matrix(c(-25, -25), ncol = 1), matrix(c(0, 1), ncol = 1)),
+        list(4, 0, matrix(rep(5, 5), ncol = 1), matrix(rep(0, 5), ncol = 1)),
+        list(4, 0, matrix(rep(-5, 6), ncol = 1), matrix(rep(0, 6), ncol = 1))        
+    )
+    sampleReadsInfo <- data.frame(
+        qname = c("read1", "read2", "read3", "read4"),
+        strand = c("+", "-", "+", "-")
+    )
+        
+    set.seed(1)
+    out <- downsample(
+        sampleReads,
+        iBam = 1,
+        downsampleToCov = 2,
+        sampleNames = "sample",
+        sampleReadsInfo = sampleReadsInfo,
+        verbose = FALSE
+    )
+    expect_equal(out$sampleReads, sampleReads[1:2])
+
+})
+

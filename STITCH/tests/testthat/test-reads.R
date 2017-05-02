@@ -45,6 +45,27 @@ test_that("an error is thrown when supplied BAM file does not exist", {
 })
 
     
+
+test_that("an error is thrown when supplied BAM file does not have @RG SM tag", {
+
+    sample_name <- "jimmy"
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), sample_name),
+        sam = make_simple_sam_text(sample_name = sample_name, include_rg_tag = FALSE)
+    )
+    
+    expect_error(
+        get_sample_names_from_bam_or_cram_files(
+            files = bam_file,
+            nCores = 1,
+            file_type = "BAM",
+            verbose = FALSE
+        ),
+        paste0("There is no RG tag with sample name in file:", bam_file)
+    )
+    
+})
+
 test_that("sample names can be properly retrieved from BAM files", {
 
     sample_names <- c("file1", "file2")

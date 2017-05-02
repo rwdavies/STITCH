@@ -2826,10 +2826,10 @@ get_RG_lines_from_SeqLib <- function(file) {
     return(x[substr(x, 1, 3) == "@RG"])
 }
 
-convert_sam_header_rg_tags_to_sample_name <- function(header) {
+convert_sam_header_rg_tags_to_sample_name <- function(header, file) {
     rg_spots <- lapply(header, strsplit, split = "\t")
     if (length(rg_spots) == 0)
-        stop(paste0("There is no @RG tag (with sample name) for:", file))
+        stop(paste0("There is no RG tag with sample name in file:", file))
     sm <- sapply(rg_spots, function(x) {
         rg <- x[[1]]
         sm <- substr(rg[substr(rg, 1, 3) == "SM:"], 4, 1000)
@@ -2842,12 +2842,12 @@ convert_sam_header_rg_tags_to_sample_name <- function(header) {
 
 get_sample_name_from_bam_file_using_external_samtools <- function(file) {
     header <- system(paste0("samtools view -H ", file, " | grep ^@RG"), intern = TRUE)
-    return(convert_sam_header_rg_tags_to_sample_name(header))
+    return(convert_sam_header_rg_tags_to_sample_name(header = header, file = file))
 }
 
 get_sample_name_from_bam_file_using_SeqLib <- function(file) {
     header <- get_RG_lines_from_SeqLib(file)
-    return(convert_sam_header_rg_tags_to_sample_name(header))
+    return(convert_sam_header_rg_tags_to_sample_name(header = header, file = file))
 }
 
 
@@ -3675,14 +3675,24 @@ downsample <- function(
                 reads_at_SNP <- reads_per_SNP[[as.character(bad_snp - 1)]] ## 0-based
                 ## remove from consideration if they've been removed already
                 reads_at_SNP <- reads_at_SNP[toRemove[reads_at_SNP + 1] == FALSE]
+                ## remove those than span SNPs more than once
+                t <- table(reads_at_SNP)
+                reads_to_remove_multi_span <- as.integer(names(t)[t > 1])
+                cov_due_to_multi_span_reads <- sum(is.na(match(reads_at_SNP, reads_to_remove_multi_span)) == FALSE)
                 ## now, remove reads at random that intersect this SNP until desired coverage reached
-                extra_coverage <- depth_per_SNP[bad_snp] - downsampleToCov
-                reads_to_remove <- sample(reads_at_SNP, extra_coverage, replace = FALSE)
+                extra_coverage <- depth_per_SNP[bad_snp] - downsampleToCov - cov_due_to_multi_span_reads
+                if (extra_coverage > 0) {
+                    reads_to_remove_single_span <- sample(reads_at_SNP, extra_coverage, replace = FALSE)
+                } else {
+                    reads_to_remove_single_span <- NULL
+                }
+                reads_to_remove <- c(reads_to_remove_single_span, reads_to_remove_multi_span)
                 toRemove[reads_to_remove + 1] <- TRUE
                 ## modify depth_per_SNP appropriately from removing all those reads
                 for(r in (reads_to_remove + 1)) {
                     w <- sampleReads[[r]][[4]] + 1 # 1-based
-                    depth_per_SNP[w] <- depth_per_SNP[w] - 1
+                    for(w2 in w)
+                        depth_per_SNP[w2] <- depth_per_SNP[w2] - 1
                 }
             }
         }
