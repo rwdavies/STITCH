@@ -189,7 +189,11 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	// okay, if we're here, we're considering this read
 	//
 	refPosition = record.Position() + 1; // 1-based
-	std::tie(cigarLengthVec, cigarTypeVec) = split_cigar(record.CigarString());
+	std::string cigarRead = record.CigarString();
+	// if unmapped, skip
+	if (cigarRead == "") // this is how "*" cigarReads are returned by seqLib
+	  continue;
+	std::tie(cigarLengthVec, cigarTypeVec) = split_cigar(cigarRead);
 	// okay, probably want to clean this up at some point, might be wrong way of doing this
 	got_seq_already = false;
 	if ((cigarTypeVec[0] == "S") | (cigarTypeVec[cigarTypeVec.size() - 1] == "S")) {

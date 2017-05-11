@@ -973,3 +973,62 @@ test_that("CRAM with one read can be properly interpreted", {
     )
 
 })
+
+
+
+test_that("can handle a cigar string of *", {
+
+    chr <- 10
+    pos <- cbind(
+        CHR = rep(chr, 7),
+        POS = c(9, 11, 13, 15, 17, 19, 21),
+        REF = c("A", "A", "A", "A", "A", "A", "A"),
+        ALT = c("C", "C", "C", "C", "C", "C", "C")
+    )
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r001", "0", chr, "17", "60",
+                  "6M", "*", "0", "0",
+                  "CCCCCC", "::::::"),
+                c("r001", "0", chr, "17", "60",
+                  "*", "=", "0", "0",
+                  "NNNNNN", "######")
+            ), 
+            chr
+        )
+    )
+    expected_sample_reads <- list(
+        list(
+            2, 5,
+            matrix(c(25, 25, 25), ncol = 1),
+            matrix(c(4, 5, 6), ncol = 1)
+        )
+    )
+    
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-0",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100
+    )
+
+    load(file_sampleReads(tempdir(), 1, regionName))
+    expect_equal(
+        sampleReads,
+        expected_sample_reads
+    )
+
+
+})
