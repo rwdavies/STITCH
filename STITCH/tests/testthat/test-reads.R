@@ -2,7 +2,6 @@
 ## bqs <- paste0(sapply(25 + 33 + 0:10, function(x) rawToChar(as.raw(x))), collapse = "")
 
 
-
 test_that("C++ APIs give same sample name for BAM files", {
     sample_name <- "jimmy"
     bam_name <- make_simple_bam(
@@ -46,7 +45,7 @@ test_that("an error is thrown when supplied BAM file does not exist", {
 
     
 
-test_that("an error is thrown when supplied BAM file does not have @RG SM tag", {
+test_that("an error is thrown when supplied BAM file does not have @RG tag", {
 
     sample_name <- "jimmy"
     bam_file <- make_simple_bam(
@@ -65,6 +64,31 @@ test_that("an error is thrown when supplied BAM file does not have @RG SM tag", 
     )
     
 })
+
+test_that("an error is thrown when supplied BAM file has an RG tag but no SM tag", {
+
+    sample_name <- "jimmy"
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), sample_name),
+        sam = make_simple_sam_text(
+            sample_name = sample_name,
+            include_rg_tag = FALSE,
+            include_rg_tag_with_no_sm = TRUE
+        )
+    )
+    
+    expect_error(
+        get_sample_names_from_bam_or_cram_files(
+            files = bam_file,
+            nCores = 1,
+            file_type = "BAM",
+            verbose = FALSE
+        ),
+        paste0("The RG tags do not contain SM entries for file:", bam_file)
+    )
+    
+})
+
 
 test_that("sample names can be properly retrieved from BAM files", {
 
@@ -1032,3 +1056,5 @@ test_that("can handle a cigar string of *", {
 
 
 })
+
+

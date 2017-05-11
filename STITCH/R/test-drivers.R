@@ -9,7 +9,8 @@ make_simple_sam_text <- function(
     chr = 1,
     sample_name = "sample_name",
     chr_length = 45,
-    include_rg_tag = TRUE
+    include_rg_tag = TRUE,
+    include_rg_tag_with_no_sm = FALSE
 ) {
     out <- paste0(
         "@HD\tVN:1.5\tSO:coordinate\n",
@@ -17,6 +18,8 @@ make_simple_sam_text <- function(
     )
     if (include_rg_tag)
         out <- paste0(out, "@RG\tID:7369_8x15\tSM:", sample_name, "\n")
+    if (include_rg_tag_with_no_sm)
+        out <- paste0(out, "@RG\tID:7369_8x15\n")        
     if (length(entries) > 0)
         for(entry in entries)
             out <- paste0(out, paste0(entry, collapse = "\t"), "\n")

@@ -2835,6 +2835,8 @@ convert_sam_header_rg_tags_to_sample_name <- function(header, file) {
         sm <- substr(rg[substr(rg, 1, 3) == "SM:"], 4, 1000)
         return(sm)
     })
+    if (sum(sapply(sm, length)) == 0)
+        stop(paste0("The RG tags do not contain SM entries for file:", file))        
     if (length(unique(sm)) > 1)
         stop(paste0("There is more than one sample name in the header for:", file))
     return(sm[1])
