@@ -905,7 +905,7 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
 
 //' @export
 // [[Rcpp::export]]
-List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleReadsRaw, int verbose) {
+List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleReadsRaw, int verbose, arma::ivec readStart_ord, arma::ivec readEnd_ord, int iSizeUpperLimit) {
   // ord is 0-based original ordering
   // qnameInteger_ord is (ordered) integer representing reads
   
@@ -930,31 +930,42 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
     if (qnameInteger_ord[iRead + 1] != curRead) {
       
       int nSNPsInRead = -1;
+      bool save_read = true;
       for(int j = iReadStart; j <= iRead; j++) {
 
-	int r = ord[j];
+          // check distance is OK
+          if (j < iRead) {
+              if ((readEnd_ord[j + 1] - readStart_ord[j]) > iSizeUpperLimit) {
+                  if(verbose == 1) {
+                      std::cout << "violate iSizeUpperLimit, reset curRead=" << curRead << "\n";
+                  }
+                  save_read = false;
+              }
+          }
+          int r = ord[j];
 	
-	if(verbose == 1) {
-	  std::cout << "j=" << j << "\n";
-	  std::cout << "r=" << r << "\n";
-	}
+          if(verbose == 1) {
+              std::cout << "j=" << j << "\n";
+              std::cout << "r=" << r << "\n";
+          }
 	
-	// so say first read is 0-based 0:2
-        // want to take reads from ord[0:2]
-	Rcpp::List readData = as<Rcpp::List>(sampleReadsRaw[r]);
-	arma::ivec bqU = as<arma::ivec>(readData[2]);
-	arma::ivec pRU = as<arma::ivec>(readData[3]);
-	for(int k = 0; k < int(bqU.size()); k++) {
-	  // std::cout << "k=" << k << "\n";
-	  nSNPsInRead++;
-	  base_bq[nSNPsInRead] = bqU[k];
-	  base_pos[nSNPsInRead] = pRU[k];	  
-	}
+          // so say first read is 0-based 0:2
+          // want to take reads from ord[0:2]
+          Rcpp::List readData = as<Rcpp::List>(sampleReadsRaw[r]);
+          arma::ivec bqU = as<arma::ivec>(readData[2]);
+          arma::ivec pRU = as<arma::ivec>(readData[3]);
+          for(int k = 0; k < int(bqU.size()); k++) {
+              // std::cout << "k=" << k << "\n";
+              nSNPsInRead++;
+              base_bq[nSNPsInRead] = bqU[k];
+              base_pos[nSNPsInRead] = pRU[k];	  
+          }
       }
 
       arma::ivec bqL = base_bq.subvec(0, nSNPsInRead);
       arma::ivec posL = base_pos.subvec(0, nSNPsInRead);
-      sampleReads.push_back(Rcpp::List::create(nSNPsInRead, 0, bqL, posL));
+      if (save_read)
+          sampleReads.push_back(Rcpp::List::create(nSNPsInRead, 0, bqL, posL));
       iReadStart = iRead + 1;
       curRead = qnameInteger_ord[iRead + 1]; // + 1
       if(verbose == 1) {

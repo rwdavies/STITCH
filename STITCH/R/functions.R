@@ -2836,7 +2836,7 @@ convert_sam_header_rg_tags_to_sample_name <- function(header, file) {
         return(sm)
     })
     if (sum(sapply(sm, length)) == 0)
-        stop(paste0("The RG tags do not contain SM entries for file:", file))        
+        stop(paste0("The RG tags do not contain SM entries for file:", file))
     if (length(unique(sm)) > 1)
         stop(paste0("There is more than one sample name in the header for:", file))
     return(sm[1])
@@ -3022,7 +3022,10 @@ deal_with_soft_clipped_bases <- function(splitCigarRead, useSoftClippedBases, po
 merge_reads_from_sampleReadsRaw <- function(
     sampleReadsRaw,
     qname,
-    strand
+    strand,
+    readStart,
+    readEnd,
+    iSizeUpperLimit
 ) {
     ## wif: 1-based which read it came from
     wif <- sapply(sampleReadsRaw, function(x) x[[5]]) + 1
@@ -3030,6 +3033,8 @@ merge_reads_from_sampleReadsRaw <- function(
     qnameInteger <- match(qname[wif], qnameUnique)
     ord <- order(qnameInteger) - 1 ## 0-based for C++
     qnameInteger_ord <- c(qnameInteger[ord + 1], - 2)
+    readStart_ord <- readStart[ord + 1]
+    readEnd_ord <- readEnd[ord + 1]    
     ## qnameUnique is unique read names of used reads
     ## qnameInteger is integer version of that
     ## ord is 0-based ordered version of qnameInteger
@@ -3038,7 +3043,10 @@ merge_reads_from_sampleReadsRaw <- function(
         ord,
         qnameInteger_ord,
         sampleReadsRaw,
-        as.integer(0)
+        as.integer(0),
+        readStart_ord,
+        readEnd_ord,
+        iSizeUpperLimit
     )
     sampleReadsInfo <- data.frame(
         qname = qnameUnique,
@@ -3193,7 +3201,9 @@ loadBamAndConvert <- function(
     sampleReadsRaw <- out$sampleReadsRaw
     qname <- out$qname
     strand <- out$strand
-
+    readStart <- out$readStart
+    readEnd <- out$readEnd
+        
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
             name = sampleNames[iBam],
@@ -3201,9 +3211,12 @@ loadBamAndConvert <- function(
         )
     } else {
         out <- merge_reads_from_sampleReadsRaw(
-            sampleReadsRaw,
-            qname,
-            strand
+            sampleReadsRaw = sampleReadsRaw,
+            qname = qname,
+            strand = strand,
+            readStart = readStart,
+            readEnd = readEnd,
+            iSizeUpperLimit = iSizeUpperLimit
         )
         sampleReads <- out$sampleReads
         sampleReadsInfo <- out$sampleReadsInfo

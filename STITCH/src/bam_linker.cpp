@@ -6,7 +6,7 @@
 
 std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<int>, std::vector<std::string>, std::vector<std::string>> get_reads_from_seqLib(std::string region, std::string file_name, std::string ref_fa);
 
-std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int T, std::vector<int> L, std::string region, std::string file_name, std::string reference);
+std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int T, std::vector<int> L, std::string region, std::string file_name, std::string reference);
 
 std::tuple<std::vector<int>, std::vector<std::string>> split_cigar(std::string in_string);
 
@@ -102,9 +102,10 @@ Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const 
   std::vector<int> out_iRead; // 0-based read SNPs came from
   std::vector<std::string> qname; // read name for reads with SNPs in them
   std::vector<std::string> strand; // strand for reads with SNPs in them
+  std::vector<int> out_readStart; // 1-based start of read
+  std::vector<int> out_readEnd; // 1-based end of read
 
-
-  std::tie(out_num_SNPs, out_BQs, out_SNP_pos, out_iRead, qname, strand) = get_sampleReadsRaw_using_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference);
+  std::tie(out_num_SNPs, out_BQs, out_SNP_pos, out_iRead, qname, strand, out_readStart, out_readEnd) = get_sampleReadsRaw_using_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference);
 
   //
   // convert format to sampleReadsRaw
@@ -150,7 +151,9 @@ Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const 
     return Rcpp::List::create(
         Rcpp::Named("sampleReadsRaw") = sampleReadsRaw,
 	Rcpp::Named("qname") = qname,
-	Rcpp::Named("strand") = strand
+	Rcpp::Named("strand") = strand,
+	Rcpp::Named("readStart") = out_readStart,
+	Rcpp::Named("readEnd") = out_readEnd
     );
 
 }

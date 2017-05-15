@@ -554,6 +554,79 @@ test_that("BAM with three part split read is properly interpreted", {
 
 
 
+test_that("BAM with three part split read that maps very far apart is removed", {
+    
+    chr <- 10
+    pos <- cbind(
+        CHR = c(chr, chr, chr), 
+        POS = c(9, 11, 101),
+        REF = c("A", "A", "A"),
+        ALT = c("G", "C", "T")
+    )
+    ## https://github.com/samtools/hts-specs/blob/master/SAMv1.pdf    
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r000", "0", chr, "9", "60",
+                  "2M", "*", "0", "0",
+                  "AA", ":;"),
+                c("r001", "0", chr, "9", "60",
+                  "2M", "*", "0", "0",
+                  "AA", ":;"), # 25, 26
+                c("r001", "0", chr, "10", "60",
+                  "2M", "*", "0", "0",
+                  "CC", "<="), # 27, 28
+                c("r001", "0", chr, "100", "60",
+                  "2M", "*", "0", "0",
+                  "TT", ">?"), # 29, 30,
+                c("r001", "0", chr, "100", "60",
+                  "2M", "*", "0", "0",
+                  "AA", "::") 
+            ),
+            chr
+        )
+    )
+    ## 1: 0-based number of SNPs
+    ## 2: 0-based central SNP
+    ## 3: bq, - = ref, + = alt
+    ## 4: 0-based position in pos
+    expected_sample_reads <- list(
+        list(
+            0, 0,
+            matrix(c(-25), ncol = 1),
+            matrix(c(0), ncol = 1)
+        )
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        T = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-three-part",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = 1,
+        chrEnd = 100,
+        iSizeUpperLimit = 20
+    )
+    
+    load(file_sampleReads(tempdir(), 1, regionName))
+    expect_equal(
+        sampleReads,
+        expected_sample_reads
+    )
+
+})
+
+
+
 test_that("BAM with several informative and uninformative reads is properly interpreted", {
     
     chr <- 10
