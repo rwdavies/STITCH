@@ -13,11 +13,9 @@ mkdir -p benchmark-results
 
 
 #1.2.5 1.2.9 1.3.2 1.3.4
-for version in 1.3.4 1.3.5
+for version in 1.3.5 1.3.6
 do
 
-    if [ 1 == 0 ]
-    then
     r_libs=`R --slave -e ".libPaths()[1]" | awk '{print substr($0, 5, 1000)}' | tr -d '"'`
     rm -r -f ${r_libs}/00LOCK-STITCH
     echo ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
@@ -36,7 +34,6 @@ do
 		  --K=4 \
 		  --nGen=100 2>&1 | \
 	tee ${STITCH_HOME}/benchmark-results/whole_chr_CFW_${version}.txt
-    fi
 
     ./scripts/compare_vcf_to_truth.R --vcf=${STITCH_HOME}/test-results/whole_chr_CFW_${version}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=megamuga 2>&1 | \
 	tee ${STITCH_HOME}/benchmark-results/whole_chr_CFW_${version}.megamuga.txt

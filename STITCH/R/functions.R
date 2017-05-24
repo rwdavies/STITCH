@@ -2389,7 +2389,7 @@ generate_or_refactor_input <- function(
             )
             return(NULL)
         }
-        } else { # regenerateInput = FALSE
+    } else { # regenerateInput = FALSE
         if (length(bundling_info) > 0) {
             rebundle_input(
                 inputdir = inputdir,

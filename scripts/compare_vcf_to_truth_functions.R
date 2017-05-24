@@ -242,6 +242,7 @@ get_dosages_for_vcf <- function(
     subjects = NULL,
     calls = NULL,
     use_fread = TRUE,
+    use_chr = TRUE,
     tabix = TRUE
 ) {
 
@@ -251,7 +252,7 @@ get_dosages_for_vcf <- function(
     if (tabix)
         system(paste0("tabix -f ", vcf_file))
 
-    comamnd <- paste0("./bcftools  view ")
+    command <- paste0("bcftools  view ")
 
     if (is.null(subjects) == FALSE) {
         subjects_file <- tempfile()
@@ -260,6 +261,9 @@ get_dosages_for_vcf <- function(
             matrix(subjects, ncol = 1), row.names = FALSE, col.names = FALSE, quote = FALSE,
             file = subjects_file
         )
+        col_names <- strsplit(system(paste0("bcftools view -h ", vcf_file, " -S ", subjects_file, "| grep '^#CHROM' | head -n1"), intern = TRUE), "\t")[[1]]
+    } else {
+        col_names <- strsplit(system(paste0("bcftools view -h ", vcf_file, " | grep '^#CHROM' | head -n1"), intern = TRUE), "\t")[[1]]
     }
     if (is.null(calls) == FALSE) {
         regions_file <- tempfile()
@@ -271,16 +275,18 @@ get_dosages_for_vcf <- function(
         )
     }
 
-    command <- paste0(command, " ", vcf_file, " ", chr)
+    command <- paste0(command, " -H ", vcf_file)    
+    if (use_chr)
+        command <- paste0(command, " ", chr)
 
     if (verbose)
         message("Extract and load VCF")
     if (use_fread) {
-        vcf <- fread(command, data.table = FALSE)
+        vcf <- fread(command, data.table = FALSE, sep = "\t")
     }  else {
         vcf <- read.table(vcf_file)
-        colnames(vcf) <- strsplit(system(paste0("gunzip -c ", vcf_file, " | grep '^#CHROM'"), intern = TRUE), "\t")[[1]]
     }
+    colnames(vcf) <- col_names
 
     n_snps <- nrow(vcf)
     format <- strsplit(as.character(vcf[, "FORMAT"]), ":")
@@ -297,7 +303,7 @@ get_dosages_for_vcf <- function(
     for(i_samp in 1:ncol(dosages)) {
         samp <- colnames(dosages)[i_samp]
         ## first, get DS if it exists
-        a <- strsplit(as.character(vcf[, i_col]), ":")
+        a <- strsplit(as.character(vcf[, 9 + i_samp]), ":")
         for(i_snp in 1:nrow(vcf)) {
             b <- a[[i_snp]]
             x1 <- ds_spot[[i_snp]]

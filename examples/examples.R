@@ -51,6 +51,7 @@ inputBundleBlockSize <- NA
 mouse_datadir <- file.path(getwd(), "test-data/mouse_data/")
 mouse_resultsdir <- file.path(getwd(), "test-results/mouse_tests/")
 human_datadir <- file.path(getwd(), "test-data/human_data/")
+human_matched_to_reference_datadir <- file.path(getwd(), "test-data/human_data_matched_to_reference/")
 human_resultsdir <- file.path(getwd(), "test-results/human_tests/")
 system(paste0("mkdir -p ", mouse_datadir))
 system(paste0("mkdir -p ", mouse_resultsdir))
@@ -74,7 +75,6 @@ human_nGen <- 4 * 20000 / human_K
 human_reference_sample_file <- paste0(human_datadir, "1000GP_Phase3.sample")
 human_reference_legend_file <- paste0(human_datadir, "1000GP_Phase3_chr20.legend.gz")
 human_reference_haplotype_file <- paste0(human_datadir, "1000GP_Phase3_chr20.hap.gz")
-
 
 ###
 ### Section B - List of examples
@@ -148,6 +148,11 @@ for(file in files) {
     get_and_untar_if_tgz_file(file)
 }
 
+## Get example of human data with reference data at exactly the same sites
+system(paste0("mkdir -p ", human_matched_to_reference_datadir))
+setwd(human_matched_to_reference_datadir)
+get_and_untar_if_tgz_file("STITCH_human_reference_example_2017_05_24.tgz")
+
 
 ## Get mouse reference genome - need the reference genome to work with CRAM files
 setwd(mouse_datadir)
@@ -158,10 +163,10 @@ if (file.exists("mm10_2016_10_02.fa") == FALSE | file.exists("mm10_2016_10_02.fa
 }
 
 
-
 ###
 ### Section D - Mouse Examples
 ###
+
 
 
 
@@ -405,3 +410,31 @@ STITCH(
   shuffleHaplotypeIterations = NA,
   refillIterations = NA,
   genfile = human_genfile, posfile = human_posfile, K = human_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = human_nGen)
+
+
+# Human example 3 - Run with reference panel with no updating
+outputdir <- paste0(human_resultsdir, "matched_to_ref_panel/")
+system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
+system(paste0("rsync -a ", human_matched_to_reference_datadir, "/* ", outputdir))
+human_matched_to_reference_genfile <- paste0(human_matched_to_reference_datadir, "gen_sequencing.intersect.txt")
+human_matched_to_reference_posfile <- paste0(human_matched_to_reference_datadir, "pos.intersect.txt")
+human_matched_to_reference_reference_legend_file <- paste0(human_matched_to_reference_datadir, "1000GP_Phase3_20.1000000.1100000.legend.gz")
+human_matched_to_reference_reference_haplotype_file <- paste0(human_matched_to_reference_datadir, "1000GP_Phase3_20.1000000.1100000.hap.gz")
+STITCH(
+  outputdir = outputdir,
+  method = "diploid",
+  originalRegionName = "20.1000000.1100000",
+  regenerateInput = FALSE,
+  regionStart = 1000000,
+  regionEnd = 1100000,
+  buffer = 10000,
+  niterations = 1,
+  chr = "20",
+  inputBundleBlockSize = 100,
+  reference_populations = c("CHB", "CHS", "CHD"),
+  reference_haplotype_file = human_matched_to_reference_reference_haplotype_file,
+  reference_sample_file = human_reference_sample_file,
+  reference_legend_file = human_matched_to_reference_reference_legend_file,
+  shuffleHaplotypeIterations = NA,
+  refillIterations = NA,
+  genfile = human_matched_to_reference_genfile, posfile = human_matched_to_reference_posfile, K = human_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = human_nGen)

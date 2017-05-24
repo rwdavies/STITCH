@@ -1,13 +1,14 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.3.5__**
-Release date: April 12, 2017
+**__Current Version: 1.3.6__**
+Release date: May 24, 2017
 
 Changes in latest version
 
-1. Throw an error if there are problems initializing directories
-2. Better error messages for missing files
-3. Change downsample behaviour to require no more than downsampleToCov at all SNPs for a sample and not just lead SNPs in a read
+1. Allow very strict imputation from reference panels with niterations=1
+2. Fix error message printing for files missing RG bam header tag
+3. Fix bug when parsing read with cigarString *
+4. Require SM entry in RG tag
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 

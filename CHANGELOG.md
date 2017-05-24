@@ -1,3 +1,8 @@
+* v1.3.6
+	* Allow very strict imputation from reference panels with niterations=1
+	* Fix error message printing for files missing RG bam header tag
+	* Fix bug when parsing read with cigarString *
+	* Require SM entry in RG tag
 * v1.3.5
 	* Throw an error if there are problems initializing directories
 	* Better error messages for missing files
