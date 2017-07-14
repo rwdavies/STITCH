@@ -1,4 +1,4 @@
-run_acceptance_tests <- FALSE
+run_acceptance_tests <- TRUE
 
 n_snps <- 5
 chr <- 10
