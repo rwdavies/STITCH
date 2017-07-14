@@ -5262,7 +5262,7 @@ generate_hwe_on_counts <- function(
         hwe_out <- array(NA, i[2] - i[1] + 1)
         ## werwerwer
         for(j in i[1]:i[2]) {
-            hwe_out[j - i[1] + 1] <- calculate_hwe_p(hweCount[j, ])
+            hwe_out[j - i[1] + 1] <- rcpp_calculate_hwe_p(hweCount[j, ])
         }
         return(hwe_out)
         ##return(apply(hweCount[i[1]:i[2], , drop = FALSE], 1, calculate_hwe_p))
