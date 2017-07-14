@@ -5179,62 +5179,66 @@ getBetterSwitchesSimple <- function(
 calculate_hwe_p <- function(x) {
   #x <- c(100,50,10)
 
-  if (x[3]>x[1])
-    x <- x[c(3,2,1)]
+    if (x[3]>x[1])
+        x <- x[c(3,2,1)]
 
-  nAA <- x[1] # individuals
-  nAB <- x[2] # individuals
-  nBB <- x[3] # individuals
-  nA <- nAA * 2 + nAB # number of copies of A allele
-  nB <- nBB * 2 + nAB # number of copies of B allele
-  n <- nAA + nAB + nBB # number of (diploid) individuals
+    nAA <- x[1] # individuals
+    nAB <- x[2] # individuals
+    nBB <- x[3] # individuals
+    nA <- nAA * 2 + nAB # number of copies of A allele
+    nB <- nBB * 2 + nAB # number of copies of B allele
+    n <- nAA + nAB + nBB # number of (diploid) individuals
 
-  min_het <- 0
-  max_het <- nAB + 2 * min(nAA, nBB)
+    min_het <- 0
+    max_het <- nAB + 2 * min(nAA, nBB)
 
-  # maximum-ish value
-  mid <- floor((nA * nB) / ((nA + nB)))
-  if (is.na(mid))
-    mid <- 0
-  # make odd if it needs to be
-  if ((nA%%2) != (mid%%2))
-    mid <- mid + 1
+    ## maximum-ish value
+    mid <- floor((nA * nB) / ((nA + nB)))
+    if (is.na(mid))
+        mid <- 0
+    ## make odd if it needs to be
+    if ((nA%%2) != (mid%%2))
+        mid <- mid + 1
 
-  # determine a mid point
-  probs <- array(0, max_het + 1) # note - this is 0-based
-  probs[mid + 1] <- 1
-
-  # use recurrence relation - going down
-  n_het <- mid
-  n_hom_alt <- (nBB * 2 + nAB - n_het) / 2
-  n_hom_ref <- (n - n_het - n_hom_alt)
-  if ((mid - 2) >= min_het) {
-    for(het in seq(mid - 2, min_het, -2)) {
-      probs[het + 1] <- probs[het + 3] *
-        n_het * (n_het-1) / (4 * (n_hom_ref + 1) * (n_hom_alt + 1))
-      n_het <- n_het - 2
-      n_hom_ref <- n_hom_ref + 1
-      n_hom_alt <- n_hom_alt + 1
+    ## determine a mid point
+    probs <- array(0, max_het + 1) # note - this is 0-based
+    probs[mid + 1] <- 1
+    
+    ## use recurrence relation - going down
+    n_het <- mid
+    n_hom_alt <- (nBB * 2 + nAB - n_het) / 2
+    n_hom_ref <- (n - n_het - n_hom_alt)
+    if ((mid - 2) >= min_het) {
+        for (het in seq(mid - 2, min_het, -2)) {
+            probs[het + 1] <- probs[het + 3] *
+                n_het * (n_het-1) / (4 * (n_hom_ref + 1) * (n_hom_alt + 1))
+            n_het <- n_het - 2
+            n_hom_ref <- n_hom_ref + 1
+            n_hom_alt <- n_hom_alt + 1
+        }
     }
-  }
 
-  # use recurrence relationship - going up
-  n_het <- mid
-  n_hom_alt <- (nBB * 2 + nAB - n_het) / 2
-  n_hom_ref <- (n - n_het - n_hom_alt)
-  if ((mid + 2) <= max_het) {
-    for(het in seq(mid + 2, max_het, 2)) {
-      probs[het + 1] <- probs[het - 1] *
-        (4 * n_hom_ref * n_hom_alt) / ( (n_het + 2) * (n_het + 1))
-      n_het <- n_het + 2
-      n_hom_ref <- n_hom_ref - 1
-      n_hom_alt <- n_hom_alt - 1
+   
+    ## use recurrence relationship - going up
+    n_het <- mid
+    n_hom_alt <- (nBB * 2 + nAB - n_het) / 2
+    n_hom_ref <- (n - n_het - n_hom_alt)
+    if ((mid + 2) <= max_het) {
+        for (het in seq(mid + 2, max_het, 2)) {
+            probs[het + 1] <- probs[het - 1] *
+                (4 * n_hom_ref * n_hom_alt) / ( (n_het + 2) * (n_het + 1))
+            n_het <- n_het + 2
+            n_hom_ref <- n_hom_ref - 1
+            n_hom_alt <- n_hom_alt - 1
+        }
     }
-  }
 
-  all_probs <- probs / sum(probs)
-  p <- min(1, sum(all_probs[all_probs <= all_probs[nAB + 1]]))
-  return(p)
+    
+    all_probs <- probs / sum(probs)
+    p2 <- sum(all_probs[all_probs <= all_probs[nAB + 1]])
+    p <- min(1, p2)
+
+    return(p)
 }
 
 

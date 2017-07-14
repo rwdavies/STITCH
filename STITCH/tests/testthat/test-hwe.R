@@ -1,14 +1,21 @@
-## am here
-## write tests that
-## test for some arbitrary numbers c(0, 50, 100), c(100, 50, 0), c(0, 5, 10), c(10, 5, 0)
-## as well as edge cases, c(0, 0, 0), c(0, 0, 1), etc
-
 test_that("HWE in C++ is the same as in R", {
 
-    ## have confirmed this fails
     mat <- rbind(
         c(0, 0, 0),
-        c(0, 0, 1)
+        c(0, 0, 1),
+        c(0, 1, 0),
+        c(1, 0, 0),
+        c(0, 1, 1),
+        c(1, 0, 1),
+        c(1, 1, 0),
+        c(1, 1, 1),
+        c(5, 10, 20),
+        c(20, 10, 5),
+        c(10000, 100, 10),
+        c(10000, 101, 10),        
+        c(10000, 102, 10),
+        c(10000, 103, 10),        
+        c(10000, 10000, 10)        
     )
     apply(mat, 1, function(x) {
         expect_equal(

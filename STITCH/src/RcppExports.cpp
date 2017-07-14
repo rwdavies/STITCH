@@ -195,7 +195,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_calculate_hwe_p
-double rcpp_calculate_hwe_p(const Rcpp::IntegerVector reference_hap);
+Rcpp::NumericVector rcpp_calculate_hwe_p(const Rcpp::IntegerVector reference_hap);
 RcppExport SEXP STITCH_rcpp_calculate_hwe_p(SEXP reference_hapSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
