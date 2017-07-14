@@ -310,23 +310,24 @@ make_acceptance_test_data_package <- function(
         quote = FALSE
     )
 
-    return(list(
-        bamlist = bamlist,
-        cramlist = cramlist,
-        ref = ref,
-        posfile = posfile,
-        genfile = genfile,
-        bamlist = bamlist,
-        chr = chr,
-        outputdir = outputdir,
-        phase = phase,
-        L = as.integer(pos[, 2]),
-        pos = pos,
-        sample_names = sample_names,
-        bam_files = bam_files,
-        T = as.integer(nrow(pos)),
-        phasefile = phasefile
-    ))
+    return(
+        list(
+            bamlist = bamlist,
+            cramlist = cramlist,
+            ref = ref,
+            posfile = posfile,
+            genfile = genfile,
+            chr = chr,
+            outputdir = outputdir,
+            phase = phase,
+            L = as.integer(pos[, 2]),
+            pos = pos,
+            sample_names = sample_names,
+            bam_files = bam_files,
+            T = as.integer(nrow(pos)),
+            phasefile = phasefile
+        )
+    )
 
 }
 

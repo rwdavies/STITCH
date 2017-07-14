@@ -149,6 +149,7 @@ STITCH <- function(
     ##
     outputInputGen <- FALSE # whether to output input in gen format
     startIterations <- 0 # how many start iterations to run
+
     windowSNPs <- 5000 # if doing the window start, how many SNPs to loop over
     if(method=="diploid")
         restartIterations <- NA
@@ -210,7 +211,7 @@ STITCH <- function(
     ## print out date
     ##
     date <- date()
-    print(paste(c("Program start - ",date),collapse=""))
+    print_message("Program start")
     file <- file.path(outputdir, "RData", paste0("start.", regionName ,".RData"))
     if(generateInputOnly==FALSE)
         save(date, file = file)
@@ -337,20 +338,18 @@ STITCH <- function(
     ##
     ## if we want, re-intersect with new set of positions
     ##
-    if(is.na(subsetSNPsfile)==FALSE & subsetSNPsfile!="NA")
-    {
-        print(paste("Subsetting SNPs from file ",subsetSNPsfile,sep=""))
+    if(is.na(subsetSNPsfile)==FALSE & subsetSNPsfile!="NA") {
+        print_message(paste0("Subsetting SNPs from file ", subsetSNPsfile))
         ## load in positions
         out=subsetSNPsFunction(N=N,subsetSNPsfile=subsetSNPsfile,regionName=regionName,tempdir=tempdir,L=L,environment=environment,nCores=nCores,outputdir=outputdir)
-        print(paste("Back to main ",subsetSNPsfile,sep=""))
+        print_message(paste0("Back to main ", subsetSNPsfile))
         keep=out$keep
         T=as.integer(sum(keep))
         L=L[keep]
         pos=pos[keep,]
         gen=gen[keep,]
-        print(paste("Done subsetting section ",subsetSNPsfile,sep=""))
+        print_message(paste0("Done subsetting section ",subsetSNPsfile))
         save(T,L,keep,pos,gen,file=paste(outputdir,"debug/files.RData",sep=""))
-        print(T)
     }
 
 
@@ -404,10 +403,10 @@ STITCH <- function(
     ##
     ## toggle read aware
     ##
-    if(readAware==FALSE) {
-        print("Split reads")
+    if (readAware == FALSE) {
+        print_message("Split reads")
         splitReadsCompletely(N=N,nCores=nCores,tempdir=tempdir,regionName=regionName,environment=environment)
-        print("Done splitting reads")
+        print_message("Done splitting reads")
     }
 
 
@@ -453,11 +452,11 @@ STITCH <- function(
     ##
     ## run EM algorithm here
     ##
-    print(paste("Begin EM - ", date()))
+    print_message("Begin EM")
     date <- date()
     save(date, file = file.path(outputdir, "RData", paste0("startEM.", regionName, ".RData")))
-    print(paste0("Number of samples - ", N))
-    print(paste0("Number of SNPs - ", T))
+    print_message(paste0("Number of samples - ", N))
+    print_message(paste0("Number of SNPs - ", T))
     ## actually run now
     iteration <- max(0, startIterations)
     while(iteration < niterations) {
@@ -468,7 +467,7 @@ STITCH <- function(
         if(is.na(switchModelIteration)==FALSE) {
             if(iteration==switchModelIteration) {
                 method="diploid"
-                print(paste("Switching from pseudoHaploid to diploid - iteration ",iteration," - ",date(),sep=""))
+                print_message(paste0("Switching from pseudoHaploid to diploid - iteration ",iteration))
             }
         }
         ##
@@ -512,7 +511,7 @@ STITCH <- function(
     ## build final VCF from pieces
     ##
     write_vcf_after_EM(vcf_output_name = vcf_output_name, outputdir = outputdir, regionName = regionName, sampleNames = sampleNames, tempdir = tempdir, nCores = nCores, info = info, hwe = hwe, estimatedAlleleFrequency = estimatedAlleleFrequency, pos = pos, N = N, outputBlockSize = outputBlockSize, reference_panel_SNPs = reference_panel_SNPs, method = method)
-    print(paste("Done EM and outputting - ",date()))
+    print_message("Done EM and outputting")
 
 
     ##
@@ -548,7 +547,7 @@ STITCH <- function(
         ##
         ## shrink the VCF
         ##
-        print(paste0("Remove buffer from VCF - ",date()))
+        print_message("Remove buffer from VCF")
         file <- get_output_vcf(vcf_output_name,  outputdir, regionName)
         file_temp <- paste0(file, ".temp")
         command <- paste0("gunzip -c ",file," | cat | awk '{if(substr($0, 1, 1)==",'"#"'," || ( $2>=", regionStart, " && $2<=", regionEnd, ")) {print $0}}' | bgzip -c > ",file_temp)
@@ -563,7 +562,7 @@ STITCH <- function(
     ##
     ## save various important objects to disk
     ##
-    print(paste0("Save RData objects to disk - ",date()))
+    print_message("Save RData objects to disk")
     save(info, file = file.path(outputdir, "RData", paste0("info.",regionName,".RData")))
     save(hwe, file = file.path(outputdir, "RData", paste0("hwe.",regionName,".RData")))
     passQC <- info > 0.4 & hwe > 1e-6 # one interpretation of passQC
@@ -592,7 +591,7 @@ STITCH <- function(
         )
     )
     save(
-        nCores, N, T, chr, K, niterations,
+        nCores, N, T, chr, K, niterations, nGen,
         file = file.path(
             outputdir, "RData", paste0("EMparameters.", regionName, ".RData")
         )
@@ -610,7 +609,7 @@ STITCH <- function(
     ##
     ## do some plotting
     ##
-    print(paste0("Make plots - ", date()))
+    print_message("Make plots")
     plotMetricsForPostImputationQC(iSample=NULL,highCovList=NULL,gen=gen, gen_imp = gen_imp, alleleCount=alleleCount,chr=chr,L=L,estimatedAlleleFrequency=estimatedAlleleFrequency,info=info,outputdir=outputdir,hwe=hwe,regionName=regionName)
     ##
     ## plot hapProbs sum - should tell what states are being used
@@ -629,7 +628,7 @@ STITCH <- function(
     ##
     ## clean up and terminate
     ##
-    print(paste0("Clean up and end - ",date()))
+    print_message("Clean up and end")
     warnings()
     ## remove things from tempdir
     if(keepTempDir==FALSE) {
@@ -639,7 +638,7 @@ STITCH <- function(
     }
 
     date=date()
-    print(paste(c("Program done - ",date),collapse=""))
+    print_message("Program done")
     save(date, file = file.path(outputdir, "RData", paste0("end.",regionName,".RData")))
 
     return(NULL)
@@ -873,7 +872,8 @@ validate_hapProb <- function(initial_min_hapProb, initial_max_hapProb) {
 initialize_directories <- function(
     tempdir,
     keepTempDir,
-    outputdir
+    outputdir,
+    STITCH_again = FALSE
 ) {
     ## not ideal - overriding input parameter
     ## also not ideal - same name as function
@@ -882,7 +882,7 @@ initialize_directories <- function(
     }
     tempdir <- paste0(tempdir, "/", paste(toupper(letters[sample(26,10,replace=TRUE)]),collapse=""), "/")
     if (keepTempDir == TRUE)
-        print(paste0("tempdir=", tempdir))
+        print_message(paste0("tempdir = ", tempdir))
     dirs_to_create <- c(
         tempdir,
         outputdir,
@@ -891,6 +891,11 @@ initialize_directories <- function(
         file.path(outputdir, "plots"),
         file.path(outputdir, "input")
     )
+    if (STITCH_again)
+        dirs_to_create <- c(
+            dirs_to_create,
+            file.path(outputdir, "input_again")
+        )
     for(dir in dirs_to_create) {
         dir.create(dir, showWarnings = FALSE)
         ## throw error if there was a failure to create the folder
@@ -903,6 +908,8 @@ initialize_directories <- function(
         }
     }
     inputdir <- file.path(outputdir, "input")
+    if (STITCH_again)
+        inputdir <- file.path(outputdir, "input_again")        
     return(
         list(
             tempdir = tempdir,
@@ -965,7 +972,7 @@ remove_buffer_from_variables <- function(
     eHapsUpdate_numer = NULL,
     eHapsUpdate_denom = NULL
 ) {
-    print(paste0("Remove buffer region from output - ",date()))
+    print_message("Remove buffer region from output")
     ## determine where the region is
     inRegion2 <- L >= regionStart & L <= regionEnd
     inRegion2L <- which(inRegion2)
@@ -1181,7 +1188,7 @@ get_and_validate_pos_gen_and_phase <- function(
     verbose = FALSE
 ) {
     if (verbose)
-        print(paste0("Get and validate pos and gen - ", date()))
+        print_message("Get and validate pos and gen")
     pos <- get_and_validate_pos(posfile, chr)
     gen <- get_and_validate_gen(genfile)
     phase <- get_and_validate_phase(phasefile)
@@ -1202,7 +1209,7 @@ get_and_validate_pos_gen_and_phase <- function(
     L <- as.integer(as.character(pos[, "POS"]))
     T <- as.integer(length(L))
     if (verbose)
-        print(paste0("Done get and validate pos and gen - ", date()))
+        print_message("Done get and validate pos and gen")
     return(
         list(
             pos = pos,
@@ -1419,15 +1426,15 @@ compare_reference_haps_against_alleleCount <- function(
             cor(alleleCount[w, 3], rowSums(reference_haps[w, ]), use = "pairwise.complete.obs")
         )
 
-    print(paste0("The following correlations are observed between allele frequencies estimated from the sequencing pileup and the reference haplotype counts:"))
-    print(paste0(round(all_cor, 3), " for all SNPs"))
-    print(paste0(round(high_maf_cor, 3), " for > 5% MAF SNPs"))
-    print(paste0(round(low_maf_cor, 3), " for < 5% MAF SNPs"))
+    print_message(paste0("The following correlations are observed between allele frequencies estimated from the sequencing pileup and the reference haplotype counts:"))
+    print_message(paste0(round(all_cor, 3), " for all SNPs"))
+    print_message(paste0(round(high_maf_cor, 3), " for > 5% MAF SNPs"))
+    print_message(paste0(round(low_maf_cor, 3), " for < 5% MAF SNPs"))
 
     N_haps <- ncol(reference_haps)
 
     out_plot <- file.path(outputdir, "plots", paste0("alleleFrequency_pileup_vs_reference_haplotypes.", regionName, ".png"))
-    print(paste0("A plot of allele frequencies from sequencing pileup vs reference haplotype counts is at:", out_plot))
+    print_message(paste0("A plot of allele frequencies from sequencing pileup vs reference haplotype counts is at:", out_plot))
     png(out_plot, height = 500, width = 500)
     plot(alleleCount[, 3], rowSums(reference_haps) / N_haps, xlab = "Allele frequency from pileup", ylab = "Allele frequency from reference haplotypes")
     dev.off()
@@ -1472,7 +1479,7 @@ initialize_parameters <- function(
   niterations
 ) {
 
-    print(paste0("Begin parameter initialization, ", date()))
+    print_message("Begin parameter initialization")
     a1 <- 0
     b1 <- 1
     eHapsCurrent <- matrix(a1+(b1-a1)*runif(T*K),ncol=K)
@@ -1486,7 +1493,7 @@ initialize_parameters <- function(
     reference_panel_SNPs <- array(FALSE, T)
 
     if (reference_haplotype_file != "") {
-        print(paste0("Begin initializing paramters using reference haplotypes, ", date()))
+        print_message("Begin initializing paramters using reference haplotypes")
 
         ## get reference haplotypes matched to posfile
         ## NA's where there are no match
@@ -1516,12 +1523,12 @@ initialize_parameters <- function(
 
         if (K > ncol(reference_haps)) {
             ## fill in rest with noise
-            print(paste0("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start"))
+            print_message("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start")
             w <- is.na(eHapsCurrent[, 1])
             eHapsCurrent[w, 1:ncol(reference_haps)] <- reference_haps[w, ]
 
         } else if (K == ncol(reference_haps)) {
-            print(paste0("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes"))
+            print_message("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes")
             ## shrink them from 0 -> e and 1 -> (1-e)
             e <- 0.001
             reference_haps[reference_haps == 0] <- e
@@ -1586,10 +1593,10 @@ initialize_parameters <- function(
             }
 
         }
-        print(paste0("Done initializing paramters using reference haplotypes, ", date()))
+        print_message("Done initializing paramters using reference haplotypes")
     }
 
-    print(paste0("Done parameter initialization, ", date()))
+    print_message("Done parameter initialization")
 
     return(
         list(
@@ -1639,9 +1646,9 @@ run_EM_on_reference_sample_reads <- function(
   reference_phred
 ) {
 
-  print(paste0("Begin EM using reference haplotypes, ", date()))
+  print_message("Begin EM using reference haplotypes")
   for(iteration in 1:reference_iterations) {
-    print(paste0("Reference iteration = ", iteration, ", ", date()))
+    print_message(paste0("Reference iteration = ", iteration))
     out <- single_reference_iteration(N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, T = T, K = K, L = L, nGen  = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent)
     sigmaCurrent <- out$sigmaSum
     eHapsCurrent <- out$gammaSum
@@ -1650,7 +1657,7 @@ run_EM_on_reference_sample_reads <- function(
     priorCurrent <- out$priorSum
   }
 
-  print(paste0("Done EM using reference haplotypes, ", date()))
+  print_message("Done EM using reference haplotypes")
 
   return(
     list(
@@ -1766,7 +1773,7 @@ single_reference_iteration <- function(
 
     error_check <- sapply(out2, class) == "try-error"
     if (sum(error_check) > 0) {
-        print(out[[which(error_check)[1]]])
+        print_message(out[[which(error_check)[1]]])
         stop("There has been an error generating the input. Please see error message above")
     }
 
@@ -1818,7 +1825,7 @@ make_fake_sample_reads_from_haplotypes <- function(
     regionName
 ) {
 
-    print(paste0("Begin convert reference haplotypes to internal input format, ", date()))
+    print_message(paste0("Begin convert reference haplotypes to internal input format"))
 
     sampleRanges <- getSampleRange(N_haps, nCores)
     non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
@@ -1855,11 +1862,11 @@ make_fake_sample_reads_from_haplotypes <- function(
 
     error_check <- sapply(out, class) == "try-error"
     if (sum(error_check) > 0) {
-        print(out[[which(error_check)[1]]])
+        print_message(out[[which(error_check)[1]]])
         stop("There has been an error generating the input. Please see error message above")
     }
 
-    print(paste0("End convert reference haplotypes to internal input format, ", date()))
+    print_message("End convert reference haplotypes to internal input format")
 
 }
 
@@ -1903,7 +1910,7 @@ get_reference_colClasses <- function(
                 )
             ) == FALSE
         )
-        print(paste0("Keeping ", length(keep_samples) / 2, " out of ", nrow(reference_samples), " reference samples from populations:", paste0(reference_populations, collapse = ",")))
+        print_message(paste0("Keeping ", length(keep_samples) / 2, " out of ", nrow(reference_samples), " reference samples from populations:", paste0(reference_populations, collapse = ",")))
         colClasses <- rep("NULL", nrow(reference_samples) * 2)
         colClasses[keep_samples] <- "integer"
     }
@@ -1917,10 +1924,10 @@ print_and_validate_reference_snp_stats <- function(
     both_snps
 ) {
     ## print out stats
-    print(paste0("In the region to be imputed plus buffer there are the following number of SNPs:"))
-    print(paste0(length(pos_snps), " from the posfile"))
-    print(paste0(length(legend_snps), " from the reference haplotypes"))
-    print(paste0(length(both_snps), " in the intersection of the posfile and the reference haplotypes"))
+    print_message(paste0("In the region to be imputed plus buffer there are the following number of SNPs:"))
+    print_message(paste0(length(pos_snps), " from the posfile"))
+    print_message(paste0(length(legend_snps), " from the reference haplotypes"))
+    print_message(paste0(length(both_snps), " in the intersection of the posfile and the reference haplotypes"))
     if (length(both_snps) == 0)
         stop("There are 0 SNPs that intersect between the posfile and the reference haplotypes. Please troubleshoot to see if there is an error, or re-run without reference haplotypes")
 }
@@ -1991,7 +1998,7 @@ extract_validate_and_load_haplotypes <- function(
     niterations
 ) {
 
-    print(paste0("Extract reference haplotypes, ",date()))
+    print_message("Extract reference haplotypes")
     temp_haps_file <- paste0(tempdir, ".haps.", regionName, ".txt.gz")
     temp_extract_file <- paste0(tempdir, ".extract.", regionName, ".txt")
 
@@ -2029,7 +2036,7 @@ extract_validate_and_load_haplotypes <- function(
         )
     )
 
-    print(paste0("Load reference haplotypes, ",date()))
+    print_message("Load reference haplotypes")
     haps <- read.table(
         temp_haps_file,
         colClasses = colClasses,
@@ -2060,7 +2067,7 @@ remove_NA_columns_from_haps <- function(haps) {
     if (sum(na_sum == 0) == 0)
         stop("There are no viable haplotypes from the reference samples for the region of interest")
     if (sum(na_sum == nrow(na_sum)) > 0)
-        print(paste0("Removing ", X, " out of ", Y, " male haplotypes from the reference haplotypes", date()))
+        print_message(paste0("Removing ", X, " out of ", Y, " male haplotypes from the reference haplotypes"))
     haps <- haps[, na_sum == 0, drop = FALSE]
     return(haps)
 }
@@ -2081,13 +2088,13 @@ get_haplotypes_from_reference <- function(
   niterations = 40
 ) {
 
-    print(paste0("Begin get haplotypes from reference, ", date()))
+    print_message("Begin get haplotypes from reference")
 
-    print(paste0("Load and validate reference legend header, ",date()))
+    print_message("Load and validate reference legend header")
     legend_header <- as.character(unlist(read.table(reference_legend_file, nrow = 1, sep = " ")))
     validate_legend_header(legend_header)
 
-    print(paste0("Load and validate reference legend, ",date()))
+    print_message("Load and validate reference legend")
     colClasses <- get_reference_colClasses(
         reference_sample_file,
         reference_populations,
@@ -2117,8 +2124,8 @@ get_haplotypes_from_reference <- function(
         niterations
     )
 
-    print(paste0("Succesfully extracted ", ncol(haps), " haplotypes from reference data, ", date()))
-    print(paste0("End get haplotypes from reference, ", date()))
+    print_message(paste0("Succesfully extracted ", ncol(haps), " haplotypes from reference data"))
+    print_message("End get haplotypes from reference")
 
     return(haps)
 
@@ -2205,7 +2212,7 @@ downsample_the_samples <- function(
   environment
 ) {
 
-  print(paste0("Begin downsample samples to ",100 * downsampleSamples , "% of the original numbers, ", date()))
+  print_message(paste0("Begin downsample samples to ",100 * downsampleSamples , "% of the original numbers"))
   keep <- array(FALSE,N)
   keelList <- NULL
   # keep - either those on a list, or the high coverage
@@ -2298,7 +2305,7 @@ downsample_the_samples <- function(
   }
   error_check <- sapply(out2, class) == "try-error"
   if (sum(error_check) > 0) {
-    print(out2[[which(error_check)[1]]])
+    print_message(out2[[which(error_check)[1]]])
     stop("There has been an error downsampling the samples. Please see error message above")
   }
 
@@ -2326,7 +2333,7 @@ downsample_the_samples <- function(
     )
   )
 
-  print(paste0("End downsample samples, ", date()))
+  print_message("End downsample samples")
 
   return(
     list(
@@ -2440,7 +2447,7 @@ rebundle_input <- function(
   environment
 ) {
 
-  print(paste0("Rebundle inputs, ", date()))
+  print_message("Rebundle inputs")
   out <- get_rebundled_files(inputdir, regionName)
   files <- out$files
   ranges <- out$ranges
@@ -2461,8 +2468,8 @@ rebundle_input <- function(
   })
   }))
   if (sum(files_do_not_exist) ==0) {
-    print(paste0("The previously bundled files are the right size. No need to rebundle"))
-    print(paste0("Done rebundling inputs, ", date()))
+    print_message("The previously bundled files are the right size. No need to rebundle")
+    print_message("Done rebundling inputs")
     return(NULL)
   }
 
@@ -2520,11 +2527,11 @@ rebundle_input <- function(
   }
   error_check <- sapply(out2, class) == "try-error"
   if (sum(error_check) > 0) {
-    print(out2[[which(error_check)[1]]])
+    print_message(out2[[which(error_check)[1]]])
     stop("There has been an error rebundling the input. Please see error message above")
   }
 
-  print(paste0("Done rebundling inputs, ", date()))
+  print_message("Done rebundling inputs")
   return(NULL)
 }
 
@@ -2557,10 +2564,10 @@ generate_input <- function(
   nCores,
   save_sampleReadsInfo
 ) {
-    print(paste0("Generate inputs - ", date()))
+    print_message("Generate inputs")
     chrLength <- NA
     if (is.na(chrStart)) {
-        print(paste0("Get chromosome length - ", date()))
+        print_message("Get chromosome length")
         chrLength <- get_chromosome_length(iBam = 1, bam_files, cram_files, chr)
     }
     sampleRanges <- getSampleRange(N = N, nCores = nCores)
@@ -2573,10 +2580,10 @@ generate_input <- function(
         stopCluster(cl)
     }
     if (length(unlist(out)) > 0)  {
-        print(out[[which(sapply(out, length) > 0)[1]]])
+        print_message(out[[which(sapply(out, length) > 0)[1]]])
         stop("There has been an error generating the input. Please see error message above")
     }
-    print(paste0("Done generating inputs - ", date()))
+    print_message("Done generating inputs")
     return(NULL)
 }
 
@@ -2608,7 +2615,7 @@ loadBamAndConvert_across_a_range <- function(
   chrLength,
   save_sampleReadsInfo
 ) {
-  #print(paste0("Convert inputs for iCore=", iCore, ", ", date()))
+  #print_message(paste0("Convert inputs for iCore=", iCore))
   sampleRange <- sampleRanges[[iCore]]
   for(iBam in sampleRange[1]:sampleRange[2]) {
     loadBamAndConvert(iBam = iBam, L=L,pos=pos,T=T,bam_files = bam_files,cram_files = cram_files,reference=reference,iSizeUpperLimit=iSizeUpperLimit,bqFilter=bqFilter,chr=chr,N=N,downsampleToCov=downsampleToCov,sampleNames=sampleNames,inputdir=inputdir,useSoftClippedBases=useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, chrLength = chrLength, save_sampleReadsInfo = save_sampleReadsInfo)
@@ -2625,7 +2632,7 @@ loadBamAndConvert_across_a_range <- function(
       }
     }
   }
-  #print(paste0("Done converting inputs for iCore=", iCore, ", ", date()))
+  #print_message(paste0("Done converting inputs for iCore=", iCore))
   return(NULL)
 }
 
@@ -2652,7 +2659,7 @@ bundle_inputs_after_generation <- function(
   y <- bundling_info$list[[iC]][[iB]]
   s <- y[1]
   e <- y[2]
-  #print(paste0("Bundle what=", what, ", iBam=", iBam, ", iCore=", iC, ", iBundle=", iB, ", samples=", s, "-", e, ", ", date()))
+  #print_message(paste0("Bundle what=", what, ", iBam=", iBam, ", iCore=", iC, ", iBundle=", iB, ", samples=", s, "-", e))
   # now, get these samples and write to disk
   samples_in_core_bundle <- s:e
   bundledSampleObject <- lapply(
@@ -2864,7 +2871,7 @@ get_sample_names_from_bam_or_cram_files <- function(
 ) {
 
     if (verbose)
-        print(paste0("Get ", file_type, " sample names - ", date()))
+        print_message(paste0("Get ", file_type, " sample names"))
 
     for(file in files)
         if (file.exists(file) == FALSE)
@@ -2879,7 +2886,9 @@ get_sample_names_from_bam_or_cram_files <- function(
     sampleNames <- as.character(unlist(sampleNames))
 
     if (verbose)
-        print(paste0("Done getting ", file_type, " sample names - ", date()))
+        print_message(paste0(
+            "Done getting ", file_type, " sample names"
+        ))
 
     return(sampleNames)
 }
@@ -2924,7 +2933,9 @@ refillSimple <- function(hapSum,T,K,eHapsCurrent,N) {
             }
         }
     }
-    print(paste("Refill infrequently used haplotypes - ",round(100*sum(b==TRUE)/(nrow(b)*ncol(b)),1),"% of regions replaced",sep=""))
+    print_message(paste0(
+        "Refill infrequently used haplotypes - ",round(100*sum(b==TRUE)/(nrow(b)*ncol(b)),1),"% of regions replaced"
+    ))
     return(list(eHapsCurrent = eHapsCurrent))
 }
 
@@ -3064,7 +3075,7 @@ merge_reads_from_sampleReadsRaw <- function(
 ## if there are no reads, give the same some fake-ish reads
 ## anyway
 get_fake_sampleReads <- function(name, mess) {
-    print(
+    print_message(
         paste0(
             "WARNING - sample ", name, " ",
             mess, ". ",
@@ -3165,10 +3176,10 @@ loadBamAndConvert <- function(
         } else {
             what <- "CRAM"
         }
-        print(
+        print_message(
             paste0(
                 "Load and convert ", what, " ",
-                iBam, " of ", N , ", ", date()
+                iBam, " of ", N
             )
         )
     }
@@ -3424,7 +3435,7 @@ shrinkReads <- function(
 
     if(regenerateInput == TRUE | regionName == originalRegionName) {
 
-        print(paste0("Copying files onto tempdir, ", date()))
+        print_message("Copying files onto tempdir")
         if (is.na(inputBundleBlockSize)) {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
             command1 <- paste0(
@@ -3446,10 +3457,10 @@ shrinkReads <- function(
             command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " ", inputdir, " ", tempdir)
             system(command2)
         }
-        print(paste0("Done copying files onto tempdir, ", date()))
+        print_message("Done copying files onto tempdir")
     } else {
 
-        print(paste0("Begin shrink reads, ", date()))
+        print_message("Begin shrink reads")
         sampleRanges <- getSampleRange(N = N, nCores = nCores)
         if(environment == "server") {
             out <- mclapply(sampleRanges,FUN=shrinkReads_on_range, mc.cores=nCores, originalRegionName = originalRegionName, regionName = regionName, bundling_info = bundling_info, tempdir = tempdir, inputdir = inputdir, inRegionL = inRegionL)
@@ -3461,10 +3472,10 @@ shrinkReads <- function(
         }
         error_check <- sapply(out, class) == "try-error"
         if (sum(error_check) > 0) {
-            print(out[[which(error_check)[1]]])
+            print_message(out[[which(error_check)[1]]])
             stop("There has been an error generating the input. Please see error message above")
         }
-        print(paste0("End shrink reads, ", date()))
+        print_message("End shrink readsk")
 
     }
 
@@ -3716,7 +3727,11 @@ downsample <- function(
         }
         ## done!
         if (verbose)
-            print(paste0("WARNING - downsample sample ",sampleNames[iBam]," - ",sum(toRemove)," of ",length(sampleReads)," reads removed "))
+            warning(paste0(
+                "downsample sample ", sampleNames[iBam], " - ",
+                sum(toRemove), " of ", length(sampleReads),
+                " reads removed "
+            ))
         sampleReads <- sampleReads[toRemove == FALSE]
         sampleReadsInfo <- sampleReadsInfo[toRemove == FALSE, ]
     }
@@ -3815,7 +3830,7 @@ buildAlleleCount <- function(
     bundling_info
 ) {
     x3 <- getSampleRange(N = N, nCores = nCores)
-    print(paste0("Generate allele count, ", date()))
+    print_message("Generate allele count")
 
     if(environment=="server") {
         out2 <- mclapply(x3,mc.cores=nCores,FUN=buildAlleleCount_subfunction,T=T,tempdir=tempdir,regionName=regionName, bundling_info = bundling_info)
@@ -3828,7 +3843,7 @@ buildAlleleCount <- function(
 
     error_check <- sapply(out2, class) == "try-error"
     if (sum(error_check) > 0) {
-        print(out2[[which(error_check)[1]]])
+        print_message(out2[[which(error_check)[1]]])
         stop("There has been an error generating the input. Please see error message above")
     }
     alleleCount <- array(0,c(T,3))
@@ -3837,9 +3852,31 @@ buildAlleleCount <- function(
     }
     alleleCount[, 3] <- alleleCount[, 1] / alleleCount[, 2]
 
-    print(paste0("Quantiles across SNPs of per-sample depth of coverage"))
-    print(quantile(alleleCount[,2] / N, prob = c(0.05, 0.25, 0.5, 0.75, 0.95)))
-    print(paste0("Done generating allele count, ", date()))
+    print_message("Quantiles across SNPs of per-sample depth of coverage")
+    
+    prob <- c(0.05, 0.25, 0.5, 0.75, 0.95)    
+    x <- quantile(alleleCount[,2] / N, prob = prob)
+    ## this was surprisingly difficult!
+    ## *should* work
+    y <- max(nchar(round(x, 3)))
+    y2 <- format(round(x, 3), nsmall = 3)
+    z <- paste0(y2, collapse = "  ")
+    start_spaces <- nchar(y2[1]) - 5
+    start_spaces <- paste0(rep(" ", each = start_spaces), collapse = "")
+    print_message(
+        paste0(
+            start_spaces,
+            paste0(
+                format(round(prob, 2), nsmall = 2),
+                "%",
+                paste0(rep(" ", y - 3), collapse = ""),
+                collapse = ""
+            )
+        )
+    )
+    print_message(z)
+    
+    print_message("Done generating allele count")
 
     alleleCount[is.na(alleleCount[,3]),3] <- 0 # not sure why these would exist anymore
     return(alleleCount)
@@ -3898,7 +3935,7 @@ downsampleToFraction_a_range <- function(
 ### build allele count matrix from input RData files
 downsampleToFraction <- function(N,nCores,downsampleFraction,regionName,tempdir,environment, bundling_info)
 {
-  print(paste0("Begin downsampling reads, ",date()))
+  print_message("Begin downsampling reads")
   # do first loop
   sampleRanges <- getSampleRange(N = N, nCores = nCores)
   if(environment=="server")
@@ -3913,10 +3950,10 @@ downsampleToFraction <- function(N,nCores,downsampleFraction,regionName,tempdir,
   }
   error_check <- sapply(out2, class) == "try-error"
   if (sum(error_check) > 0) {
-    print(out2[[which(error_check)[1]]])
+    print_message(out2[[which(error_check)[1]]])
     stop("There has been an error downsampling the reads. Please see error message above")
   }
-  print(paste0("Done downsampling reads, ",date()))
+  print_message("Done downsampling reads")
   return(NULL)
 }
 
@@ -4060,7 +4097,7 @@ initialize_readProbs <- function(
   initial_min_hapProb,
   initial_max_hapProb
 ) {
-  print(paste0("Initialize readProbs, ", date()))
+  print_message("Initialize readProbs")
   sampleRanges <- getSampleRange(N = N, nCores = nCores)
   out <- mclapply(1:length(sampleRanges), mc.cores = nCores, function(iCore) {
     sampleRange <- sampleRanges[[iCore]]
@@ -4107,10 +4144,10 @@ initialize_readProbs <- function(
   })
   error_check <- sapply(out, class) == "try-error"
   if (sum(error_check) > 0) {
-    print(out[[which(error_check)[1]]])
+    print_message(out[[which(error_check)[1]]])
     stop("There has been an error generating the input. Please see error message above")
   }
-  print(paste0("Done initializing readProbs, ", date()))
+  print_message(paste0("Done initializing readProbs"))
   return(NULL)
 }
 
@@ -4202,6 +4239,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,T,priorCurren
     ## 2 - get update pieces
     ## 3 - if necessary add to output
     ##
+    
     whatToReturnOriginal=whatToReturn
     for(iSample in sampleRange[1]:sampleRange[2]) {
         ##
@@ -4506,11 +4544,11 @@ get_transMatRate <- function(method, sigmaCurrent) {
 }
 
 completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,alphaMatCurrent,sigmaCurrent,maxDifferenceBetweenReads,whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrent,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase
-    ) {
+) {
 
-    print(paste(c("Start of iteration ",iteration," - ",date()),collapse=""))
-    if(is.na(match(iteration,restartIterations))==FALSE  )
-        print(paste0("Restart read probabilities ", date()))
+    print_message(paste0("Start of iteration ", iteration))
+    if (is.na(match(iteration,restartIterations))==FALSE)
+        print_message("Restart read probabilities")
 
     ##
     ## initial set up based on iteration
@@ -4552,11 +4590,11 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     eHapsCurrent_t <- t(eHapsCurrent)
 
     if(environment=="server") {
-        out2 <- mclapply(x3,mc.cores=nCores,tempdir=tempdir,chr=chr,K=K,T=T,priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, x3 = x3, FUN=subset_of_complete_iteration, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks)
+        single_iteration_results <- mclapply(x3,mc.cores=nCores,tempdir=tempdir,chr=chr,K=K,T=T,priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, x3 = x3, FUN=subset_of_complete_iteration, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks)
     }
     if(environment=="cluster") {
         cl <- makeCluster(nCores, type = "FORK")
-        out2 <- parLapply(cl, x3, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K,T=T,priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations,niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks)
+        single_iteration_results <- parLapply(cl, x3, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K,T=T,priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations,niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks)
         stopCluster(cl)
     }
 
@@ -4564,9 +4602,9 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     ## done running samples
     ## first, check if there was an error, print it
     ##
-    te <- sapply(out2, class) == "try-error"
+    te <- sapply(single_iteration_results, class) == "try-error"
     if (sum(te) > 0) {
-        print(out2[[which(te)[1]]]) # print first error
+        print_message(single_iteration_results[[which(te)[1]]]) # print first error
         stop("An error occured during STITCH. The first such error is above")
     }
 
@@ -4574,22 +4612,24 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     ##
     ## update results
     ##
-    out <- calculate_updates(out2 = out2, x3 = x3, K = K, T = T, N = N, nGen = nGen, expRate = expRate, minRate = minRate, maxRate = maxRate, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, L = L)
+    out <- calculate_updates(out2 = single_iteration_results, x3 = x3, K = K, T = T, N = N, nGen = nGen, expRate = expRate, minRate = minRate, maxRate = maxRate, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, L = L)
     sigmaSum <- out$sigmaSum
     priorSum <- out$priorSum
     alphaMatSum <- t(out$alphaMatSum_t) ## TRANSPOSE-CLEAN
     gammaSum <- t(out$gammaSum_t) ## TRANSPOSE-CLEAN
     hapSum <- t(out$hapSum_t) ## TRANSPOSE-CLEAN
+    rm(out)
 
 
     ##
     ## get other updates
     ##
-    out <- calculate_misc_updates(N = N, nsplit = nsplit, nbreaks = nbreaks, x3 = x3, out2 = out2, fromMat = fromMat, K = K)
+    out <- calculate_misc_updates(N = N, nsplit = nsplit, nbreaks = nbreaks, x3 = x3, out2 = single_iteration_results, fromMat = fromMat, K = K)
     restartMatrixList <- out$restartMatrixList
     readsTotal <- out$readsTotal
     readsSplit <- out$readsSplit
     fromMat <- out$fromMat
+    rm(out)
 
 
     ##
@@ -4599,20 +4639,26 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     info <- NA
     estimatedAlleleFrequency <- NA
     if(iteration == niterations) {
+        print_message("Calculate INFO and HWE")        
         infoCount <- array(0,c(T,2))
         hweCount <- array(0,c(T,3))
         afCount <- array(0,T)
-        for(i in 1:length(out2)) {
-            infoCount <- infoCount + out2[[i]]$infoCount
-            hweCount <- hweCount + out2[[i]]$hweCount
-            afCount <- afCount + out2[[i]]$afCount
+        for(i in 1:length(single_iteration_results)) {
+            infoCount <- infoCount + single_iteration_results[[i]]$infoCount
+            hweCount <- hweCount + single_iteration_results[[i]]$hweCount
+            afCount <- afCount + single_iteration_results[[i]]$afCount
         }
+    }
+    rm(single_iteration_results) ## remove this no matter what at this point
+    if(iteration == niterations) {    
         thetaHat <- infoCount[,1] / 2 / N
         denom <- 2 * N * thetaHat * (1-thetaHat)
         info <- 1 - infoCount[,2] / denom
         estimatedAlleleFrequency <- afCount / N
         hwe <- generate_hwe_on_counts(hweCount, T, nCores)
     }
+
+    
     ##
     ##
     ## look at switching
@@ -4621,25 +4667,28 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
         out <- getBetterSwitchesSimple(fromMat=fromMat,nbreaks=nbreaks,K=K,T=T,eHapsFuture=gammaSum,alphaMatFuture=alphaMatSum,iteration=iteration, breaks = breaks, rStart = rStart, rEnd = rEnd)
         gammaSum <- out$eHapsFuture
         alphaMatSum <- out$alphaMatFuture
+        rm(out)
     }
     ##
     ## look at refilling - round 1
     ##
-    if(is.na(match(iteration, refillIterations)) == FALSE) {
-        print(paste("Iteration - ",iteration," - refill infrequently used haplotypes",sep=""))
-        out=refillSimple(hapSum=hapSum,T=T,K=K,eHapsCurrent=gammaSum,N=N)
-        eHapsCurrent=out$eHapsCurrent
-        noise=0.2 # add in noise so things aren't exact
-        eHapsCurrent=noise * array(runif(T*K),c(T,K)) + (1-noise)*eHapsCurrent
-        priorSum=noise * rep(1/K,K) + (1-noise)*priorSum # restart these as well
-        gammaSum=eHapsCurrent
-        ## add in noise as well
+    if (is.na(match(iteration, refillIterations)) == FALSE) {
+        print_message(paste0("Iteration - ",iteration," - refill infrequently used haplotypes"))
+        out <- refillSimple(hapSum = hapSum, T = T, K = K, eHapsCurrent = gammaSum, N = N)
+        eHapsCurrent <- out$eHapsCurrent
+        noise <- 0.2 # add in noise so things aren't exact
+        eHapsCurrent <- noise * array(runif(T * K), c(T, K)) + (1 - noise) * eHapsCurrent
+        priorSum <- noise * rep(1 / K, K) + (1 - noise) * priorSum # restart these as well
+        gammaSum <- eHapsCurrent
+        rm(out)
     }
     ##
     ## look at splitting
     ##
-    if(nsplit>0) {
-        print(paste("split reads - average ",round(mean(readsSplit))," % ",round(100*mean(readsSplit)/mean(readsTotal),3),",",date(),sep=""))
+    if(nsplit > 0) {
+        print_message(paste0(
+            "Split reads, average N=",round(mean(readsSplit))," (",round(100*mean(readsSplit)/mean(readsTotal),3), " %)"
+        ))
         save(readsTotal,readsSplit,file = file.path(outputdir, "RData", paste0("splitReads.",regionName,".iteration.",iteration,".RData")))
     }
     ##
@@ -4654,12 +4703,12 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
             row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE,append=iteration>1
         )
         if (iteration == 1)
-            print(paste0("Printing out per-sample and mean estimates of correlation between provided genotypes from genfile and sample dosages, oriented so that the major allele has dosage 0 and the minor allele has dosage 1"))
+            print_message("Printing out per-sample and mean estimates of correlation between provided genotypes from genfile and sample dosages, oriented so that the major allele has dosage 0 and the minor allele has dosage 1")
         y <- round(currentR2, 3)
-        print(paste0(
+        print_message(paste0(
             "iteration=", iteration, ", sample(r2)=",
             paste(y[-length(y)], collapse = ", "),
-            " - mean=", y[length(y)], ", ", date()
+            " - mean=", y[length(y)]
         ))
     }
     ##
@@ -4673,10 +4722,10 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
             phase = phase
         )
         if (iteration == 1)
-            print(paste0("Printing out per-sample phase switch error"))
-        print(paste0(
-            "iteration=", iteration, ", sample(pse %)=",
-            paste(round(pse, 2) * 100, collapse = ", "), ", ", date()
+            print_message("Printing out per-sample phase switch error")
+        print_message(paste0(
+            "iteration = ", iteration, ", sample(pse %)=",
+            paste(round(pse, 2) * 100, collapse = ", "), ", "
         ))
     }
     ##
@@ -4686,7 +4735,6 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
         restartMatrix <- cbind(rep(1:N,sapply(restartMatrixList,nrow)),matrix(unlist(lapply(restartMatrixList,t)),ncol=5,byrow=TRUE))
         save(restartMatrix,file=paste0(outputdir,"RData/restartMatrix.iteration.",iteration,".",regionName,".RData"))
     }
-
     return(
         list(
             eHapsFuture = gammaSum,
@@ -4794,7 +4842,7 @@ calculate_updates <- function(
     ## now - cols, meaning SNPs, want to
     t1 <- colSums(is.na(alphaMatSum_t)) > 0
     if ( sum(t1) > 0)
-        print("WARNING - alphaMat update contains NA")
+        warning("alphaMat update contains NA")
     alphaMatSum_t[, t1] <- 0.25
 
     return(
@@ -5085,7 +5133,9 @@ getBetterSwitchesSimple <- function(
     ##
     ## do the shuffling
     ##
-    print(paste0("Shuffle haplotypes - Iteration ",iteration," - change ",sum(whichIsBest!=1)," out of ",nbreaks," N=100 SNP intervals"))
+    print_message(paste0(
+        "Shuffle haplotypes - Iteration ", iteration, " - change ", sum(whichIsBest!=1), " out of ", nbreaks, " N=100 SNP intervals"
+    ))
     switchCur=1:K
     for(iBreak in 1:(nbreaks+1)) {
       permL=tempMat[iBreak,]
@@ -5196,16 +5246,22 @@ generate_hwe_on_counts <- function(
   nCores
 ) {
     ## few SNPs - make at least 5 per entry
-    x <- seq(1, T, by = ceiling(T/nCores))
-    if(ceiling(T/nCores)<10)
-        x <- seq(1, T, by = ceiling(T/10))
-    x2=c(x[-1]-1, T)
-    x3=as.list(1:nCores)
-    for(i in 1:length(x2))
-        x3[[i]]= c(x[i],x2[i])
-    x3=x3[unlist(lapply(x3,length))>1] # make sure each one has at least two to load
-    out <- mclapply(x3,hweCount=hweCount,function(i, hweCount) {
-        return(apply(hweCount[i[1]:i[2], , drop = FALSE],1,calculate_hwe_p))
+    x <- seq(1, T, by = ceiling(T / nCores))
+    if (ceiling(T/nCores)<10)
+        x <- seq(1, T, by = ceiling(T / 10))
+    x2 <- c(x[-1] - 1, T)
+    x3 <- as.list(1:nCores)
+    for (i in 1:length(x2))
+        x3[[i]] <- c(x[i], x2[i])
+    x3 <- x3[unlist(lapply(x3, length)) > 1] # make sure each one has at least two to load
+    out <- mclapply(x3, mc.cores = nCores, function(i) {
+        hwe_out <- array(NA, i[2] - i[1] + 1)
+        ## werwerwer
+        for(j in i[1]:i[2]) {
+            hwe_out[j - i[1] + 1] <- calculate_hwe_p(hweCount[j, ])
+        }
+        return(hwe_out)
+        ##return(apply(hweCount[i[1]:i[2], , drop = FALSE], 1, calculate_hwe_p))
     })
     out <- unlist(out)
     return(out)
@@ -5327,7 +5383,7 @@ outputInputInVCFFunction <- function(
   }
   error_check <- sapply(out2, class) == "try-error"
   if (sum(error_check) > 0) {
-    print(out2[[which(error_check)[1]]])
+    print_message(out2[[which(error_check)[1]]])
     stop("There has been an error generating the input. Please see error message above")
   }
   #
@@ -5342,7 +5398,7 @@ outputInputInVCFFunction <- function(
   # build header
   # build left side
   # stitch everything together
-  print(paste0("Build vcf from input - ",date()))
+  print_message("Build vcf from input")
   output_vcf_header <- paste0(outputdir,"stitch.input.",regionName,".header.vcf")
   output_vcf_left <- paste0(outputdir,"stitch.input.",regionName,".left.vcf.gz")
   output_vcf <- paste0(outputdir,"stitch.input.",regionName,".vcf.gz")
@@ -5397,10 +5453,7 @@ outputInputInVCFFunction <- function(
       output_vcf
     ,'"'
   )
-  #print(command)
-  system(
-    command
-  )
+  system(command)
   system(paste0("rm ",output_vcf_header))
   system(paste0("rm ",output_vcf_left))
   #
@@ -5441,10 +5494,10 @@ getR2DuringEMAlgorithm <- function(
     for(isample in 1:n_hc) {
         x <- gen[, isample]
         y <- 2 * out[[isample]]
-        ##print(paste0("range(x) = ", range(x, na.rm=TRUE)))
-        ##print(paste0("range(y) = ", range(y, na.rm=TRUE)))
-        ##x[to_flip] <- 2 - x[to_flip]
-        ##y[to_flip] <- 2 - y[to_flip]
+        ## print_message(paste0("range(x) = ", range(x, na.rm=TRUE)))
+        ## print_message(paste0("range(y) = ", range(y, na.rm=TRUE)))
+        x[to_flip] <- 2 - x[to_flip]
+        y[to_flip] <- 2 - y[to_flip]
         store[isample] <- cor(x, y, use = "complete.obs") ** 2
     }
     store[n_hc + 1]=mean(store[1:n_hc])
@@ -5765,7 +5818,9 @@ findRecombinedReadsPerSample <- function(
         sampleReads <- sampleReads[order(unlist(lapply(sampleReads,function(x) x[[2]])))]
         save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName))
         if (verbose==TRUE)
-            print(paste0("sample ",iSample," readsSplit ",count," readsTotal ",length(sampleReads)))
+            print_message(paste0(
+                "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
+            ))
     }
     return(
         list(
@@ -6014,7 +6069,10 @@ write_block_of_vcf <- function(
   outputdir,
   regionName
 ) {
-    print(paste0("Write block of VCF for samples:",iSample_list[1],"-",iSample_list[length(iSample_list)], " - ", date()))
+    print_message(paste0(
+        "Write block of VCF for samples:",
+        iSample_list[1], "-", iSample_list[length(iSample_list)]
+    ))
     m <- matrix(sapply(list_of_vcf_columns_to_out[iSample_list],I), ncol = length(iSample_list))
   write.table(
       m,
@@ -6072,7 +6130,7 @@ write_vcf_after_EM <- function(
   method
 ) {
     ## set up file names
-    print(paste0("Build final vcf - ",date()))
+    print_message("Build final vcf")
     output_vcf <- get_output_vcf(vcf_output_name,  outputdir, regionName)
     output_vcf_header <- paste0(output_vcf, ".header.gz")
     output_vcf_left <- paste0(output_vcf, ".left.gz")
@@ -6197,3 +6255,12 @@ estimate_read_proportions <- function(
     }
     return(output)
 }
+
+print_message <- function(x) {
+    message(
+        paste0(
+            "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", x
+        )
+    )
+}
+    

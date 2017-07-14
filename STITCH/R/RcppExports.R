@@ -61,3 +61,8 @@ cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, re
     .Call('STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit)
 }
 
+#' @export
+rcpp_calculate_hwe_p <- function(reference_hap) {
+    .Call('STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
+}
+

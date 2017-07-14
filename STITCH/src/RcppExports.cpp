@@ -194,3 +194,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_calculate_hwe_p
+double rcpp_calculate_hwe_p(const Rcpp::IntegerVector reference_hap);
+RcppExport SEXP STITCH_rcpp_calculate_hwe_p(SEXP reference_hapSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type reference_hap(reference_hapSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_hwe_p(reference_hap));
+    return rcpp_result_gen;
+END_RCPP
+}
