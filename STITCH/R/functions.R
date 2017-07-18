@@ -5249,23 +5249,13 @@ generate_hwe_on_counts <- function(
   T,
   nCores
 ) {
-    ## few SNPs - make at least 5 per entry
-    x <- seq(1, T, by = ceiling(T / nCores))
-    if (ceiling(T/nCores)<10)
-        x <- seq(1, T, by = ceiling(T / 10))
-    x2 <- c(x[-1] - 1, T)
-    x3 <- as.list(1:nCores)
-    for (i in 1:length(x2))
-        x3[[i]] <- c(x[i], x2[i])
-    x3 <- x3[unlist(lapply(x3, length)) > 1] # make sure each one has at least two to load
+    x3 <- getSampleRange(T, nCores) ## should work on this as well
     out <- mclapply(x3, mc.cores = nCores, function(i) {
         hwe_out <- array(NA, i[2] - i[1] + 1)
-        ## werwerwer
         for(j in i[1]:i[2]) {
             hwe_out[j - i[1] + 1] <- rcpp_calculate_hwe_p(hweCount[j, ])
         }
         return(hwe_out)
-        ##return(apply(hweCount[i[1]:i[2], , drop = FALSE], 1, calculate_hwe_p))
     })
     out <- unlist(out)
     return(out)
@@ -5670,20 +5660,20 @@ split_function <- function(
     return(out)
 }
 
+
+## returns 1-based index of what reads are not desired
 get_reads_worse_than_50_50 <- function(sampleReads, eHapsCurrent_t, K) {
-    whichReads <- sapply(sampleReads,function(x) x[[1]]) > 2
-    m <- t(
-        sapply(
-            sampleReads[whichReads],
-            split_function,
-            eHapsCurrent_t = eHapsCurrent_t,
-            K = K
-        )
-    )
-    w=(1:length(sampleReads))[whichReads][(apply(m,1,which.max)==(K+1))]
-    ## can't do first or last read
-    ## w=w[w>1 & w<length(sampleReads)]
-    return(w)
+    ## only sample those with more than 2 SNPs
+    whichReads <- which(sapply(sampleReads,function(x) x[[1]]) > 2)
+    ## pre-allocate output
+    ## do not duplicate sampleReads continuously
+    to_return <- array(FALSE, length(sampleReads))
+    for(iRead in whichReads) {
+        m <- split_function(eHapsCurrent_t, sampleReads[[iRead]], K = K)
+        if (which.max(m) == (K + 1))
+            to_return[iRead] <- TRUE
+    }
+    return(which(to_return))
 }
 
 
