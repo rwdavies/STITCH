@@ -37,7 +37,7 @@ version <- unlist(
 
 ## move tarball to releases
 release_package_tarball <- file.path("releases", paste0("STITCH_", version, ".tar.gz"))
-system(paste0("mv ", package_tarball, " ", release_package_tarball))
+system(paste0("mv '", package_tarball, "' ", release_package_tarball))
 package_tarball <- release_package_tarball
 
 ## install from tarball
