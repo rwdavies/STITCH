@@ -44,7 +44,7 @@ then
     ## add soft link
     dir=`pwd`
     rm -f samtools
-    ln -s ${dir}/dependencies/samtools-${samv}/samtools ${dir}/samtools
+    ln -s "${dir}/dependencies/samtools-${samv}/samtools" "${dir}/samtools"
 fi
 
 
@@ -68,7 +68,7 @@ then
     ## add soft link
     dir=`pwd`
     rm -f bcftools
-    ln -s ${dir}/dependencies/bcftools-${bcftoolsv}/bcftools ${dir}/bcftools
+    ln -s "${dir}/dependencies/bcftools-${bcftoolsv}/bcftools" "${dir}/bcftools"
 fi
 
 
@@ -94,5 +94,5 @@ then
     ## add soft link
     dir=`pwd`
     rm -f bgzip
-    ln -s ${dir}/dependencies/htslib-${htslibv}/bgzip ${dir}/bgzip
+    ln -s "${dir}/dependencies/htslib-${htslibv}/bgzip" "${dir}/bgzip"
 fi
