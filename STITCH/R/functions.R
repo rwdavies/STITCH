@@ -412,10 +412,10 @@ STITCH <- function(
 
 
     ##
-    ## if we're so inclined, output input in VCF format
+    ## if we're so inclined, output input in VCF format, then exit
     ##
     if (outputInputInVCFFormat == TRUE) {
-        out=outputInputInVCFFunction(outputdir = outputdir, pos = pos, T = T, tempdir = tempdir, N = N, nCores = nCores, regionName = regionName, environment = environment, sampleNames = sampleNames, outputBlockSize = outputBlockSize, bundling_info = bundling_info)
+        out <- outputInputInVCFFunction(outputdir = outputdir, pos = pos, T = T, tempdir = tempdir, N = N, nCores = nCores, regionName = regionName, environment = environment, sampleNames = sampleNames, outputBlockSize = outputBlockSize, bundling_info = bundling_info, vcf_output_name = vcf_output_name)
         return(NULL)
     }
 
@@ -3852,39 +3852,36 @@ buildAlleleCount <- function(
     }
     alleleCount[, 3] <- alleleCount[, 1] / alleleCount[, 2]
 
-    print_message("Quantiles across SNPs of per-sample depth of coverage")
-    
-    prob <- c(0.05, 0.25, 0.5, 0.75, 0.95)    
-    x <- quantile(alleleCount[,2] / N, prob = prob)
-    ## this was surprisingly difficult!
-    ## *should* work
-    y <- max(nchar(round(x, 3)))
-    y2 <- format(round(x, 3), nsmall = 3)
-    z <- paste0(y2, collapse = "  ")
-    start_spaces <- nchar(y2[1]) - 5
-    start_spaces <- paste0(rep(" ", each = start_spaces), collapse = "")
-    print_message(
-        paste0(
-            start_spaces,
-            paste0(
-                format(round(prob, 2), nsmall = 2),
-                "%",
-                paste0(rep(" ", y - 3), collapse = ""),
-                collapse = ""
-            )
-        )
-    )
-    print_message(z)
-    
+    alleleCount[is.na(alleleCount[,3]),3] <- 0 # not sure why these would exist anymore    
+    print_allele_count(alleleCount, N)
     print_message("Done generating allele count")
 
-    alleleCount[is.na(alleleCount[,3]),3] <- 0 # not sure why these would exist anymore
     return(alleleCount)
 }
 
 
 
-
+## basically print quantile using message
+print_allele_count <- function(alleleCount, N) {
+    print_message("Quantiles across SNPs of per-sample depth of coverage")
+    ## or, print it my way
+    prob <- c(0.05, 0.25, 0.5, 0.75, 0.95)    
+    x <- quantile(alleleCount[,2] / N, prob = prob)
+    fancy_x <- format(round(x, 3), nsmall = 3)
+    top <- ""
+    bottom <- ""
+    for (i in 1:length(x)) {
+        c1 <- nchar(names(x)[i])
+        c2 <- nchar(fancy_x[i])
+        ## pad with difference + 1 for spacing
+        c_width <- max(c1, c2) + 1
+        top <- paste0(top, paste0(rep(" ", c_width - c1), collapse = ""), names(x)[i])
+        bottom <- paste0(bottom, paste0(rep(" ", c_width - c2), collapse = ""), fancy_x[i])
+    }
+    ## 
+    print_message(top)
+    print_message(bottom)
+}
 
 
 downsampleToFraction_a_range <- function(
@@ -4221,27 +4218,33 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,T,priorCurren
     hweCount <- NA
     afCount <- NA
     infoCount <- NA
-    if (iteration==niterations) {
-        hweCount = array(0,c(T,3))
-        infoCount = array(0,c(T,2))
-        afCount = array(0,T)
+    if (iteration == niterations) {
+        hweCount <- array(0, c(T, 3))
+        infoCount <- array(0, c(T, 2))
+        afCount <- array(0, T)
     }
     ##
-    ## set output block size for VCF pasting
+    ## initialze matrix to store output results
     ##
-    list_of_vcf_columns_to_out <- as.list(1:N)
     outputBlockRange <- getOutputBlockRange(
         sampleRange,
         outputBlockSize
     )
+    if(iteration==niterations) {
+        iBlock <- 1
+        vcf_matrix_to_out <- array(
+            NA,
+            c(T, outputBlockRange[iBlock + 1] - outputBlockRange[iBlock])
+        )
+        vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
+    }
     ##
     ## 1 - run forward backwards
     ## 2 - get update pieces
     ## 3 - if necessary add to output
     ##
-    
-    whatToReturnOriginal=whatToReturn
-    for(iSample in sampleRange[1]:sampleRange[2]) {
+    whatToReturnOriginal <- whatToReturn
+    for (iSample in sampleRange[1]:sampleRange[2]) {
         ##
         ##
         ## 1 - run forward backwards
@@ -4432,7 +4435,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,T,priorCurren
         ##
         ##
         ##
-        if(iteration==niterations) {
+        if (iteration == niterations) {
             ## get allele counts for HWE, info calcs, AF
             ## get most likely genotype - add to count
             for(i in 1:length(fbsoL)) {
@@ -4470,15 +4473,33 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,T,priorCurren
                 read_proportions <- NULL
             }
             ##
-            ## add column to VCF, and possibly write block to disk
+            ## add column to VCF to matrix, and possibly write matrix to disk
             ##
-            list_of_vcf_columns_to_out[[iSample]] <- make_column_of_vcf(gp, read_proportions)
-            i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
+            ## add into appropriate column
+            vcf_matrix_to_out[
+               ,
+                iSample - vcf_matrix_to_out_offset
+            ] <- make_column_of_vcf(gp, read_proportions)
             iBlock <- match(iSample, outputBlockRange)
-            if (iBlock > 1 & is.na(iBlock)==FALSE) {
-                iSample_list <- (outputBlockRange[iBlock-1]+1):outputBlockRange[iBlock]
-                write_block_of_vcf(i_core, iBlock, list_of_vcf_columns_to_out, iSample_list = iSample_list, outputdir, regionName)
-                list_of_vcf_columns_to_out <- as.list(1:N)
+            if (iBlock > 1 & is.na(iBlock) == FALSE) {
+                i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))                
+                ## iSample_list <- (outputBlockRange[iBlock - 1] + 1):outputBlockRange[iBlock]
+                write_block_of_vcf(
+                    i_core = i_core,
+                    iBlock = iBlock,
+                    vcf_matrix_to_out = vcf_matrix_to_out,
+                    outputdir = outputdir,
+                    regionName = regionName,
+                    outputBlockRange = outputBlockRange
+                )
+                ## initialize new matrix if not last one
+                if (iBlock <= (length(outputBlockRange) - 1)) {
+                    vcf_matrix_to_out <- array(
+                        NA,
+                        c(T, outputBlockRange[iBlock + 1] - outputBlockRange[iBlock])
+                    )
+                    vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
+                }
             }
         } ## end of check on whether its the final iteration and to output
     } # end of sample loop
@@ -5263,205 +5284,224 @@ generate_hwe_on_counts <- function(
 
 
 
-# function to get phred scaled likelihood and genotype
-# from input RData file
-get_pl_and_rd_from_tempdir <- function(
-  sampleReads,
-  T
+## function to get phred scaled likelihood and genotype
+## from input RData file
+get_pl_and_rd <- function(
+    sampleReads,
+    T
 ) {
-  # get genotype likelihoods
-  x=unlist(sapply(sampleReads,function(x) x[[4]]))+1
-  bq=unlist(sapply(sampleReads,function(x) x[[3]]))
-  s=as.integer(bq>0)
-  bq=abs(bq)
-  e=10^(-bq/10)
-    p=cbind(1-e,e*(1/3))
-    pA=p[cbind(1:nrow(p),s+1)]
-    pB=p[cbind(1:nrow(p),2-s)]
-    # hmm, just do for loop? not ideal, but OK?
-    g=array(1,c(T,3))
-    rd=array(0,c(T,2))
-    for(i in 1:length(x)) {
-      a=x[i]
-      #b=y[i]
-      b=pA[i]/2
-      c=pB[i]/2
-      g[a,]=g[a,] * c(b+b, b+c, c+c) # new
-      z <- which.max(c(pA[i], pB[i]))
-      rd[a,z] = rd[a,z] + 1
+    ## get genotype likelihoods
+    x <- unlist(lapply(sampleReads,function(x) x[[4]])) + 1
+    bq <- unlist(lapply(sampleReads,function(x) x[[3]]))
+    s <- as.integer(bq > 0)
+    bq <- abs(bq)
+    e <- 10^(-bq/10)
+    p <- cbind(1 - e, e * (1 / 3))
+    pA <- p[cbind(1:nrow(p), s + 1)]
+    pB <- p[cbind(1:nrow(p), 2 - s)]
+    ## hmm, just do for loop? not ideal, but OK?
+    g <- array(1,c(T,3))
+    rd <- array(0,c(T,2))
+    for (i in 1:length(x)) {
+        a <- x[i]
+        ##b=y[i]
+        b <- pA[i]/2
+        c <- pB[i]/2
+        g[a, ] <- g[a, ] * c(b + b, b + c, c + c)
+        z <- which.max(c(pA[i], pB[i]))
+        rd[a,z] = rd[a,z] + 1
     }
-    g=g/rowSums(g) # divide by max
-    a=g[,1]
-    w=a<g[,2]; a[w]=g[w,2]
-    w=a<g[,3]; a[w]=g[w,3]
-    g=g/a
-    # 0/0:2,0:2:3:0,3,45
-    # turn into PLs
-    # ex: 1/1:0,1:1:3:32,3,0
-    pl=round(10 * -log10(g) )
-    return(list(pl = pl, rd = rd))
+    g <- g / rowSums(g) # divide by max
+    a <- g[, 1]
+    w <- a < g[,2]; a[w] = g[w,2]
+    w <- a < g[,3]; a[w] = g[w,3]
+    g <- g / a
+    ## 0/0:2,0:2:3:0,3,45
+    ## turn into PLs
+    ## ex: 1/1:0,1:1:3:32,3,0
+    pl <- round(10 * -log10(g) )
+    return(
+        list(
+            pl = pl,
+            rd = rd
+        )
+    )
 }
 
 
 # if want to output genotype probabilities in VCF format
 outputInputInVCFFunction <- function(
-  outputdir,
-  pos,
-  T,
-  tempdir,
-  N,
-  nCores,
-  regionName,
-  environment,
-  sampleNames,
-  outputBlockSize,
-  bundling_info
+    outputdir,
+    pos,
+    T,
+    tempdir,
+    N,
+    nCores,
+    regionName,
+    environment,
+    sampleNames,
+    outputBlockSize,
+    bundling_info,
+    vcf_output_name
 ) {
-  #
-  # need to loop over samples, very similar to normal output
-  # write out chunks
-  # except this time, want genotype, allelic depth, pl
-  # gt,ad,pl
-  #
-  #
-  #
-  #
-  # 1 - build the data
-  #
-  #
-  #
-  #
-  x3 <- getSampleRange(N, nCores)
-  f <- function(sampleRange, N, outputBlockSize, tempdir, regionName, T, bundling_info) {
-    i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
-    list_of_vcf_columns_to_out <- as.list(1:N)
-    outputBlockRange <- getOutputBlockRange(sampleRange,outputBlockSize )
-    bundledSampleReads <- NULL
-    for(iSample in sampleRange[1]:sampleRange[2]) {
-
-      out <- get_sampleReads_from_dir_for_sample(
-        dir = tempdir,
-        regionName = regionName,
-        iSample = iSample,
-        bundling_info = bundling_info,
-        bundledSampleReads = bundledSampleReads
-      )
-      sampleReads <- out$sampleReads
-      bundledSampleReads <- out$bundledSampleReads
-
-      o <- get_pl_and_rd_from_tempdir(sampleReads, T)
-      pl <- o$pl
-      rd <- o$rd
-      list_of_vcf_columns_to_out[[iSample]] <- make_column_of_vcf_from_pl_and_rd(pl, rd)
-      # if appropriate - write to disk!
-      iBlock <- match(iSample, outputBlockRange)
-      if (iBlock > 1 & is.na(iBlock)==FALSE) {
-        iSample_list <- (outputBlockRange[iBlock-1]+1):outputBlockRange[iBlock]
-        write_block_of_vcf(i_core, iBlock, list_of_vcf_columns_to_out, iSample_list = iSample_list, outputdir, regionName)
-        list_of_vcf_columns_to_out <- as.list(1:N)
-      }
+    ##
+    ##
+    ## 1 - build the data
+    ##
+    ##
+    x3 <- getSampleRange(N, nCores)
+    f <- function(sampleRange, N, outputBlockSize, tempdir, regionName, T, bundling_info) {
+        i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
+        outputBlockRange <- getOutputBlockRange(sampleRange,outputBlockSize )
+        bundledSampleReads <- NULL
+        outputBlockRange <- getOutputBlockRange(
+            sampleRange,
+            outputBlockSize
+        )
+        vcf_matrix_to_out <- array(
+            NA,
+            c(T, outputBlockRange[2] - outputBlockRange[1])
+        )
+        vcf_matrix_to_out_offset <- outputBlockRange[1]
+        for (iSample in sampleRange[1]:sampleRange[2]) {
+            out <- get_sampleReads_from_dir_for_sample(
+                dir = tempdir,
+                regionName = regionName,
+                iSample = iSample,
+                bundling_info = bundling_info,
+                bundledSampleReads = bundledSampleReads
+            )
+            sampleReads <- out$sampleReads
+            bundledSampleReads <- out$bundledSampleReads
+            ##
+            o <- get_pl_and_rd(sampleReads, T)
+            pl <- o$pl
+            rd <- o$rd
+            ## start saving
+            vcf_matrix_to_out[
+               ,
+                iSample - vcf_matrix_to_out_offset
+            ] <- make_column_of_vcf_from_pl_and_rd(pl, rd)
+            ## if appropriate - write to disk!
+            iBlock <- match(iSample, outputBlockRange)            
+            if (iBlock > 1 & is.na(iBlock)==FALSE) {
+                write_block_of_vcf(
+                    i_core = i_core,
+                    iBlock = iBlock,
+                    vcf_matrix_to_out = vcf_matrix_to_out,
+                    outputdir = outputdir,
+                    regionName = regionName,
+                    outputBlockRange = outputBlockRange
+                )
+                ## initialize new matrix if not last one
+                if (iBlock < length(outputBlockRange)) {
+                    vcf_matrix_to_out <- array(
+                        NA,
+                        c(T, outputBlockRange[iBlock] - outputBlockRange[iBlock - 1])
+                    )
+                    vcf_matrix_to_out_offset <- outputBlockRange[iBlock - 1]
+                }
+            }
+        }
     }
-  }
-  #
-  # loop over samples - write to disk!
-  #
-  if(environment=="server")
-  {
-    out2=mclapply(x3,mc.cores=nCores,FUN=f, N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, T = T, bundling_info = bundling_info)
-  }
-  if(environment=="cluster")
-  {
-    cl = makeCluster(nCores, type = "FORK")
-    out2 = parLapply(cl, x3, fun=f,N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, T = T, bundling_info = bundling_info)
-    stopCluster(cl)
-  }
-  error_check <- sapply(out2, class) == "try-error"
-  if (sum(error_check) > 0) {
-    print_message(out2[[which(error_check)[1]]])
-    stop("There has been an error generating the input. Please see error message above")
-  }
-  #
-  #
-  #
-  #
-  # step 2 - build the VCF itself
-  #
-  #
-  #
-  #
-  # build header
-  # build left side
-  # stitch everything together
-  print_message("Build vcf from input")
-  output_vcf_header <- paste0(outputdir,"stitch.input.",regionName,".header.vcf")
-  output_vcf_left <- paste0(outputdir,"stitch.input.",regionName,".left.vcf.gz")
-  output_vcf <- paste0(outputdir,"stitch.input.",regionName,".vcf.gz")
-  #
-  # do header lines
-  #
-  header <- paste0(
-    '##fileformat=VCFv4.0\n',
-    '##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">\n',
-    '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n',
-    '##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">\n'
-  )
-  header2 <- paste("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", paste(sampleNames, collapse = "\t", sep="\t"), sep="\t")
-  #
-  # add output
-  #
-  cat(header, header2, "\n", sep="", file = output_vcf_header)
-  #
-  # build first part of file
-  #
-  options(scipen=6)
-  INFO <- "."
-  write.table(
-    matrix(paste(pos[,1], pos[,2], ".", pos[,3], pos[,4], ".", "PASS", INFO , "GT:AD:PL", sep="\t"), ncol=1),
-    file = gzfile(output_vcf_left),
-    row.names = FALSE,
-    col.names = FALSE,
-    sep = "",
-    quote = FALSE
-  )
-  #
-  # get number of cores and blocks
-  #
-  x3 <- getSampleRange(N, nCores)
-  files_to_paste <- lapply(1:nCores, function(i_core) {
-    nBlocks <- length(getOutputBlockRange(
-      sampleRange = x3[[i_core]],
-      outputBlockSize
-    ))
-    return(paste0('<(gunzip -c ',outputdir, "vcf.piece.",i_core,".",2:nBlocks,".",regionName,".txt.gz", ' | cat ) '))
-})
-  files_to_paste <- paste(unlist(files_to_paste), collapse = " ")
-  #
-  # merge together
-  #
-  command <- paste0(
-    'bash -c "',
-    'paste -d ',shQuote("\t"),' ',
-    '<(gunzip -c ',output_vcf_left,' | cat ) ',
-    files_to_paste, " | ",
-    " cat ",output_vcf_header," - | bgzip -c > ",
-      output_vcf
-    ,'"'
-  )
-  system(command)
-  system(paste0("rm ",output_vcf_header))
-  system(paste0("rm ",output_vcf_left))
-  #
-  # remove
-  #
-  x3 <- getSampleRange(N, nCores)
-  files_to_remove <- unlist(lapply(1:nCores, function(i_core) {
-    nBlocks <- length(getOutputBlockRange(
-      sampleRange = x3[[i_core]],
-      outputBlockSize
-    ))
-    return(paste0(outputdir, "vcf.piece.",i_core,".",2:nBlocks,".",regionName,".txt.gz"))
-  }))
-  system(paste0("rm ",paste0(files_to_remove, collapse=" ")))
+    ##
+    ## loop over samples - write to disk!
+    ##
+    print_message("Prepare data to use to build vcf from input")    
+    if (environment == "server") {
+        out2 <- mclapply(x3,mc.cores=nCores,FUN=f, N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, T = T, bundling_info = bundling_info)
+    }
+    if (environment == "cluster") {
+        cl <- makeCluster(nCores, type = "FORK")
+        out2 <- parLapply(cl, x3, fun=f,N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, T = T, bundling_info = bundling_info)
+        stopCluster(cl)
+    }
+    error_check <- sapply(out2, class) == "try-error"
+    if (sum(error_check) > 0) {
+        print_message(out2[[which(error_check)[1]]])
+        stop("There has been an error generating the input. Please see error message above")
+    }
+    ##
+    ##
+    ## step 2 - build the VCF itself
+    ##
+    ##
+    ##
+    ## build header
+    ## build left side
+    ## stitch everything together
+    print_message("Build VCF from input")
+    output_vcf <- get_output_vcf(vcf_output_name,  outputdir, regionName, prefix = "stitch.input")
+    output_vcf_header <- paste0(output_vcf, ".header.gz")
+    output_vcf_left <- paste0(output_vcf, ".left.gz")
+    ##
+    ## do header lines
+    ##
+    header <- paste0(
+        '##fileformat=VCFv4.0\n',
+        '##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">\n',
+        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n',
+        '##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">\n'
+    )
+    header2 <- paste("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", paste(sampleNames, collapse = "\t", sep="\t"), sep="\t")
+    ##
+    ## add output
+    ##
+    cat(header, header2, "\n", sep="", file = output_vcf_header)
+    ##
+    ## build first part of file
+    ##
+    options(scipen=6)
+    INFO <- "."
+    write.table(
+        matrix(paste(pos[,1], pos[,2], ".", pos[,3], pos[,4], ".", "PASS", INFO , "GT:AD:PL", sep="\t"), ncol=1),
+        file = gzfile(output_vcf_left),
+        row.names = FALSE,
+        col.names = FALSE,
+        sep = "",
+        quote = FALSE
+    )
+    ##
+    ## get number of cores and blocks
+    ##
+    x3 <- getSampleRange(N, nCores)
+    files_to_paste <- lapply(1:nCores, function(i_core) {
+        nBlocks <- length(getOutputBlockRange(
+            sampleRange = x3[[i_core]],
+            outputBlockSize
+        ))
+        return(paste0('<(gunzip -c ',outputdir, "vcf.piece.",i_core,".",2:nBlocks,".",regionName,".txt.gz", ' | cat ) '))
+    })
+    files_to_paste <- paste(unlist(files_to_paste), collapse = " ")
+    ##
+    ## merge together
+    ##
+    command <- paste0(
+        'bash -c "',
+        'paste -d ',shQuote("\t"),' ',
+        '<(gunzip -c ',output_vcf_left,' | cat ) ',
+        files_to_paste, " | ",
+        " cat ",output_vcf_header," - | bgzip -c > ",
+        output_vcf
+       ,'"'
+    )
+    system(command)
+    system(paste0("rm ",output_vcf_header))
+    system(paste0("rm ",output_vcf_left))
+    ##
+    ## remove
+    ##
+    x3 <- getSampleRange(N, nCores)
+    files_to_remove <- unlist(lapply(1:nCores, function(i_core) {
+        nBlocks <- length(getOutputBlockRange(
+            sampleRange = x3[[i_core]],
+            outputBlockSize
+        ))
+        return(paste0(outputdir, "vcf.piece.",i_core,".",2:nBlocks,".",regionName,".txt.gz"))
+    }))
+    system(paste0("rm ",paste0(files_to_remove, collapse=" ")))
+    print_message("Done building VCF from input")
+    return(NULL)
 }
 
 
@@ -5601,10 +5641,10 @@ plotHapSum <- function(
     N
 ) {
     jpeg(outname, height = 2000, width = 10000, qual = 100)
-    colStore <- rep(c("black","red","green","blue"), ceiling(K/4))
+    colStore <- rep(c("black","red","green","blue"), ceiling(K / 4))
     sum <- array(0, T)
     xlim <- range(L)
-    ylim <- c(0,1)
+    ylim <- c(0, 1)
     plot(x = L[1], y = 0, xlim = xlim, ylim = ylim, axes = FALSE)
     x <- c(L[1], L, L[length(L):1])
     m <- array(0, c(T, K + 1))
@@ -5612,7 +5652,7 @@ plotHapSum <- function(
         m[, i + 1] <- m[, i] + hapSum[, i] / N
     for(i in K:1) {
         polygon(
-            x = x, y = c(m[1,i], m[,i+1], m[T:1,i]),
+            x = x, y = c(m[1, i], m[, i + 1], m[T:1, i]),
             xlim = xlim, ylim = ylim, col = colStore[i]
         )
     }
@@ -6056,27 +6096,32 @@ make_column_of_vcf_from_pl_and_rd <- function(
 ## write a block of samples to disk
 ## don't write header or row information
 write_block_of_vcf <- function(
-  i_core,
-  iBlock,
-  list_of_vcf_columns_to_out,
-  iSample_list,
-  outputdir,
-  regionName
+    i_core,
+    iBlock,
+    vcf_matrix_to_out,
+    outputdir,
+    regionName,
+    outputBlockRange
 ) {
     print_message(paste0(
         "Write block of VCF for samples:",
-        iSample_list[1], "-", iSample_list[length(iSample_list)]
+        (outputBlockRange[iBlock - 1] + 1), "-", outputBlockRange[iBlock]
     ))
-    m <- matrix(sapply(list_of_vcf_columns_to_out[iSample_list],I), ncol = length(iSample_list))
-  write.table(
-      m,
-      file = gzfile(paste0(outputdir, "vcf.piece.",i_core,".",iBlock,".",regionName,".txt.gz")),
-      row.names = FALSE,
-      col.names = FALSE,
-      sep = "\t",
-      quote = FALSE
-  )
-  return(NULL)
+    ##m <- matrix(
+    ##    sapply(list_of_vcf_columns_to_out[iSample_list], I),
+    ##    ncol = length(iSample_list)
+    ##)
+    write.table(
+        vcf_matrix_to_out,
+        file = gzfile(
+            paste0(outputdir, "vcf.piece.", i_core, ".", iBlock, ".", regionName, ".txt.gz")
+        ),
+        row.names = FALSE,
+        col.names = FALSE,
+        sep = "\t",
+        quote = FALSE
+    )
+    return(NULL)
 }
 
 
@@ -6084,13 +6129,21 @@ write_block_of_vcf <- function(
 get_output_vcf <- function(
     vcf_output_name,
     outputdir,
-    regionName
+    regionName,
+    prefix = NULL
 ) {
     if (is.null(vcf_output_name)) {
-        return(file.path(
-            outputdir,
-            paste0("stitch.", regionName, ".vcf.gz")
-        ))
+        if (is.null(prefix)) {
+            return(file.path(
+                outputdir,
+                paste0("stitch.", regionName, ".vcf.gz")
+            ))
+        } else {
+            return(file.path(
+                outputdir,
+                paste0(prefix, ".", regionName, ".vcf.gz")
+            ))
+        }
     } else {
         if (basename(vcf_output_name) == vcf_output_name) {
             return(file.path(
@@ -6124,7 +6177,7 @@ write_vcf_after_EM <- function(
   method
 ) {
     ## set up file names
-    print_message("Build final vcf")
+    print_message("Build final VCF")
     output_vcf <- get_output_vcf(vcf_output_name,  outputdir, regionName)
     output_vcf_header <- paste0(output_vcf, ".header.gz")
     output_vcf_left <- paste0(output_vcf, ".left.gz")
@@ -6250,10 +6303,20 @@ estimate_read_proportions <- function(
     return(output)
 }
 
-print_message <- function(x) {
+print_message <- function(x, include_mem = FALSE) {
+    if (include_mem) {
+        mem <- system("ps auxww | grep 'scripts/profile.R' | grep slave | grep -v 'grep' | awk -v OFS='\t' '$1=$1' | cut -f6", intern = TRUE)
+        if (length(mem) > 0) {
+            mem <- paste0(paste0(round(as.integer(mem) / 2 ** 20, 3), collapse = ", "), " - ")
+        } else {
+            mem <- ""
+        }
+    } else {
+        mem <- ""
+    }
     message(
         paste0(
-            "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", x
+            "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", mem, x
         )
     )
 }

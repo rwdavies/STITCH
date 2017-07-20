@@ -126,3 +126,23 @@ test_that("an error is thown when cramlist does not exist", {
     )
     
 })
+
+
+test_that("can print allele count properly for empty results", {
+    alleleCount <- array(0, c(10, 3))
+    alleleCount[, c(1, 3)] <- NA
+    print_allele_count(alleleCount, N = 10) 
+})
+
+test_that("can print allele count properly for normal results", {
+    set.seed(1)
+    alleleCount <- array(runif(30), c(10, 3))
+    alleleCount[, c(1, 3)] <- NA    
+    print_allele_count(alleleCount, N = 10) 
+})
+
+test_that("can print allele count for variable results", {
+    alleleCount <- array(NA, c(100, 3))
+    alleleCount[, 2] <- seq(1, 1e6, length.out = 100)
+    print_allele_count(alleleCount, N = 10) 
+})

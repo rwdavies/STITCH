@@ -65,7 +65,8 @@ test_that("STITCH diploid works under default parameters", {
         outputdir = data_package$outputdir,
         K = 2,
         nGen = 100,
-        nCores = 1
+        nCores = 1,
+        outputBlockSize = 3
     )
 
     sink()
@@ -690,6 +691,81 @@ test_that("STITCH with generateInputOnly actually only generates input", {
         sort(paste0("sample.", 1:10, ".input.", data_package$chr, ".RData"))
     )
 
+
+})
+
+
+
+test_that("STITCH can generate input in VCF format", {
+    skip_test_if_TRUE(run_acceptance_tests)
+
+    sink("/dev/null")
+
+    set.seed(10)
+    n_snps <- 5
+    chr <- 10
+    phasemaster <- matrix(c(0, 1, 0, 0, 1, 0, 1, 1, 0, 0), ncol = 2)
+    n_reads <- n_snps * 10
+    n_samples <- 10
+    data_package_local <- make_acceptance_test_data_package(
+        n_samples = n_samples,
+        n_snps = n_snps,
+        n_reads = n_reads,
+        seed = 1,
+        chr = chr,
+        K = 2,
+        phasemaster = phasemaster
+    )
+    
+    local_outputdir <- tempfile()
+    dir.create(local_outputdir)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package_local$chr,
+        bamlist = data_package_local$bamlist,
+        posfile = data_package_local$posfile,
+        outputdir = local_outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        outputInputInVCFFormat = TRUE
+    )
+    dir(local_outputdir)
+
+    ## expect not to find normal VCF output, but new one
+    expect_equal(
+        FALSE,
+        file.exists(file.path(local_outputdir, paste0("stitch.", data_package_local$chr, ".vcf.gz")))
+    )
+    expect_equal(
+        TRUE,
+        file.exists(file.path(local_outputdir, paste0("stitch.input.", data_package_local$chr, ".vcf.gz")))
+    )
+
+    ## since this is comparatively high coverage
+    ## results should be OK
+    vcf <- read.table(
+        file.path(local_outputdir, paste0("stitch.input.", data_package_local$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    ## check read counts are OK
+    ## in this, > 0 read counts as appropriate
+    for (iSample in 1:n_samples) {
+        rc <- sapply(strsplit(vcf[, iSample + 9], ":"), I)[2, ]
+        rc2 <- sapply(strsplit(rc, ","), I) ## ref, alt
+        genotype <- data_package_local$phase[, iSample, 1] + data_package_local$phase[, iSample, 2]
+        ## ref counts - expect no alternate reads
+        expect_equal(sum(as.integer(rc2[1, genotype == 0]) == 0), 0)        
+        expect_equal(sum(as.integer(rc2[2, genotype == 0]) > 0), 0)
+        ## alt counts - expect both to never be 0
+        expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)        
+        expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)
+        ## hom alt counts - expect no reference reads
+        expect_equal(sum(as.integer(rc2[1, genotype == 2]) > 0), 0)        
+        expect_equal(sum(as.integer(rc2[2, genotype == 2]) == 0), 0)
+    }
 
 })
 
