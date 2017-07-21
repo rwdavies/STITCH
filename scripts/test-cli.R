@@ -123,9 +123,9 @@ out <- system2(
 )
 expect_equal(0, out)
 ## check this occured
-stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
-expect_equal(length(grep("Build vcf from input", stdout)), 1)
-expect_equal(length(grep("teration", stdout)), 0)
+stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
+expect_equal(length(grep("Build VCF from input", stderr)), 1)
+expect_equal(length(grep("teration", stderr)), 0)
 
 
 message("test that STITCH CLI parses integer vector refillIterations correctly")
@@ -146,9 +146,9 @@ out <- system2(
 )
 expect_equal(0, out)
 ## check this occured
-stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
 
-a <- stdout[grep("refill infrequently used haplotypes", stdout)]
+a <- stderr[grep("refill infrequently used haplotypes", stderr)]
 expect_equal(sum(sapply(sapply(c(4, 30), function(x) grep(x, a)), length) == 0), 0)
 
 
@@ -170,9 +170,8 @@ out <- system2(
 )
 expect_equal(0, out)
 ## check this occured
-stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
 stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
-a <- stdout[grep("refill infrequently used haplotypes", stdout)]
+a <- stderr[grep("refill infrequently used haplotypes", stderr)]
 ## manually know default is 6, 10, 14, 18
 expect_equal(sum(sapply(sapply(c(6, 10, 14, 18), function(x) grep(x, a)), length) == 0), 0)
 
@@ -199,8 +198,8 @@ out <- system2(
 )
 expect_equal(0, out)
 ## check this occured
-stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
 check <- sapply(c("CEU", "GBR"), function(pop) {
-    length(grep(pop, stdout))
+    length(grep(pop, stderr))
 })
 expect_equal(sum(check == 0), 0)
