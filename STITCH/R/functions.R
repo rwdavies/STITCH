@@ -909,7 +909,7 @@ initialize_directories <- function(
     }
     inputdir <- file.path(outputdir, "input")
     if (STITCH_again)
-        inputdir <- file.path(outputdir, "input_again")        
+        inputdir <- file.path(outputdir, "input_again")
     return(
         list(
             tempdir = tempdir,
@@ -3045,7 +3045,7 @@ merge_reads_from_sampleReadsRaw <- function(
     ord <- order(qnameInteger) - 1 ## 0-based for C++
     qnameInteger_ord <- c(qnameInteger[ord + 1], - 2)
     readStart_ord <- readStart[ord + 1]
-    readEnd_ord <- readEnd[ord + 1]    
+    readEnd_ord <- readEnd[ord + 1]
     ## qnameUnique is unique read names of used reads
     ## qnameInteger is integer version of that
     ## ord is 0-based ordered version of qnameInteger
@@ -3214,7 +3214,7 @@ loadBamAndConvert <- function(
     strand <- out$strand
     readStart <- out$readStart
     readEnd <- out$readEnd
-        
+
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
             name = sampleNames[iBam],
@@ -3852,8 +3852,9 @@ buildAlleleCount <- function(
     }
     alleleCount[, 3] <- alleleCount[, 1] / alleleCount[, 2]
 
-    alleleCount[is.na(alleleCount[,3]),3] <- 0 # not sure why these would exist anymore    
+    alleleCount[is.na(alleleCount[,3]),3] <- 0 # not sure why these would exist anymore
     print_allele_count(alleleCount, N)
+    check_allele_count_OK(alleleCount)
     print_message("Done generating allele count")
 
     return(alleleCount)
@@ -3865,7 +3866,7 @@ buildAlleleCount <- function(
 print_allele_count <- function(alleleCount, N) {
     print_message("Quantiles across SNPs of per-sample depth of coverage")
     ## or, print it my way
-    prob <- c(0.05, 0.25, 0.5, 0.75, 0.95)    
+    prob <- c(0.05, 0.25, 0.5, 0.75, 0.95)
     x <- quantile(alleleCount[,2] / N, prob = prob)
     fancy_x <- format(round(x, 3), nsmall = 3)
     top <- ""
@@ -3878,11 +3879,28 @@ print_allele_count <- function(alleleCount, N) {
         top <- paste0(top, paste0(rep(" ", c_width - c1), collapse = ""), names(x)[i])
         bottom <- paste0(bottom, paste0(rep(" ", c_width - c2), collapse = ""), fancy_x[i])
     }
-    ## 
+    ##
     print_message(top)
     print_message(bottom)
 }
 
+
+check_allele_count_OK <- function(alleleCount) {
+    if (sum(is.na(alleleCount)) > 0) {
+        bad_row <- which.max(rowSums(is.na(alleleCount)) > 0)
+        stop(
+            paste0(
+                "An internal problem with STITCH occured. ",
+                "There are NAs in the allele count. ",
+                "This may indicate a problem converting the input ",
+                "BAM/CRAM data into the internal STITCH format. ",
+                "The first error occured for SNP number ",
+                bad_row, " with entry ",
+                paste0(alleleCount[bad_row, ], collapse = ", ")
+            )
+        )
+    }
+}
 
 downsampleToFraction_a_range <- function(
   sampleRange,
@@ -4482,7 +4500,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,T,priorCurren
             ] <- make_column_of_vcf(gp, read_proportions)
             iBlock <- match(iSample, outputBlockRange)
             if (iBlock > 1 & is.na(iBlock) == FALSE) {
-                i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))                
+                i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
                 ## iSample_list <- (outputBlockRange[iBlock - 1] + 1):outputBlockRange[iBlock]
                 write_block_of_vcf(
                     i_core = i_core,
@@ -4660,7 +4678,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
     info <- NA
     estimatedAlleleFrequency <- NA
     if(iteration == niterations) {
-        print_message("Calculate INFO and HWE")        
+        print_message("Calculate INFO and HWE")
         infoCount <- array(0,c(T,2))
         hweCount <- array(0,c(T,3))
         afCount <- array(0,T)
@@ -4671,7 +4689,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
         }
     }
     rm(single_iteration_results) ## remove this no matter what at this point
-    if(iteration == niterations) {    
+    if(iteration == niterations) {
         thetaHat <- infoCount[,1] / 2 / N
         denom <- 2 * N * thetaHat * (1-thetaHat)
         info <- 1 - infoCount[,2] / denom
@@ -4679,7 +4697,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,T,priorCurrent,eHapsCurrent,
         hwe <- generate_hwe_on_counts(hweCount, T, nCores)
     }
 
-    
+
     ##
     ##
     ## look at switching
@@ -5224,7 +5242,7 @@ calculate_hwe_p <- function(x) {
     ## determine a mid point
     probs <- array(0, max_het + 1) # note - this is 0-based
     probs[mid + 1] <- 1
-    
+
     ## use recurrence relation - going down
     n_het <- mid
     n_hom_alt <- (nBB * 2 + nAB - n_het) / 2
@@ -5239,7 +5257,7 @@ calculate_hwe_p <- function(x) {
         }
     }
 
-   
+
     ## use recurrence relationship - going up
     n_het <- mid
     n_hom_alt <- (nBB * 2 + nAB - n_het) / 2
@@ -5254,7 +5272,7 @@ calculate_hwe_p <- function(x) {
         }
     }
 
-    
+
     all_probs <- probs / sum(probs)
     p2 <- sum(all_probs[all_probs <= all_probs[nAB + 1]])
     p <- min(1, p2)
@@ -5383,7 +5401,7 @@ outputInputInVCFFunction <- function(
                 iSample - vcf_matrix_to_out_offset
             ] <- make_column_of_vcf_from_pl_and_rd(pl, rd)
             ## if appropriate - write to disk!
-            iBlock <- match(iSample, outputBlockRange)            
+            iBlock <- match(iSample, outputBlockRange)
             if (iBlock > 1 & is.na(iBlock)==FALSE) {
                 write_block_of_vcf(
                     i_core = i_core,
@@ -5407,7 +5425,7 @@ outputInputInVCFFunction <- function(
     ##
     ## loop over samples - write to disk!
     ##
-    print_message("Prepare data to use to build vcf from input")    
+    print_message("Prepare data to use to build vcf from input")
     if (environment == "server") {
         out2 <- mclapply(x3,mc.cores=nCores,FUN=f, N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, T = T, bundling_info = bundling_info)
     }
@@ -6320,4 +6338,4 @@ print_message <- function(x, include_mem = FALSE) {
         )
     )
 }
-    
+
