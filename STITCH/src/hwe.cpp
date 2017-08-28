@@ -91,7 +91,7 @@ Rcpp::NumericVector rcpp_calculate_hwe_p(const Rcpp::IntegerVector reference_hap
       all_probs[k] = probs[k] / probs_sum;
   }
 
-  double p2;
+  double p2 = 0;
   for(int k = 0; k <= max_het; k++) {
       if (all_probs[k] <= all_probs[nAB]) {
           p2 = p2 + all_probs[k];
