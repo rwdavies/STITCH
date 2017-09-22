@@ -1,14 +1,14 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.3.6__**
-Release date: May 24, 2017
+**__Current Version: 1.3.7__**
+Release date: September 22, 2017
 
 Changes in latest version
 
-1. Allow very strict imputation from reference panels with niterations=1
-2. Fix error message printing for files missing RG bam header tag
-3. Fix bug when parsing read with cigarString *
-4. Require SM entry in RG tag
+1. Misc changes to reduce RAM usage
+2. Standardize messaging and change to stderr vs stdout
+3. Re-enable printing of r2 oriented for major allele during progression
+4. More errors and checking for reference legend file
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -25,7 +25,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.3.6.tar.gz
+R CMD INSTALL ./releases/STITCH_1.3.7.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz

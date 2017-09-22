@@ -1,3 +1,8 @@
+* v1.3.7
+	* Misc changes to reduce RAM usage
+	* Standardize messaging and change to stderr vs stdout
+	* Re-enable printing of r2 oriented for major allele during progression
+	* More errors and checking for reference legend file
 * v1.3.6
 	* Allow very strict imputation from reference panels with niterations=1
 	* Fix error message printing for files missing RG bam header tag
