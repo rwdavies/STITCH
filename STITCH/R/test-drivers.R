@@ -382,10 +382,13 @@ make_reference_package <- function(
     n_snps = 10,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
+    refs = NA,
+    alts = NA,
     L = NA,
     chr = 1,
     reference_sample_header = NA,
-    reference_genders = c("male", "female")
+    reference_genders = c("male", "female"),
+    reference_legend_header = NULL
 ) {
 
     n_total_samples <- length(reference_populations) * n_samples_per_pop
@@ -394,6 +397,8 @@ make_reference_package <- function(
         posfile = posfile,
         n_snps = n_snps,
         seed = 1,
+        refs = refs,
+        alts = alts,
         L = L
     )
 
@@ -418,11 +423,16 @@ make_reference_package <- function(
     ##id position a0 a1 TYPE AFR AMR EAS EUR SAS ALL
     ##20:60343:G:A 60343 G A Biallelic_SNP 0 0.00144092219020173 0 0 0 0.000199680511182109
     reference_legend <- data.frame(
-        id = "NOT_USED",
+        id = paste0("rs", pos[, "POS"]),
         position = pos[, "POS"],
         a0 = pos[, "REF"],
         a1 = pos[, "ALT"]
     )
+    if (is.null(reference_legend_header) == FALSE) {
+        if (length(reference_legend_header) != 4)
+            stop("Bad test setup")
+        colnames(reference_legend) <- reference_legend_header
+    }
     simple_write(reference_legend, reference_legend_file, gzip = TRUE)
 
     ## 0 0 1 1 - 2 entries per sample, row = SNP, one per sample

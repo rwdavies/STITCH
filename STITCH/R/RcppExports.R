@@ -3,66 +3,66 @@
 
 #' @export
 get_header_using_SeqLib <- function(file_name) {
-    .Call('STITCH_get_header_using_SeqLib', PACKAGE = 'STITCH', file_name)
+    .Call('_STITCH_get_header_using_SeqLib', PACKAGE = 'STITCH', file_name)
 }
 
 #' @export
 get_read_span <- function(cigarLengthVec, cigarTypeVec) {
-    .Call('STITCH_get_read_span', PACKAGE = 'STITCH', cigarLengthVec, cigarTypeVec)
+    .Call('_STITCH_get_read_span', PACKAGE = 'STITCH', cigarLengthVec, cigarTypeVec)
 }
 
 #' @export
 cpp_cigar_split_many <- function(strings) {
-    .Call('STITCH_cpp_cigar_split_many', PACKAGE = 'STITCH', strings)
+    .Call('_STITCH_cpp_cigar_split_many', PACKAGE = 'STITCH', strings)
 }
 
 #' @export
 cpp_deal_with_soft_clipped_bases <- function(splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead) {
-    .Call('STITCH_cpp_deal_with_soft_clipped_bases', PACKAGE = 'STITCH', splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead)
+    .Call('_STITCH_cpp_deal_with_soft_clipped_bases', PACKAGE = 'STITCH', splitCigarRead, useSoftClippedBases, posRead, seqRead, qualRead)
 }
 
 #' @export
 get_sample_data_from_SeqLib <- function(region, file_name, reference = "") {
-    .Call('STITCH_get_sample_data_from_SeqLib', PACKAGE = 'STITCH', region, file_name, reference)
+    .Call('_STITCH_get_sample_data_from_SeqLib', PACKAGE = 'STITCH', region, file_name, reference)
 }
 
 #' @export
 get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference = "") {
-    .Call('STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference)
+    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference)
 }
 
 #' @export
 rcpp_make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
-    .Call('STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
+    .Call('_STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
 }
 
 #' @export
 increment2N <- function(yT, xT, y, z) {
-    .Call('STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
+    .Call('_STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
 }
 
 #' @export
 pseudoHaploid_update_model_9 <- function(pRgivenH1, pRgivenH2, eMatHap_t1, eMatHap_t2, gamma_t1, gamma_t2, K, srp) {
-    .Call('STITCH_pseudoHaploid_update_model_9', PACKAGE = 'STITCH', pRgivenH1, pRgivenH2, eMatHap_t1, eMatHap_t2, gamma_t1, gamma_t2, K, srp)
+    .Call('_STITCH_pseudoHaploid_update_model_9', PACKAGE = 'STITCH', pRgivenH1, pRgivenH2, eMatHap_t1, eMatHap_t2, gamma_t1, gamma_t2, K, srp)
 }
 
 #' @export
 forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput) {
-    .Call('STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput)
+    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput)
 }
 
 #' @export
 forwardBackwardHaploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, pState) {
-    .Call('STITCH_forwardBackwardHaploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, pState)
+    .Call('_STITCH_forwardBackwardHaploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, pState)
 }
 
 #' @export
 cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit) {
-    .Call('STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit)
+    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit)
 }
 
 #' @export
 rcpp_calculate_hwe_p <- function(reference_hap) {
-    .Call('STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
+    .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
 }
 

@@ -1,16 +1,3 @@
-test_that("reference legend file with duplicate entries throws an error", {
-    reference_legend <- data.frame(
-        position = c(10, 10, 20),
-        a0 = c("A", "A", "T"),
-        a1 = c("A", "A", "G")
-    )
-    expect_error(
-        validate_reference_legend(reference_legend),
-        "There are 1 duplicate row ids. One such example is 10 A A"
-    )
-})
-
-
 test_that("dependency checker works", {
 
     expect_error(

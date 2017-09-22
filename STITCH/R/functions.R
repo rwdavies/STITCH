@@ -1509,7 +1509,6 @@ initialize_parameters <- function(
             regionStart = regionStart,
             regionEnd = regionEnd,
             buffer = buffer,
-            chr = chr,
             niterations = niterations
         )
         reference_panel_SNPs <- is.na(reference_haps[, 1]) == FALSE
@@ -1895,8 +1894,7 @@ validate_reference_sample_file <- function(samples, reference_sample_file) {
 
 get_reference_colClasses <- function(
     reference_sample_file,
-    reference_populations,
-    chr
+    reference_populations
 ) {
     colClasses <- NA
     if (reference_sample_file != "") {
@@ -1935,7 +1933,7 @@ print_and_validate_reference_snp_stats <- function(
 
 
 
-load_reference_legend <- function(
+load_and_validate_reference_legend <- function(
     legend_header,
     reference_legend_file,
     regionStart,
@@ -1952,6 +1950,7 @@ load_reference_legend <- function(
     } else {
         extract_condition <- "NR>1" ## do not load the header
     }
+    ## check the column is an integer
     legend_and_range <- system(
         paste0(
             "gunzip -c ", reference_legend_file, " | ", "awk '{if(", extract_condition,  ") {print NR\" \"$0}}'"
@@ -1961,7 +1960,11 @@ load_reference_legend <- function(
     col <- as.integer(sapply(a, function(x) x[1]))
     legend <- t(sapply(a, function(x) x[-1]))
     colnames(legend) <- legend_header
-    legend_position <- as.integer(legend[, "position"])
+
+    ## validate here, so can get positions_in_haps_file below
+    validate_reference_legend(legend)
+    
+    legend_position <- suppressWarnings(as.integer(legend[, "position"]))
     position_in_haps_file <- as.integer(sapply(a, function(x) x[1])) - 1
     return(
         list(
@@ -2076,18 +2079,21 @@ remove_NA_columns_from_haps <- function(haps) {
 get_haplotypes_from_reference <- function(
   reference_haplotype_file,
   reference_legend_file,
-  reference_sample_file,
+  reference_sample_file = "",
   reference_populations,
   pos,
-  tempdir = tempdir(),
+  tempdir = NULL,
   regionName = "test",
   regionStart = NA,
   regionEnd = NA,
   buffer = NA,
-  chr,
   niterations = 40
 ) {
 
+    ## really regret my choice of tempdir here
+    if (is.null(tempdir))
+        tempdir <- tempdir()
+    
     print_message("Begin get haplotypes from reference")
 
     print_message("Load and validate reference legend header")
@@ -2097,10 +2103,9 @@ get_haplotypes_from_reference <- function(
     print_message("Load and validate reference legend")
     colClasses <- get_reference_colClasses(
         reference_sample_file,
-        reference_populations,
-        chr
+        reference_populations
     )
-    out <- load_reference_legend(
+    out <- load_and_validate_reference_legend(
         legend_header,
         reference_legend_file,
         regionStart,
@@ -2111,15 +2116,14 @@ get_haplotypes_from_reference <- function(
     legend_position <- out$legend_position
     position_in_haps_file <- out$position_in_haps_file
 
-    validate_reference_legend(legend)
 
     haps <- extract_validate_and_load_haplotypes(
         legend,
         pos,
         reference_haplotype_file,
         position_in_haps_file,
-        regionName,
-        tempdir,
+        regionName = regionName,
+        tempdir = tempdir,
         colClasses,
         niterations
     )
@@ -2139,6 +2143,33 @@ validate_reference_legend <- function(
     if (nrow(legend) == 0) {
         stop(paste0("After extraction, the legend file had no rows. Please check the intersection between the regionStart, regionEnd, buffer and the reference_legend_file:", reference_legend_file))
     }
+    ## check that positions are numeric
+    x <- suppressWarnings(is.na(as.integer(as.character(legend[, "position"]))))
+    if (sum(x) > 0) {
+        stop(paste0(
+            "reference_legend_file position needs to be integer ",
+            "valued positions with values ",
+            "between 1 and ", .Machine$integer.max, " but ",
+            "in row ", which.max(x), " ", legend[which.max(x), "position"],
+            " was observed"
+        ))
+    }
+    ## can now convert to integer
+    legend_position <- as.integer(legend[, "position"])
+    ## check that SNPs are sorted
+    if (sum(diff(legend_position) < 0) > 0) {
+        w <- which.max(diff(legend_position) < 0)
+        stop(paste0(
+            "reference_legend_file position needs to be sorted in ",
+            "strictly increasing order ",
+            "but row number ", w, " has position ",
+            legend[w, "position"], " ",
+            "and row number ", w + 1, " has position ",
+            legend[w + 1, "position"],
+            ". Please further note that STITCH uses IMPUTE2 style reference legend and haplotype files that have to be split by chromosome, and that no checking of correct chromosome is done programatically by STITCH as chromosome is not a column in the reference legend file, so please match your files with care. Sorry for the inconvenience"
+        ))
+    }
+    ## check that there are no duplicates (possibly deprecated)
     legend_snps <- paste(
         legend[, "position"], legend[,"a0"], legend[, "a1"],
         sep = "-"
@@ -2182,14 +2213,25 @@ validate_haps <- function(
 validate_legend_header <- function(
     legend_header
 ) {
-    if (length(legend_header) < 3)
-        stop("The reference_legend_file has fewer than 3 columns. Perhaps it is not a space separated file?")
-    if (is.na(match("position", legend_header)))
-        stop ("Cannot find 'position' column in reference_legend_file")
-    if (is.na(match("a0", legend_header)))
-        stop ("Cannot find reference allele 'a0' column in reference_legend_file")
-    if (is.na(match("a1", legend_header)))
-        stop ("Cannot find alternate allele 'a1' column in reference_legend_file")
+    required_cols <- c("position", "a0", "a1")    
+    if (length(legend_header) < length(required_cols))
+        stop(
+            paste0(
+                "The reference_legend_file has fewer than ",
+                length(legend_header),
+                " columns. Perhaps it is not a space separated file?"
+            )
+        )
+    for (required_col in required_cols) {
+        if (is.na(match(required_col, legend_header))) {
+            stop(
+                paste0(
+                    "Cannot find '", required_col, "' column ",
+                    "in reference_legend_file"
+                )
+            )
+        }
+    }
     return(NULL)
 }
 
