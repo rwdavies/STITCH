@@ -1,7 +1,7 @@
 run_acceptance_tests <- TRUE
 
-n_snps <- 5
-chr <- 10
+n_snps <- 10 
+chr <- 1
 phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
 data_package <- make_acceptance_test_data_package(
     n_samples = 10,
@@ -84,6 +84,8 @@ test_that("STITCH diploid works under default parameters", {
     )
 
 })
+
+
 
 
 test_that("STITCH diploid works under default parameters with nCores = 40 and N = 25", {
@@ -197,10 +199,12 @@ test_that("STITCH pseudoHaploid works under default parameters", {
         stringsAsFactors = FALSE
     )
 
+    print(vcf)
+    print(data_package$phase)
     check_vcf_against_phase(
         vcf = vcf,
         phase = data_package$phase,
-        tol = 0.2
+        tol = 0.4 ## they're not all that bad
     )
 
 })
@@ -716,7 +720,7 @@ test_that("STITCH can generate input in VCF format", {
         K = 2,
         phasemaster = phasemaster
     )
-    
+
     local_outputdir <- tempfile()
     dir.create(local_outputdir)
     STITCH(
@@ -757,13 +761,13 @@ test_that("STITCH can generate input in VCF format", {
         rc2 <- sapply(strsplit(rc, ","), I) ## ref, alt
         genotype <- data_package_local$phase[, iSample, 1] + data_package_local$phase[, iSample, 2]
         ## ref counts - expect no alternate reads
-        expect_equal(sum(as.integer(rc2[1, genotype == 0]) == 0), 0)        
+        expect_equal(sum(as.integer(rc2[1, genotype == 0]) == 0), 0)
         expect_equal(sum(as.integer(rc2[2, genotype == 0]) > 0), 0)
         ## alt counts - expect both to never be 0
-        expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)        
+        expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)
         expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)
         ## hom alt counts - expect no reference reads
-        expect_equal(sum(as.integer(rc2[1, genotype == 2]) > 0), 0)        
+        expect_equal(sum(as.integer(rc2[1, genotype == 2]) > 0), 0)
         expect_equal(sum(as.integer(rc2[2, genotype == 2]) == 0), 0)
     }
 
@@ -870,5 +874,192 @@ test_that("STITCH errors if niterations=1 with reference panel and posfile is no
         "You have selected to use reference haplotypes with niterations=1, which requires exact matching of reference legend SNPs and posfile SNPs. However, posfile SNP with pos-ref-alt 6-A-G was not found in reference legend"
     )
     sink()
+
+})
+
+
+test_that("STITCH can initialize with reference data with snap to grid", {
+
+    skip_test_if_TRUE(run_acceptance_tests)
+    sink("/dev/null")
+
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        reference_haplotype_file = refpack$reference_haplotype_file,
+        reference_legend_file = refpack$reference_legend_file,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        gridWindowSize = 2
+    )
+    sink()
+
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
+
+test_that("STITCH diploid works with snap to grid", {
+
+    skip_test_if_TRUE(run_acceptance_tests)    
+    sink("/dev/null")
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        outputBlockSize = 3,
+        gridWindowSize = 2
+    )
+
+
+    sink()
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
+
+
+test_that("STITCH diploid works with regionStart, regionEnd and buffer", {
+
+    skip_test_if_TRUE(run_acceptance_tests)    
+    sink("/dev/null")
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        regionStart = 3,
+        regionEnd = 7,
+        buffer = 1
+    )
+
+
+    sink()
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
+
+test_that("STITCH diploid works with snap to grid", {
+
+    skip_test_if_TRUE(run_acceptance_tests)    
+    sink("/dev/null")
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        outputBlockSize = 3,
+        gridWindowSize = 2
+    )
+
+
+    sink()
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
+
+
+test_that("STITCH pseudoHaploid works with grid", {
+
+    skip_test_if_TRUE(run_acceptance_tests)    
+    sink("/dev/null")
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        gridWindowSize = 3,
+        method = "pseudoHaploid"
+    )
+
+    sink()
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.3
+    )
 
 })

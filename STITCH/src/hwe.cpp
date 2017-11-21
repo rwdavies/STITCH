@@ -98,6 +98,7 @@ Rcpp::NumericVector rcpp_calculate_hwe_p(const Rcpp::IntegerVector reference_hap
       }
   }
 
+  
   // R is being weird about returning straight doubles
   Rcpp::NumericVector p3 = Rcpp::NumericVector(1);
   if (p2 > 1.0) {

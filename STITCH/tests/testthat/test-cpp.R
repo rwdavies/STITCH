@@ -14,7 +14,7 @@ test_that("can do pseudoHaploid updates in C++", {
         list(eMatHap = matrix(runif(K * n_reads), nrow = n_reads))
     )
     for(iNor in 1:2) {
-        fbsoL[[iNor]]$gamma <- matrix(runif(K * T), nrow = T) 
+        fbsoL[[iNor]]$gamma <- matrix(runif(K * T), nrow = T)
         fbsoL[[iNor]]$eMatHap_t <- t(fbsoL[[iNor]]$eMatHap)
         fbsoL[[iNor]]$gamma_t <- t(fbsoL[[iNor]]$gamma)
     }
@@ -52,7 +52,7 @@ test_that("can do pseudoHaploid updates in C++", {
     expect_equal(sum(abs(out1$pRgivenH2 - pRgivenH2_new)), 0)
     expect_equal(sum(abs(out2$pRgivenH1 - pRgivenH1_new)), 0)
     expect_equal(sum(abs(out2$pRgivenH2 - pRgivenH2_new)), 0)
-    
+
 
 })
 
@@ -77,7 +77,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         reads_span_n_snps = 3,
         n_cores = 1
     )
-    ##tmpdir = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/"    
+    ##tmpdir = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/"
     ##save(data_package, file = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
     ##load("/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
 
@@ -86,7 +86,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         iBam = 1,
         L = data_package$L,
         pos = data_package$pos,
-        T = data_package$T,
+        nSNPs = data_package$nSNPs,
         bam_files = data_package$bam_files,
         N = 1,
         sampleNames = data_package$sample_names,
@@ -121,10 +121,10 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
     )
 
 
-    
+
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
-    
+
     out <- forwardBackwardHaploid(
         sampleReads = sampleReads,
         nReads = as.integer(length(sampleReads)),
@@ -144,3 +144,161 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
 
 
 })
+
+
+test_that("can calculate eMatHapSNP and sample a path", {
+
+    n_snps <- 10 ## set to 10000 to check times better
+    K <- 4
+    phasemaster <- matrix(
+        c(rep(0, n_snps), rep(1, n_snps)),
+        ncol = K
+    )
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 1,
+        n_snps = n_snps,
+        n_reads = n_snps * 2,
+        seed = 2,
+        chr = 10,
+        K = K,
+        phasemaster = phasemaster,
+        reads_span_n_snps = 3,
+        n_cores = 1
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = data_package$L,
+        pos = data_package$pos,
+        nSNPs = data_package$nSNPs,
+        bam_files = data_package$bam_files,
+        N = 1,
+        sampleNames = data_package$sample_names,
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        chrStart = 1,
+        chrEnd = max(data_package$pos[, 2]) + 100
+    )
+
+    load(file_sampleReads(tempdir(), 1, regionName))
+    eHaps <- array(runif(n_snps * K), c(n_snps, K))
+
+    eMatHap_t <- rcpp_make_eMatHap_t(
+        sampleReads = sampleReads,
+        nReads = length(sampleReads),
+        eHaps_t = t(eHaps),
+        maxDifferenceBetweenReads = 1000,
+        Jmax = 10
+    )
+
+    sigma <- runif(n_snps - 1)
+    alphaMat <- array(runif((n_snps - 1) * K), c(n_snps - 1, K))
+    x <- sigma
+    transMatRate <- cbind(x, 1 - x)
+    pi <- runif(K) / K
+
+    read_labels <- as.integer(runif(length(sampleReads)) < 0.5)
+
+    path <- rcpp_sample_path(
+        read_labels = read_labels,
+        eMatHap_t = eMatHap_t,
+        sampleReads = sampleReads,
+        nReads = length(sampleReads),
+        eHaps_t = t(eHaps),
+        maxDifferenceBetweenReads = 1000,
+        Jmax = 10,
+        pi = pi,
+        transMatRate_t = t(transMatRate),
+        alphaMat_t = t(alphaMat)
+    )
+
+})
+
+
+test_that("can sample many paths in c++", {
+
+    skip("this isn't working reproducibly")
+    set.seed(45)
+    n_snps <- 10 ## set to 10000 to check times better
+    K <- 4
+    phasemaster <- matrix(
+        c(rep(0, n_snps), rep(1, n_snps)),
+        ncol = K
+    )
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 1,
+        n_snps = n_snps,
+        n_reads = n_snps * 2,
+        seed = 2,
+        chr = 10,
+        K = K,
+        phasemaster = phasemaster,
+        reads_span_n_snps = 3,
+        n_cores = 1
+    )
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = data_package$L,
+        pos = data_package$pos,
+        nSNPs = data_package$nSNPs,
+        bam_files = data_package$bam_files,
+        N = 1,
+        sampleNames = data_package$sample_names,
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        chrStart = 1,
+        chrEnd = max(data_package$pos[, 2]) + 100
+    )
+
+    load(file_sampleReads(tempdir(), 1, regionName))
+    ## give it some random stuff to use as input
+    eHaps <- array(runif(n_snps * K), c(n_snps, K))
+    eHaps[, 1] <- 0.01
+    eHaps[, 2] <- 0.99
+    sigma <- array(0.99, n_snps)
+    alphaMat <- array(runif((n_snps - 1) * K), c(n_snps - 1, K))
+    x <- sigma
+    transMatRate <- cbind(x, 1 - x)
+    pi <- runif(K) / K
+    srp <- unlist(lapply(sampleReads,function(x) x[[2]]))
+
+    n_its <- 10
+    sum_dosage_vec <- array(0, n_its)
+    sum_dosage_vec[6:10] <- 1
+    n_starts <- 10
+    out <- rcpp_sample_multiple_paths(
+        n_starts = n_starts,
+        n_its = n_its,
+        sampleReads = sampleReads,
+        nReads = length(sampleReads),
+        eHaps_t = t(eHaps),
+        maxDifferenceBetweenReads = 1000,
+        Jmax = 10,
+        pi = pi,
+        transMatRate_t = t(transMatRate),
+        alphaMat_t = t(alphaMat),
+        srp = srp,
+        sum_dosage_vec = sum_dosage_vec
+    )
+
+    ## check dosage OK vs expectation
+    expect_equal(
+        sum(
+            abs(
+                rowSums(data_package$phase[, , ]) -
+                rowSums(out$dosages) / n_its
+            ) > 0.2
+        ),
+        0
+    )
+
+
+})
+

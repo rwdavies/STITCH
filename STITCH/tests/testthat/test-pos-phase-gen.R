@@ -233,7 +233,7 @@ test_that("phase throws an error if bad split character", {
         get_and_validate_phase(phasefile),
         paste0(
             "Unable to split column 1 of phasefile at position 1 with entry ",
-            paste0(phase[1, 1, 1], ":", phase[1, 1, 2]), 
+            paste0(phase[1, 1, 1], ":", phase[1, 1, 2]),
             " due to lack of field separator |"
         ),
         fixed = TRUE
@@ -259,7 +259,7 @@ test_that("pos, gen and phase can be loaded", {
     n_snps <- 3
     posfile <- tempfile()
     pos <- make_posfile(posfile, n_snps = n_snps)
-    genfile <- tempfile()    
+    genfile <- tempfile()
     gen <- make_genfile(genfile, n_snps = n_snps)
     phasefile <- tempfile()
     phase <- make_phasefile(phasefile, n_snps = n_snps)
@@ -269,7 +269,7 @@ test_that("pos, gen and phase can be loaded", {
         phasefile,
         chr = 1
     )
-    expect_equal(out$T, n_snps)
+    expect_equal(out$nSNPs, n_snps)
     expect_equal(out$gen, gen)
     expect_equal(out$pos, pos)
     expect_equal(out$phase, phase)
@@ -284,7 +284,7 @@ test_that("gen and phase can be omitted", {
         posfile,
         chr = 1
     )
-    expect_equal(out$T, n_snps)
+    expect_equal(out$nSNPs, n_snps)
     expect_equal(out$pos, pos)
 })
 
@@ -299,7 +299,7 @@ test_that("gen can be omitted", {
         phasefile = phasefile,
         chr = 1
     )
-    expect_equal(out$T, n_snps)
+    expect_equal(out$nSNPs, n_snps)
     expect_equal(out$pos, pos)
     expect_equal(out$phase, phase)
 })
@@ -315,7 +315,7 @@ test_that("phase can be omitted", {
         genfile = genfile,
         chr = 1
     )
-    expect_equal(out$T, n_snps)
+    expect_equal(out$nSNPs, n_snps)
     expect_equal(out$pos, pos)
     expect_equal(out$gen, gen)
 })
@@ -324,7 +324,7 @@ test_that("phase can be omitted", {
 test_that("pos different sized than gen throws an error", {
     posfile <- tempfile()
     pos <- make_posfile(posfile, n_snps = 4)
-    genfile <- tempfile()    
+    genfile <- tempfile()
     gen <- make_genfile(genfile, n_snps = 3)
     expect_error(
         get_and_validate_pos_gen_and_phase(
@@ -340,7 +340,7 @@ test_that("pos different sized than gen throws an error", {
 test_that("pos different sized than phase throws an error", {
     posfile <- tempfile()
     pos <- make_posfile(posfile, n_snps = 4)
-    phasefile <- tempfile()    
+    phasefile <- tempfile()
     phase <- make_phasefile(phasefile, n_snps = 5)
     expect_error(
         get_and_validate_pos_gen_and_phase(
@@ -357,7 +357,7 @@ test_that("pos different sized than phase throws an error", {
 ## test sample name matching
 test_that("gen name is properly matched", {
     sampleNames <- paste0("samp", 1:10)
-    genfile <- tempfile()    
+    genfile <- tempfile()
     gen <- make_genfile(
         genfile, n_samples = 3,
         header = c("samp1", "samp8", "samp5")
@@ -375,7 +375,7 @@ test_that("gen name is properly matched", {
 ## test sample name matching
 test_that("gen name is properly matched with one sample", {
     sampleNames <- paste0("samp", 1:10)
-    genfile <- tempfile()    
+    genfile <- tempfile()
     gen <- make_genfile(
         genfile, n_samples = 1,
         header = c("samp7")

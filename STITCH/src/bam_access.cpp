@@ -119,7 +119,7 @@ std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<int>,
 }
 
 
-std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int T, std::vector<int> L, std::string region, std::string file_name, std::string reference) {
+std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int nSNPs, std::vector<int> L, std::string region, std::string file_name, std::string reference) {
     //
     // initialize SeqLib stuff
     //
@@ -224,7 +224,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	// for t-Min
 	while(whileVar==0) {
 	  // dont continue if too far
-	  if(tMin<(T-1)) {
+	  if(tMin<(nSNPs-1)) {
 	    // continue 
 	    if(L[tMin] < readStart) {
 	      tMin++;
@@ -239,7 +239,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	whileVar=0;
 	while(whileVar==0) {
 	  // dont continue if too far
-	  if(tMax < (T - 1)) {
+	  if(tMax < (nSNPs - 1)) {
 	    if(L[tMax + 1] <= readEnd) { 
 	      // number is only to deal with weird cigars	  
 	      tMax++;
@@ -247,7 +247,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	      whileVar=1; // break loop - done!
 	    }
 	  } else {
-	    tMax = T - 1; // done, cannot be larger
+	    tMax = nSNPs - 1; // done, cannot be larger
 	    whileVar=1; // break loop
 	  }
 	}

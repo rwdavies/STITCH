@@ -1,5 +1,18 @@
-test_that("dependency checker works", {
+test_that("reference legend file with duplicate entries throws an error", {
+    reference_legend <- data.frame(
+        position = c(10, 10, 20),
+        a0 = c("A", "A", "T"),
+        a1 = c("A", "A", "G")
+    )
+    expect_error(
+        validate_reference_legend(reference_legend),
+        "There are 1 duplicate row ids. One such example is 10 A A"
+    )
+})
 
+
+test_that("dependency checker works", {
+    
     expect_error(
         check_program_dependency("not_a_program"),
         paste0(
@@ -8,7 +21,7 @@ test_that("dependency checker works", {
             "Please make not_a_program available from the PATH"
         )
     )
-
+    
 })
 
 test_that("vcf_output_name throws an error when too short", {
@@ -26,7 +39,7 @@ test_that("vcf_output_name can be OK", {
 test_that("if vcf_output_name does not have a folder, it is placed in outputdir", {
     vcf_output_name <- "jimmy.vcf.gz"
     outputdir <- "/path/to/folder"
-    regionName <- "20.10.20"
+    regionName <- "20.10.20"    
     output_vcf <- get_output_vcf(vcf_output_name, outputdir, regionName)
     expect_equal(
         output_vcf,
@@ -37,7 +50,7 @@ test_that("if vcf_output_name does not have a folder, it is placed in outputdir"
 test_that("if vcf_output_name has a folder, this is the path to the file", {
     vcf_output_name <- file.path("path", "to", "jimmy.vcf.gz")
     outputdir <- "/path/to/folder"
-    regionName <- "20.10.20"
+    regionName <- "20.10.20"    
     output_vcf <- get_output_vcf(vcf_output_name, outputdir, regionName)
     expect_equal(
         output_vcf,
@@ -48,7 +61,7 @@ test_that("if vcf_output_name has a folder, this is the path to the file", {
 test_that("if vcf_output_name is NULL, vcf_output_name is constructed in the default way", {
     vcf_output_name <- NULL
     outputdir <- "/path/to/folder"
-    regionName <- "20.10.20"
+    regionName <- "20.10.20"    
     output_vcf <- get_output_vcf(vcf_output_name, outputdir, regionName)
     expect_equal(
         output_vcf,
@@ -93,7 +106,7 @@ test_that("an error is thown when bamlist does not exist", {
         ),
         paste0("Cannot find bamlist:", bamlist_that_does_not_exist)
     )
-
+    
 })
 
 
@@ -102,7 +115,7 @@ test_that("an error is thown when cramlist does not exist", {
     cramlist_that_does_not_exist <- tempfile()
     ref <- tempfile()
     system(paste0("touch ", ref))
-
+    
     expect_error(
         validate_bamlist_and_cramlist_for_input_generation(
             regenerateInput = TRUE,
@@ -111,32 +124,26 @@ test_that("an error is thown when cramlist does not exist", {
         ),
         paste0("Cannot find cramlist:", cramlist_that_does_not_exist)
     )
-
+    
 })
 
 
 test_that("can print allele count properly for empty results", {
     alleleCount <- array(0, c(10, 3))
-    print_allele_count(alleleCount, N = 10)
+    alleleCount[, c(1, 3)] <- NA
+    print_allele_count(alleleCount, N = 10) 
 })
 
 test_that("can print allele count properly for normal results", {
     set.seed(1)
     alleleCount <- array(runif(30), c(10, 3))
-    print_allele_count(alleleCount, N = 10)
+    alleleCount[, c(1, 3)] <- NA    
+    print_allele_count(alleleCount, N = 10) 
 })
 
 test_that("can print allele count for variable results", {
-    alleleCount <- array(0, c(100, 3))
+    alleleCount <- array(NA, c(100, 3))
     alleleCount[, 2] <- seq(1, 1e6, length.out = 100)
-    print_allele_count(alleleCount, N = 10)
+    print_allele_count(alleleCount, N = 10) 
 })
 
-test_that("allele count throws an error if there is an internal problem", {
-    alleleCount <- array(NA, c(5, 3))
-    alleleCount[, 2:3] <- c(2, 3)
-    expect_error(
-        check_allele_count_OK(alleleCount),
-        "An internal problem with STITCH occured. There are NAs in the allele count. This may indicate a problem converting the input BAM/CRAM data into the internal STITCH format. The first error occured for SNP number 1 with entry NA, 2, 3"
-    )
-})

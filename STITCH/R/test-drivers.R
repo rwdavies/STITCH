@@ -19,7 +19,7 @@ make_simple_sam_text <- function(
     if (include_rg_tag)
         out <- paste0(out, "@RG\tID:7369_8x15\tSM:", sample_name, "\n")
     if (include_rg_tag_with_no_sm)
-        out <- paste0(out, "@RG\tID:7369_8x15\n")        
+        out <- paste0(out, "@RG\tID:7369_8x15\n")
     if (length(entries) > 0)
         for(entry in entries)
             out <- paste0(out, paste0(entry, collapse = "\t"), "\n")
@@ -293,7 +293,7 @@ make_acceptance_test_data_package <- function(
         cramlist <- file.path(outputdir, "cramlist.txt")
         bamlist <- NULL
         samplelist <- cramlist
-        ref <- sample_files[[1]]$ref        
+        ref <- sample_files[[1]]$ref
         sample_files <- sapply(sample_files, function(x) x$cram_file)
         bam_files <- NULL
     } else {
@@ -324,7 +324,7 @@ make_acceptance_test_data_package <- function(
             pos = pos,
             sample_names = sample_names,
             bam_files = bam_files,
-            T = as.integer(nrow(pos)),
+            nSNPs = as.integer(nrow(pos)),
             phasefile = phasefile
         )
     )
@@ -382,13 +382,11 @@ make_reference_package <- function(
     n_snps = 10,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
-    refs = NA,
-    alts = NA,
     L = NA,
     chr = 1,
     reference_sample_header = NA,
     reference_genders = c("male", "female"),
-    reference_legend_header = NULL
+    phasemaster = NULL
 ) {
 
     n_total_samples <- length(reference_populations) * n_samples_per_pop
@@ -397,8 +395,6 @@ make_reference_package <- function(
         posfile = posfile,
         n_snps = n_snps,
         seed = 1,
-        refs = refs,
-        alts = alts,
         L = L
     )
 
@@ -423,23 +419,28 @@ make_reference_package <- function(
     ##id position a0 a1 TYPE AFR AMR EAS EUR SAS ALL
     ##20:60343:G:A 60343 G A Biallelic_SNP 0 0.00144092219020173 0 0 0 0.000199680511182109
     reference_legend <- data.frame(
-        id = paste0("rs", pos[, "POS"]),
+        id = "NOT_USED",
         position = pos[, "POS"],
         a0 = pos[, "REF"],
         a1 = pos[, "ALT"]
     )
-    if (is.null(reference_legend_header) == FALSE) {
-        if (length(reference_legend_header) != 4)
-            stop("Bad test setup")
-        colnames(reference_legend) <- reference_legend_header
-    }
     simple_write(reference_legend, reference_legend_file, gzip = TRUE)
 
-    ## 0 0 1 1 - 2 entries per sample, row = SNP, one per sample
-    reference_haplotypes <- array(
-        sample(c(0, 1), n_snps * 2 * n_total_samples, replace = TRUE),
-        c(n_snps, 2 * n_total_samples)
-    )
+    ## either sample at random
+    ## or sample from phasemaster without recomb
+    reference_haplotypes <- array(NA, c(n_snps, 2 * n_total_samples))
+    for (i_sample in 1:n_total_samples) {
+        for (i_hap in 1:2) {
+            c <- 2 * (i_sample - 1) + i_hap
+            if (is.null(phasemaster )) {
+                g <- sample(c(0, 1), n_snps, replace = TRUE)
+            } else {
+                g <- phasemaster[, sample(1:ncol(phasemaster), 1)]
+            }
+            reference_haplotypes[, c] <- g
+        }
+    }
+
     if (chr == "X") {
         ## 2nd hap for each male goes to -
         w <- 2 * which(reference_samples[, "SEX"] == "male")

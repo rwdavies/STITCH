@@ -25,6 +25,7 @@ using namespace Rcpp;
 ////' @export
 //// [[Rcpp::export]]
 
+arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax);
 
 
 //' @export
@@ -113,6 +114,7 @@ double print_times (double prev, int suppressOutput, std::string past_text, std:
 
 
 
+
 //' @export
 // [[Rcpp::export]]
 Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput) {
@@ -124,7 +126,8 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   //
   // constants
   //
-  const int T = eHaps_t.n_cols;
+  const int T_total = eHaps_t.n_cols; // total number of SNPs
+  const int T = alphaMat_t.n_cols + 1;  // what we iterate over / grid
   const int K = eHaps_t.n_rows; // traditional K for haplotypes
   const int KK = K*K; // KK is number of states / traditional K for HMMs
   //
@@ -135,23 +138,20 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   arma::mat betaHat_t = arma::zeros(KK,T);
   arma::rowvec c = arma::zeros(1,T);
   arma::mat gamma_t = arma::zeros(KK,T);  
-  arma::mat eMat_t = arma::ones(KK,T);
+  arma::mat eMat_t = arma::ones(KK, T_total);
   // define eMatHap to work on the number of reads
   arma::mat eMatHap_t = arma::ones(K,nReads);  
-  // variables for faster forward backward calculation
-  double alphaConst, betaConst;
+  // variables for faster forward backward calculation  double alphaConst, betaConst;
   arma::vec alphaTemp1 = arma::zeros(K);
   arma::vec alphaTemp2 = arma::zeros(K);
   arma::vec betaTemp1 = arma::zeros(K);
   arma::vec betaTemp2 = arma::zeros(K);
+  double alphaConst, betaConst;
   // variables working on full space
   arma::mat jUpdate_t = arma::zeros(K,T-1);  
-  arma::cube gammaUpdate_t = arma::zeros(K,T,2);
-  arma::mat hapProbs = arma::zeros(T,K);
-  arma::mat genProbs = arma::zeros(T,3);
-  arma::vec dosage = arma::zeros(T);
-  int jj, j, k, kk, t, k1, k2, iRead;
-  int J, readSNP;
+  arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
+  int j, k, kk, t, k1, k2, iRead;
+  int readSNP;
   double kl1, kl2;        
   double x, a, b, d, e, d1, d2, d3, eps;
   double pR = 0;
@@ -164,51 +164,7 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   next_section="Initialize eMatHap";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  //
-  for(iRead=0; iRead<=nReads-1; iRead++)
-  {
-    Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-    // recal that below is what is used to set each element of sampleRead
-    // note - this is no longer quite accurate
-    // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
-    J = as<int>(readData[0]); // number of Unique SNPs on read
-    readSNP = as<int>(readData[1]); // leading SNP from read
-    arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for SNPs
-    arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-    // once each SNP is done, have P(read | k), can multiply to get P(read|(k1,k2))
-    if(J>=Jmax)
-      J=Jmax;
-    // for each SNP in the read
-    for(j=0; j<=J; j++) 
-    {
-      // less than 0 - reference base more likely
-        if(bqU(j)<0) {
-        eps = pow(10,(double(bqU(j))/10));
-        pR=1-eps;
-        pA=eps/3;
-      }
-      if(bqU(j)>0) {
-        eps = pow(10,(-double(bqU(j))/10));
-        pR=eps/3;
-        pA=1-eps;
-      }
-      jj=pRU(j);
-      for(k=0; k<=K-1; k++)
-          eMatHap_t(k,iRead) = eMatHap_t(k,iRead) * \
-              ( eHaps_t(k,jj) * pA + (1 - eHaps_t(k,jj)) * pR);
-    }
-    //
-    // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
-    //
-    x=0;
-    for(k=0; k<=K-1; k++)
-        if(eMatHap_t(k,iRead)>x)
-            x=eMatHap_t(k,iRead);
-    // x is the maximum now
-    for(k=0; k<=K-1; k++)
-        if(eMatHap_t(k,iRead)<x/maxDifferenceBetweenReads)
-            eMatHap_t(k,iRead)=x/maxDifferenceBetweenReads;
-  }
+  eMatHap_t = rcpp_make_eMatHap_t(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax);
   //
   // once we have all the eMatHaps, ie probabilities from reads, make eMat from this
   //
@@ -362,40 +318,6 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
       gamma_t.col(t) = gamma_t.col(t) / c(t);
   //
   //
-  // get dosages
-  //  - only needed if final run
-  //
-  //
-  next_section="Get dosages";
-  prev=print_times(prev, suppressOutput, prev_section, next_section);
-  prev_section=next_section;
-  if((whatToReturn == 2) | (whatToReturn==0)) // final run or debugging only
-  {
-    for(t=0; t<=T-1; t++)
-    {
-      for(k1=0; k1<=K-1;k1++)
-      {
-        for(k2=0; k2<=K-1;k2++)
-        {
-          k=k1+K*k2;
-          hapProbs(t,k1)= hapProbs(t,k1) + gamma_t(k,t)/2;
-          hapProbs(t,k2)= hapProbs(t,k2) + gamma_t(k,t)/2;
-          a=eHaps_t(k1, t);
-          b=eHaps_t(k2, t);
-          genProbs(t,0) = genProbs(t,0) + \
-              gamma_t(k,t) * (1-a) * (1-b);
-          genProbs(t,1) = genProbs(t,1) + \
-              gamma_t(k,t) * (a * (1 - b) + (1 - a) * b);
-          genProbs(t,2) = genProbs(t,2) + \
-              gamma_t(k,t) * a * b;
-        } // k2
-      } //k1
-      for(j=1;j<=2;j++)
-        dosage(t)=dosage(t)+j*genProbs(t,j)/2;
-    } // end of loop on t
-  } // end of if statement
-  //
-  //
   // do gamma update here - save large matrix, just put in necessary values
   //
   //
@@ -411,7 +333,7 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
       // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
       Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
       int J = as<int>(readData[0]); // number of SNPs on read
-      int cr = as<int>(readData[1]); // central SNP
+      int cr = as<int>(readData[1]); // central SNP or grid point
       arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
       arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
       for(j=0; j<=J; j++) // for each SNP in the read
@@ -492,9 +414,6 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   prev_section=next_section;
   if(whatToReturn==0) // full, debugging return
     return(wrap(Rcpp::List::create(
-      Rcpp::Named("hapProbs") = hapProbs,
-      Rcpp::Named("dosage") = dosage,
-      Rcpp::Named("genProbs") = genProbs,
       Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
       Rcpp::Named("gamma_t") = gamma_t,      
       Rcpp::Named("betaHat_t") = betaHat_t,
@@ -509,10 +428,7 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
       Rcpp::Named("jUpdate_t") = jUpdate_t)));
   if(whatToReturn==2) // final run - no updating needed
     return(wrap(Rcpp::List::create(
-      Rcpp::Named("hapProbs") = hapProbs,
       Rcpp::Named("gamma_t") = gamma_t,
-      Rcpp::Named("dosage") = dosage,
-      Rcpp::Named("genProbs") = genProbs,
       Rcpp::Named("jUpdate_t") = jUpdate_t,
       Rcpp::Named("gammaUpdate_t") = gammaUpdate_t)));
   // just put something to remove warning
@@ -523,6 +439,58 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
 
 
 
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::List calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, const arma::mat& eHaps_t, const arma::mat& gamma_t, const Rcpp::IntegerVector grid) {
+    // basically, copy and paste, either using grid or not
+    arma::mat genProbs = arma::zeros(nSNPs,3);
+    arma::vec dosage = arma::zeros(nSNPs);
+    // new
+    int t, k1, k2, j, k;
+    double a, b;
+    if (nSNPs > nGrids) {
+        for(t=0; t<=nSNPs-1; t++) {
+            for(k1=0; k1<=K-1;k1++) {
+                for(k2=0; k2<=K-1;k2++) {
+                    k=k1+K*k2;
+                    a=eHaps_t(k1, t);
+                    b=eHaps_t(k2, t);
+                    genProbs(t,0) = genProbs(t,0) +             \
+                        gamma_t(k, grid(t)) * (1-a) * (1-b);
+                    genProbs(t,1) = genProbs(t,1) +                     \
+                        gamma_t(k, grid(t)) * (a * (1 - b) + (1 - a) * b);
+                    genProbs(t,2) = genProbs(t,2) +     \
+                        gamma_t(k, grid(t)) * a * b;
+                } // k2
+            } //k1
+            for(j=1;j<=2;j++)
+                dosage(t)=dosage(t)+j*genProbs(t,j)/2;
+        }
+    } else {
+        for(t=0; t<=nSNPs-1; t++) {
+            for(k1=0; k1<=K-1;k1++) {
+                for(k2=0; k2<=K-1;k2++) {
+                    k=k1+K*k2;
+                    a=eHaps_t(k1, t);
+                    b=eHaps_t(k2, t);
+                    genProbs(t,0) = genProbs(t,0) +             \
+                        gamma_t(k, t) * (1-a) * (1-b);
+                    genProbs(t,1) = genProbs(t,1) +                     \
+                        gamma_t(k, t) * (a * (1 - b) + (1 - a) * b);
+                    genProbs(t,2) = genProbs(t,2) +     \
+                        gamma_t(k, t) * a * b;
+                } // k2
+            } //k1
+            for(j=1;j<=2;j++)
+                dosage(t)=dosage(t)+j*genProbs(t,j)/2;
+        }
+    }
+    return(wrap(Rcpp::List::create(
+      Rcpp::Named("dosage") = dosage,
+      Rcpp::Named("genProbs") = genProbs
+                                   )));
+}
 
 
 
@@ -547,7 +515,8 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   // constants
   //
   //
-  const int T = eHaps_t.n_cols;
+  const int T_total = eHaps_t.n_cols; // total number of SNPs
+  const int T = alphaMat_t.n_cols + 1;  // what we iterate over / grid
   const int K = eHaps_t.n_rows; // traditional K for haplotypes
   //
   // new variables
@@ -564,7 +533,7 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   arma::mat eMatHapSNP_t = arma::ones(K,T);
   // variables working on full space
   arma::mat jUpdate_t = arma::zeros(K,T-1);
-  arma::cube gammaUpdate_t = arma::zeros(K,T,2);
+  arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
   // variables for transition matrix and initialization
   // int variables and such
   int j, jj, k, t, k1, iRead;
@@ -873,6 +842,7 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
       Rcpp::Named("eMatHapOri_t") = eMatHapOri_t,
       Rcpp::Named("gamma_t") = gamma_t,
       Rcpp::Named("jUpdate_t") = jUpdate_t,
+      Rcpp::Named("eMatHapSNP_t") = eMatHapSNP_t,
       Rcpp::Named("eMatHap_t") = eMatHap_t)));
   if(whatToReturn==1) // update
     return(wrap(Rcpp::List::create(
