@@ -95,8 +95,21 @@ Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::
 
 
 
-
-
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector get_random_values(int N) {
+    Rcpp::NumericVector out = Rcpp::NumericVector(N);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 1);
+    int n;
+    double rand_uniform;
+    for(n=0; n<N; n++){
+        rand_uniform = dis(gen);        
+        out(n)=rand_uniform;
+    }
+    return(out);
+}
 
 
 
@@ -114,10 +127,112 @@ double print_times (double prev, int suppressOutput, std::string past_text, std:
 
 
 
+//' @export
+// [[Rcpp::export]]
+arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & transMatRate_t, const arma::mat & eMat_t, const arma::mat & alphaMat_t, const int T, const int K, const arma::rowvec & c) {
+    //
+    arma::imat sampled_path_diploid(T, 3);
+    int sampled_state;
+    int t;
+    int first_k;
+    int second_k;
+    int KK = K * K;
+    double sum = 0;
+    double rand_uniform = 0;
+    double samp_vector_sum;
+    double norm;
+    arma::rowvec samp_vector = arma::zeros(1, KK);
+    int prev_state;
+    int prev_first_k, prev_second_k, k1, kk;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 1);
+    // somehow this makes dis(gen) give me random 0-1 doubles I think
+    //
+    // choose initial state
+    //
+    double check = 0;
+    for(kk = 0; kk < KK; kk++)
+        check = check + alphaHat_t(kk, T - 1);
+    if ((pow(check - 1, 2)) > 1e-4) {
+        std::cout << "BAD input assumption" << std::endl;
+        return(sampled_path_diploid);
+    }
+    //
+    //
+    kk = 0;  
+    rand_uniform = dis(gen);
+    sum = 0;
+    while(kk < KK) {
+        sum = sum + alphaHat_t(kk, T - 1); // does this sum to 1???
+        if (sum > rand_uniform) {
+            sampled_state = kk;
+            first_k = (sampled_state) % K;
+            second_k = (sampled_state - first_k) / K;
+            sampled_path_diploid(T - 1, 0) = first_k; // 0 based
+            sampled_path_diploid(T - 1, 1) = second_k; // 0 based
+            sampled_path_diploid(T - 1, 2) = sampled_state; // 0 based
+            kk = KK;
+        }
+        kk = kk + 1;    
+    }
+    //
+    // cycle
+    //
+    //for(t = T - 2; t >= 0; t--) {
+    for(t = T - 2; t >= 0; t--) {
+        prev_first_k = sampled_path_diploid(t + 1, 0); // 0-based
+        prev_second_k = sampled_path_diploid(t + 1, 1); // 0 based
+        prev_state = sampled_path_diploid(t + 1, 2); // 0 based
+        samp_vector.fill(transMatRate_t(2, t) * alphaMat_t(prev_first_k, t) * alphaMat_t(prev_second_k, t));
+        for(k1=0; k1<=K-1; k1++) {
+            // switch on first, keep second
+            samp_vector(k1 + K * prev_second_k) = samp_vector(k1 + K * prev_second_k) + transMatRate_t(1, t) * alphaMat_t(prev_first_k, t);
+            // keep first, switch on second
+            samp_vector(prev_first_k + K * k1) = samp_vector(prev_first_k + K * k1) + transMatRate_t(1, t) * alphaMat_t(prev_second_k, t);
+        }
+        samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_t(0, t);
+        //
+        samp_vector_sum = 0;
+        for(kk=0; kk<=KK-1; kk++) {
+            samp_vector(kk)=samp_vector(kk) * alphaHat_t(kk, t);
+            samp_vector_sum=samp_vector_sum + samp_vector(kk);
+        }
+        norm = alphaHat_t(prev_state, t + 1) / eMat_t(prev_state, t + 1) / c(t + 1);
+        if ((pow(samp_vector_sum / norm - 1, 2)) > 1e-4) {
+             std::cout << "BAD COUNT on t=" << t << std::endl;
+             std::cout << "samp_vector_sum=" << samp_vector_sum << std::endl;
+             std::cout << "norm=" << norm << std::endl;
+             return(sampled_path_diploid);
+        }
+        // sample state using crazy C++
+        kk = 0;  
+        rand_uniform = dis(gen);
+        sum = 0;
+        while(kk < KK) {
+            sum = sum + samp_vector(kk) / norm;
+            if (sum > rand_uniform) {
+                sampled_state = kk;
+                kk = KK;
+            }
+            kk = kk + 1;    
+        }
+        // convert back here
+        first_k = (sampled_state) % K;
+        second_k = (sampled_state - first_k) / K;
+        sampled_path_diploid(t, 0) = first_k;
+        sampled_path_diploid(t, 1) = second_k;
+        sampled_path_diploid(t, 2) = sampled_state;
+    }
+    return(sampled_path_diploid);
+}
+
+
+
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput) {
+Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput, const int return_a_sampled_path = 0) {
   double prev=clock();
   std::string prev_section="Null";
   std::string next_section="Initialize variables";
@@ -140,7 +255,7 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   arma::mat gamma_t = arma::zeros(KK,T);  
   arma::mat eMat_t = arma::ones(KK, T_total);
   // define eMatHap to work on the number of reads
-  arma::mat eMatHap_t = arma::ones(K,nReads);  
+  arma::mat eMatHap_t; //  = arma::ones(K,nReads)
   // variables for faster forward backward calculation  double alphaConst, betaConst;
   arma::vec alphaTemp1 = arma::zeros(K);
   arma::vec alphaTemp2 = arma::zeros(K);
@@ -405,6 +520,13 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
       }   // end of loop on k
   } // end of loop on t
   //
+  // optional, sample a path
+  //
+  arma::imat sampled_path_diploid;
+  if (return_a_sampled_path == 1) {
+      sampled_path_diploid = sample_diploid_path(alphaHat_t, transMatRate_t, eMat_t, alphaMat_t, T, K, c);
+  }
+  //
   //
   // done - return necessary information
   //
@@ -420,17 +542,22 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
       Rcpp::Named("alphaHat_t") = alphaHat_t,      
       Rcpp::Named("jUpdate_t") = jUpdate_t,      
       Rcpp::Named("eMat_t") = eMat_t,
-      Rcpp::Named("eMatHap_t") = eMatHap_t)));
+      Rcpp::Named("eMatHap_t") = eMatHap_t,
+      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid
+                                   )));
   if(whatToReturn==1) // update
     return(wrap(Rcpp::List::create(
       Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
       Rcpp::Named("gamma_t") = gamma_t,
-      Rcpp::Named("jUpdate_t") = jUpdate_t)));
+      Rcpp::Named("jUpdate_t") = jUpdate_t,
+      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid
+                                   )));
   if(whatToReturn==2) // final run - no updating needed
     return(wrap(Rcpp::List::create(
       Rcpp::Named("gamma_t") = gamma_t,
       Rcpp::Named("jUpdate_t") = jUpdate_t,
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t)));
+      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
+      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid)));
   // just put something to remove warning
   return(wrap(Rcpp::List::create(
       Rcpp::Named("c") = c)));

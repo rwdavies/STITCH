@@ -133,9 +133,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_random_values
+Rcpp::NumericVector get_random_values(int N);
+RcppExport SEXP _STITCH_get_random_values(SEXP NSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_random_values(N));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_diploid_path
+arma::imat sample_diploid_path(const arma::mat& alphaHat_t, const arma::mat& transMatRate_t, const arma::mat& eMat_t, const arma::mat& alphaMat_t, const int T, const int K, const arma::rowvec& c);
+RcppExport SEXP _STITCH_sample_diploid_path(SEXP alphaHat_tSEXP, SEXP transMatRate_tSEXP, SEXP eMat_tSEXP, SEXP alphaMat_tSEXP, SEXP TSEXP, SEXP KSEXP, SEXP cSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t(transMatRate_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMat_t(eMat_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
+    Rcpp::traits::input_parameter< const int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const arma::rowvec& >::type c(cSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_diploid_path(alphaHat_t, transMatRate_t, eMat_t, alphaMat_t, T, K, c));
+    return rcpp_result_gen;
+END_RCPP
+}
 // forwardBackwardDiploid
-Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput);
-RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP whatToReturnSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP) {
+Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput, const int return_a_sampled_path);
+RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP whatToReturnSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP return_a_sampled_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -149,7 +177,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type whatToReturn(whatToReturnSEXP);
     Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
     Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
-    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput));
+    Rcpp::traits::input_parameter< const int >::type return_a_sampled_path(return_a_sampled_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput, return_a_sampled_path));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -226,7 +255,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_sample_path
-arma::rowvec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t);
+arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t);
 RcppExport SEXP _STITCH_rcpp_sample_path(SEXP read_labelsSEXP, SEXP eMatHap_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -299,6 +328,61 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_NumericMatrix
+double test_NumericMatrix(Rcpp::NumericMatrix m);
+RcppExport SEXP _STITCH_test_NumericMatrix(SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_NumericMatrix(m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_arma1
+double test_arma1(const arma::mat& m);
+RcppExport SEXP _STITCH_test_arma1(SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_arma1(m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_arma2
+double test_arma2(const arma::mat& m);
+RcppExport SEXP _STITCH_test_arma2(SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_arma2(m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_arma3
+double test_arma3(const arma::mat& m);
+RcppExport SEXP _STITCH_test_arma3(SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_arma3(m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_arma4
+double test_arma4(const arma::mat& m);
+RcppExport SEXP _STITCH_test_arma4(SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_arma4(m));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_header_using_SeqLib", (DL_FUNC) &_STITCH_get_header_using_SeqLib, 1},
@@ -310,7 +394,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},
     {"_STITCH_increment2N", (DL_FUNC) &_STITCH_increment2N, 4},
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},
-    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 10},
+    {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
+    {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
+    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 11},
     {"_STITCH_calculate_fbd_dosage", (DL_FUNC) &_STITCH_calculate_fbd_dosage, 6},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 14},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 7},
@@ -319,6 +405,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
     {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_test_NumericMatrix", (DL_FUNC) &_STITCH_test_NumericMatrix, 1},
+    {"_STITCH_test_arma1", (DL_FUNC) &_STITCH_test_arma1, 1},
+    {"_STITCH_test_arma2", (DL_FUNC) &_STITCH_test_arma2, 1},
+    {"_STITCH_test_arma3", (DL_FUNC) &_STITCH_test_arma3, 1},
+    {"_STITCH_test_arma4", (DL_FUNC) &_STITCH_test_arma4, 1},
     {NULL, NULL, 0}
 };
 

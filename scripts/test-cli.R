@@ -19,11 +19,22 @@ source("STITCH/R/test-drivers.R")
 ## testthat doesn't do what I want outside of package form
 ## so don't bother wrappping, just fail
 
+cli_function_build <- Sys.getenv("CLI_FUNCTION_BUILD")
+if (cli_function_build != "") {
+    print(paste0("Using ", cli_function_build))
+    dir <- tempdir()
+    system(paste0("cp ", cli_function_build, " ", dir, "/"))
+    system(paste0("(cd ", dir, " && tar -zxvf ", dir, "/*tar.gz STITCH/R/functions.R)"))
+    function_file <- file.path(dir, "STITCH/R/functions.R")
+} else {
+    function_file <- "STITCH/R/functions.R"
+}
 
+system(paste0("cp ", function_file, " ~/TEMP.R"))
 ## make CLI file
 cli_output_file <- "STITCH.R"
 make_STITCH_cli(
-    function_file = "STITCH/R/functions.R",
+    function_file = function_file,
     cli_output_file = cli_output_file
 )
 system(paste0("chmod +x ", cli_output_file))
@@ -82,6 +93,8 @@ out <- system2(
     ),
     stdout = stdout_file, stderr = stderr_file
 )
+stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
+stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
 expect_equal(0, out)
 
 
@@ -103,7 +116,18 @@ out <- system2(
 expect_equal(out > 0, TRUE)
 
 
-
+cli_version <- Sys.getenv("CLI_VERSION")
+error_check <- 2
+if (cli_version != "") {
+    ##message(paste0("Using CLI_VERSION=", cli_version))
+    version <- as.numeric(strsplit(cli_version, ".", fixed = TRUE)[[1]])
+    if ((version[2] >= 3 & version[3] >=7 ) | version[2] >= 4) {
+        error_check <- 2
+    } else {
+        error_check <- 1
+    }
+}
+##message(paste0("Using error_check = ", error_check))
 
 message("test that STITCH CLI parses a logical variable correctly")
 stdout_file <- tempfile()
@@ -124,8 +148,17 @@ out <- system2(
 expect_equal(0, out)
 ## check this occured
 stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
-expect_equal(length(grep("Build VCF from input", stderr)), 1)
-expect_equal(length(grep("teration", stderr)), 0)
+stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+
+if (error_check == 1) {
+    expect_equal(length(grep("Build vcf from input", stdout)), 1)
+    expect_equal(length(grep("teration", stdout)), 0)
+} else if (error_check == 2) {
+    expect_equal(length(grep("Build VCF from input", stderr)), 1)
+    expect_equal(length(grep("teration", stderr)), 0)
+} else {
+    stop("bad CLI test")
+}
 
 
 message("test that STITCH CLI parses integer vector refillIterations correctly")
@@ -145,10 +178,12 @@ out <- system2(
     stdout = stdout_file, stderr = stderr_file
 )
 expect_equal(0, out)
-## check this occured
-stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
-
-a <- stderr[grep("refill infrequently used haplotypes", stderr)]
+if (error_check == 1) {
+    out_log <- system(paste0("cat ", stdout_file), intern = TRUE)
+} else {
+    out_log <- system(paste0("cat ", stderr_file), intern = TRUE)
+}
+a <- out_log[grep("refill infrequently used haplotypes", out_log)]
 expect_equal(sum(sapply(sapply(c(4, 30), function(x) grep(x, a)), length) == 0), 0)
 
 
@@ -170,8 +205,12 @@ out <- system2(
 )
 expect_equal(0, out)
 ## check this occured
-stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
-a <- stderr[grep("refill infrequently used haplotypes", stderr)]
+if (error_check == 1) {
+    out_log <- system(paste0("cat ", stdout_file), intern = TRUE)
+} else {
+    out_log <- system(paste0("cat ", stderr_file), intern = TRUE)
+}
+a <- out_log[grep("refill infrequently used haplotypes", out_log)]
 ## manually know default is 6, 10, 14, 18
 expect_equal(sum(sapply(sapply(c(6, 10, 14, 18), function(x) grep(x, a)), length) == 0), 0)
 
@@ -198,8 +237,12 @@ out <- system2(
 )
 expect_equal(0, out)
 ## check this occured
-stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
+if (error_check == 1) {
+    out_log <- system(paste0("cat ", stdout_file), intern = TRUE)
+} else {
+    out_log <- system(paste0("cat ", stderr_file), intern = TRUE)
+}
 check <- sapply(c("CEU", "GBR"), function(pop) {
-    length(grep(pop, stderr))
+    length(grep(pop, out_log))
 })
 expect_equal(sum(check == 0), 0)

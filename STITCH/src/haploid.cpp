@@ -88,9 +88,75 @@ arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, c
 
   
 
+arma::ivec sample_path_from_alphaHat_t(const arma::mat & alphaHat_t, const arma::mat & transMatRate_t, const arma::mat & eMatHapSNP_t, const arma::mat & alphaMat_t, const int T, const int K, const arma::rowvec & c) {
+    //
+    arma::ivec sampled_state(T);
+    int k, t;
+    double sum = 0;
+    double rand_uniform = 0;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 1);
+    // somehow this makes dis(gen) give me random 0-1 doubles I think
+    //
+    // choose initial state
+    //
+    k = 0;  
+    rand_uniform = dis(gen);
+    sum = 0;
+    while(k < K) {
+        sum = sum + alphaHat_t(k, T - 1);
+        if (sum > rand_uniform) {
+            sampled_state(T - 1) = k;
+            k = K;
+        }
+        k = k + 1;    
+    }
+    //
+    // cycle
+    //
+    double samp_vector_sum;
+    double norm;
+    arma::rowvec samp_vector = arma::zeros(1, K);  
+    int prev_state;
+    //for(t = T - 2; t >= 0; t--) {
+    for(t = T - 2; t >= 0; t--) {
+        prev_state = sampled_state(t + 1);
+        samp_vector.fill(transMatRate_t(1, t) * alphaMat_t(prev_state, t));
+        samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_t(0, t);
+        samp_vector_sum = 0;
+        for(k=0; k<=K-1; k++) {
+            samp_vector(k)=samp_vector(k) * alphaHat_t(k, t);
+            samp_vector_sum=samp_vector_sum + samp_vector(k);
+        }
+        norm = alphaHat_t(prev_state, t + 1) / eMatHapSNP_t(prev_state, t + 1) / c(t + 1);
+        // if ((pow(samp_vector_sum / norm, 2) - 1) > 1e-4) {
+        //     std::cout << "BAD COUNT on t=" << t << std::endl;
+        //     std::cout << "samp_vector_sum=" << samp_vector_sum << std::endl;
+        //     std::cout << "norm=" << norm << std::endl;
+        //     return(sampled_state);          
+        // }
+        // sample state using crazy C++
+        k = 0;  
+        rand_uniform = dis(gen);
+        sum = 0;
+        while(k < K) {
+            sum = sum + samp_vector(k) / norm;
+            if (sum > rand_uniform) {
+                sampled_state(t) = k;
+                k = K;
+            }
+            k = k + 1;    
+        }
+    }
+    return(sampled_state);
+}
+
+
+
 //' @export
 // [[Rcpp::export]]
-arma::rowvec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t) {
+arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat & transMatRate_t, const arma::mat& alphaMat_t) {
   //
   // constants
   //
@@ -102,7 +168,6 @@ arma::rowvec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eM
   int iRead, readSNP, k, k1, t;
   double alphaConst;
   arma::mat eMatHapSNP_t = arma::ones(K,T);
-  arma::rowvec sampled_state = arma::zeros(1, T);
   arma::mat alphaHat_t = arma::zeros(K,T);
   arma::rowvec c = arma::zeros(1,T);
   //
@@ -151,66 +216,13 @@ arma::rowvec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eM
   // sample a path
   //
   //
-  double sum = 0;
-  double rand_uniform = 0;
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dis(0, 1);
-  // somehow this makes dis(gen) give me random 0-1 doubles I think
-  //
-  // choose initial state
-  //
-  k = 0;  
-  rand_uniform = dis(gen);
-  sum = 0;
-  while(k < K) {
-    sum = sum + alphaHat_t(k, T - 1);
-    if (sum > rand_uniform) {
-        sampled_state(T - 1) = k;
-        k = K;
-    }
-    k = k + 1;    
-  }
-  //
-  // cycle
-  //
-  double samp_vector_sum;
-  double norm;
-  arma::rowvec samp_vector = arma::zeros(1, K);  
-  int prev_state;
-  //for(t = T - 2; t >= 0; t--) {
-  for(t = T - 2; t >= 0; t--) {
-      prev_state = sampled_state(t + 1);
-      samp_vector.fill(transMatRate_t(1, t) * alphaMat_t(prev_state, t));
-      samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_t(0, t);
-      samp_vector_sum = 0;
-      for(k=0; k<=K-1; k++) {
-          samp_vector(k)=samp_vector(k) * alphaHat_t(k, t);
-          samp_vector_sum=samp_vector_sum + samp_vector(k);
-      }
-      norm = alphaHat_t(prev_state, t + 1) / eMatHapSNP_t(prev_state, t + 1) / c(t + 1);
-      if ((pow(samp_vector_sum / norm, 2) - 1) > 1e-4) {
-          std::cout << "BAD COUNT on t=" << t << std::endl;
-          std::cout << "samp_vector_sum=" << samp_vector_sum << std::endl;
-          std::cout << "norm=" << norm << std::endl;
-          return(sampled_state);          
-      }
-      // sample state using crazy C++
-      k = 0;  
-      rand_uniform = dis(gen);
-      sum = 0;
-      while(k < K) {
-          sum = sum + samp_vector(k) / norm;
-          if (sum > rand_uniform) {
-              sampled_state(t) = k;
-              k = K;
-          }
-          k = k + 1;    
-      }
-  }
-  return(sampled_state);
+  arma::ivec to_out = sample_path_from_alphaHat_t(alphaHat_t, transMatRate_t, eMatHapSNP_t, alphaMat_t, T, K, c);
+  return(to_out);
 }
 
+
+
+      
 
 //' @export
 // [[Rcpp::export]]
@@ -222,7 +234,7 @@ Rcpp::List rcpp_sample_multiple_paths(const int n_starts, const int n_its, const
     const int T = eHaps_t.n_cols;
     int i_start, iRead, iHap, it, t;
     double s1, s2, p1, p2, pHap1;    
-    arma::mat path = arma::zeros(2, T);
+    arma::imat path(2, T);
     arma::mat read_labels = arma::zeros(2, nReads);
     arma::mat dosages = arma::zeros(n_starts, T);
     //

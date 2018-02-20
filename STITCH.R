@@ -364,6 +364,12 @@ option_list <- list(
         type = "logical",
         help = "Experimental. Boolean TRUE/FALSE about whether to save additional information about the reads that were extracted [default FALSE] ",
         default = FALSE
+    ), 
+    make_option(
+        "--gridWindowSize",
+        type = "integer",
+        help = "Whether to work on a grid where reads are binned into windows of this size (1 based, i.e. first bin is bases 1-gridWindowSize). This is particularly appropriate for very low coverage data (e.g. less than 0.2X) and can substantially speed up analyses [default NA] ",
+        default = NA
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -430,5 +436,6 @@ STITCH(
     initial_max_hapProb = opt$initial_max_hapProb,
     regenerateInputWithDefaultValues = opt$regenerateInputWithDefaultValues,
     plotHapSumDuringIterations = opt$plotHapSumDuringIterations,
-    save_sampleReadsInfo = opt$save_sampleReadsInfo
+    save_sampleReadsInfo = opt$save_sampleReadsInfo,
+    gridWindowSize = opt$gridWindowSize
 )

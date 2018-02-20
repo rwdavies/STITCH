@@ -27,7 +27,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   reference_phred = 20, reference_iterations = 10, vcf_output_name = NULL,
   initial_min_hapProb = 0.4, initial_max_hapProb = 0.6,
   regenerateInputWithDefaultValues = FALSE,
-  plotHapSumDuringIterations = FALSE, save_sampleReadsInfo = FALSE)
+  plotHapSumDuringIterations = FALSE, save_sampleReadsInfo = FALSE,
+  gridWindowSize = NA)
 }
 \arguments{
 \item{chr}{What chromosome to run. Should match BAM headers}
@@ -151,6 +152,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{plotHapSumDuringIterations}{Boolean TRUE/FALSE about whether to make a plot that shows the relative number of individuals using each ancestral haplotype in each iteration}
 
 \item{save_sampleReadsInfo}{Experimental. Boolean TRUE/FALSE about whether to save additional information about the reads that were extracted}
+
+\item{gridWindowSize}{Whether to work on a grid where reads are binned into windows of this size (1 based, i.e. first bin is bases 1-gridWindowSize). This is particularly appropriate for very low coverage data (e.g. less than 0.2X) and can substantially speed up analyses}
 }
 \value{
 Results in properly formatted version

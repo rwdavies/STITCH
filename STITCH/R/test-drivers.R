@@ -167,7 +167,7 @@ make_phasefile <- function(
         )
     } else {
         if (is.null(phasemaster))
-            phasemaster <- array(round(sample(vals, size = n_snps * K, replace = TRUE)), c(n_snps, 2))
+            phasemaster <- array(round(sample(vals, size = n_snps * K, replace = TRUE)), c(n_snps, K))
         phase <- array(0, c(n_snps, n_samples, 2))
         for(i_sample in 1:n_samples)
             for(i_hap in 1:2)
@@ -251,6 +251,7 @@ make_acceptance_test_data_package <- function(
             1:n_reads,
             mc.cores = n_cores,
             function(i_read) {
+            ## w is 1-based sampling of start to end 
             w <- sample(1:(n_snps - reads_span_n_snps + 1), 1) + 0:(reads_span_n_snps - 1)
             h <- phase[w, i_sample, (i_read %% 2) + 1]
             seq <- r[w]

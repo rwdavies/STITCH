@@ -3,35 +3,62 @@
 #' @param stitch_cli_file where output goes
 make_STITCH_cli <- function(
     function_file,
-    cli_output_file
+    cli_output_file,
+    integer_vectors = c("shuffleHaplotypeIterations", "splitReadIterations", "refillIterations"),
+    character_vectors = c("reference_populations"),
+    other_logical_params = NULL,
+    other_integer_params = NULL,
+    other_double_params = NULL,
+    other_character_params = NULL,
+    function_name = "STITCH"
 ) {
 
     a <- readLines(function_file, n = 200)
     params <- a[grep("param", a)]
-    params <- params[-grep("##", params)]
+    x <- grep("initialize_parameters", params)
+    if (length(x) > 0)
+        params <- params[-x]
+    x <- grep("##", params)
+    if (length(x) > 0)
+        params <- params[-x]
     x <- sapply(strsplit(params, "#' @param "), function(x) x[2])
+    x <- hack_for_1_2_5(x)
     param_names <- sapply(strsplit(x, " "), function(x) x[1])
     help_per_param <- sapply(strsplit(x, " "), function(x) paste(x[-1], collapse = " "))
     names(help_per_param) <- param_names
 
+
     ## manually specify types here
     logical_params <- c("outputInputInVCFFormat", "readAware", "regenerateInput", "keepInterimFiles", "keepTempDir", "generateInputOnly", "useSoftClippedBases", "regenerateInputWithDefaultValues", "plotHapSumDuringIterations", "save_sampleReadsInfo")
-    integer_params <- c("K", "chrStart", "chrEnd", "regionStart", "regionEnd", "buffer", "niterations", "nCores", "Jmax", "pseudoHaploidModel", "switchModelIteration", "outputBlockSize", "inputBundleBlockSize", "reference_phred", "reference_iterations")
+    integer_params <- c("K", "chrStart", "chrEnd", "regionStart", "regionEnd", "buffer", "niterations", "nCores", "Jmax", "pseudoHaploidModel", "switchModelIteration", "outputBlockSize", "inputBundleBlockSize", "reference_phred", "reference_iterations", "gridWindowSize")
     double_params <- c("nGen", "downsampleToCov", "downsampleFraction", "maxDifferenceBetweenReads", "alphaMatThreshold", "emissionThreshold", "iSizeUpperLimit", "bqFilter", "expRate", "maxRate", "minRate", "downsampleSamples", "initial_min_hapProb", "initial_max_hapProb")
     character_params <- c("chr", "posfile", "outputdir", "tempdir", "bamlist", "cramlist", "reference", "genfile", "method", "shuffleHaplotypeIterations", "splitReadIterations", "originalRegionName", "environment", "restartIterations", "refillIterations", "downsampleSamplesKeepList", "subsetSNPsfile", "reference_haplotype_file", "reference_legend_file", "reference_sample_file", "reference_populations", "vcf_output_name")
+    ## deprecated
+    integer_params <- c(integer_params, "diploidModel")
+    logical_params <- c(logical_params, "outputHaplotypeProbabilities")
+    
+    logical_params <- check_and_add_param(other_logical_params, logical_params, integer_params, double_params, character_params)
+    integer_params <- check_and_add_param(other_integer_params, integer_params, logical_params, double_params, character_params)
+    double_params <- check_and_add_param(other_double_params, double_params, logical_params, integer_params, character_params)
+    character_params <- check_and_add_param(other_character_params, character_params, logical_params, integer_params, double_params)    
+    
     param_type <- array(NA, length(param_names))
     param_type[match(logical_params, param_names)] <- "logical"
     param_type[match(integer_params, param_names)] <- "integer"
     param_type[match(double_params, param_names)] <- "double"
     param_type[match(character_params, param_names)] <- "character"
     if (sum(is.na(param_type)) > 0)
-        stop("Unassigned parameter type")
+        stop(
+            paste0(
+                "Unassigned parameter types:",
+                paste0(param_names[is.na(param_type)], collapse = ",")
+            )
+        )
+
     names(param_type) <- param_names
 
     ## further, note that some are in fact vectors, or can be vectors
     ## so down below, need to split intelligently
-    integer_vectors <- c("shuffleHaplotypeIterations", "splitReadIterations", "refillIterations")
-    character_vectors <- c("reference_populations")
 
     ## hmm, not sure how to do this otherwise
     ## just manually specify numeric
@@ -108,7 +135,7 @@ make_STITCH_cli <- function(
 
     ## cat("print(opt)\n", sep = "", file = cli_output_file, append = TRUE)
 
-    cat("STITCH(", sep = "", file = cli_output_file, append = TRUE)
+    cat(function_name, "(", sep = "", file = cli_output_file, append = TRUE)
 
     for(param in param_names) {
         ## evaluate the ones that are vectors
@@ -137,4 +164,34 @@ make_STITCH_cli <- function(
 
 
 
+check_param <- function(new_params, should_not_be_in_set) {
+    w <- match(new_params, should_not_be_in_set)
+    if (sum(is.na(w) == FALSE) > 0) {
+        stop(paste0("bad assignment:", new_params[is.na(w) == FALSE]))
+    }
+}
 
+check_and_add_param <- function(new_params, old_params, old_params1, old_params2, old_params3) {
+    if (is.null(new_params) == FALSE) {
+        ## 1 - check not in any other set
+        ## 2 - add then uniqueify
+        check_param(new_params, old_params1)
+        check_param(new_params, old_params2)
+        check_param(new_params, old_params3)
+        old_params <- unique(c(new_params, old_params))
+    }
+    return(old_params)
+}
+
+
+hack_for_1_2_5 <- function(x) {
+    if (length(x) == 61) {
+        if (grep("initial_min_hapProb", x[59]) == 1) {
+            x[59] <- substr(x[59], 2, 1000)
+        }
+        if (grep("initial_max_hapProb", x[60]) == 1) {
+            x[60] <- substr(x[60], 2, 1000)
+        }
+    }
+    return(x)
+}

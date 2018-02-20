@@ -27,8 +27,8 @@ get_sample_data_from_SeqLib <- function(region, file_name, reference = "") {
 }
 
 #' @export
-get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference = "") {
-    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, T, L, region, file_name, reference)
+get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference = "") {
+    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference)
 }
 
 #' @export
@@ -47,8 +47,23 @@ pseudoHaploid_update_model_9 <- function(pRgivenH1, pRgivenH2, eMatHap_t1, eMatH
 }
 
 #' @export
-forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput) {
-    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput)
+get_random_values <- function(N) {
+    .Call('_STITCH_get_random_values', PACKAGE = 'STITCH', N)
+}
+
+#' @export
+sample_diploid_path <- function(alphaHat_t, transMatRate_t, eMat_t, alphaMat_t, T, K, c) {
+    .Call('_STITCH_sample_diploid_path', PACKAGE = 'STITCH', alphaHat_t, transMatRate_t, eMat_t, alphaMat_t, T, K, c)
+}
+
+#' @export
+forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput, return_a_sampled_path = 0L) {
+    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, whatToReturn, Jmax, suppressOutput, return_a_sampled_path)
+}
+
+#' @export
+calculate_fbd_dosage <- function(nGrids, nSNPs, K, eHaps_t, gamma_t, grid) {
+    .Call('_STITCH_calculate_fbd_dosage', PACKAGE = 'STITCH', nGrids, nSNPs, K, eHaps_t, gamma_t, grid)
 }
 
 #' @export
@@ -62,7 +77,52 @@ cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, re
 }
 
 #' @export
+rcpp_make_eMatHap_t <- function(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax) {
+    .Call('_STITCH_rcpp_make_eMatHap_t', PACKAGE = 'STITCH', sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax)
+}
+
+#' @export
+rcpp_sample_path <- function(read_labels, eMatHap_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t) {
+    .Call('_STITCH_rcpp_sample_path', PACKAGE = 'STITCH', read_labels, eMatHap_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t)
+}
+
+#' @export
+rcpp_sample_multiple_paths <- function(n_starts, n_its, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t, srp, sum_dosage_vec) {
+    .Call('_STITCH_rcpp_sample_multiple_paths', PACKAGE = 'STITCH', n_starts, n_its, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t, srp, sum_dosage_vec)
+}
+
+#' @export
+rcpp_calculate_many_likelihoods <- function(swap_mat, reads_at_SNPs, eMatHap_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t) {
+    .Call('_STITCH_rcpp_calculate_many_likelihoods', PACKAGE = 'STITCH', swap_mat, reads_at_SNPs, eMatHap_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t)
+}
+
+#' @export
 rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
+}
+
+#' @export
+test_NumericMatrix <- function(m) {
+    .Call('_STITCH_test_NumericMatrix', PACKAGE = 'STITCH', m)
+}
+
+#' @export
+test_arma1 <- function(m) {
+    .Call('_STITCH_test_arma1', PACKAGE = 'STITCH', m)
+}
+
+#' @export
+test_arma2 <- function(m) {
+    .Call('_STITCH_test_arma2', PACKAGE = 'STITCH', m)
+}
+
+#' @export
+test_arma3 <- function(m) {
+    .Call('_STITCH_test_arma3', PACKAGE = 'STITCH', m)
+}
+
+#' @export
+test_arma4 <- function(m) {
+    .Call('_STITCH_test_arma4', PACKAGE = 'STITCH', m)
 }
 

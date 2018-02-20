@@ -147,3 +147,4 @@ test_that("can print allele count for variable results", {
     print_allele_count(alleleCount, N = 10) 
 })
 
+

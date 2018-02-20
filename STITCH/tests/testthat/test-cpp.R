@@ -146,6 +146,87 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
 })
 
 
+test_that("can sample one path from forwardBackwardDiploid", {
+
+    set.seed(10)
+    n_snps <- 10 ## set to 10000 to check times better
+    K <- 20
+
+    phasemaster <- matrix(
+        c(rep(0, n_snps), rep(1, n_snps)),
+        ncol = K
+    )
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 1,
+        n_snps = n_snps,
+        n_reads = n_snps * 2,
+        seed = 2,
+        chr = 10,
+        K = K,
+        phasemaster = phasemaster,
+        reads_span_n_snps = 3,
+        n_cores = 1
+    )
+    ##tmpdir = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/"
+    ##save(data_package, file = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
+    ##load("/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
+
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = data_package$L,
+        pos = data_package$pos,
+        nSNPs = data_package$nSNPs,
+        bam_files = data_package$bam_files,
+        N = 1,
+        sampleNames = data_package$sample_names,
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        chrStart = 1,
+        chrEnd = max(data_package$pos[, 2]) + 100
+    )
+
+    set.seed(40)
+    load(file_sampleReads(tempdir(), 1, regionName))
+    eHaps <- array(runif(n_snps * K), c(n_snps, K))
+    sigma <- rep(0.999, n_snps - 1)
+    alphaMat <- array(1 / K / K, c(n_snps - 1, K))
+    x <- sigma
+    transMatRate <- cbind(x ** 2, x * (1 - x), (1 - x) ** 2)
+    pi <- runif(K) / K
+    eHaps[, 1] <- 0.01
+    eHaps[, 2] <- 0.99
+
+    out <- forwardBackwardDiploid(
+        sampleReads = sampleReads,
+        nReads = as.integer(length(sampleReads)),
+        pi = pi,
+        transMatRate = t(transMatRate),
+        alphaMat = t(alphaMat),
+        eHaps = t(eHaps),
+        maxDifferenceBetweenReads = as.double(1000),
+        whatToReturn = as.integer(0),
+        Jmax = as.integer(10),
+        suppressOutput = as.integer(1),
+        return_a_sampled_path = as.integer(1)
+    )
+
+    ## basically, these should be the same
+    ## given the seed and the ridiculous good fit
+    marginally_most_likely_path <- apply(out$gamma_t, 2, which.max) ## 1-based
+
+
+    sampled_path <- out$sampled_path_diploid[, 3]
+    ## 0-based,
+    ## should be 1, 0 -> 1
+    ## or 0, 1 -> 20
+    expect_equal(sum(sampled_path != 1 & sampled_path != 20), 0)
+
+})
+
+
 test_that("can calculate eMatHapSNP and sample a path", {
 
     n_snps <- 10 ## set to 10000 to check times better
@@ -217,88 +298,4 @@ test_that("can calculate eMatHapSNP and sample a path", {
 
 })
 
-
-test_that("can sample many paths in c++", {
-
-    skip("this isn't working reproducibly")
-    set.seed(45)
-    n_snps <- 10 ## set to 10000 to check times better
-    K <- 4
-    phasemaster <- matrix(
-        c(rep(0, n_snps), rep(1, n_snps)),
-        ncol = K
-    )
-    data_package <- make_acceptance_test_data_package(
-        n_samples = 1,
-        n_snps = n_snps,
-        n_reads = n_snps * 2,
-        seed = 2,
-        chr = 10,
-        K = K,
-        phasemaster = phasemaster,
-        reads_span_n_snps = 3,
-        n_cores = 1
-    )
-
-    regionName <- "region-name"
-    loadBamAndConvert(
-        iBam = 1,
-        L = data_package$L,
-        pos = data_package$pos,
-        nSNPs = data_package$nSNPs,
-        bam_files = data_package$bam_files,
-        N = 1,
-        sampleNames = data_package$sample_names,
-        inputdir = tempdir(),
-        regionName = regionName,
-        tempdir = tempdir(),
-        chr = data_package$chr,
-        chrStart = 1,
-        chrEnd = max(data_package$pos[, 2]) + 100
-    )
-
-    load(file_sampleReads(tempdir(), 1, regionName))
-    ## give it some random stuff to use as input
-    eHaps <- array(runif(n_snps * K), c(n_snps, K))
-    eHaps[, 1] <- 0.01
-    eHaps[, 2] <- 0.99
-    sigma <- array(0.99, n_snps)
-    alphaMat <- array(runif((n_snps - 1) * K), c(n_snps - 1, K))
-    x <- sigma
-    transMatRate <- cbind(x, 1 - x)
-    pi <- runif(K) / K
-    srp <- unlist(lapply(sampleReads,function(x) x[[2]]))
-
-    n_its <- 10
-    sum_dosage_vec <- array(0, n_its)
-    sum_dosage_vec[6:10] <- 1
-    n_starts <- 10
-    out <- rcpp_sample_multiple_paths(
-        n_starts = n_starts,
-        n_its = n_its,
-        sampleReads = sampleReads,
-        nReads = length(sampleReads),
-        eHaps_t = t(eHaps),
-        maxDifferenceBetweenReads = 1000,
-        Jmax = 10,
-        pi = pi,
-        transMatRate_t = t(transMatRate),
-        alphaMat_t = t(alphaMat),
-        srp = srp,
-        sum_dosage_vec = sum_dosage_vec
-    )
-
-    ## check dosage OK vs expectation
-    expect_equal(
-        sum(
-            abs(
-                rowSums(data_package$phase[, , ]) -
-                rowSums(out$dosages) / n_its
-            ) > 0.2
-        ),
-        0
-    )
-
-
-})
 
