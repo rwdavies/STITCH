@@ -1,0 +1,119 @@
+```{r initialize, echo=FALSE}
+
+## compile using something like
+## knitr::knit('benchmarks/summarize_benchmarking.Rmd', output = "benchmarks/summarize_benchmarking.md"); system("rsync -av benchmarks/summarize_benchmarking.md florence:~/")
+library("knitr")
+STITCH_home <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/"
+
+get_information <- function(what_to_benchmark_script, what) {
+    data <- system(paste0('source ', what_to_benchmark_script, ' && echo ', what), intern = TRUE)
+    return(strsplit(data, " ")[[1]])
+}
+what_to_benchmark_script <- paste0(STITCH_home, "scripts/what_to_benchmark.sh")
+version_list <- get_information(what_to_benchmark_script, "${version_list[@]}")
+name_list <- get_information(what_to_benchmark_script, "${name_list[@]}")
+extra_list <- get_information(what_to_benchmark_script, "${extra_list[@]}")
+options_list <- get_information(what_to_benchmark_script, "${options_list[@]}")
+n <- length(version_list)
+options_list[options_list == "NA"] <- " "
+
+
+get_elapsed_time_from_log <- function(log_file) {
+    if (file.exists(log_file) == FALSE) {
+        return(NA)
+    } else {
+        a <- as.character(read.table(log_file, sep = "\t")[, 1])
+        b <- a[grep("Elapsed ", a)]
+        if (length(b) == 0)
+            return(NA)
+        c <- strsplit(b, "Elapsed (wall clock) time (h:mm:ss or m:ss): ", fixed = TRUE)[[1]][2]
+        d <- strsplit(c, ":")[[1]]
+        if (length(d) == 2) {
+            ## minutes and seconds
+            return(as.numeric(d[1]) + as.numeric(d[2]) / 60)
+        } else if (length(d) == 3) {
+            return(60 * as.numeric(d[1]) + as.numeric(d[2]) + as.numeric(d[3]) / 60)
+        }
+    }
+}
+
+profile_whole_chr <- function() {
+    whole_chr <- t(sapply(1:n, function(i) {
+        version <- version_list[i]
+        name <- name_list[i]
+        option <- options_list[i]
+        time_min <- get_elapsed_time_from_log(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".txt"))
+        s <- "Average r2 of SNPs that pass QC:"
+        acc <- system(paste0("grep '", s, "'  ", STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt"), intern = TRUE)
+        acc <- as.numeric(strsplit(acc, s)[[1]][2])
+        return(c(version, option, round(time_min, 1), acc))
+    }))
+    colnames(whole_chr) <- c("Version", "Options", "Time (min)", "Accuracy")
+    return(whole_chr)
+}
+
+profile_smaller_chunk <- function(K, input) {
+    profile <- t(sapply(1:n, function(i) {
+        version <- version_list[i]
+    	name <- name_list[i]
+            option 		      <- options_list[i]
+            c <- 0
+            o <- as.list(1:4)
+	    log <- paste0(STITCH_home, "benchmark-results/benchmark_", input, "_", K, "_", name, ".txt")
+            time_min <- get_elapsed_time_from_log(log)
+            if (version == "1.1.1" & input == "CRAMS")
+                time_min <- NA
+            ## change name
+            return(c(version, option, input, K, round(time_min, 1)))
+    }))
+    colnames(profile) <- c("Version", "Options", "Input", "K", "Time (min)")
+    return(profile)
+}
+
+
+
+```
+## Benchmarking
+
+Incremental version releases of STITCH have often focused on miscellaneous speed improvements. The purpose of this page is to ensure performance hasn't regressed, as well as to benchmark those speedups across versions and options on a consistent set of data. This is done first using whole chromosome CFW mice data for speed and accuracy and later on a subset of the data to benchmark more options for speed.
+
+The major take aways are
+1. No obvious regression in performance across normal version updates
+2. Consistent gradual speed improvements of approximately 1.5-3X versus earlier releases
+3. Order of magnitude speedups can be obtained for high K using "gridding" approach, with only very slight losses in accuracy
+
+
+## Whole chromosome CFW mice test
+
+This analysis uses 2,073 mice at approximately 0.015X coverage at X SNPs using K=4. Performance is assessed using X mice on X array
+
+```{r whole_chr, echo=FALSE}
+kable(profile_whole_chr())
+```
+
+
+
+
+## Smaller profiling
+
+These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs. These tests are primary for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
+
+### K=4, BAMs
+```{r profile_4_BAMS, echo=FALSE}
+kable(profile_smaller_chunk(4, "BAMS"))
+```
+
+### K=4, CRAMs
+```{r profile_4_CRAMS, echo=FALSE}
+kable(profile_smaller_chunk(4, "CRAMS"))
+```
+
+### K=20, BAMs
+```{r profile_20_BAMS, echo=FALSE}
+kable(profile_smaller_chunk(20, "BAMS"))
+```
+
+### K=20, CRAMs
+```{r profile_20_CRAMS, echo=FALSE}
+kable(profile_smaller_chunk(20, "CRAMS"))
+```
