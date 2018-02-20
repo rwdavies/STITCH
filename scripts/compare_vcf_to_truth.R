@@ -48,6 +48,13 @@ option_list <- list(
         "--verbose",
         action = "store_true",
         default = FALSE
+    ),
+    make_option(
+        "--mega-save-file",
+        type = "character",        
+        help = "RData file to save mega-muga processed results",
+        dest = "mega_save_file",
+        default = NA
     )
 )
 
@@ -62,6 +69,7 @@ truth_vcf_file <- opt$truth_vcf
 chr <- opt$chr
 compare_against <- opt$compare_against
 verbose <- opt$verbose
+mega_save_file <- opt$mega_save_file
 
 
 
@@ -82,10 +90,18 @@ if (compare_against == "affy") {
 } else if (compare_against == "megamuga") {
 
     message("--- Compare MegaMUGA to Input VCF ---")
-    megamuga <- get_megamuga_calls_for_chr(chr)
-    mega_calls <- convert_megamuga_to_calls(megamuga, chr)
-    mega_calls <- filter_calls_for_chr(mega_calls)
-    subjects <- colnames(mega_calls)[grep("Q_", colnames(mega_calls))]
+    if (is.na(mega_save_file) | file.exists(mega_save_file) == FALSE) {
+        megamuga <- get_megamuga_calls_for_chr(chr)
+        mega_calls <- convert_megamuga_to_calls(megamuga, chr)
+        mega_calls <- filter_calls_for_chr(mega_calls)
+        subjects <- colnames(mega_calls)[grep("Q_", colnames(mega_calls))]
+        if (is.na(mega_save_file) == FALSE) {
+            save(mega_calls, subjects, file = mega_save_file)
+        }
+    } else {
+        message("Load previous MegaMuga file")
+        load(mega_save_file)
+    }
     out <- get_dosages_for_vcf(vcf_file, chr, subjects, mega_calls)
     dosages <- out$dosages
     dosages_meta <- out$dosages_meta
