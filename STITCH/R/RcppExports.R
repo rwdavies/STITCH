@@ -101,28 +101,3 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
 }
 
-#' @export
-test_NumericMatrix <- function(m) {
-    .Call('_STITCH_test_NumericMatrix', PACKAGE = 'STITCH', m)
-}
-
-#' @export
-test_arma1 <- function(m) {
-    .Call('_STITCH_test_arma1', PACKAGE = 'STITCH', m)
-}
-
-#' @export
-test_arma2 <- function(m) {
-    .Call('_STITCH_test_arma2', PACKAGE = 'STITCH', m)
-}
-
-#' @export
-test_arma3 <- function(m) {
-    .Call('_STITCH_test_arma3', PACKAGE = 'STITCH', m)
-}
-
-#' @export
-test_arma4 <- function(m) {
-    .Call('_STITCH_test_arma4', PACKAGE = 'STITCH', m)
-}
-

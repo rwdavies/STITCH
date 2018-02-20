@@ -328,61 +328,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// test_NumericMatrix
-double test_NumericMatrix(Rcpp::NumericMatrix m);
-RcppExport SEXP _STITCH_test_NumericMatrix(SEXP mSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_NumericMatrix(m));
-    return rcpp_result_gen;
-END_RCPP
-}
-// test_arma1
-double test_arma1(const arma::mat& m);
-RcppExport SEXP _STITCH_test_arma1(SEXP mSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_arma1(m));
-    return rcpp_result_gen;
-END_RCPP
-}
-// test_arma2
-double test_arma2(const arma::mat& m);
-RcppExport SEXP _STITCH_test_arma2(SEXP mSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_arma2(m));
-    return rcpp_result_gen;
-END_RCPP
-}
-// test_arma3
-double test_arma3(const arma::mat& m);
-RcppExport SEXP _STITCH_test_arma3(SEXP mSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_arma3(m));
-    return rcpp_result_gen;
-END_RCPP
-}
-// test_arma4
-double test_arma4(const arma::mat& m);
-RcppExport SEXP _STITCH_test_arma4(SEXP mSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_arma4(m));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_header_using_SeqLib", (DL_FUNC) &_STITCH_get_header_using_SeqLib, 1},
@@ -405,11 +350,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
     {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
-    {"_STITCH_test_NumericMatrix", (DL_FUNC) &_STITCH_test_NumericMatrix, 1},
-    {"_STITCH_test_arma1", (DL_FUNC) &_STITCH_test_arma1, 1},
-    {"_STITCH_test_arma2", (DL_FUNC) &_STITCH_test_arma2, 1},
-    {"_STITCH_test_arma3", (DL_FUNC) &_STITCH_test_arma3, 1},
-    {"_STITCH_test_arma4", (DL_FUNC) &_STITCH_test_arma4, 1},
     {NULL, NULL, 0}
 };
 
