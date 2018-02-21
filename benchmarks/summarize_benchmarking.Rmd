@@ -2,14 +2,22 @@
 
 ## compile using something like
 ## knitr::knit('benchmarks/summarize_benchmarking.Rmd', output = "benchmarks/summarize_benchmarking.md"); system("rsync -av benchmarks/summarize_benchmarking.md florence:~/")
+
 library("knitr")
-STITCH_home <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/"
+args <- commandArgs(trailingOnly = FALSE)
+for(key in c("--file=", "--f=")) {
+    i <- substr(args, 1, nchar(key)) == key
+    if (sum(i) == 1) {
+        script_dir <- dirname(substr(args[i], nchar(key) + 1, 1000))
+        STITCH_home <- file.path(script_dir, "../")
+    }
+}
 
 get_information <- function(what_to_benchmark_script, what) {
     data <- system(paste0('source ', what_to_benchmark_script, ' && echo ', what), intern = TRUE)
     return(strsplit(data, " ")[[1]])
 }
-what_to_benchmark_script <- paste0(STITCH_home, "scripts/what_to_benchmark.sh")
+what_to_benchmark_script <- paste0(STITCH_home, "/scripts/what_to_benchmark.sh")
 version_list <- get_information(what_to_benchmark_script, "${version_list[@]}")
 name_list <- get_information(what_to_benchmark_script, "${name_list[@]}")
 extra_list <- get_information(what_to_benchmark_script, "${extra_list[@]}")
@@ -44,8 +52,15 @@ profile_whole_chr <- function() {
         option <- options_list[i]
         time_min <- get_elapsed_time_from_log(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".txt"))
         s <- "Average r2 of SNPs that pass QC:"
-        acc <- system(paste0("grep '", s, "'  ", STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt"), intern = TRUE)
-        acc <- as.numeric(strsplit(acc, s)[[1]][2])
+	bench_file <- paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt")
+	if (file.exists(bench_file)) {
+	print(bench_file)
+	    command <- paste0("grep '", s, "'  ", bench_file)
+            acc <- system(command, intern = TRUE)
+            acc <- as.numeric(strsplit(acc, s)[[1]][2])
+	} else {
+	    acc <- NA
+	} 
         return(c(version, option, round(time_min, 1), acc))
     }))
     colnames(whole_chr) <- c("Version", "Options", "Time (min)", "Accuracy")
@@ -89,31 +104,4 @@ This analysis uses 2,073 mice at approximately 0.015X coverage at X SNPs using K
 
 ```{r whole_chr, echo=FALSE}
 kable(profile_whole_chr())
-```
-
-
-
-
-## Smaller profiling
-
-These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs. These tests are primary for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
-
-### K=4, BAMs
-```{r profile_4_BAMS, echo=FALSE}
-kable(profile_smaller_chunk(4, "BAMS"))
-```
-
-### K=4, CRAMs
-```{r profile_4_CRAMS, echo=FALSE}
-kable(profile_smaller_chunk(4, "CRAMS"))
-```
-
-### K=20, BAMs
-```{r profile_20_BAMS, echo=FALSE}
-kable(profile_smaller_chunk(20, "BAMS"))
-```
-
-### K=20, CRAMs
-```{r profile_20_CRAMS, echo=FALSE}
-kable(profile_smaller_chunk(20, "CRAMS"))
 ```
