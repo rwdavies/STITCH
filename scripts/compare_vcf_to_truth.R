@@ -55,12 +55,16 @@ option_list <- list(
         help = "RData file to save mega-muga processed results",
         dest = "mega_save_file",
         default = NA
+    ),
+    make_option(
+        "--cfw-data-dir",
+        type = "character",        
+        help = "Where CFW truth files are stored",
+        dest = "cfw_data_dir",
+        default = "/data/smew1/rdavies/stitch_development/truth/cfw/"
     )
 )
 
-cfw_data_dir <- "/data/smew1/rdavies/stitch_development/truth/cfw/"
-megamugadir <- file.path(cfw_data_dir, "megamuga")
-affydir <- file.path(cfw_data_dir, "affy")
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
 
 ## vcf_file <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/whole_chr_CFW_1.3.5/stitch.chr19.vcf.gz"; chr <- "chr19"; compare_against <- "megamuga"; verbose = TRUE
@@ -70,6 +74,10 @@ chr <- opt$chr
 compare_against <- opt$compare_against
 verbose <- opt$verbose
 mega_save_file <- opt$mega_save_file
+cfw_data_dir <- opt$cfw_data_dir
+megamugadir <- file.path(cfw_data_dir, "megamuga")
+affydir <- file.path(cfw_data_dir, "affy")
+
 
 
 

@@ -17,6 +17,7 @@ fi
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 STITCH_HOME=`pwd`
+script_dir=${STITCH_HOME}/scripts/
 export PATH=`pwd`/:${PATH}
 mkdir -p benchmark-results
 
@@ -43,8 +44,9 @@ do
     R CMD INSTALL ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
     
     ##d="/data/smew1/rdavies/stitch_development/outbredmice_chr19/"
+    ##CFW_DATA_DIR="/data/smew1/rdavies/stitch_development/truth/cfw/"    
     d="/well/myers/rwdavies/stitch_development/outbredmice_chr19/"
-    ##test_results_dir=${STITCH_HOME}/test-results/
+    CFW_DATA_DIR="/well/myers/rwdavies/stitch_development/truth/cfw/" 
     TEST_RESULTS_DIR=/well/myers/rwdavies/stitch_development/test-results/    
     description="whole_chr_CFW_${name}"
     OUTPUTDIR=${TEST_RESULTS_DIR}/${description}/
@@ -89,9 +91,9 @@ export R_LIBS_USER=${LOCAL_R_LIB}
    echo -e "    
     ## 1.1.1 require manually fixing typo in header
     ## 1.1.1, 1.2.5 require bgzipping
-    ./scripts/compare_vcf_to_truth.R --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=megamuga 2>&1 | \
+    ./scripts/compare_vcf_to_truth.R --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=megamuga --cfw-data-dir=${CFW_DATA_DIR} 2>&1 | \
 	tee ${STITCH_HOME}/benchmark-results/${description}.megamuga.txt
-    ./scripts/compare_vcf_to_truth.R --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=affy 2>&1 | \
+    ./scripts/compare_vcf_to_truth.R --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=affy --cfw-data-dir=${CFW_DATA_DIR} 2>&1 | \
 	tee ${STITCH_HOME}/benchmark-results/${description}.affy.txt
 " >> ${SUBMIT_SCRIPT}
     
@@ -101,7 +103,7 @@ export R_LIBS_USER=${LOCAL_R_LIB}
 	bash ${SUBMIT_SCRIPT}
     else
 	echo submission time!
-	qsub -cwd -V -N ${description} -pe shmem 1 -q short.qc -P myers.prjc -j Y -o ${OUTPUTDIR} ${SUBMIT_SCRIPT}
+	qsub -cwd -V -N ${name} -pe shmem 1 -q short.qc -P myers.prjc -j Y -o ${OUTPUTDIR} ${SUBMIT_SCRIPT}
     fi
     
 done
