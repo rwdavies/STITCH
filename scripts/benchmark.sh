@@ -47,8 +47,10 @@ do
     # install copy here. cannot install properly on cluster
     LOCAL_R_LIB=${STITCH_HOME}/test-results/profile-${name}/
     mkdir -p ${LOCAL_R_LIB}
-    export R_LIBS=${LOCAL_R_LIB}
-    export R_LIBS_USER=${LOCAL_R_LIB}
+    ## if commented out, just use local system install\
+    ##export R_LIBS=${LOCAL_R_LIB}
+    ##export R_LIBS_USER=${LOCAL_R_LIB}
+    ## R --slave -e ".libPaths()"
     echo Installing ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
     export SEQLIB_ROOT=${STITCH_HOME}/SeqLib/
     R CMD INSTALL ${STITCH_HOME}/${PROFTOOLS_TARBALL}
@@ -63,10 +65,9 @@ do
 	    description="benchmark_${use}_${K}_${name}"
 	    export OUTPUTDIR=${STITCH_HOME}/test-results/${description}/
 	    mkdir -p ${OUTPUTDIR}
-	    echo "FIX ME"
 	    echo -e "
-            export R_LIBS=${LOCAL_R_LIB}
-            export R_LIBS_USER=${LOCAL_R_LIB}
+            ##export R_LIBS=${LOCAL_R_LIB}
+            ##export R_LIBS_USER=${LOCAL_R_LIB}
 	    export USE=${use}
 	    export K=${K}
 	    export OPTION=${option}
@@ -74,16 +75,15 @@ do
 	    export TITLE=${use}_${version}
             export OUTPUTDIR=${OUTPUTDIR}
 	    export OUTPUT_PLOT=${STITCH_HOME}/benchmark-results/${description}.pdf
-            ##ulimit -n 4096 ## if no internet, something about keeping lots of reference file handles available. probably something I need to fix
+            ##ulimit -n 4096 ## if no internet, something about keeping lots of reference file handles available. something I need to fix. see seqlib issue
 	    /usr/bin/time -v ${STITCH_HOME}/scripts/profile.R 2>&1 | tee ${STITCH_HOME}/benchmark-results/${description}.txt
 " > ${OUTPUTDIR}/script.sh
 	    if [ $run == "local" ]
 	    then
-		bash ${OUTPUTDIR}/script.sh
+		bash ${OUTPUTDIR}/script.sh &
 	    else
 		qsub -cwd -V -N ${description} -pe shmem 1 -q short.qc -P myers.prjc -j Y -o ${OUTPUTDIR} ${OUTPUTDIR}/script.sh
 	    fi
-	    exit
 	    ## 
 	    ##${STITCH_HOME}/scripts/compare_vcf_to_truth.R \
 	    ##    --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz \
@@ -94,7 +94,10 @@ do
 	    ##	tee ${OUTPUTDIR}/${description}.megamuga.txt
 	done
     done
-    exit    
+    if [ $run == "local" ]
+    then
+	wait
+    fi
 done
 
 exit 0

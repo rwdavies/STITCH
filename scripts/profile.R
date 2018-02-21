@@ -17,7 +17,7 @@ if (Sys.getenv("USE") == "CRAMS") {
     reference <- ""
 }
 
-if (Sys.getenv("OPTION") != "") {
+if (Sys.getenv("OPTION") != "" & Sys.getenv("OPTION") != "NA") {
     option <- paste0(", ", Sys.getenv("OPTION"))
 } else {
     option <- ""
@@ -33,13 +33,13 @@ chr <- "chr19"
 posfile <- "pos.txt"
 genfile <- "gen.txt"
 tempdir <- paste0(outputdir, "/")
-##print("FIX ME")##tempdir()     'genfile = genfile,',    
 nCores <- as.integer(nCores)
 command <- paste0(
     'STITCH(',
     'chr = chr,',
     'bamlist = bamlist,',
     'posfile = posfile,',
+    'genfile = genfile,',    
     'outputdir = outputdir,',
     'K = ', K, ',',
     'nGen = 100,',
