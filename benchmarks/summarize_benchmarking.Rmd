@@ -3,16 +3,6 @@
 ## compile using something like
 ## knitr::knit('benchmarks/summarize_benchmarking.Rmd', output = "benchmarks/summarize_benchmarking.md"); system("rsync -av benchmarks/summarize_benchmarking.md florence:~/")
 
-library("knitr")
-args <- commandArgs(trailingOnly = FALSE)
-for(key in c("--file=", "--f=")) {
-    i <- substr(args, 1, nchar(key)) == key
-    if (sum(i) == 1) {
-        script_dir <- dirname(substr(args[i], nchar(key) + 1, 1000))
-        STITCH_home <- file.path(script_dir, "../")
-    }
-}
-
 get_information <- function(what_to_benchmark_script, what) {
     data <- system(paste0('source ', what_to_benchmark_script, ' && echo ', what), intern = TRUE)
     return(strsplit(data, " ")[[1]])
@@ -104,4 +94,30 @@ This analysis uses 2,073 mice at approximately 0.015X coverage at X SNPs using K
 
 ```{r whole_chr, echo=FALSE}
 kable(profile_whole_chr())
+```
+
+
+
+## Smaller profiling
+
+These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs. These tests are primary for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
+
+### K=4, BAMs
+```{r profile_4_BAMS, echo=FALSE}
+kable(profile_smaller_chunk(4, "BAMS"))
+```
+
+### K=4, CRAMs
+```{r profile_4_CRAMS, echo=FALSE}
+kable(profile_smaller_chunk(4, "CRAMS"))
+```
+
+### K=20, BAMs
+```{r profile_20_BAMS, echo=FALSE}
+kable(profile_smaller_chunk(20, "BAMS"))
+```
+
+### K=20, CRAMs
+```{r profile_20_CRAMS, echo=FALSE}
+kable(profile_smaller_chunk(20, "CRAMS"))
 ```
