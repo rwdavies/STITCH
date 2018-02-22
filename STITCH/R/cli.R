@@ -186,11 +186,17 @@ check_and_add_param <- function(new_params, old_params, old_params1, old_params2
 
 hack_for_1_2_5 <- function(x) {
     if (length(x) == 61) {
-        if (grep("initial_min_hapProb", x[59]) == 1) {
-            x[59] <- substr(x[59], 2, 1000)
+        y <- grep("initial_min_hapProb", x[59])
+        if (length(y) == 1) {
+            if (y == 1) {
+                x[59] <- substr(x[59], 2, 1000)
+            }
         }
-        if (grep("initial_max_hapProb", x[60]) == 1) {
-            x[60] <- substr(x[60], 2, 1000)
+        y <- grep("initial_max_hapProb", x[60])
+        if (length(y) == 1) {
+            if (y == 1) {
+                x[60] <- substr(x[60], 2, 1000)
+            }
         }
     }
     return(x)
