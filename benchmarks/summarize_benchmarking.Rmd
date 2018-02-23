@@ -3,6 +3,8 @@
 ## compile using something like
 ## knitr::knit('benchmarks/summarize_benchmarking.Rmd', output = "benchmarks/summarize_benchmarking.md"); system("rsync -av benchmarks/summarize_benchmarking.md florence:~/")
 
+
+STITCH_home <- "../" ## this is called from benchmarks
 get_information <- function(what_to_benchmark_script, what) {
     data <- system(paste0('source ', what_to_benchmark_script, ' && echo ', what), intern = TRUE)
     return(strsplit(data, " ")[[1]])
@@ -12,8 +14,8 @@ version_list <- get_information(what_to_benchmark_script, "${version_list[@]}")
 name_list <- get_information(what_to_benchmark_script, "${name_list[@]}")
 extra_list <- get_information(what_to_benchmark_script, "${extra_list[@]}")
 options_list <- get_information(what_to_benchmark_script, "${options_list[@]}")
-n <- length(version_list)
 options_list[options_list == "NA"] <- " "
+n <- length(version_list)
 
 
 get_elapsed_time_from_log <- function(log_file) {
@@ -44,10 +46,13 @@ profile_whole_chr <- function() {
         s <- "Average r2 of SNPs that pass QC:"
 	bench_file <- paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt")
 	if (file.exists(bench_file)) {
-	print(bench_file)
 	    command <- paste0("grep '", s, "'  ", bench_file)
             acc <- system(command, intern = TRUE)
-            acc <- as.numeric(strsplit(acc, s)[[1]][2])
+	    if (length(attr(acc, "status")) == 0) {
+                acc <- as.numeric(strsplit(acc, s)[[1]][2])
+	    }    else {
+		acc <- NA
+	    } 
 	} else {
 	    acc <- NA
 	} 

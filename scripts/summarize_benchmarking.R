@@ -14,7 +14,6 @@ for(key in c("--file=", "--f=")) {
 }
 STITCH_home <- getwd()
 setwd(STITCH_home)
-print(getwd())
 
 knitr::knit('benchmarks/summarize_benchmarking.Rmd', output = "benchmarks/summarize_benchmarking.md")
 system("rsync -av benchmarks/summarize_benchmarking.md florence:~/")

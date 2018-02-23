@@ -35,23 +35,29 @@ do
     ## ugh, need to rebuild CLI...
     LOCAL_R_LIB=${STITCH_HOME}/test-results/whole-chr-${name}/
     mkdir -p ${LOCAL_R_LIB}
-    export R_LIBS=${LOCAL_R_LIB}
-    export R_LIBS_USER=${LOCAL_R_LIB}
+    ##export R_LIBS=${LOCAL_R_LIB}
+    ##export R_LIBS_USER=${LOCAL_R_LIB}
     r_libs=`R --slave -e ".libPaths()[1]" | awk '{print substr($0, 5, 1000)}' | tr -d '"'`
     rm -r -f ${r_libs}/00LOCK-STITCH
-    echo Installing ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
     export SEQLIB_ROOT=${STITCH_HOME}/SeqLib/
+    echo Installing ${STITCH_HOME}/releases/STITCH_${version}.tar.gz    
     R CMD INSTALL ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
     
-    ##d="/data/smew1/rdavies/stitch_development/outbredmice_chr19/"
-    ##CFW_DATA_DIR="/data/smew1/rdavies/stitch_development/truth/cfw/"    
-    d="/well/myers/rwdavies/stitch_development/outbredmice_chr19/"
-    CFW_DATA_DIR="/well/myers/rwdavies/stitch_development/truth/cfw/" 
-    TEST_RESULTS_DIR=/well/myers/rwdavies/stitch_development/test-results/    
+    d="/data/smew1/rdavies/stitch_development/outbredmice_chr19/"
+    CFW_DATA_DIR="/data/smew1/rdavies/stitch_development/truth/cfw/"
+    TEST_RESULTS_DIR=${STITCH_HOME}/test-results/
+    N_CORES=16
+    BAMLIST=${d}/bamlist.txt
+    ##d="/well/myers/rwdavies/stitch_development/outbredmice_chr19/"
+    ##CFW_DATA_DIR="/well/myers/rwdavies/stitch_development/truth/cfw/" 
+    ##TEST_RESULTS_DIR=/well/myers/rwdavies/stitch_development/test-results/
+    ##BAMLIST=${d}/bamlist.rescomp.txt
+    ##N_CORES=1
     description="whole_chr_CFW_${name}"
     OUTPUTDIR=${TEST_RESULTS_DIR}/${description}/
 
-    SUBMIT_SCRIPT=${STITCH_HOME}/benchmark-results/${description}.txt
+    SUBMIT_SCRIPT=${STITCH_HOME}/benchmark-results/${description}.sh
+    rm ${SUBMIT_SCRIPT}
     if [ ${interface} == "cli" ]
     then
        export CLI_FUNCTION_BUILD=${STITCH_HOME}/releases/STITCH_${version}.tar.gz
@@ -61,16 +67,16 @@ do
        echo -e "
 hostname
 which time
-export R_LIBS=${LOCAL_R_LIB}
-export R_LIBS_USER=${LOCAL_R_LIB}
+##export R_LIBS=${LOCAL_R_LIB}
+##export R_LIBS_USER=${LOCAL_R_LIB}
 /usr/bin/time -v \
      		     ${LOCAL_R_LIB}/STITCH.R \
      		     --outputdir=${OUTPUTDIR} \
-     		     --bamlist=${d}/bamlist.rescomp.txt \
+     		     --bamlist=${BAMLIST} \
      		     --posfile=${d}/pos.chr19.txt \
      		     --genfile=${d}/gen.chr19.txt \
      		     --chr=chr19 \
-     		     --nCores=1 \
+     		     --nCores=${N_CORES} \
      		     --K=4 \
      		     --nGen=100 ${extra} 2>&1 | \
      	   tee ${STITCH_HOME}/benchmark-results/${description}.txt
@@ -80,7 +86,7 @@ export R_LIBS_USER=${LOCAL_R_LIB}
     then
        echo -e "	
 	/usr/bin/time -v \
-		      R -e \"library(STITCH); STITCH(outputdir='\"${OUTPUTDIR}/\"', bamlist='\"${d}/bamlist.txt\"', posfile='\"${d}/pos.chr19.txt\"', genfile='\"${d}/gen.chr19.txt\"', chr='chr19', nCores=1, K = 4, nGen = 100, tempdir = paste0(tempdir(), '/'));\" 2>&1 | \
+		      R -e \"library(STITCH); STITCH(outputdir='\"${OUTPUTDIR}/\"', bamlist='\"${BAMLIST}\"', posfile='\"${d}/pos.chr19.txt\"', genfile='\"${d}/gen.chr19.txt\"', chr='chr19', nCores=${N_CORES}, K = 4, nGen = 100, tempdir = paste0(tempdir(), '/'));\" 2>&1 | \
 	    tee ${STITCH_HOME}/benchmark-results/${description}.txt
 " > ${SUBMIT_SCRIPT}
     else
@@ -88,6 +94,27 @@ export R_LIBS_USER=${LOCAL_R_LIB}
 	exit 1
     fi
 
+    ## fix bug in header and then bgzip
+    if [ ${version} == "1.1.1" ]
+    then
+   echo -e "    
+gunzip ${OUTPUTDIR}/stitch.chr19.vcf.gz
+sed 's/FORMAT=<ID=GT:,Number=1/FORMAT=<ID=GT,Number=1/' ${OUTPUTDIR}/stitch.chr19.vcf > ${OUTPUTDIR}/stitch.chr19.vcf.temp
+mv ${OUTPUTDIR}/stitch.chr19.vcf.temp ${OUTPUTDIR}/stitch.chr19.vcf
+bgzip ${OUTPUTDIR}/stitch.chr19.vcf
+tabix ${OUTPUTDIR}/stitch.chr19.vcf.gz
+" >> ${SUBMIT_SCRIPT}
+    fi
+    ## fix non bgzipped file
+    if [ ${version} == "1.2.5" ]
+    then
+   echo -e "    
+gunzip ${OUTPUTDIR}/stitch.chr19.vcf.gz
+bgzip ${OUTPUTDIR}/stitch.chr19.vcf
+tabix ${OUTPUTDIR}/stitch.chr19.vcf.gz
+" >> ${SUBMIT_SCRIPT}
+    fi
+    
    echo -e "    
     ## 1.1.1 require manually fixing typo in header
     ## 1.1.1, 1.2.5 require bgzipping
@@ -109,3 +136,4 @@ export R_LIBS_USER=${LOCAL_R_LIB}
 done
 
 exit 0
+
