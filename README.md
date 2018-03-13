@@ -1,14 +1,13 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.3.7__**
-Release date: September 22, 2017
+**__Current Version: 1.4.0__**
+Release date: March 13, 2018
 
 Changes in latest version
 
-1. Misc changes to reduce RAM usage
-2. Standardize messaging and change to stderr vs stdout
-3. Re-enable printing of r2 oriented for major allele during progression
-4. More errors and checking for reference legend file
+1. Added option gridWindowSize to perform HMM on blocks of physical size gridWindowSize, which can dramatically speed up analysis for low coverage samples (see Benchmark section, examples)
+2. Added benchmark section to GitHub
+3. Misc small speedups, internal variable re-naming
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -25,7 +24,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.3.7.tar.gz
+R CMD INSTALL ./releases/STITCH_1.4.0.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
@@ -48,6 +47,10 @@ If you're on Mac you may see an error similar to ```ld: library not found for -l
 ## Help, command line interface and common options
 
 For a full list of options, in R, query ```?STITCH```, or from the command line, ```STITCH --help```. For a brief writeup of commonly used variables, see [Options.md](Options.md). To pass vectors using the command line, do something like ```STITCH.R --refillIterations='c(3,40)'``` or ```STITCH.R --reference_populations='c("CEU","GBR")'```.
+
+## Benchmarks 
+
+One can see some speed benchmarks in benchmarks/benchmark.Md
 
 ## Examples
 

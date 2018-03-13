@@ -1,3 +1,7 @@
+* v1.4.0
+	* Added option gridWindowSize to perform HMM on blocks of physical size gridWindowSize, which can dramatically speed up analysis for low coverage samples (see Benchmark section, examples)
+	* Added benchmark section to GitHub
+	* Misc small speedups, internal variable re-naming
 * v1.3.7
 	* Misc changes to reduce RAM usage
 	* Standardize messaging and change to stderr vs stdout
