@@ -30,7 +30,7 @@ if (cli_function_build != "") {
     function_file <- "STITCH/R/functions.R"
 }
 
-system(paste0("cp ", function_file, " ~/TEMP.R"))
+## system(paste0("cp ", function_file, " ~/TEMP.R"))
 ## make CLI file
 cli_output_file <- "STITCH.R"
 make_STITCH_cli(
@@ -88,7 +88,6 @@ out <- system2(
         paste0("--outputdir=", data_package$outputdir),
         "--K=2",
         "--nGen=100",
-        "--buffer=NA",
         "--nCores=1"
     ),
     stdout = stdout_file, stderr = stderr_file
@@ -96,6 +95,8 @@ out <- system2(
 stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
 stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
 expect_equal(0, out)
+
+
 
 
 message("test that STITCH CLI stops when bad variable given")
@@ -155,7 +156,7 @@ if (error_check == 1) {
     expect_equal(length(grep("teration", stdout)), 0)
 } else if (error_check == 2) {
     expect_equal(length(grep("Build VCF from input", stderr)), 1)
-    expect_equal(length(grep("teration", stderr)), 0)
+    expect_equal(length(grep("teration", stderr[-1])), 0)
 } else {
     stop("bad CLI test")
 }

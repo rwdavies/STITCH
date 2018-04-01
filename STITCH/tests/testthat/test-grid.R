@@ -51,36 +51,56 @@ test_that("distances on the grid are OK", {
 
 })
 
+
+
 test_that("removal of buffer from grid makes sense", {
 
     L <- 1:20
+    n_snps <- 20
     regionStart <- 5
     regionEnd <- 16
     buffer <- 5
-    gridWindowSize <- 3
+    K <- 4
 
-    out <- assign_positions_to_grid(
-        L = L,
-        gridWindowSize = gridWindowSize
-    )
-    out <- remove_buffer_from_variables(
-        L = L,
-        regionStart = regionStart,
-        regionEnd = regionEnd,
-        grid = out$grid,
-        grid_distances = out$grid_distances,
-        L_grid = out$L_grid,
-        nGrids = out$nGrids,
-        gridWindowSize = gridWindowSize
-    )
-    expect_equal(length(out$grid), length(regionStart:regionEnd))
-    ## 5-6, 7-9, 10-12, 13-15, 16
-    expect_equal(out$nGrids, 5)
-    expect_equal(out$grid_distances, rep(gridWindowSize, 4)) ## no spacing
-    expect_equal(out$L_grid, 4.5 + 3 * 0:4)
+    for(gridWindowSize in c(NA, 1, 3)) {
+        
+        out <- assign_positions_to_grid(
+            L = L,
+            gridWindowSize = gridWindowSize
+        )
     
+        alphaMatCurrent <- array(0, c(out$nGrids, K))
+        
+        out <- remove_buffer_from_variables(
+            L = L,
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            grid = out$grid,
+            grid_distances = out$grid_distances,
+            alphaMatCurrent = alphaMatCurrent,
+            L_grid = out$L_grid,
+            nGrids = out$nGrids,
+            gridWindowSize = gridWindowSize,
+            verbose = FALSE
+        )
+        
+        expect_equal(length(out$grid), length(regionStart:regionEnd))
+        ## 5-6, 7-9, 10-12, 13-15, 16
+        if (is.na(gridWindowSize) == FALSE) {
+            if (gridWindowSize == 3) {
+                expect_equal(out$nGrids, 5)
+                expect_equal(out$grid_distances, rep(gridWindowSize, 4)) ## no spacing
+                expect_equal(out$L_grid, 4.5 + 3 * 0:4)
+                expect_equal(nrow(out$alphaMatCurrent), 4)
+            }
+        }
+        
+    }
+        
 
 })
+
+
 
 
 test_that("can use grid", {

@@ -130,6 +130,15 @@ STITCH <- function(
     gridWindowSize = NA
 ) {
 
+    ## capture command line
+    x <- as.list(environment())
+    command_line <- paste0(
+        "STITCH(",
+        paste(names(x), " = ", x, collapse = ", ", sep = ""),
+        ")"
+    )
+    print_message(paste0("Running ", command_line))
+
     ##    K_subset = NA,
     ##    K_random = NA
     ## #' @param K_subset In diploid_subset mode, how many haplotypes to investigate per sample
@@ -1102,11 +1111,13 @@ remove_buffer_from_variables <- function(
     grid_distances = NULL,
     L_grid = NULL,
     nGrids = NULL,
-    gridWindowSize = NULL
+    gridWindowSize = NULL,
+    verbose = TRUE
 ) {
-    print_message("Remove buffer region from output")
+    if (verbose)
+        print_message("Remove buffer region from output")
     ## determine where the region is
-    inRegion2 <- L >= regionStart & L <= regionEnd
+    inRegion2 <- regionStart <= L & L <= regionEnd
     inRegion2L <- which(inRegion2)
     ## pos, gen, L
     pos <- pos[inRegion2, ]
@@ -1117,14 +1128,18 @@ remove_buffer_from_variables <- function(
     alleleCount <- alleleCount[inRegion2, ]
     L <- L[inRegion2]
     nSNPs <- as.integer(nrow(pos))
-    ## parameters and hapSum
-    x <- inRegion2L
-    x <- x[-length(x)]
-    alphaMatCurrent <- alphaMatCurrent[x,]
-    sigmaCurrent <- sigmaCurrent[x]
+    ## hmm, there is no perfect answer here
+    ## for now, save everything that intersected
+    to_keep <- unique(grid[inRegion2L]) + 1
+    hapSumCurrent <- hapSumCurrent[to_keep, , drop = FALSE]
+    hapSum <- hapSum[to_keep, , drop = FALSE]
+    ## now for these there is one fewer point    
+    to_keep <- to_keep[-length(to_keep)]
+    alphaMatCurrent <- alphaMatCurrent[to_keep, , drop = FALSE]
+    sigmaCurrent <- sigmaCurrent[to_keep]
+    ##
+    ##
     eHapsCurrent <- eHapsCurrent[inRegion2,]
-    hapSumCurrent <- hapSumCurrent[inRegion2,]
-    hapSum <- hapSum[inRegion2,]
     priorCurrent <- hapSum[1,]/sum(hapSum[1,])
     ##
     info <- info[inRegion2]

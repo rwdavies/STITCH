@@ -358,7 +358,13 @@ STITCH(vcf_output_name = "test.vcf.gz", method = "diploid", outputdir = outputdi
 setwd(mouse_datadir)
 outputdir <- paste0(mouse_resultsdir, "gridWindowSize/")
 system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
-STITCH(vcf_output_name = "test.vcf.gz", method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize, gridWindowSize = 10000)
+STITCH(
+  regionStart = 10000000,
+  regionEnd = 10800000,
+  buffer = 50000,
+  gridWindowSize = 10000,
+  inputBundleBlockSize = 100,  
+  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
 
 
 

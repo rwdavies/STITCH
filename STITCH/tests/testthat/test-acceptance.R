@@ -1029,6 +1029,43 @@ test_that("STITCH diploid works with snap to grid", {
 })
 
 
+test_that("STITCH diploid works with snap to grid with a buffer", {
+
+    skip_test_if_TRUE(run_acceptance_tests)    
+    sink("/dev/null")
+    
+    set.seed(10)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = data_package$outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        outputBlockSize = 3,
+        gridWindowSize = 2,
+        regionStart = 3,
+        regionEnd = 7,
+        buffer = 1
+    )
+
+    sink()
+
+    vcf <- read.table(
+        file.path(data_package$outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
 
 
 test_that("STITCH pseudoHaploid works with grid", {
