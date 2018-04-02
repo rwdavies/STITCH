@@ -1,3 +1,5 @@
+* v1.4.1
+	* Fix bug when using gridWindowSize and buffer
 * v1.4.0
 	* Added option gridWindowSize to perform HMM on blocks of physical size gridWindowSize, which can dramatically speed up analysis for low coverage samples (see Benchmark section, examples)
 	* Added benchmark section to GitHub
