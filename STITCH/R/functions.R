@@ -32,7 +32,7 @@
 #' @param maxRate Maximum recomb rate cM/Mb
 #' @param minRate Minimum recomb rate cM/Mb
 #' @param Jmax Maximum number of SNPs on a read
-#' @param regenerateInput Whether to regenerate input files
+#' @param regenerateInput Whether to regenerate input files. If this is FALSE, please using the same regionStart, regionEnd, buffer and posfile as you used to generate the input. Setting any of those to different values can cause the previous input data to be improperly interpreted. Please also see originalRegionName and regenerateInputWithDefaultValues
 #' @param originalRegionName If regenerateInput is FALSE (i.e. using existing data), this is the name of the original region name (chr.regionStart.regionEnd). This is necessary to load past variables
 #' @param keepInterimFiles Whether to keep interim parameter estimates
 #' @param keepTempDir Whether to keep files in temporary directory
@@ -913,7 +913,7 @@ validate_bamlist_and_cramlist_for_input_generation <- function(
 ) {
     if (regenerateInput == FALSE) {
         if (is.na(originalRegionName) == TRUE)
-            stop("if regenerateInput is FALSE (i.e. using existing data), you must supply the original region name (must not be NA) to load the input properly. Also don't forget to supply the position file used to make the original input data")
+            stop("if regenerateInput is FALSE (i.e. using existing data), you must supply the original region name (must not be NA) to load the input properly. Also don't forget to supply the position file used to make the original input data, as well as to use the same regionStart, regionEnd and buffer values")
         if (bamlist != "" || cramlist != "")
             stop("If not regenerating input, please do not supply bamlist")
         if ((is.na(regionStart) | is.na(regionEnd) | is.na(buffer)) & regenerateInputWithDefaultValues == FALSE)
