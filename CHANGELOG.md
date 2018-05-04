@@ -1,3 +1,7 @@
+* v1.4.2
+	* Introduce new variable maxEmissionMatrixDifference to better control magnitude of differences in emission matrix, and reduce underflow likelihood when using gridWindowSize
+	* Apply downsampling to gridded sampleReads to reduce underflow likelihood
+	* Allow disabling of plots in cases with poor x11 support
 * v1.4.1
 	* Fix bug when using gridWindowSize and buffer
 * v1.4.0

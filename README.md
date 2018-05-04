@@ -1,11 +1,13 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.4.1__**
-Release date: March 13, 2018
+**__Current Version: 1.4.2__**
+Release date: May 4, 2018
 
 Changes in latest version
 
-1. Fix bug when using gridWindowSize and buffer
+1. Introduce new variable maxEmissionMatrixDifference to better control magnitude of differences in emission matrix, and reduce underflow likelihood when using gridWindowSize
+2. Apply downsampling to gridded sampleReads to reduce underflow likelihood
+3. Allow disabling of plots in cases with poor x11 support
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -22,7 +24,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.4.1.tar.gz
+R CMD INSTALL ./releases/STITCH_1.4.2.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
