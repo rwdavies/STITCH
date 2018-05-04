@@ -232,7 +232,7 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput, const int return_a_sampled_path = 0) {
+Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, int whatToReturn, const int Jmax, const int suppressOutput, const int return_a_sampled_path = 0) {
   double prev=clock();
   std::string prev_section="Null";
   std::string next_section="Initialize variables";
@@ -253,7 +253,7 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   arma::mat betaHat_t = arma::zeros(KK,T);
   arma::rowvec c = arma::zeros(1,T);
   arma::mat gamma_t = arma::zeros(KK,T);  
-  arma::mat eMat_t = arma::ones(KK, T_total);
+  arma::mat eMat_t = arma::ones(KK, T);
   // define eMatHap to work on the number of reads
   arma::mat eMatHap_t; //  = arma::ones(K,nReads)
   // variables for faster forward backward calculation  double alphaConst, betaConst;
@@ -271,6 +271,8 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   double x, a, b, d, e, d1, d2, d3, eps;
   double pR = 0;
   double pA = 0;
+  double rescale;
+  int prev_readSNP;
   //
   //
   // eMat - make complete
@@ -286,14 +288,13 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   next_section="Initialize eMat";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  d=maxDifferenceBetweenReads*maxDifferenceBetweenReads;
   //
   for(iRead=0; iRead<=nReads-1; iRead++) {
       Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
       readSNP = as<int>(readData[1]); // leading SNP from read
       for(k1=0; k1<=K-1; k1++) {
           for(k2=0; k2<=K-1; k2++) {
-              // multiply by former value if >=2 reads at a locus
+              // work in log space?
               eMat_t(k1+K*k2,readSNP) = eMat_t(k1+K*k2,readSNP) * (0.5 * eMatHap_t(k1,iRead) + 0.5 * eMatHap_t(k2,iRead));
           }
       }  // end of SNP in read
@@ -301,18 +302,26 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   //
   // cap eMat, ie P(reads | k1,k2) to be within maxDifferenceBetweenReads^2
   //
+  prev_readSNP = -1;
   for(iRead=0; iRead<=nReads-1; iRead++) {
     Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
     readSNP = as<int>(readData[1]); // leading SNP from read
-    // first, get maximum
-    x=0;
-    for(k=0; k<=KK-1; k++)
-        if(eMat_t(k,readSNP)>x)
-            x=eMat_t(k,readSNP);
-    // x is the maximum now
-    for(k=0; k<=KK-1; k++)
-        if(eMat_t(k,readSNP)<(x/d))
-            eMat_t(k,readSNP)=x/d;
+    // do not bother if already been done
+    if (readSNP != prev_readSNP) {
+        // first, get maximum
+        x=0;
+        for(k=0; k<=KK-1; k++)
+            if(eMat_t(k,readSNP)>x)
+                x=eMat_t(k,readSNP);
+        // x is the maximum now. re-scale to x
+        rescale = 1 / x;        
+        for(k=0; k<=KK-1; k++) {
+            eMat_t(k,readSNP) = eMat_t(k,readSNP) * rescale;
+            if(eMat_t(k,readSNP)<(1 / maxEmissionMatrixDifference))
+                eMat_t(k,readSNP)=1 / maxEmissionMatrixDifference;
+        }
+    }
+    prev_readSNP = readSNP;
   } // end of loop on t
   //
   //
@@ -632,7 +641,7 @@ Rcpp::List calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, 
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int whatToReturn, const int Jmax, const int suppressOutput, const int model, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, arma::mat pState) {
+Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int whatToReturn, const int Jmax, const int suppressOutput, const int model, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, arma::mat pState) {
   double prev=clock();
   std::string prev_section="Null";
   std::string next_section="Initialize variables";
@@ -671,6 +680,7 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   double pRead = 0;
   double pR = 0;
   double pA = 0;
+  double rescale;
   //
   //
   //
@@ -762,7 +772,6 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   // afterwards - cap per-SNP by difference squared 
   //
   //
-  d = maxDifferenceBetweenReads * maxDifferenceBetweenReads;
   // now - afterward - cap eMatHapSNP
   for(t=0; t<=T-1; t++) {
       // if eMatHapSNP(t, 0) != 0, proceed
@@ -772,10 +781,14 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
               if(eMatHapSNP_t(k, t)>x)
                   x=eMatHapSNP_t(k, t);
           // x is the maximum now
+          rescale = 1 / x;        
           x=x/d;
-          for(k=0; k<=K-1; k++)
-              if(eMatHapSNP_t(k, t)<x)
-                  eMatHapSNP_t(k, t)=x;
+          for(k=0; k<=K-1; k++) {
+              eMatHapSNP_t(k, t) = eMatHapSNP_t(k, t) * rescale;
+              if(eMatHapSNP_t(k, t) < (1 / maxEmissionMatrixDifference)) {
+                  eMatHapSNP_t(k, t)=1 / maxEmissionMatrixDifference;
+              }
+          }
       }
   }
   //

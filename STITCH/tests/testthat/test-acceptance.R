@@ -1,3 +1,11 @@
+if (1 == 0) {
+    library("testthat"); library("STITCH")
+    setwd("/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/STITCH/R")
+    o <- sapply(dir(pattern = "*R"), source)
+    setwd("/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/")
+    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+}
+
 run_acceptance_tests <- TRUE
 
 n_snps <- 10
@@ -997,6 +1005,7 @@ test_that("STITCH diploid works with snap to grid", {
 
     skip_test_if_TRUE(run_acceptance_tests)    
     sink("/dev/null")
+    
     set.seed(10)
     STITCH(
         tempdir = tempdir(),
@@ -1010,7 +1019,6 @@ test_that("STITCH diploid works with snap to grid", {
         outputBlockSize = 3,
         gridWindowSize = 2
     )
-
 
     sink()
 

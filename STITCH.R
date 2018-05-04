@@ -126,6 +126,12 @@ option_list <- list(
         default = 1000
     ), 
     make_option(
+        "--maxEmissionMatrixDifference",
+        type = "double",
+        help = "Similar to maxDifferenceBetweenReads, specifies ratio of how much larger the most probable state can be than the least probable state, but across all reads rather than for a single read. This helps to limit overflow in C++ calculations [default 1e10] ",
+        default = 1e10
+    ), 
+    make_option(
         "--alphaMatThreshold",
         type = "double",
         help = "Minimum (maximum is 1 minus this) state switching into probabilities [default 1e-4] ",
@@ -200,7 +206,7 @@ option_list <- list(
     make_option(
         "--regenerateInput",
         type = "logical",
-        help = "Whether to regenerate input files [default TRUE] ",
+        help = "Whether to regenerate input files. If this is FALSE, please using the same regionStart, regionEnd, buffer and posfile as you used to generate the input. Setting any of those to different values can cause the previous input data to be improperly interpreted. Please also see originalRegionName and regenerateInputWithDefaultValues [default TRUE] ",
         default = TRUE
     ), 
     make_option(
@@ -360,6 +366,12 @@ option_list <- list(
         default = FALSE
     ), 
     make_option(
+        "--plotAfterImputation",
+        type = "logical",
+        help = "Boolean TRUE/FALSE about whether to make plots after imputation has run (can be set to FALSE if this throws errors on systems without x11) [default TRUE] ",
+        default = TRUE
+    ), 
+    make_option(
         "--save_sampleReadsInfo",
         type = "logical",
         help = "Experimental. Boolean TRUE/FALSE about whether to save additional information about the reads that were extracted [default FALSE] ",
@@ -397,6 +409,7 @@ STITCH(
     regionEnd = opt$regionEnd,
     buffer = opt$buffer,
     maxDifferenceBetweenReads = opt$maxDifferenceBetweenReads,
+    maxEmissionMatrixDifference = opt$maxEmissionMatrixDifference,
     alphaMatThreshold = opt$alphaMatThreshold,
     emissionThreshold = opt$emissionThreshold,
     iSizeUpperLimit = opt$iSizeUpperLimit,
@@ -436,6 +449,7 @@ STITCH(
     initial_max_hapProb = opt$initial_max_hapProb,
     regenerateInputWithDefaultValues = opt$regenerateInputWithDefaultValues,
     plotHapSumDuringIterations = opt$plotHapSumDuringIterations,
+    plotAfterImputation = opt$plotAfterImputation,
     save_sampleReadsInfo = opt$save_sampleReadsInfo,
     gridWindowSize = opt$gridWindowSize
 )

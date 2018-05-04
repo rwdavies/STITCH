@@ -23,7 +23,8 @@ mkdir -p benchmark-results
 
 source "${script_dir}/what_to_benchmark.sh"
 
-for i_version in $(seq 0 $((${#version_list[@]} - 1)))
+##for i_version in $(seq 0 $((${#version_list[@]} - 1)))
+for i_version in 3 3
 do
     version=${version_list[$i_version]}
     extra=${extra_list[$i_version]}
@@ -57,7 +58,7 @@ do
     OUTPUTDIR=${TEST_RESULTS_DIR}/${description}/
 
     SUBMIT_SCRIPT=${STITCH_HOME}/benchmark-results/${description}.sh
-    rm ${SUBMIT_SCRIPT}
+    rm -r -f ${SUBMIT_SCRIPT}
     if [ ${interface} == "cli" ]
     then
        export CLI_FUNCTION_BUILD=${STITCH_HOME}/releases/STITCH_${version}.tar.gz

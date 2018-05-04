@@ -172,6 +172,7 @@ test_that("can use grid", {
         alphaMat = t(alphaMat),
         eHaps = t(eHaps),
         maxDifferenceBetweenReads = as.double(1000),
+        maxEmissionMatrixDifference = as.double(1e10),
         whatToReturn = as.integer(0),
         Jmax = as.integer(10),
         suppressOutput = as.integer(1)
@@ -197,6 +198,7 @@ test_that("can use grid", {
         alphaMat = t(alphaMat),
         transMatRate = transMatRate_t,
         maxDifferenceBetweenReads = as.double(1000),
+        maxEmissionMatrixDifference = as.double(1e10),        
         whatToReturn = as.integer(0),
         suppressOutput=as.integer(1),
         model=as.integer(9)
@@ -261,3 +263,73 @@ test_that("can calculate fbd dosage using grid", {
 
 })
 
+test_that("can downsample for gridding appropriately", {
+
+    sampleReads <- list(
+        list(0, 0, matrix(0, ncol = 1), matrix(0, ncol = 1)),
+        list(0, 1, matrix(0, ncol = 1), matrix(0, ncol = 1)),
+        list(0, 1, matrix(0, ncol = 1), matrix(0, ncol = 1)),
+        list(0, 2, matrix(0, ncol = 1), matrix(0, ncol = 1))        
+    )
+    sampleNames <- "jimmy"
+    iBam <- 1
+    regionName <- "someRegion"
+    tempdir <- tempdir()
+
+    for(downsampleToCov in c(1, 2)) {
+
+        out <- downsample_snapped_sampleReads(
+            sampleReads,
+            iBam,
+            downsampleToCov,
+            sampleNames,
+            verbose = FALSE
+        )
+        
+        expect_equal(
+            length(out),
+            c(3, 4)[downsampleToCov]
+        )
+    }
+
+    ## check this works through high level function
+    N <- 1
+    nCores <- 1
+    downsampleToCov <- 1
+    inputBundleBlockSize <- NA
+    L <- c(1, 2, 3)
+    gridWindowSize <- NA
+    out <- assign_positions_to_grid(L = L, gridWindowSize = gridWindowSize)
+    grid <- out$grid
+    grid_distances <- out$grid_distances
+    bundling_info <- get_bundling_position_information(
+        N = N,
+        nCores = nCores,
+        blockSize = inputBundleBlockSize
+    )
+
+    ## expect that when it goes it, it has length 3
+    expect_equal(
+        length(sampleReads),
+        4
+    )
+    save(sampleReads, file = file_sampleReads(tempdir, 1, regionName))
+
+    ## now perform high level function
+    snap_reads_to_grid(
+        N = N,
+        nCores = nCores,
+        regionName = regionName,
+        tempdir = tempdir,
+        bundling_info = bundling_info,
+        grid = grid,
+        downsampleToCov = downsampleToCov,
+        verbose = FALSE
+    )
+    load(file = file_sampleReads(tempdir, 1, regionName))
+    expect_equal(
+        length(sampleReads),
+        3
+    )
+
+})

@@ -203,7 +203,8 @@ make_acceptance_test_data_package <- function(
     reads_span_n_snps = NULL,
     n_cores = 1,
     tmpdir = tempdir(),
-    use_crams = FALSE
+    use_crams = FALSE,
+    sample_names = NULL
 ) {
 
     if (is.null(reads_span_n_snps))
@@ -243,8 +244,12 @@ make_acceptance_test_data_package <- function(
     read_names <- paste0("r00", 1:n_reads)
     bq <- paste0(rep(":", n), collapse = "")
 
-    sample_names <- sapply(1:n_samples, function(i_sample)
-        return(paste0("samp", i_sample)))
+    if (is.null(sample_names)) {
+        sample_names <- sapply(1:n_samples, function(i_sample)
+            return(paste0("samp", i_sample)))
+    } else if (length(sample_names) != n_samples) {
+        stop(paste0("You idiot, length(sample_names) = ", length(sample_names), " is not the same as n_samples which is ", n_samples))
+    }
 
     sample_files <- lapply(1:n_samples, function(i_sample) {
         reads <- mclapply(
@@ -265,9 +270,11 @@ make_acceptance_test_data_package <- function(
         })
         reads <- reads[order(as.integer(sapply(reads, function(x) x[[4]])))]
         sample_name <- sample_names[i_sample]
+        key <- round(10e4 * runif(1))
+        file_stem <- file.path(rawdir, paste0(sample_name, ".", key))
         if (use_crams) {
             out <- make_simple_cram(
-                file_stem = file.path(rawdir, sample_name),
+                file_stem = file_stem,
                 sam = make_simple_sam_text(
                     reads,
                     chr,
@@ -278,7 +285,7 @@ make_acceptance_test_data_package <- function(
             )
         } else {
             out <- make_simple_bam(
-                file_stem = file.path(rawdir, sample_name),
+                file_stem = file_stem,
                 sam = make_simple_sam_text(
                     reads,
                     chr,

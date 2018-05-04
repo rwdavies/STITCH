@@ -115,6 +115,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         alphaMat = t(alphaMat),
         eHaps = t(eHaps),
         maxDifferenceBetweenReads = as.double(1000),
+        maxEmissionMatrixDifference = as.double(1e4),
         whatToReturn = as.integer(0),
         Jmax = as.integer(10),
         suppressOutput = as.integer(1)
@@ -137,6 +138,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         alphaMat = t(alphaMat),
         transMatRate = t(transMatRate),
         maxDifferenceBetweenReads = as.double(1000),
+        maxEmissionMatrixDifference = as.double(1e4),        
         whatToReturn = as.integer(0),
         suppressOutput=as.integer(1),
         model=as.integer(9)
@@ -207,6 +209,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         alphaMat = t(alphaMat),
         eHaps = t(eHaps),
         maxDifferenceBetweenReads = as.double(1000),
+        maxEmissionMatrixDifference = as.double(1000),
         whatToReturn = as.integer(0),
         Jmax = as.integer(10),
         suppressOutput = as.integer(1),

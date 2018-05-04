@@ -9,26 +9,27 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   outputInputInVCFFormat = FALSE, downsampleToCov = 50,
   downsampleFraction = 1, readAware = TRUE, chrStart = NA, chrEnd = NA,
   regionStart = NA, regionEnd = NA, buffer = NA,
-  maxDifferenceBetweenReads = 1000, alphaMatThreshold = 1e-04,
-  emissionThreshold = 1e-04, iSizeUpperLimit = as.integer(600),
-  bqFilter = as.integer(17), niterations = 40,
-  shuffleHaplotypeIterations = c(4, 8, 12, 16), splitReadIterations = 25,
-  nCores = 1, expRate = 0.5, maxRate = 100, minRate = 0.1,
-  Jmax = 1000, regenerateInput = TRUE, originalRegionName = NA,
-  keepInterimFiles = FALSE, keepTempDir = FALSE, environment = "server",
-  pseudoHaploidModel = 9, outputHaplotypeProbabilities = FALSE,
-  switchModelIteration = NA, generateInputOnly = FALSE,
-  restartIterations = NA, refillIterations = c(6, 10, 14, 18),
-  downsampleSamples = 1, downsampleSamplesKeepList = NA,
-  subsetSNPsfile = NA, useSoftClippedBases = FALSE,
-  outputBlockSize = 1000, inputBundleBlockSize = NA,
-  reference_haplotype_file = "", reference_legend_file = "",
-  reference_sample_file = "", reference_populations = NA,
-  reference_phred = 20, reference_iterations = 10, vcf_output_name = NULL,
+  maxDifferenceBetweenReads = 1000, maxEmissionMatrixDifference = 1e+10,
+  alphaMatThreshold = 1e-04, emissionThreshold = 1e-04,
+  iSizeUpperLimit = as.integer(600), bqFilter = as.integer(17),
+  niterations = 40, shuffleHaplotypeIterations = c(4, 8, 12, 16),
+  splitReadIterations = 25, nCores = 1, expRate = 0.5, maxRate = 100,
+  minRate = 0.1, Jmax = 1000, regenerateInput = TRUE,
+  originalRegionName = NA, keepInterimFiles = FALSE, keepTempDir = FALSE,
+  environment = "server", pseudoHaploidModel = 9,
+  outputHaplotypeProbabilities = FALSE, switchModelIteration = NA,
+  generateInputOnly = FALSE, restartIterations = NA,
+  refillIterations = c(6, 10, 14, 18), downsampleSamples = 1,
+  downsampleSamplesKeepList = NA, subsetSNPsfile = NA,
+  useSoftClippedBases = FALSE, outputBlockSize = 1000,
+  inputBundleBlockSize = NA, reference_haplotype_file = "",
+  reference_legend_file = "", reference_sample_file = "",
+  reference_populations = NA, reference_phred = 20,
+  reference_iterations = 10, vcf_output_name = NULL,
   initial_min_hapProb = 0.4, initial_max_hapProb = 0.6,
   regenerateInputWithDefaultValues = FALSE,
-  plotHapSumDuringIterations = FALSE, save_sampleReadsInfo = FALSE,
-  gridWindowSize = NA)
+  plotHapSumDuringIterations = FALSE, plotAfterImputation = TRUE,
+  save_sampleReadsInfo = FALSE, gridWindowSize = NA)
 }
 \arguments{
 \item{chr}{What chromosome to run. Should match BAM headers}
@@ -73,6 +74,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{maxDifferenceBetweenReads}{How much of a difference to allow the reads to make in the forward backward probability calculation. For example, if P(read | state 1)=1 and P(read | state 2)=1e-6, re-scale so that their ratio is this value. This helps prevent any individual read as having too much of an influence on state changes, helping prevent against influence by false positive SNPs}
 
+\item{maxEmissionMatrixDifference}{Similar to maxDifferenceBetweenReads, specifies ratio of how much larger the most probable state can be than the least probable state, but across all reads rather than for a single read. This helps to limit overflow in C++ calculations}
+
 \item{alphaMatThreshold}{Minimum (maximum is 1 minus this) state switching into probabilities}
 
 \item{emissionThreshold}{Emission probability bounds. emissionThreshold < P(alt read | state k) < (1-emissionThreshold)}
@@ -97,7 +100,7 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{Jmax}{Maximum number of SNPs on a read}
 
-\item{regenerateInput}{Whether to regenerate input files}
+\item{regenerateInput}{Whether to regenerate input files. If this is FALSE, please using the same regionStart, regionEnd, buffer and posfile as you used to generate the input. Setting any of those to different values can cause the previous input data to be improperly interpreted. Please also see originalRegionName and regenerateInputWithDefaultValues}
 
 \item{originalRegionName}{If regenerateInput is FALSE (i.e. using existing data), this is the name of the original region name (chr.regionStart.regionEnd). This is necessary to load past variables}
 
@@ -150,6 +153,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{regenerateInputWithDefaultValues}{If regenerateInput is FALSE and the original input data was made using regionStart, regionEnd and buffer as default values, set this equal to TRUE}
 
 \item{plotHapSumDuringIterations}{Boolean TRUE/FALSE about whether to make a plot that shows the relative number of individuals using each ancestral haplotype in each iteration}
+
+\item{plotAfterImputation}{Boolean TRUE/FALSE about whether to make plots after imputation has run (can be set to FALSE if this throws errors on systems without x11)}
 
 \item{save_sampleReadsInfo}{Experimental. Boolean TRUE/FALSE about whether to save additional information about the reads that were extracted}
 
