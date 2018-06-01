@@ -3,6 +3,8 @@ STITCH - Sequencing To Imputation Through Constructing Haplotypes
 **__Current Version: 1.4.2__**
 Release date: May 4, 2018
 
+[![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
+
 Changes in latest version
 
 1. Introduce new variable maxEmissionMatrixDifference to better control magnitude of differences in emission matrix, and reduce underflow likelihood when using gridWindowSize
