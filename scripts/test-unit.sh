@@ -12,6 +12,9 @@ script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 export PATH=`pwd`/:${PATH}
 
+echo "PATH IS:"${PATH}
+echo "which samtools is:"`which samtools`
+
 logfile="temp.txt"
 # suppressPackageStartupMessages
 # --slave
