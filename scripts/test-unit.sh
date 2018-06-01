@@ -15,7 +15,7 @@ export PATH=`pwd`/:${PATH}
 logfile="temp.txt"
 # suppressPackageStartupMessages
 # --slave
-R -e 'devtools::document("STITCH"); devtools::test("STITCH")' 2>&1 | tee ${logfile}
+R -e 'devtools::document("STITCH"); devtools::test("STITCH", reporter = "summary")' 2>&1 | tee ${logfile}
 
 # somehow this gives 0 exit code on parse failure
 started_if_1=`cat ${logfile} | grep 'Testing STITCH' | wc -l`
