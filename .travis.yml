@@ -1,0 +1,13 @@
+language: r
+
+os:
+  - linux
+
+#before_install:
+# - sudo apt-get install r-base && R -h
+
+install:
+ - ./scripts/install-dependencies.sh
+
+script:
+  - ./scripts/test-unit.sh
