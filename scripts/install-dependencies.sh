@@ -22,7 +22,7 @@ mkdir -p dependencies
 # This is no longer required in STITCH 1.3.0
 # but leave in for now, can be useful to have easy install
 force_install=${1:-nope}
-#zero_if_samtools_not_installed=`which samtools | wc -l`
+zero_if_samtools_not_installed=`which samtools | wc -l`
 if [ $force_install == "samtools" ] || [$zero_if_samtools_not_installed == 0 ]
 then
     echo install samtools
