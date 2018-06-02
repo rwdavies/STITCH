@@ -23,7 +23,7 @@ mkdir -p dependencies
 # but leave in for now, can be useful to have easy install
 force_install=${1:-nope}
 zero_if_samtools_not_installed=`which samtools | wc -l`
-if [ $force_install == "samtools" ] || [$zero_if_samtools_not_installed == 0 ]
+if [ $zero_if_samtools_not_installed == 0 ] || [ $force_install == "samtools" ]
 then
     echo install samtools
     cd dependencies
