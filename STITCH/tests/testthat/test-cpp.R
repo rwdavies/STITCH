@@ -121,7 +121,10 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         suppressOutput = as.integer(1)
     )
 
-
+    ## basic checks
+    expect_equal(ncol(out$gamma_t), n_snps)
+    expect_equal(min(out$gamma_t) >= 0, TRUE)
+    expect_equal(max(out$gamma_t) <= 1, TRUE)    
 
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
@@ -144,6 +147,11 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         model=as.integer(9)
     )
 
+    ## basic checks
+    expect_equal(ncol(out$gamma_t), n_snps)
+    expect_equal(min(out$gamma_t) >= 0, TRUE)
+    expect_equal(max(out$gamma_t) <= 1, TRUE)    
+    
 
 })
 
@@ -298,6 +306,9 @@ test_that("can calculate eMatHapSNP and sample a path", {
         transMatRate_t = t(transMatRate),
         alphaMat_t = t(alphaMat)
     )
+
+    expect_equal(nrow(path), n_snps)
+    
 
 })
 

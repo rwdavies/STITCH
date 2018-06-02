@@ -178,6 +178,10 @@ test_that("can use grid", {
         suppressOutput = as.integer(1)
     )
 
+    expect_equal(ncol(out$gamma_t), nGrids)
+    expect_equal(min(out$gamma_t) >= 0, TRUE)
+    expect_equal(max(out$gamma_t) <= 1, TRUE)    
+
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
 
@@ -204,6 +208,9 @@ test_that("can use grid", {
         model=as.integer(9)
     )
 
+    expect_equal(ncol(out$gamma_t), nGrids)
+    expect_equal(min(out$gamma_t) >= 0, TRUE)
+    expect_equal(max(out$gamma_t) <= 1, TRUE)    
 
 })
 

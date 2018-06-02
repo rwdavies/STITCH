@@ -1,9 +1,13 @@
 if (1 == 0) {
+    
     library("testthat"); library("STITCH")
-    setwd("/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/STITCH/R")
+    ## dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "~/Google Drive/STITCH/"
+    setwd(paste0(dir, "/STITCH/R"))
     o <- sapply(dir(pattern = "*R"), source)
-    setwd("/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/")
+    setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+    
 }
 
 run_acceptance_tests <- TRUE
@@ -62,7 +66,8 @@ refpackX <- make_reference_package(
 
 
 test_that("STITCH diploid works under default parameters", {
-    skip_test_if_TRUE(run_acceptance_tests)
+
+    ##skip_test_if_TRUE(run_acceptance_tests)
 
     sink("/dev/null")
 
