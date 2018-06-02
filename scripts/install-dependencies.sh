@@ -23,7 +23,7 @@ mkdir -p dependencies
 # but leave in for now, can be useful to have easy install
 force_install=${1:-nope}
 zero_if_samtools_not_installed=`which samtools | wc -l`
-if [ $zero_if_samtools_not_installed == 0 ] || [ $force_install == "samtools" ]
+if [ $zero_if_samtools_not_installed == 0 ] || [ "$force_install" == "samtools" ]
 then
     echo install samtools
     cd dependencies
@@ -47,8 +47,7 @@ then
 fi
 
 
-force_install=${1:-nope}
-if [ $force_install == "bcftools" ]
+if [ "$force_install" == "bcftools" ]
 then
     echo install bcftools
     cd dependencies
@@ -73,7 +72,7 @@ fi
 
 
 zero_if_bgzip_not_installed=`which bgzip | wc -l` 
-if [ $zero_if_bgzip_not_installed == 0 ] || [ $force_install == "bgzip" ]
+if [ $zero_if_bgzip_not_installed == 0 ] || [ "$force_install" == "bgzip" ]
 then
     echo install bgzip
     cd dependencies
