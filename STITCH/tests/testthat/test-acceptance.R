@@ -67,7 +67,7 @@ refpackX <- make_reference_package(
 
 test_that("STITCH diploid works under default parameters", {
 
-    ##skip_test_if_TRUE(run_acceptance_tests)
+   skip_test_if_TRUE(run_acceptance_tests)
 
     sink("/dev/null")
 

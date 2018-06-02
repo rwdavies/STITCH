@@ -4529,6 +4529,200 @@ run_forward_backwards <- function(
 
 
 
+
+within_EM_per_sample_heuristics <- function(
+    sampleReads,
+    iSample,
+    K,
+    fbsoL,
+    method,
+    regionName,
+    L,
+    nGrids,
+    grid,
+    nor,
+    K_subset,
+    gammaSum_t,
+    alphaMatSum_t,    
+    priorSum,
+    nbreaks,
+    srp,
+    pRgivenH1,
+    pRgivenH2,
+    nSNPs,
+    delta,
+    eHapsCurrent_t,
+    alphaMatCurrent_t,
+    sigmaCurrent,
+    hapSum_t,
+    maxDifferenceBetweenReads,
+    maxEmissionMatrixDifference,
+    outputdir,
+    iteration,
+    restartIterations,
+    highCovInLow,
+    nsplit,
+    best_K_for_sample,
+    restartMatrixList, 
+    readsTotal,
+    readsSplit,
+    pseudoHaploidModel,
+    tempdir,
+    samples_with_phase
+) {
+    if (method == "pseudoHaploid") {
+        for(iNor in 1:2)
+            fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t
+    } else if (method == "diploid") {
+        y <- fbsoL[[1]]$gamma_t
+        gamma_t <- y[1:K, ]
+        for(ii in 2:K)
+            gamma_t <- gamma_t + y[1:K+(ii-1)*K, ]
+        fbsoL[[1]]$gammaK_t <- gamma_t
+    } else if (method == "diploid_subset") {
+        ## make faster...
+        gamma_t <- array(0, c(K, nGrids))
+        y <- fbsoL[[1]]$gamma_t
+        for(ii in 1:K_subset)
+            gamma_t[best_K_for_sample, ] <-
+                gamma_t[best_K_for_sample, ] +
+                y[1:K_subset + (ii - 1) * K_subset, ]
+        fbsoL[[1]]$gammaK_t <- gamma_t
+    }
+    ##
+    ## get update pieces
+    ##
+    for(iNor in 1:nor) {
+        which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
+        gammaSum_t[best_K_for_sample, which, ] <-
+            gammaSum_t[best_K_for_sample, which , ] +
+            fbsoL[[iNor]]$gammaUpdate_t[, which, ]
+        alphaMatSum_t[best_K_for_sample, ] <-
+            alphaMatSum_t[best_K_for_sample, ] +
+            fbsoL[[iNor]]$jUpdate_t
+        ## gammaK_t is already up-sized
+        priorSum <- priorSum +
+            fbsoL[[iNor]]$gammaK_t[, 1]
+    }
+    hapSum_t <- hapSum_t + fbsoL[[1]]$gammaK_t
+    ##
+    ## 
+    ##
+    if(nbreaks>0) {
+        ## for each sample, get the changes between every 100
+        for(iNor in 1:nor) {
+                hp=matrix(t(fbsoL[[1]]$gamma_t[, breaks]) ,ncol = K)
+                for(f in 1:nbreaks)
+                    fromMat[f,,]=fromMat[f,,] + hp[f,] %*% t(hp[f+1,])
+        }
+    }
+    ##
+    ## now - consider whether to re-start - ie fix gammas
+    ##
+    out <- restartSample(
+        sampleReads = sampleReads, srp = srp, pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, fbsoL=fbsoL, nSNPs = nSNPs,eHapsCurrent_t=eHapsCurrent_t,sigmaCurrent=sigmaCurrent,alphaMatCurrent_t=alphaMatCurrent_t,Jmax=Jmax,priorCurrent=priorCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,outputdir=outputdir,iteration = iteration,restartIterations = restartIterations, method = method
+    )
+    restartMatrixList[[iSample]] <- out$m
+    fbsoL <- out$fbsoL
+    ##
+    ## update pseudo diploid probabilities
+    ##
+    if (method == "pseudoHaploid") {
+        r <- pseudoHaploidUpdate(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp,delta=delta, K = K)
+        pRgivenH1 <- r$pRgivenH1
+        pRgivenH2 <- r$pRgivenH2
+        delta <- r$delta
+        save(
+            srp, pRgivenH1, pRgivenH2, delta,
+            file = file.path(tempdir, paste0("sample.",iSample,".readProbs.",regionName,".RData"))
+        )
+    }
+    ##
+    ## check high coverage samples if applicable
+    ##
+    if (is.na(match(iSample, highCovInLow)) ==FALSE) {
+        dosage <- array(0, nSNPs)
+        if (method == "pseudoHaploid") {
+            for(iNor in 1:nor) {
+                dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t * eHapsCurrent_t))
+            }
+        } else if(method == "diploid"){
+            out <- calculate_fbd_dosage(
+                nGrids = nGrids,
+                nSNPs = nSNPs,
+                K = K,
+                eHaps_t = eHapsCurrent_t,
+                gamma_t = fbsoL[[1]]$gamma_t,
+                grid = grid
+            )
+            dosage <- out$dosage
+        } else if(method == "diploid_subset") {
+            out <- calculate_fbd_dosage(
+                nGrids = nGrids,
+                nSNPs = nSNPs,
+                K = K_subset,
+                eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
+                gamma_t = fbsoL[[1]]$gamma_t,
+                grid = grid
+            )
+            dosage <- out$dosage                
+        }
+        if (nor == 2) {
+            dosage <- dosage / 2
+        }
+        save(dosage, file=file_dosages(tempdir, iSample, regionName))
+    } # end of check on high coverage sample
+    ##
+    ## check phasing samples if applicable
+    ##
+    if (method == "pseudoHaploid" &&
+        is.na(match(iSample, samples_with_phase))==FALSE) {
+        haplotypes <- array(0, c(nSNPs, 2))
+        for(i_hap in 1:2)
+            haplotypes[, i_hap] <- colSums(fbsoL[[i_hap]]$gamma_t * eHapsCurrent_t)
+        save(haplotypes, file=file_haplotypes(tempdir, iSample, regionName))
+    }
+    ##
+    ## do read splitting if the correct iteration
+    ##
+    if ( nsplit > 0 & method != "pseudoHaploid") {
+        ## BUGwerwer - this has never been on
+        ## including never for pseudoHaploid
+        ## fix this in the future
+        if(method=="pseudoHaploid") {
+            gammaK_t <- fbsoL[[1]]$gammaK_t + fbsoL[[2]]$gammaK_t
+        } else {
+            gammaK_t <- fbsoL[[1]]$gammaK_t
+        }
+        out <- findRecombinedReadsPerSample(
+            gammaK_t = fbsoL[[1]]$gammaK_t,
+            eHapsCurrent_t = eHapsCurrent_t,
+            K = K,
+            L = L,
+            iSample = iSample,
+            verbose = FALSE,
+            sampleReads = sampleReads,
+            tempdir = tempdir,
+            regionName = regionName,
+            grid = grid
+        )
+        readsTotal[iSample] <- out$readsTotal
+        readsSplit[iSample] <- out$readsSplit
+    }
+    return(
+        list(
+            gammaSum_t = gammaSum_t,
+            alphaMatSum_t = alphaMatSum_t,
+            priorSum = priorSum,
+            hapSum_t = hapSum_t,
+            readsTotal = readsTotal,
+            readsSplit = readsSplit,
+            restartMatrixList = restartMatrixList
+        )
+    )
+}
+
+
 subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrentL,outputBlockSize, bundling_info, transMatRate_t, x3, N, shuffleHaplotypeIterations, niterations, L, samples_with_phase, nbreaks, breaks, vcf.piece_unique, grid, grid_eHaps_distance) {
 
     ## initialize bundling variables
@@ -4669,154 +4863,59 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         fbsoL <- out$fbsoL
 
         
-        ##
-        ##
-        ##
-        ##
-        ## 2 - do various heuristics and updating
-        ##
-        ##
-        ##
-        ##
-        ##
-        if (method == "pseudoHaploid") {
-            for(iNor in 1:2)
-                fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t
-        } else if (method == "diploid") {
-            y <- fbsoL[[1]]$gamma_t
-            gamma_t <- y[1:K, ]
-            for(ii in 2:K)
-                gamma_t <- gamma_t + y[1:K+(ii-1)*K, ]
-            fbsoL[[1]]$gammaK_t <- gamma_t
-        } else if (method == "diploid_subset") {
-            ## make faster...
-            gamma_t <- array(0, c(K, nGrids))
-            ##save(best_K_for_sample, K_subset, K, nGrids, fbsoL, iNor, gamma_t, hapSum_t, file = "~/temp.RData")
-            ##stop("wer")
-            y <- fbsoL[[iNor]]$gamma_t
-            for(ii in 1:K_subset)
-                gamma_t[best_K_for_sample, ] <-
-                    gamma_t[best_K_for_sample, ] +
-                    y[1:K_subset + (ii - 1) * K_subset, ]
-            fbsoL[[iNor]]$gammaK_t <- gamma_t
-        }
-        ##
-        ## get update pieces
-        ##
-        for(iNor in 1:nor) {
-            which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
-            gammaSum_t[best_K_for_sample, which, ] <-
-                gammaSum_t[best_K_for_sample, which , ] +
-                fbsoL[[iNor]]$gammaUpdate_t[, which, ]
-            alphaMatSum_t[best_K_for_sample, ] <-
-                alphaMatSum_t[best_K_for_sample, ] +
-                fbsoL[[iNor]]$jUpdate_t
-            ## gammaK_t is already up-sized
-            priorSum <- priorSum +
-                fbsoL[[iNor]]$gammaK_t[, 1]
-        }
-        hapSum_t <- hapSum_t + fbsoL[[iNor]]$gammaK_t
-        ##
-        ## 
-        ##
-        if(nbreaks>0) {
-            ## for each sample, get the changes between every 100
-            for(iNor in 1:nor) {
-                hp=matrix(t(fbsoL[[1]]$gamma_t[, breaks]) ,ncol = K)
-                for(f in 1:nbreaks)
-                    fromMat[f,,]=fromMat[f,,] + hp[f,] %*% t(hp[f+1,])
-            }
-        }
-        ##
-        ## now - consider whether to re-start - ie fix gammas
-        ##
-        out <- restartSample(sampleReads = sampleReads, srp = srp, pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, fbsoL=fbsoL, nSNPs = nSNPs,eHapsCurrent_t=eHapsCurrent_t,sigmaCurrent=sigmaCurrent,alphaMatCurrent_t=alphaMatCurrent_t,Jmax=Jmax,priorCurrent=priorCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,outputdir=outputdir,iteration = iteration,restartIterations = restartIterations, method = method)
-        restartMatrixList[[iSample]] <- out$m
-        fbsoL <- out$fbsoL
-        ##
-        ## update pseudo diploid probabilities
-        ##
-        if(method=="pseudoHaploid") {
-            r=pseudoHaploidUpdate(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp,delta=delta, K = K)
-            pRgivenH1=r$pRgivenH1
-            pRgivenH2=r$pRgivenH2
-            delta=r$delta
-            save(
-                srp, pRgivenH1, pRgivenH2, delta,
-                file = file.path(tempdir, paste0("sample.",iSample,".readProbs.",regionName,".RData"))
-            )
-        }
-        ##
-        ## check high coverage samples if applicable
-        ##
-        if(is.na(match(iSample,highCovInLow))==FALSE) {
-            dosage <- array(0, nSNPs)
-            if (method == "pseudoHaploid") {
-                for(iNor in 1:nor)
-                    dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t * eHapsCurrent_t))
-            } else if(method == "diploid"){
-                out <- calculate_fbd_dosage(
-                    nGrids = nGrids,
-                    nSNPs = nSNPs,
-                    K = K,
-                    eHaps_t = eHapsCurrent_t,
-                    gamma_t = fbsoL[[iNor]]$gamma_t,
-                    grid = grid
-                )
-                dosage <- out$dosage
-                ##fbsoL[[iNor]]$dosage
-            } else if(method == "diploid_subset") {
-                out <- calculate_fbd_dosage(
-                    nGrids = nGrids,
-                    nSNPs = nSNPs,
-                    K = K_subset,
-                    eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
-                    gamma_t = fbsoL[[iNor]]$gamma_t,
-                    grid = grid
-                )
-                dosage <- out$dosage                
-            }
-            if (nor == 2)
-                dosage <- dosage / 2
-            save(dosage, file=file_dosages(tempdir, iSample, regionName))
-        } # end of check on high coverage sample
-        ##
-        ## check phasing samples if applicable
-        ##
-        if (method == "pseudoHaploid" &&
-            is.na(match(iSample, samples_with_phase))==FALSE) {
-            haplotypes <- array(0, c(nSNPs, 2))
-            for(i_hap in 1:2)
-                haplotypes[, i_hap] <- colSums(fbsoL[[i_hap]]$gamma_t * eHapsCurrent_t)
-            save(haplotypes, file=file_haplotypes(tempdir, iSample, regionName))
-        }
-        ##
-        ## do read splitting if the correct iteration
-        ##
-        if ( nsplit > 0 & method != "pseudoHaploid") {
-            ## BUGwerwer - this has never been on
-            ## including never for pseudoHaploid
-            ## fix this in the future
-            if(method=="pseudoHaploid") {
-                gammaK_t <- fbsoL[[1]]$gammaK_t + fbsoL[[2]]$gammaK_t
-            } else {
-                gammaK_t <- fbsoL[[1]]$gammaK_t
-            }
-            out <- findRecombinedReadsPerSample(
-                gammaK_t = fbsoL[[1]]$gammaK_t,
-                eHapsCurrent_t = eHapsCurrent_t,
-                K = K,
-                L = L,
-                iSample = iSample,
-                verbose = FALSE,
-                sampleReads = sampleReads,
-                tempdir = tempdir,
-                regionName = regionName,
-                grid = grid
-            )
-            readsTotal[iSample] <- out$readsTotal
-            readsSplit[iSample] <- out$readsSplit
-        }
+
+        out <- within_EM_per_sample_heuristics(
+            sampleReads = sampleReads,
+            iSample = iSample,
+            K = K,
+            fbsoL = fbsoL,
+            method = method,
+            regionName = regionName,
+            L = L,
+            nGrids = nGrids,
+            grid = grid,
+            nor = nor,
+            K_subset = K_subset,
+            gammaSum_t = gammaSum_t,
+            alphaMatSum_t = alphaMatSum_t,    
+            priorSum = priorSum,
+            nbreaks = nbreaks,
+            srp = srp,
+            pRgivenH1 = pRgivenH1,
+            pRgivenH2 = pRgivenH2,
+            nSNPs = nSNPs,
+            delta = delta,
+            eHapsCurrent_t = eHapsCurrent_t,
+            alphaMatCurrent_t = alphaMatCurrent_t,
+            sigmaCurrent = sigmaCurrent,
+            hapSum_t = hapSum_t,
+            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+            outputdir = outputdir,
+            iteration = iteration,
+            restartIterations = restartIterations,
+            highCovInLow = highCovInLow,
+            nsplit = nsplit,
+            best_K_for_sample = best_K_for_sample,
+            restartMatrixList = restartMatrixList,
+            readsTotal = readsTotal,
+            readsSplit = readsSplit,
+            pseudoHaploidModel = pseudoHaploidModel,
+            tempdir = tempdir,
+            samples_with_phase = samples_with_phase
+        )
+        gammaSum_t <- out$gammaSum_t
+        alphaMatSum_t <- out$alphaMatSum_t
+        priorSum <- out$priorSum
+        hapSum_t <- out$hapSum_t
+        hapSum_t <- out$hapSum_t
+        readsTotal <- out$readsTotal
+        readsSplit <- out$readsSplit
+        restartMatrixList <- out$restartMatrixList
+
+
+        
+        
         ##
         ##
         ##
@@ -4836,7 +4935,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
                         nSNPs = nSNPs,
                         K = K,
                         eHaps_t = eHapsCurrent_t,
-                        gamma_t = fbsoL[[iNor]]$gamma_t,
+                        gamma_t = fbsoL[[1]]$gamma_t,
                         grid = grid
                     )
                     gp <- out$genProbs
