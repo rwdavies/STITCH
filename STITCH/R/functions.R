@@ -1026,9 +1026,15 @@ initialize_directories <- function(
     if (is.na(tempdir)) {
         tempdir <- tempdir()
     }
-    tempdir <- paste0(tempdir, "/", paste(toupper(letters[sample(26,10,replace=TRUE)]),collapse=""), "/")
-    if (keepTempDir == TRUE)
+    tempdir <- file.path(
+        tempdir,
+        paste(
+            toupper(letters[sample(26, 10, replace = TRUE)]), collapse=""
+        )
+    )
+    if (keepTempDir == TRUE) {
         print_message(paste0("tempdir = ", tempdir))
+    }
     dirs_to_create <- c(
         tempdir,
         outputdir,
@@ -3644,22 +3650,22 @@ shrinkReads <- function(
         if (is.na(inputBundleBlockSize)) {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
             command1 <- paste0(
-                '(cd ', inputdir, ' && find . -name "',
+                '(cd "', inputdir, '" && find . -name "',
                 'sample.*.input.', regionName, '.RData',
-                '" > ', file_with_files_to_transfer, ')'
+                '" > "', file_with_files_to_transfer, '")'
             )
             system(command1)
-            command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " '", inputdir, "' '", tempdir, "'")
+            command2 <- paste0("rsync -a --files-from='", file_with_files_to_transfer, "' '", inputdir, "' '", tempdir, "'")
             system(command2)
         } else {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
             command1 <- paste0(
-                '(cd ', inputdir, ' && find . -name "',
+                '(cd "', inputdir, '" && find . -name "',
                 "bundledSamples.*-*.", regionName, ".RData",
-                '" > ', file_with_files_to_transfer, ')'
+                '" > "', file_with_files_to_transfer, '")'
             )
             system(command1)
-            command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " '", inputdir, "' '", tempdir, "'")
+            command2 <- paste0("rsync -a --files-from='", file_with_files_to_transfer, "' '", inputdir, "' '", tempdir, "'")
             system(command2)
         }
         print_message("Done copying files onto tempdir")
@@ -4546,6 +4552,8 @@ within_EM_per_sample_heuristics <- function(
     alphaMatSum_t,    
     priorSum,
     nbreaks,
+    breaks,
+    fromMat,
     srp,
     pRgivenH1,
     pRgivenH2,
@@ -4608,12 +4616,12 @@ within_EM_per_sample_heuristics <- function(
     ##
     ## 
     ##
-    if(nbreaks>0) {
+    if (nbreaks > 0) {
         ## for each sample, get the changes between every 100
         for(iNor in 1:nor) {
-                hp=matrix(t(fbsoL[[1]]$gamma_t[, breaks]) ,ncol = K)
-                for(f in 1:nbreaks)
-                    fromMat[f,,]=fromMat[f,,] + hp[f,] %*% t(hp[f+1,])
+            hp <- matrix(t(fbsoL[[1]]$gamma_t[, breaks]), ncol = K)
+            for(f in 1:nbreaks)
+                fromMat[f, , ] <- fromMat[f, , ] + hp[f, ] %*% t(hp[f + 1, ])
         }
     }
     ##
@@ -4717,7 +4725,8 @@ within_EM_per_sample_heuristics <- function(
             hapSum_t = hapSum_t,
             readsTotal = readsTotal,
             readsSplit = readsSplit,
-            restartMatrixList = restartMatrixList
+            restartMatrixList = restartMatrixList,
+            fromMat = fromMat
         )
     )
 }
@@ -5006,6 +5015,8 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             alphaMatSum_t = alphaMatSum_t,    
             priorSum = priorSum,
             nbreaks = nbreaks,
+            breaks = breaks,
+            fromMat = fromMat,
             srp = srp,
             pRgivenH1 = pRgivenH1,
             pRgivenH2 = pRgivenH2,
@@ -5038,6 +5049,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         readsTotal <- out$readsTotal
         readsSplit <- out$readsSplit
         restartMatrixList <- out$restartMatrixList
+        fromMat <- out$fromMat
 
 
         if (iteration == niterations) {

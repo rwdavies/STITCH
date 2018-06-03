@@ -102,6 +102,45 @@ test_that("STITCH diploid works under default parameters", {
 
 
 
+test_that("STITCH diploid works under default parameters when outputdir has a space in it", {
+
+    skip_test_if_TRUE(run_acceptance_tests)
+
+    sink("/dev/null")
+
+    set.seed(10)
+    outputdir <- file.path(data_package$outputdir, "wer wer2")
+    dir.create(outputdir)
+    STITCH(
+        tempdir = tempdir(),
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        outputBlockSize = 3
+    )
+    
+    sink()
+
+    vcf <- read.table(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
+
 
 test_that("STITCH diploid works under default parameters with nCores = 40 and N = 25", {
     skip_test_if_TRUE(run_acceptance_tests)
@@ -715,7 +754,8 @@ test_that("STITCH with generateInputOnly actually only generates input", {
 
 
 test_that("STITCH can generate input in VCF format", {
-    skip_test_if_TRUE(run_acceptance_tests)
+    
+    ## skip_test_if_TRUE(run_acceptance_tests)
 
     sink("/dev/null")
 
@@ -735,8 +775,8 @@ test_that("STITCH can generate input in VCF format", {
         phasemaster = phasemaster
     )
 
-    local_outputdir <- tempfile()
-    dir.create(local_outputdir)
+    local_outputdir <- file.path(tempfile(), "wer wer2")
+    dir.create(local_outputdir, recursive = TRUE)
     STITCH(
         tempdir = tempdir(),
         chr = data_package_local$chr,

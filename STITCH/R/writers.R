@@ -139,55 +139,41 @@ outputInputInVCFFunction <- function(
     ##
     ## get number of cores and blocks
     ##
-    x3 <- getSampleRange(N, nCores)
-    files_to_paste <- lapply(1:nCores, function(i_core) {
-        nBlocks <- length(getOutputBlockRange(
-            sampleRange = x3[[i_core]],
-            outputBlockSize
-        ))
-        return(
-            paste0(
-                '<(gunzip -c ', outputdir, "vcf.piece",
-                vcf.piece_unique, i_core,
-                ".", 2:nBlocks, ".", regionName,
-                ".txt.gz", ' | cat ) '
-            )
-        )
-    })
-    files_to_paste <- paste(unlist(files_to_paste), collapse = " ")
+    unlisted_files_to_paste <- get_files_to_paste(
+        N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName
+    )    
     ##
     ## merge together
     ##
     command <- paste0(
         'bash -c "',
         'paste -d ',shQuote("\t"),' ',
-        '<(gunzip -c ',output_vcf_left,' | cat ) ',
-        files_to_paste, " | ",
-        " cat ",output_vcf_header," - | bgzip -c > ",
-        output_vcf
+        '<(gunzip -c ', shQuote(output_vcf_left), ' | cat ) ',
+        unlisted_files_to_paste, ' | ',
+        ' cat ', shQuote(output_vcf_header) ,' - | bgzip -c > ',
+        shQuote(output_vcf)
        ,'"'
     )
     system(command)
-    system(paste0("rm ",output_vcf_header))
-    system(paste0("rm ",output_vcf_left))
+    unlink(output_vcf_header)
+    unlink(output_vcf_left)
     ##
     ## remove
     ##
     x3 <- getSampleRange(N, nCores)
-    files_to_remove <- unlist(lapply(1:nCores, function(i_core) {
+    for(i_core in 1:length(x3)) {
         nBlocks <- length(getOutputBlockRange(
             sampleRange = x3[[i_core]],
             outputBlockSize
         ))
-        return(
+        unlink(
             paste0(
-                outputdir, "vcf.piece", vcf.piece_unique,
-                i_core,
+                outputdir, "vcf.piece",
+                vcf.piece_unique, i_core,
                 ".", 2:nBlocks, ".", regionName, ".txt.gz"
             )
         )
-    }))
-    system(paste0("rm ",paste0(files_to_remove, collapse=" ")))
+    }
     print_message("Done building VCF from input")
     return(NULL)
 }
@@ -216,10 +202,13 @@ write_block_of_vcf <- function(
     write.table(
         vcf_matrix_to_out,
         file = gzfile(
-            paste0(
-                outputdir, "vcf.piece",
-                vcf.piece_unique,
-                i_core, ".", iBlock, ".", regionName, ".txt.gz"
+            file.path(
+                outputdir,
+                paste0(
+                    "vcf.piece",
+                    vcf.piece_unique,
+                    i_core, ".", iBlock, ".", regionName, ".txt.gz"
+                )
             )
         ),
         row.names = FALSE,
@@ -415,59 +404,74 @@ write_vcf_after_EM <- function(
     ##
     ## get number of cores and blocks
     ##
-    x3 <- getSampleRange(N, nCores)
-    files_to_paste <- lapply(1:length(x3), function(i_core) {
-        nBlocks <- length(getOutputBlockRange(
-            sampleRange = x3[[i_core]],
-            outputBlockSize
-        ))
-        return(
-            paste0(
-                '<(gunzip -c ', outputdir, "vcf.piece",
-                vcf.piece_unique,
-                i_core, "." , 2:nBlocks, ".",
-                regionName, ".txt.gz", ' | cat ) '
-            )
-        )
-    })
-    files_to_paste <- paste(unlist(files_to_paste), collapse = " ")
+    unlisted_files_to_paste <- get_files_to_paste(
+        N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName
+    )    
     ##
+    ## this command is crazy - write to tempfile then run
     ## merge together
     ##
     command <- paste0(
         'bash -c "',
         'paste -d ',shQuote("\t"),' ',
-        '<(gunzip -c ',output_vcf_left,' | cat ) ',
-        files_to_paste, " | ",
-        " cat ",output_vcf_header," - | bgzip -c > ",
-        output_vcf
+        '<(gunzip -c ', shQuote(output_vcf_left), ' | cat ) ',
+        unlisted_files_to_paste, ' | ',
+        ' cat ', shQuote(output_vcf_header) ,' - | bgzip -c > ',
+        shQuote(output_vcf)
        ,'"'
     )
-    system(
-        command
-    )
-    system(paste0("rm ",output_vcf_header))
-    system(paste0("rm ",output_vcf_left))
+    ##cat(command, file = temp_runfile)
+    ##system(paste0("bash ", temp_runfile))
+    ## temp_runfile <- tempfile()
+    system(command)
+    unlink(output_vcf_header)
+    unlink(output_vcf_left)
     ##
     ## remove
     ##
     x3 <- getSampleRange(N, nCores)
-    files_to_remove <- unlist(lapply(1:length(x3), function(i_core) {
+    for(i_core in 1:length(x3)) {
         nBlocks <- length(getOutputBlockRange(
             sampleRange = x3[[i_core]],
             outputBlockSize
         ))
-        return(
+        unlink(
             paste0(
                 outputdir, "vcf.piece",
                 vcf.piece_unique, i_core,
                 ".", 2:nBlocks, ".", regionName, ".txt.gz"
             )
         )
-    }))
-    system(paste0("rm ",paste0(files_to_remove, collapse=" ")))
+    }
     return(NULL)
 }
 
 
 
+get_files_to_paste <- function(N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName) {
+    x3 <- getSampleRange(N, nCores)
+    files_to_paste <- lapply(1:length(x3), function(i_core) {
+        nBlocks <- length(getOutputBlockRange(
+            sampleRange = x3[[i_core]],
+            outputBlockSize
+        ))
+        files_x <- NULL
+        if (nBlocks > 1) {
+            for(iBlock in 2:nBlocks) {
+                file_x <- file.path(
+                    outputdir,
+                    paste0(
+                        "vcf.piece",
+                        vcf.piece_unique,
+                        i_core, "." , iBlock, ".",
+                        regionName, ".txt.gz"
+                    )
+                )
+                files_x <- c(files_x, paste0('<(gunzip -c ', shQuote(file_x), ' | cat ) '))
+            }
+            return(files_x)
+        }
+    })
+    unlisted_files_to_paste <- paste(unlist(files_to_paste), collapse = " ")
+    return(unlisted_files_to_paste)
+}
