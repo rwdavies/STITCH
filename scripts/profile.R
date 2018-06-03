@@ -3,10 +3,27 @@
 library("proftools")
 library("STITCH")
 
+## change directory to one up from scripts, no matter how this was called
+args <- commandArgs(trailingOnly = FALSE)
+for(key in c("--file=", "--f=")) {
+    i <- substr(args, 1, nchar(key)) == key
+    if (sum(i) == 1) {
+        script_dir <- dirname(substr(args[i], nchar(key) + 1, 1000))
+        setwd(file.path(script_dir, "../"))
+    }
+}
+
 profout <- tempfile()
 Rprof(file = profout, gc.profiling = TRUE, line.profiling = TRUE)
 outputdir <- Sys.getenv("OUTPUTDIR")
-nCores <- as.integer(Sys.getenv("N_CORES"))
+if (outputdir == "") {
+    outputdir <- file.path(getwd(), script_dir, "../", "test-results", "profile-one-off")
+    dir.create(outputdir, showWarnings = FALSE)
+}
+nCores <- Sys.getenv("N_CORES")
+if (nCores == "") {
+    nCores <- 1
+}
 if (Sys.getenv("USE") == "CRAMS") {
     bamlist <- ""
     cramlist = "cramlist.txt"
@@ -34,6 +51,7 @@ posfile <- "pos.txt"
 genfile <- "gen.txt"
 tempdir <- paste0(outputdir, "/")
 nCores <- as.integer(nCores)
+setwd("./test-data/mouse_data/")
 command <- paste0(
     'STITCH(',
     'chr = chr,',
