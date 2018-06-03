@@ -15,8 +15,9 @@ outputInputInVCFFunction <- function(
     sampleNames,
     outputBlockSize,
     bundling_info,
-    vcf_output_name,
-    vcf.piece_unique
+    output_filename,
+    vcf.piece_unique,
+    output_format
 ) {
     ##
     ##
@@ -106,7 +107,13 @@ outputInputInVCFFunction <- function(
     ## build left side
     ## stitch everything together
     print_message("Build VCF from input")
-    output_vcf <- get_output_vcf(vcf_output_name,  outputdir, regionName, prefix = "stitch.input")
+    output_vcf <- get_output_filename(
+        output_filename = output_filename,
+        outputdir = outputdir,
+        regionName = regionName,
+        output_format = output_format,
+        prefix = "stitch.input"
+    )
     output_vcf_header <- paste0(output_vcf, ".header.gz")
     output_vcf_left <- paste0(output_vcf, ".left.gz")
     ##
@@ -295,61 +302,71 @@ make_column_of_vcf <- function(
 
 
 
-## specify here the output VCF from the process
-get_output_vcf <- function(
-    vcf_output_name,
+
+
+## specify here the output file from the process
+get_output_filename <- function(
+    output_filename,
     outputdir,
     regionName,
-    prefix = NULL
+    output_format,
+    prefix = "stitch"
 ) {
-    if (is.null(vcf_output_name)) {
-        if (is.null(prefix)) {
-            return(file.path(
-                outputdir,
-                paste0("stitch.", regionName, ".vcf.gz")
-            ))
-        } else {
-            return(file.path(
-                outputdir,
-                paste0(prefix, ".", regionName, ".vcf.gz")
-            ))
-        }
+    if (output_format == "gvcf") {
+        extension <- ".vcf.gz"
     } else {
-        if (basename(vcf_output_name) == vcf_output_name) {
+        extension <- "bgen"
+    }
+    if (is.null(output_filename)) {
+        return(
+            file.path(
+                outputdir,
+                paste0(prefix, ".", regionName, extension)
+            )
+        )
+    } else {
+        if (basename(output_filename) == output_filename) {
             return(file.path(
                 outputdir,
-                vcf_output_name
+                output_filename
             ))
         } else {
-            return(vcf_output_name)
+            return(output_filename)
         }
     }
 }
 
-# build the header
-# build the left part of the VCF
-# paste together the interim VCF files
-# gzip the whole thing together
+
+## build the header
+## build the left part of the VCF
+## paste together the interim VCF files
+## gzip the whole thing together
 write_vcf_after_EM <- function(
-  vcf_output_name,
-  outputdir,
-  regionName,
-  sampleNames,
-  tempdir,
-  nCores,
-  info,
-  hwe,
-  estimatedAlleleFrequency,
-  pos,
-  N,
-  outputBlockSize,
-  reference_panel_SNPs,
-  method,
-  vcf.piece_unique = "."
+    output_filename,
+    outputdir,
+    regionName,
+    sampleNames,
+    tempdir,
+    nCores,
+    info,
+    hwe,
+    estimatedAlleleFrequency,
+    pos,
+    N,
+    outputBlockSize,
+    reference_panel_SNPs,
+    method,
+    output_format,
+    vcf.piece_unique = "."
 ) {
     ## set up file names
     print_message("Build final VCF")
-    output_vcf <- get_output_vcf(vcf_output_name,  outputdir, regionName)
+    output_vcf <- get_output_filename(
+        output_filename = output_filename,
+        outputdir = outputdir,
+        regionName = regionName,
+        output_format = output_format
+    )
     output_vcf_header <- paste0(output_vcf, ".header.gz")
     output_vcf_left <- paste0(output_vcf, ".left.gz")
     ##

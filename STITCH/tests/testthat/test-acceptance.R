@@ -67,9 +67,9 @@ refpackX <- make_reference_package(
 
 test_that("STITCH diploid works under default parameters", {
 
-   skip_test_if_TRUE(run_acceptance_tests)
+    skip_test_if_TRUE(run_acceptance_tests)
 
-   sink("/dev/null")
+    sink("/dev/null")
 
     set.seed(10)
     STITCH(
@@ -382,6 +382,8 @@ test_that("STITCH can initialize with reference data", {
 
 
 test_that("STITCH can initialize with reference data with defined regionStart and regionEnd", {
+
+    
     skip_test_if_TRUE(run_acceptance_tests)
     sink("/dev/null")
 
