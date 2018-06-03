@@ -3649,7 +3649,7 @@ shrinkReads <- function(
                 '" > ', file_with_files_to_transfer, ')'
             )
             system(command1)
-            command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " ", inputdir, " ", tempdir)
+            command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " '", inputdir, "' '", tempdir, "'")
             system(command2)
         } else {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
@@ -3659,7 +3659,7 @@ shrinkReads <- function(
                 '" > ', file_with_files_to_transfer, ')'
             )
             system(command1)
-            command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " ", inputdir, " ", tempdir)
+            command2 <- paste0("rsync -a --files-from=", file_with_files_to_transfer, " '", inputdir, "' '", tempdir, "'")
             system(command2)
         }
         print_message("Done copying files onto tempdir")
@@ -4723,6 +4723,132 @@ within_EM_per_sample_heuristics <- function(
 }
 
 
+
+
+prepare_per_sample_within_EM_output <- function(
+    iSample,
+    sampleRange,
+    fbsoL,    
+    method,
+    nGrids,
+    nSNPs,
+    K,
+    eHapsCurrent_t,
+    grid,
+    K_subset = NA,
+    vcf_matrix_to_out,
+    vcf_matrix_to_out_offset,
+    infoCount,
+    afCount,
+    hweCount,
+    outputBlockRange,
+    x3,
+    outputdir,
+    regionName,
+    vcf.piece_unique
+) {
+    ## get allele counts for HWE, info calcs, AF
+    ## get most likely genotype - add to count
+    for(i in 1:length(fbsoL)) {
+        if ( method == "diploid") {
+            ## calculate dosage here
+            out <- calculate_fbd_dosage(
+                nGrids = nGrids,
+                nSNPs = nSNPs,
+                K = K,
+                eHaps_t = eHapsCurrent_t,
+                gamma_t = fbsoL[[1]]$gamma_t,
+                grid = grid
+            )
+            gp <- out$genProbs
+        } else if (method == "pseudoHaploid") {
+            gp <- array(0, c(nSNPs, 3))
+            if (nSNPs == nGrids) {
+                g10 <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))
+                g20 <- colSums(fbsoL[[2]]$gamma_t * (1-eHapsCurrent_t))
+            } else {
+                g10 <- colSums(fbsoL[[1]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
+                g20 <- colSums(fbsoL[[2]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
+            }
+            gp[, 1] <- g10 * g20
+            gp[, 2] <- g10 * (1-g20) + (1-g10) * g20
+            gp[, 3] <- (1-g10) * (1-g20)
+        } else if (method == "diploid_subset") {
+            ## calculate dosage here
+            out <- calculate_fbd_dosage(
+                nGrids = nGrids,
+                nSNPs = nSNPs,
+                K = K_subset,
+                eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
+                gamma_t = fbsoL[[iNor]]$gamma_t,
+                grid = grid
+            )
+            gp <- out$genProbs
+        }
+    }
+    ## info counts
+    eij <- gp[,2] + 2 * gp[,3]
+    fij <- gp[,2] + 4 * gp[,3]
+    infoCount[,1] <- infoCount[,1] + eij
+    infoCount[,2] <- infoCount[,2] + (fij - eij**2)
+    ## do counts for HWE
+    w <- get_max_gen_rapid(gp)
+    hweCount[w] <- hweCount[w]+1
+    ## get counts for allele frequency
+    afCount <- afCount + (gp[,2] + 2*gp[,3]) / 2
+    ## if pseudo-haploid, get probabilities
+    ## disable outputting for now
+    if (method == "pseudoHaploid" && 1 == 0) {
+        read_proportions <- estimate_read_proportions(
+            sampleReads = sampleReads,
+            pRgivenH1 = pRgivenH1,
+            pRgivenH2 = pRgivenH2,
+            nSNPs = nSNPs
+        )
+    } else {
+        read_proportions <- NULL
+    }
+    ##
+    ## add column to VCF to matrix, and possibly write matrix to disk
+    ##
+    ## add into appropriate column
+    vcf_matrix_to_out[
+       ,
+        iSample - vcf_matrix_to_out_offset
+    ] <- make_column_of_vcf(gp, read_proportions)
+    iBlock <- match(iSample, outputBlockRange)
+    if (iBlock > 1 & is.na(iBlock) == FALSE) {
+        i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
+        write_block_of_vcf(
+            i_core = i_core,
+            iBlock = iBlock,
+            vcf_matrix_to_out = vcf_matrix_to_out,
+            outputdir = outputdir,
+            regionName = regionName,
+            outputBlockRange = outputBlockRange,
+            vcf.piece_unique = vcf.piece_unique
+        )
+        ## initialize new matrix if not last one
+        if (iBlock <= (length(outputBlockRange) - 1)) {
+            vcf_matrix_to_out <- array(
+                NA,
+                c(nSNPs, outputBlockRange[iBlock + 1] - outputBlockRange[iBlock])
+            )
+            vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
+        }
+    }
+    return(
+        list(
+            vcf_matrix_to_out = vcf_matrix_to_out,
+            vcf_matrix_to_out_offset = vcf_matrix_to_out_offset,
+            infoCount = infoCount,
+            afCount = afCount,
+            hweCount = hweCount
+        )
+    )
+}
+
+
 subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrentL,outputBlockSize, bundling_info, transMatRate_t, x3, N, shuffleHaplotypeIterations, niterations, L, samples_with_phase, nbreaks, breaks, vcf.piece_unique, grid, grid_eHaps_distance) {
 
     ## initialize bundling variables
@@ -4914,114 +5040,41 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         restartMatrixList <- out$restartMatrixList
 
 
-        
-        
-        ##
-        ##
-        ##
-        ##
-        ## 3 - output as necessary
-        ##
-        ##
-        ##
         if (iteration == niterations) {
-            ## get allele counts for HWE, info calcs, AF
-            ## get most likely genotype - add to count
-            for(i in 1:length(fbsoL)) {
-                if ( method == "diploid") {
-                    ## calculate dosage here
-                    out <- calculate_fbd_dosage(
-                        nGrids = nGrids,
-                        nSNPs = nSNPs,
-                        K = K,
-                        eHaps_t = eHapsCurrent_t,
-                        gamma_t = fbsoL[[1]]$gamma_t,
-                        grid = grid
-                    )
-                    gp <- out$genProbs
-                } else if (method == "pseudoHaploid") {
-                    gp <- array(0, c(nSNPs, 3))
-                    if (nSNPs == nGrids) {
-                        g10 <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))
-                        g20 <- colSums(fbsoL[[2]]$gamma_t * (1-eHapsCurrent_t))
-                    } else {
-                        g10 <- colSums(fbsoL[[1]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
-                        g20 <- colSums(fbsoL[[2]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
-                    }
-                    gp[, 1] <- g10 * g20
-                    gp[, 2] <- g10 * (1-g20) + (1-g10) * g20
-                    gp[, 3] <- (1-g10) * (1-g20)
-                } else if (method == "diploid_subset") {
-                    ## calculate dosage here
-                    out <- calculate_fbd_dosage(
-                        nGrids = nGrids,
-                        nSNPs = nSNPs,
-                        K = K_subset,
-                        eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
-                        gamma_t = fbsoL[[iNor]]$gamma_t,
-                        grid = grid
-                    )
-                    gp <- out$genProbs
-                }
-            }
-            ## info counts
-            eij <- gp[,2] + 2 * gp[,3]
-            fij <- gp[,2] + 4 * gp[,3]
-            infoCount[,1] <- infoCount[,1] + eij
-            infoCount[,2] <- infoCount[,2] + (fij - eij**2)
-            ## do counts for HWE
-            w <- get_max_gen_rapid(gp)
-            hweCount[w] <- hweCount[w]+1
-            ## get counts for allele frequency
-            afCount <- afCount + (gp[,2] + 2*gp[,3]) / 2
-            ## if pseudo-haploid, get probabilities
-            ## disable outputting for now
-            if (method == "pseudoHaploid" && 1 == 0) {
-                read_proportions <- estimate_read_proportions(
-                    sampleReads = sampleReads,
-                    pRgivenH1 = pRgivenH1,
-                    pRgivenH2 = pRgivenH2,
-                    nSNPs = nSNPs
-                )
-            } else {
-                read_proportions <- NULL
-            }
-            ##
-            ## add column to VCF to matrix, and possibly write matrix to disk
-            ##
-            ## add into appropriate column
-            vcf_matrix_to_out[
-               ,
-                iSample - vcf_matrix_to_out_offset
-            ] <- make_column_of_vcf(gp, read_proportions)
-            iBlock <- match(iSample, outputBlockRange)
-            if (iBlock > 1 & is.na(iBlock) == FALSE) {
-                i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
-                ## iSample_list <- (outputBlockRange[iBlock - 1] + 1):outputBlockRange[iBlock]
-                write_block_of_vcf(
-                    i_core = i_core,
-                    iBlock = iBlock,
-                    vcf_matrix_to_out = vcf_matrix_to_out,
-                    outputdir = outputdir,
-                    regionName = regionName,
-                    outputBlockRange = outputBlockRange,
-                    vcf.piece_unique = vcf.piece_unique
-                )
-                ## initialize new matrix if not last one
-                if (iBlock <= (length(outputBlockRange) - 1)) {
-                    vcf_matrix_to_out <- array(
-                        NA,
-                        c(nSNPs, outputBlockRange[iBlock + 1] - outputBlockRange[iBlock])
-                    )
-                    vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
-                }
-            }
-        } ## end of check on whether its the final iteration and to output
+            out <- prepare_per_sample_within_EM_output(
+                iSample = iSample,
+                sampleRange = sampleRange,
+                fbsoL = fbsoL,    
+                method = method,
+                nGrids = nGrids,
+                nSNPs = nSNPs,
+                K = K,
+                eHapsCurrent_t = eHapsCurrent_t,
+                grid = grid,
+                K_subset = K_subset,
+                vcf_matrix_to_out = vcf_matrix_to_out,
+                vcf_matrix_to_out_offset = vcf_matrix_to_out_offset,
+                infoCount = infoCount,
+                afCount = afCount,
+                hweCount = hweCount,
+                outputBlockRange = outputBlockRange,
+                x3 = x3,
+                outputdir = outputdir,
+                regionName = regionName,
+                vcf.piece_unique = vcf.piece_unique
+            )
+            ## note - this is now wasteful given how R works
+            ## modification will force re-copying of these
+            ## seriously consider re-writing in C++
+            vcf_matrix_to_out <- out$vcf_matrix_to_out
+            vcf_matrix_to_out_offset <- out$vcf_matrix_to_out_offset
+            infoCount <- out$infoCount
+            afCount <- out$afCount
+            hweCount <- out$hweCount
+        }
         
-    } # end of sample loop
-    ##
-    ## end loop on samples being processed
-    ##
+        
+    }
 
     return(
         list(

@@ -69,7 +69,7 @@ test_that("STITCH diploid works under default parameters", {
 
    skip_test_if_TRUE(run_acceptance_tests)
 
-    sink("/dev/null")
+   sink("/dev/null")
 
     set.seed(10)
     STITCH(
