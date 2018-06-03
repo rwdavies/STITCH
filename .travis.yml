@@ -10,4 +10,4 @@ install:
  - ./scripts/install-dependencies.sh
 
 script:
-  - ./scripts/all-tests.sh
+  - ./scripts/test-unit.sh && ./scripts/build-and-install.R && ./scripts/test-cli.R
