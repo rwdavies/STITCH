@@ -77,6 +77,11 @@ cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, re
 }
 
 #' @export
+rcpp_get_update_pieces <- function(hapSum_t, gammaK_t, int_nor) {
+    .Call('_STITCH_rcpp_get_update_pieces', PACKAGE = 'STITCH', hapSum_t, gammaK_t, int_nor)
+}
+
+#' @export
 rcpp_make_eMatHap_t <- function(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax) {
     .Call('_STITCH_rcpp_make_eMatHap_t', PACKAGE = 'STITCH', sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax)
 }

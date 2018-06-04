@@ -252,7 +252,8 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   arma::mat alphaHat_t = arma::zeros(KK,T);  
   arma::mat betaHat_t = arma::zeros(KK,T);
   arma::rowvec c = arma::zeros(1,T);
-  arma::mat gamma_t = arma::zeros(KK,T);  
+  arma::mat gamma_t = arma::zeros(KK,T);
+  arma::mat gammaK_t = arma::zeros(K,T);  
   arma::mat eMat_t = arma::ones(KK, T);
   // define eMatHap to work on the number of reads
   arma::mat eMatHap_t; //  = arma::ones(K,nReads)
@@ -441,6 +442,18 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
   for(t=0; t<= T-1; t++)
       gamma_t.col(t) = gamma_t.col(t) / c(t);
   //
+  // do collapsed gamma here
+  //
+  for(t=0; t<= T-1; t++) {
+    for(k1=0; k1<=K-1; k1++) {
+        d = 0;
+        for(k2=0; k2<=K-1; k2++) {
+            d = d + gamma_t(k1+K*k2, t);
+        }
+        gammaK_t(k1, t) = d;
+    }
+  }
+  //
   //
   // do gamma update here - save large matrix, just put in necessary values
   //
@@ -552,21 +565,25 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
       Rcpp::Named("jUpdate_t") = jUpdate_t,      
       Rcpp::Named("eMat_t") = eMat_t,
       Rcpp::Named("eMatHap_t") = eMatHap_t,
-      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid
+      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid,
+      Rcpp::Named("gammaK_t") = gammaK_t      
                                    )));
   if(whatToReturn==1) // update
     return(wrap(Rcpp::List::create(
       Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
       Rcpp::Named("gamma_t") = gamma_t,
       Rcpp::Named("jUpdate_t") = jUpdate_t,
-      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid
+      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid,
+      Rcpp::Named("gammaK_t") = gammaK_t
                                    )));
   if(whatToReturn==2) // final run - no updating needed
     return(wrap(Rcpp::List::create(
       Rcpp::Named("gamma_t") = gamma_t,
       Rcpp::Named("jUpdate_t") = jUpdate_t,
       Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid)));
+      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid, 
+      Rcpp::Named("gammaK_t") = gammaK_t     
+                                   )));
   // just put something to remove warning
   return(wrap(Rcpp::List::create(
       Rcpp::Named("c") = c)));
@@ -674,7 +691,8 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   // int variables and such
   int j, jj, k, t, k1, iRead;
   int J, readSNP;
-  double x, b, d, d1, d2, d3, a1, a2, y;
+  double x, b, d1, d2, d3, a1, a2, y;
+  double d = 1;
   double alphaConst;
   double eps;
   double pRead = 0;
@@ -1085,6 +1103,31 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
     }
     
   }
-  
   return sampleReads;
+}
+
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::List rcpp_get_update_pieces(arma::mat& hapSum_t, const arma::mat& gammaK_t, const int int_nor) {
+    const int T = hapSum_t.n_cols;
+    const int K = hapSum_t.n_rows;
+    //int iNor;
+    //}
+    int t, k;
+    if (int_nor == 1) {
+        for(t=0; t < T; t++) {
+            for(k=0; k < K; k++) {
+                hapSum_t(k, t) = hapSum_t(k, t) + gammaK_t(k, t);
+            }
+        }
+    } else if (int_nor == 2) {
+        // pseudo-haploid
+        for(t=0; t < T; t++) {
+            for(k=0; k < K; k++) {
+                hapSum_t(k, t) = hapSum_t(k, t) + 0.5 * gammaK_t(k, t);
+            }
+        }
+    }
+    return R_NilValue;
 }

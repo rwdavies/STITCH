@@ -3887,53 +3887,61 @@ run_forward_backwards <- function(
     }
     
     fbsoL <- as.list(1:nor)
-    for (iNor in 1:nor) {
-        if (method == "diploid_subset") {
-            ## choose best haplotypes
-            out <- select_best_K_for_a_sample_diploid(
-                priorCurrent = priorCurrent,
-                alphaMatCurrent_t = alphaMatCurrent_t,
-                eHapsCurrent_t = eHapsCurrent_t,
-                tempdir = tempdir,
-                iSample = iSample,
-                regionName = regionName,
-                K_subset = K_subset,
-                nSNPs = nSNPs,
-                iteration = iteration,
-                K_random = K_random,
-                add_noise = TRUE,
-                grid_eHaps_distance = grid_eHaps_distance
-            )
-            best_K_for_sample <- out$best_K_for_sample
-            best_K_random <- out$best_K_random
-
-            fbsoL[[iNor]] <- forwardBackwardDiploid(
-                sampleReads = sampleReads,
-                nReads = as.integer(length(sampleReads)),
-                pi = out$piSubset,
-                eHaps_t = out$eHapsSubset_t,
-                alphaMat_t = out$alphaMatSubset_t,
-                transMatRate_t = transMatRate_t,
-                Jmax = Jmax,
-                maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-                maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-                whatToReturn = whatToReturn,
-                suppressOutput = as.integer(1),
-                return_a_sampled_path = as.integer(1)
-            )
-            ## save haplotypes for next time
-            path <- fbsoL[[iNor]]$sampled_path_diploid ## on grid, want 1-based
-            ## BUG FIX - was selecting haplotypes incorrectly
-            hap1 <- out$eHapsSubset_t[cbind((path[, 1] + 1)[grid + 1], 1:nSNPs)]
-            hap2 <- out$eHapsSubset_t[cbind((path[, 2] + 1)[grid + 1], 1:nSNPs)]
-            if (sum(is.na(hap1)) > 0) {
-                file <- paste0(outputdir, "/debug/iSample", iSample, ".RData")
-                save(fbsoL, iNor, path, eHapsCurrent_t, grid, nSNPs, file = file)
-                stop(paste0("bad hap1 iSample = ", iSample, ", debug information in ", file))
-            }
-            save(best_K_random, path, hap1, hap2, best_K_for_sample, file = file_besthaps(tempdir, iSample, regionName))
+    if (method == "diploid_subset") {
+        ## choose best haplotypes
+        out <- select_best_K_for_a_sample_diploid(
+            priorCurrent = priorCurrent,
+            alphaMatCurrent_t = alphaMatCurrent_t,
+            eHapsCurrent_t = eHapsCurrent_t,
+            tempdir = tempdir,
+            iSample = iSample,
+            regionName = regionName,
+            K_subset = K_subset,
+            nSNPs = nSNPs,
+            iteration = iteration,
+            K_random = K_random,
+            add_noise = TRUE,
+            grid_eHaps_distance = grid_eHaps_distance
+        )
+        best_K_for_sample <- out$best_K_for_sample
+        best_K_random <- out$best_K_random
+        
+        fbsoL[[iNor]] <- forwardBackwardDiploid(
+            sampleReads = sampleReads,
+            nReads = as.integer(length(sampleReads)),
+            pi = out$piSubset,
+            eHaps_t = out$eHapsSubset_t,
+            alphaMat_t = out$alphaMatSubset_t,
+            transMatRate_t = transMatRate_t,
+            Jmax = Jmax,
+            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+            whatToReturn = whatToReturn,
+            suppressOutput = as.integer(1),
+            return_a_sampled_path = as.integer(1)
+        )
+        ## save haplotypes for next time
+        path <- fbsoL[[iNor]]$sampled_path_diploid ## on grid, want 1-based
+        ## BUG FIX - was selecting haplotypes incorrectly
+        hap1 <- out$eHapsSubset_t[cbind((path[, 1] + 1)[grid + 1], 1:nSNPs)]
+        hap2 <- out$eHapsSubset_t[cbind((path[, 2] + 1)[grid + 1], 1:nSNPs)]
+        if (sum(is.na(hap1)) > 0) {
+            file <- paste0(outputdir, "/debug/iSample", iSample, ".RData")
+            save(fbsoL, iNor, path, eHapsCurrent_t, grid, nSNPs, file = file)
+            stop(paste0("bad hap1 iSample = ", iSample, ", debug information in ", file))
         }
-        if(method=="pseudoHaploid") {
+        save(best_K_random, path, hap1, hap2, best_K_for_sample, file = file_besthaps(tempdir, iSample, regionName))
+        ## make faster...
+        gamma_t <- array(0, c(K, nGrids))
+        y <- fbsoL[[1]]$gamma_t
+        for(ii in 1:K_subset)
+            gamma_t[best_K_for_sample, ] <-
+                gamma_t[best_K_for_sample, ] +
+                y[1:K_subset + (ii - 1) * K_subset, ]
+        fbsoL[[1]]$gammaK_t <- gamma_t
+    }
+    if(method=="pseudoHaploid") {
+        for (iNor in 1:nor) {        
             if (iNor==1) {
                 pRgivenH1L <- pRgivenH1
                 pRgivenH2L <- pRgivenH2
@@ -3961,22 +3969,23 @@ run_forward_backwards <- function(
                 suppressOutput = as.integer(1),
                 model = as.integer(pseudoHaploidModel)
             )
+            fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
         }
-        if(method=="diploid") {
-            fbsoL[[iNor]] <- forwardBackwardDiploid(
-                sampleReads = sampleReads,
-                nReads = as.integer(length(sampleReads)),
-                pi = priorCurrent,
-                eHaps_t = eHapsCurrent_t,
-                alphaMat_t = alphaMatCurrent_t,
-                transMatRate_t = transMatRate_t,
-                Jmax = Jmax,
-                maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-                maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-                whatToReturn = whatToReturn,
-                suppressOutput = as.integer(1)
-            )
-        }
+    }
+    if(method=="diploid") {
+        fbsoL[[1]] <- forwardBackwardDiploid(
+            sampleReads = sampleReads,
+            nReads = as.integer(length(sampleReads)),
+            pi = priorCurrent,
+            eHaps_t = eHapsCurrent_t,
+            alphaMat_t = alphaMatCurrent_t,
+            transMatRate_t = transMatRate_t,
+            Jmax = Jmax,
+            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+            whatToReturn = whatToReturn,
+            suppressOutput = as.integer(1)
+        )
     }
 
     return(
@@ -4002,9 +4011,6 @@ within_EM_per_sample_heuristics <- function(
     grid,
     nor,
     K_subset,
-    gammaSum_t,
-    alphaMatSum_t,    
-    priorSum,
     nbreaks,
     breaks,
     fromMat,
@@ -4016,7 +4022,6 @@ within_EM_per_sample_heuristics <- function(
     eHapsCurrent_t,
     alphaMatCurrent_t,
     sigmaCurrent,
-    hapSum_t,
     maxDifferenceBetweenReads,
     maxEmissionMatrixDifference,
     outputdir,
@@ -4032,42 +4037,6 @@ within_EM_per_sample_heuristics <- function(
     tempdir,
     samples_with_phase
 ) {
-    if (method == "pseudoHaploid") {
-        for(iNor in 1:2)
-            fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t
-    } else if (method == "diploid") {
-        y <- fbsoL[[1]]$gamma_t
-        gamma_t <- y[1:K, ]
-        for(ii in 2:K)
-            gamma_t <- gamma_t + y[1:K+(ii-1)*K, ]
-        fbsoL[[1]]$gammaK_t <- gamma_t
-    } else if (method == "diploid_subset") {
-        ## make faster...
-        gamma_t <- array(0, c(K, nGrids))
-        y <- fbsoL[[1]]$gamma_t
-        for(ii in 1:K_subset)
-            gamma_t[best_K_for_sample, ] <-
-                gamma_t[best_K_for_sample, ] +
-                y[1:K_subset + (ii - 1) * K_subset, ]
-        fbsoL[[1]]$gammaK_t <- gamma_t
-    }
-    ##
-    ## get update pieces
-    ##
-    for(iNor in 1:nor) {
-        which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
-        gammaSum_t[best_K_for_sample, which, ] <-
-            gammaSum_t[best_K_for_sample, which , ] +
-            fbsoL[[iNor]]$gammaUpdate_t[, which, ]
-        alphaMatSum_t[best_K_for_sample, ] <-
-            alphaMatSum_t[best_K_for_sample, ] +
-            fbsoL[[iNor]]$jUpdate_t
-        ## gammaK_t is already up-sized
-        priorSum <- priorSum +
-            fbsoL[[iNor]]$gammaK_t[, 1]
-    }
-    hapSum_t <- hapSum_t + fbsoL[[1]]$gammaK_t
-    ##
     ## 
     ##
     if (nbreaks > 0) {
@@ -4173,10 +4142,6 @@ within_EM_per_sample_heuristics <- function(
     }
     return(
         list(
-            gammaSum_t = gammaSum_t,
-            alphaMatSum_t = alphaMatSum_t,
-            priorSum = priorSum,
-            hapSum_t = hapSum_t,
             readsTotal = readsTotal,
             readsSplit = readsSplit,
             restartMatrixList = restartMatrixList,
@@ -4392,7 +4357,25 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         fbsoL <- out$fbsoL
 
         
+        ## get update pieces
+        ##
+        for(iNor in 1:nor) {
+            which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
+            gammaSum_t[best_K_for_sample, which, ] <-
+                gammaSum_t[best_K_for_sample, which , ] +
+                fbsoL[[iNor]]$gammaUpdate_t[, which, ]
+            alphaMatSum_t[best_K_for_sample, ] <-
+                alphaMatSum_t[best_K_for_sample, ] +
+                fbsoL[[iNor]]$jUpdate_t
+            priorSum <- priorSum +
+                fbsoL[[iNor]]$gammaK_t[, 1]
+        }
 
+        ## pass by reference
+        for(iNor in 1:nor) {
+            rcpp_get_update_pieces(hapSum_t, fbsoL[[1]]$gammaK_t, nor)
+        }
+        
         out <- within_EM_per_sample_heuristics(
             sampleReads = sampleReads,
             iSample = iSample,
@@ -4405,9 +4388,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             grid = grid,
             nor = nor,
             K_subset = K_subset,
-            gammaSum_t = gammaSum_t,
-            alphaMatSum_t = alphaMatSum_t,    
-            priorSum = priorSum,
             nbreaks = nbreaks,
             breaks = breaks,
             fromMat = fromMat,
@@ -4419,7 +4399,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             eHapsCurrent_t = eHapsCurrent_t,
             alphaMatCurrent_t = alphaMatCurrent_t,
             sigmaCurrent = sigmaCurrent,
-            hapSum_t = hapSum_t,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             outputdir = outputdir,
@@ -4435,11 +4414,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             tempdir = tempdir,
             samples_with_phase = samples_with_phase
         )
-        gammaSum_t <- out$gammaSum_t
-        alphaMatSum_t <- out$alphaMatSum_t
-        priorSum <- out$priorSum
-        hapSum_t <- out$hapSum_t
-        hapSum_t <- out$hapSum_t
         readsTotal <- out$readsTotal
         readsSplit <- out$readsSplit
         restartMatrixList <- out$restartMatrixList

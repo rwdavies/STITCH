@@ -241,6 +241,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_get_update_pieces
+Rcpp::List rcpp_get_update_pieces(arma::mat& hapSum_t, const arma::mat& gammaK_t, const int int_nor);
+RcppExport SEXP _STITCH_rcpp_get_update_pieces(SEXP hapSum_tSEXP, SEXP gammaK_tSEXP, SEXP int_norSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type hapSum_t(hapSum_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type gammaK_t(gammaK_tSEXP);
+    Rcpp::traits::input_parameter< const int >::type int_nor(int_norSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_update_pieces(hapSum_t, gammaK_t, int_nor));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_make_eMatHap_t
 arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax);
 RcppExport SEXP _STITCH_rcpp_make_eMatHap_t(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP) {
@@ -347,6 +360,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_calculate_fbd_dosage", (DL_FUNC) &_STITCH_calculate_fbd_dosage, 6},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 15},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 7},
+    {"_STITCH_rcpp_get_update_pieces", (DL_FUNC) &_STITCH_rcpp_get_update_pieces, 3},
     {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 5},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 10},
     {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
