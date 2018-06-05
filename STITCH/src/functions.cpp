@@ -1109,23 +1109,47 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List rcpp_get_update_pieces(arma::mat& hapSum_t, const arma::mat& gammaK_t, const int int_nor) {
-    const int T = hapSum_t.n_cols;
+Rcpp::List rcpp_get_update_pieces(
+    arma::cube& gammaSum_t,
+    arma::mat& alphaMatSum_t,
+    Rcpp::NumericVector& priorSum,
+    arma::mat& hapSum_t,    
+    const arma::mat& gammaK_t,
+    const arma::cube& gammaUpdate_t,
+    const arma::mat& jUpdate_t
+) {
+    //
+    // note - I'm not pretending to support "diploid_subset" here
+    // if I re-tool that back in, need to add back in "best_K_for_subset"
+    // as appropriate for this
+    //
+    const int nGrids = hapSum_t.n_cols;
+    const int nSNPs = gammaSum_t.n_cols;
     const int K = hapSum_t.n_rows;
-    //int iNor;
-    //}
-    int t, k;
-    if (int_nor == 1) {
-        for(t=0; t < T; t++) {
-            for(k=0; k < K; k++) {
-                hapSum_t(k, t) = hapSum_t(k, t) + gammaK_t(k, t);
-            }
+    int t, k, i;
+    for(k=0; k < K; k++) {
+        priorSum(k) = priorSum(k) + gammaK_t(k);
+    }
+    //
+    for(t=0; t < nGrids; t++) {
+        for(k=0; k < K; k++) {
+            hapSum_t(k, t) = hapSum_t(k, t) + gammaK_t(k, t);
         }
-    } else if (int_nor == 2) {
-        // pseudo-haploid
-        for(t=0; t < T; t++) {
+    }
+    for(t=0; t < (nGrids - 1); t++) {
+        for(k=0; k < K; k++) {
+            alphaMatSum_t(k, t) = alphaMatSum_t(k, t) + \
+                jUpdate_t(k, t);
+        }
+    }
+    for(t=0; t < nSNPs; t++) {
+        // only bother if non-0
+        if (gammaUpdate_t(1, t, 1) > 0) {        
             for(k=0; k < K; k++) {
-                hapSum_t(k, t) = hapSum_t(k, t) + 0.5 * gammaK_t(k, t);
+                for(i=0; i < 2; i++) {
+                    gammaSum_t(k, t, i) = gammaSum_t(k, t, i) + \
+                        gammaUpdate_t(k, t, i);
+                }
             }
         }
     }

@@ -4248,7 +4248,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     ##
     ## initialize output matrices here
     ##
-    priorSum <- array(0,K)
+    priorSum <- array(0, K)
     alphaMatSum_t <- array(0, c(K, nGrids - 1))
     gammaSum_t <- array(0, c(K, nSNPs, 2))
     hapSum_t <- array(0,c(K, nGrids))
@@ -4356,24 +4356,34 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         )
         fbsoL <- out$fbsoL
 
-        
+
+        ## 
         ## get update pieces
         ##
-        for(iNor in 1:nor) {
-            which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
-            gammaSum_t[best_K_for_sample, which, ] <-
-                gammaSum_t[best_K_for_sample, which , ] +
-                fbsoL[[iNor]]$gammaUpdate_t[, which, ]
-            alphaMatSum_t[best_K_for_sample, ] <-
-                alphaMatSum_t[best_K_for_sample, ] +
-                fbsoL[[iNor]]$jUpdate_t
-            priorSum <- priorSum +
-                fbsoL[[iNor]]$gammaK_t[, 1]
-        }
+        ##for(iNor in 1:nor) {
+            ## which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
+            ##gammaSum_t[best_K_for_sample, which, ] <-
+            ##    gammaSum_t[best_K_for_sample, which , ] +
+            ##    fbsoL[[iNor]]$gammaUpdate_t[, which, ]
+            ## alphaMatSum_t[best_K_for_sample, ] <-
+            ##    alphaMatSum_t[best_K_for_sample, ] +
+            ##    fbsoL[[iNor]]$jUpdate_t
+            ## priorSum <- priorSum +
+            ##    fbsoL[[iNor]]$gammaK_t[, 1]
+        ##}
 
         ## pass by reference
+        ## note - hapSum_t divided by 2 later on for pseudoHaploid        
         for(iNor in 1:nor) {
-            rcpp_get_update_pieces(hapSum_t, fbsoL[[1]]$gammaK_t, nor)
+            rcpp_get_update_pieces(
+                gammaSum_t = gammaSum_t,
+                alphaMatSum_t = alphaMatSum_t,
+                priorSum = priorSum,
+                hapSum_t = hapSum_t,
+                gammaK_t = fbsoL[[iNor]]$gammaK_t,
+                gammaUpdate_t = fbsoL[[iNor]]$gammaUpdate_t,
+                jUpdate_t = fbsoL[[iNor]]$jUpdate_t
+            )
         }
         
         out <- within_EM_per_sample_heuristics(
@@ -4469,8 +4479,11 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
                 }
             }
         }
-        
-        
+
+    }
+
+    if (method == "pseudoHaploid") {
+        hapSum_t <- hapSum_t / 2
     }
 
     return(

@@ -242,15 +242,19 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_get_update_pieces
-Rcpp::List rcpp_get_update_pieces(arma::mat& hapSum_t, const arma::mat& gammaK_t, const int int_nor);
-RcppExport SEXP _STITCH_rcpp_get_update_pieces(SEXP hapSum_tSEXP, SEXP gammaK_tSEXP, SEXP int_norSEXP) {
+Rcpp::List rcpp_get_update_pieces(arma::cube& gammaSum_t, arma::mat& alphaMatSum_t, Rcpp::NumericVector& priorSum, arma::mat& hapSum_t, const arma::mat& gammaK_t, const arma::cube& gammaUpdate_t, const arma::mat& jUpdate_t);
+RcppExport SEXP _STITCH_rcpp_get_update_pieces(SEXP gammaSum_tSEXP, SEXP alphaMatSum_tSEXP, SEXP priorSumSEXP, SEXP hapSum_tSEXP, SEXP gammaK_tSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum_t(gammaSum_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type alphaMatSum_t(alphaMatSum_tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector& >::type priorSum(priorSumSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type hapSum_t(hapSum_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type gammaK_t(gammaK_tSEXP);
-    Rcpp::traits::input_parameter< const int >::type int_nor(int_norSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_get_update_pieces(hapSum_t, gammaK_t, int_nor));
+    Rcpp::traits::input_parameter< const arma::cube& >::type gammaUpdate_t(gammaUpdate_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type jUpdate_t(jUpdate_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_update_pieces(gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -360,7 +364,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_calculate_fbd_dosage", (DL_FUNC) &_STITCH_calculate_fbd_dosage, 6},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 15},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 7},
-    {"_STITCH_rcpp_get_update_pieces", (DL_FUNC) &_STITCH_rcpp_get_update_pieces, 3},
+    {"_STITCH_rcpp_get_update_pieces", (DL_FUNC) &_STITCH_rcpp_get_update_pieces, 7},
     {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 5},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 10},
     {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
