@@ -25,7 +25,7 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
     const int T = gp.n_rows;
     Rcpp::StringVector output(T);
     int t = 0;
-    char buffer[20];
+    char buffer[30];
     for(t=0; t < T; t++) {
       output(t) = "";
       // first, get genotype at the start
