@@ -10,11 +10,15 @@ for(key in c("--file=", "--f=")) {
     if (sum(i) == 1) {
         script_dir <- dirname(substr(args[i], nchar(key) + 1, 1000))
         setwd(file.path(script_dir, "../"))
+        stitch_dir <- getwd()
     }
 }
 
 profout <- tempfile()
 Rprof(file = profout, gc.profiling = TRUE, line.profiling = TRUE)
+
+profile_start <- Sys.time()
+##################
 outputdir <- Sys.getenv("OUTPUTDIR")
 if (outputdir == "") {
     outputdir <- file.path(getwd(), script_dir, "../", "test-results", "profile-one-off")
@@ -72,12 +76,18 @@ command <- paste0(command, ')')
 
 print(command)
 eval(parse(text = command))
+##################
+profile_end <- Sys.time()
 
 Rprof(NULL)
 pd <- readProfileData(profout)
 title <- Sys.getenv("TITLE")
 
 output_plot <- Sys.getenv("OUTPUT_PLOT")
+if (output_plot == "") {
+    setwd(stitch_dir)
+    output_plot <- file.path("profile.pdf")
+}
 pdf(output_plot, height = 24, width = 24)
 par(mfrow = c(3, 1), oma=c(0, 0, 3, 0))
 flameGraph(pd, order = "time", main = "Time")
@@ -85,3 +95,5 @@ flameGraph(pd, order = "alpha", main = "Alphabetically")
 flameGraph(pd, order = "hot", main = "Hot path")
 title(title, outer=TRUE)
 dev.off()
+
+print(profile_end - profile_start)
