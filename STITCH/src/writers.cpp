@@ -11,7 +11,7 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 Rcpp::StringVector rcpp_make_column_of_vcf(
-    const arma::mat& gp,
+    const arma::mat& gp_t,
     const int use_read_proportions,
     const arma::mat& read_proportions
 ) {
@@ -22,36 +22,36 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
     // ##FORMAT=<ID=DS,Number=1,Type=Float,Description="Dosage">
     // ## 1/1:0,0.054,0.946:1.946
     // ## add one samples worth of info to a VCF
-    const int T = gp.n_rows;
+    const int T = gp_t.n_cols;
     Rcpp::StringVector output(T);
     int t = 0;
     char buffer[30];
     for(t=0; t < T; t++) {
       output(t) = "";
       // first, get genotype at the start
-      if (gp(t, 0) < gp(t, 1)) {
-	if (gp(t, 1) < gp(t, 2)) {
-	  if (0.90 <= gp(t, 2)) {
+      if (gp_t(0, t) < gp_t(1, t)) {
+	if (gp_t(1, t) < gp_t(2, t)) {
+	  if (0.90 <= gp_t(2, t)) {
 	    output(t) = "1/1";
 	  } else {
 	    output(t) = "./.";
 	  }
 	} else {
-	  if (0.90 <= gp(t, 1)) {
+	  if (0.90 <= gp_t(1, t)) {
 	    output(t) = "0/1";	  
 	  } else {
 	    output(t) = "./.";
 	  }
 	}
       } else {
-	if (gp(t, 0) < gp(t, 2)) {
-	  if (0.90 <= gp(t, 2)) {
+	if (gp_t(0, t) < gp_t(2, t)) {
+	  if (0.90 <= gp_t(2, t)) {
 	    output(t) = "1/1";	  	  
 	  } else {
 	    output(t) = "./.";
 	  }
 	} else {
-	  if (0.90 <= gp(t, 0)) {
+	  if (0.90 <= gp_t(0, t)) {
 	    output(t) = "0/0";
 	  } else {
 	    output(t) = "./.";
@@ -59,7 +59,7 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
 	}
       }
       // now, add on gp
-      sprintf(buffer, ":%.3f,%.3f,%.3f:%.3f", gp(t, 0), gp(t, 1), gp(t, 2), gp(t, 1) + 2 * gp(t, 2));
+      sprintf(buffer, ":%.3f,%.3f,%.3f:%.3f", gp_t(0, t), gp_t(1, t), gp_t(2, t), gp_t(1, t) + 2 * gp_t(2, t));
       output(t) += buffer;
       if (use_read_proportions == 1) {
 	sprintf(buffer, ":%.3f,%.3f,%.3f,%.3f",

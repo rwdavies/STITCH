@@ -10,64 +10,71 @@ if (1 == 0) {
     
 }
 
+run_only_one_acceptance_test <- TRUE
 run_acceptance_tests <- TRUE
 
 n_snps <- 10
 reads_span_n_snps <- 6
 chr <- 1
 n_reads <- 5 / (reads_span_n_snps / n_snps) ## want about 5X / sample
-phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
-data_package <- make_acceptance_test_data_package(
-    n_samples = 10,
-    n_snps = n_snps,
-    n_reads = n_reads,
-    seed = 3,
-    chr = chr,
-    K = 2,
-    reads_span_n_snps = reads_span_n_snps,
-    phasemaster = phasemaster
-)
-refpack <- make_reference_package(
-    n_snps = n_snps,
-    n_samples_per_pop = 4,
-    reference_populations = c("CEU", "GBR", "CHB"),
-    chr = chr
-)
-data_package_crams <- make_acceptance_test_data_package(
-    n_samples = 10,
-    n_snps = n_snps,
-    n_reads = n_reads,
-    seed = 3,
-    chr = chr,
-    K = 2,
-    phasemaster = phasemaster,
-    reads_span_n_snps = reads_span_n_snps,        
-    use_crams = TRUE
-)
 
-chr <- "X"
-phasemasterX <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
-data_packageX <- make_acceptance_test_data_package(
-    n_samples = 10,
-    n_snps = n_snps,
-    n_reads = n_reads,
-    seed = 3,
-    chr = chr,
-    K = 2,
-    reads_span_n_snps = reads_span_n_snps,    
-    phasemaster = phasemasterX
-)
-refpackX <- make_reference_package(
-    n_snps = n_snps,
-    n_samples_per_pop = 4,
-    reference_populations = c("CEU", "GBR", "CHB"),
-    chr = data_packageX$chr
-)
+if (run_acceptance_tests | run_only_one_acceptance_test) {
+    phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 10,
+        n_snps = n_snps,
+        n_reads = n_reads,
+        seed = 3,
+        chr = chr,
+        K = 2,
+        reads_span_n_snps = reads_span_n_snps,
+        phasemaster = phasemaster
+    )
+}
+
+if (run_acceptance_tests) {
+    refpack <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = 4,
+        reference_populations = c("CEU", "GBR", "CHB"),
+        chr = chr
+    )
+    data_package_crams <- make_acceptance_test_data_package(
+        n_samples = 10,
+        n_snps = n_snps,
+        n_reads = n_reads,
+        seed = 3,
+        chr = chr,
+        K = 2,
+        phasemaster = phasemaster,
+        reads_span_n_snps = reads_span_n_snps,        
+        use_crams = TRUE
+    )
+    
+    chr <- "X"
+    phasemasterX <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
+    data_packageX <- make_acceptance_test_data_package(
+        n_samples = 10,
+        n_snps = n_snps,
+        n_reads = n_reads,
+        seed = 3,
+        chr = chr,
+        K = 2,
+        reads_span_n_snps = reads_span_n_snps,    
+        phasemaster = phasemasterX
+    )
+    refpackX <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = 4,
+        reference_populations = c("CEU", "GBR", "CHB"),
+        chr = data_packageX$chr
+    )
+}
 
 
 test_that("STITCH diploid works under default parameters", {
 
-    skip_test_if_TRUE(run_acceptance_tests)
+    skip_test_if_TRUE(run_acceptance_tests | run_only_one_acceptance_test)
 
     sink("/dev/null")
 

@@ -183,9 +183,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// calculate_fbd_dosage
-Rcpp::List calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, const arma::mat& eHaps_t, const arma::mat& gamma_t, const Rcpp::IntegerVector grid);
-RcppExport SEXP _STITCH_calculate_fbd_dosage(SEXP nGridsSEXP, SEXP nSNPsSEXP, SEXP KSEXP, SEXP eHaps_tSEXP, SEXP gamma_tSEXP, SEXP gridSEXP) {
+// rcpp_calculate_fbd_dosage
+Rcpp::List rcpp_calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, const arma::mat& eHaps_t, const arma::mat& gamma_t, const Rcpp::IntegerVector grid);
+RcppExport SEXP _STITCH_rcpp_calculate_fbd_dosage(SEXP nGridsSEXP, SEXP nSNPsSEXP, SEXP KSEXP, SEXP eHaps_tSEXP, SEXP gamma_tSEXP, SEXP gridSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -195,7 +195,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type grid(gridSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculate_fbd_dosage(nGrids, nSNPs, K, eHaps_t, gamma_t, grid));
+    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_fbd_dosage(nGrids, nSNPs, K, eHaps_t, gamma_t, grid));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -348,15 +348,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_column_of_vcf
-Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp, const int use_read_proportions, const arma::mat& read_proportions);
-RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gpSEXP, SEXP use_read_proportionsSEXP, SEXP read_proportionsSEXP) {
+Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const int use_read_proportions, const arma::mat& read_proportions);
+RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP read_proportionsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type gp(gpSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type gp_t(gp_tSEXP);
     Rcpp::traits::input_parameter< const int >::type use_read_proportions(use_read_proportionsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type read_proportions(read_proportionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp, use_read_proportions, read_proportions));
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp_t, use_read_proportions, read_proportions));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -374,7 +374,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
     {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
     {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 12},
-    {"_STITCH_calculate_fbd_dosage", (DL_FUNC) &_STITCH_calculate_fbd_dosage, 6},
+    {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 15},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 7},
     {"_STITCH_rcpp_get_update_pieces", (DL_FUNC) &_STITCH_rcpp_get_update_pieces, 7},

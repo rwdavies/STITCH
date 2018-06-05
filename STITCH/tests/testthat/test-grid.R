@@ -225,7 +225,7 @@ test_that("can calculate fbd dosage", {
     grid <- 0:(nSNPs - 1)
     nGrids <- nSNPs ## since no grid
 
-    out <- calculate_fbd_dosage(
+    out <- rcpp_calculate_fbd_dosage(
         nGrids = nGrids,
         nSNPs = nSNPs,
         K = K,
@@ -235,10 +235,10 @@ test_that("can calculate fbd dosage", {
     )
 
     expect_equal(length(out$dosage), nSNPs)
-    expect_equal(nrow(out$genProbs), nSNPs)
-    expect_equal(ncol(out$genProbs), 3)
+    expect_equal(ncol(out$genProbs_t), nSNPs)
+    expect_equal(nrow(out$genProbs_t), 3)
     expect_equal(sum(out$dosage == 0), 0)
-    expect_equal(sum(out$genProbs == 0), 0)
+    expect_equal(sum(out$genProbs_t== 0), 0)
 
 
 })
@@ -254,7 +254,7 @@ test_that("can calculate fbd dosage using grid", {
     gamma_t <- array(runif(KK * nGrids), c(KK, nGrids))
     grid <- c(0, 0, 0, 1, 1, 1, 2, 2, 2, 2)
 
-    out <- calculate_fbd_dosage(
+    out <- rcpp_calculate_fbd_dosage(
         nGrids = nGrids,
         nSNPs = nSNPs,
         K = K,
@@ -263,10 +263,10 @@ test_that("can calculate fbd dosage using grid", {
         grid = grid
     )
     expect_equal(length(out$dosage), nSNPs)
-    expect_equal(nrow(out$genProbs), nSNPs)
-    expect_equal(ncol(out$genProbs), 3)
+    expect_equal(nrow(out$genProbs_t), 3)
+    expect_equal(ncol(out$genProbs_t), nSNPs)
     expect_equal(sum(out$dosage == 0), 0)
-    expect_equal(sum(out$genProbs == 0), 0)
+    expect_equal(sum(out$genProbs_t == 0), 0)
 
 })
 

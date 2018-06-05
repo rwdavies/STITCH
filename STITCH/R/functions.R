@@ -370,15 +370,15 @@ STITCH <- function(
     if(is.na(subsetSNPsfile)==FALSE & subsetSNPsfile!="NA") {
         print_message(paste0("Subsetting SNPs from file ", subsetSNPsfile))
         ## load in positions
-        out=subsetSNPsFunction(N=N,subsetSNPsfile=subsetSNPsfile,regionName=regionName,tempdir=tempdir,L=L,environment=environment,nCores=nCores,outputdir=outputdir)
+        out <- subsetSNPsFunction(N=N,subsetSNPsfile=subsetSNPsfile,regionName=regionName,tempdir=tempdir,L=L,environment=environment,nCores=nCores,outputdir=outputdir)
         print_message(paste0("Back to main ", subsetSNPsfile))
-        keep=out$keep
-        T=as.integer(sum(keep))
-        L=L[keep]
-        pos=pos[keep,]
-        gen=gen[keep,]
+        keep <- out$keep
+        T <- as.integer(sum(keep))
+        L <- L[keep]
+        pos <- pos[keep,]
+        gen <- gen[keep,]
         print_message(paste0("Done subsetting section ",subsetSNPsfile))
-        save(nSNPs , L, keep, pos, gen, file = paste0(outputdir, "/debug/files.RData"))
+        ## save(nSNPs , L, keep, pos, gen, file = paste0(outputdir, "/debug/files.RData"))
     }
 
 
@@ -386,8 +386,7 @@ STITCH <- function(
     ##
     ## downsample the number of samples
     ##
-    if(downsampleSamples < 1)
-    {
+    if(downsampleSamples < 1) {
         out <- downsample_the_samples(
             downsampleSamplesKeepList = downsampleSamplesKeepList,
             downsampleSamples = downsampleSamples,
@@ -416,8 +415,9 @@ STITCH <- function(
     ##
     ## downsample to percent
     ##
-    if(downsampleFraction < 1)
+    if(downsampleFraction < 1) {
         downsampleToFraction(N=N,nCores=nCores,downsampleFraction=downsampleFraction,regionName=regionName,tempdir=tempdir,environment=environment, bundling_info = bundling_info)
+    }
 
 
 
@@ -513,8 +513,6 @@ STITCH <- function(
     print_message(paste0("Number of SNPs - ", nSNPs))
     if (nGrids != nSNPs)
         print_message(paste0("Number of grids - ", nGrids))
-    ## actually run now
-    ##iteration <- max(0, startIterations)
 
     for(iteration in 1:niterations) {
         ##
@@ -529,7 +527,7 @@ STITCH <- function(
         ##
         ## fork out and get results
         ##
-        results <- completeSampleIteration(N=N,tempdir=tempdir,chr=chr,K=K,K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids,priorCurrent=priorCurrent,eHapsCurrent=eHapsCurrent,alphaMatCurrent=alphaMatCurrent,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,environment=environment,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrent=hapSumCurrent,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid)
+        results <- completeSampleIteration(N=N,tempdir=tempdir,chr=chr,K=K,K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids,priorCurrent=priorCurrent,eHapsCurrent=eHapsCurrent,alphaMatCurrent=alphaMatCurrent,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,environment=environment,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrent=hapSumCurrent,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, output_format = output_format)
         ##
         ## save previous results to disk
         eHapsFuture <- results$eHapsFuture
@@ -1866,6 +1864,7 @@ validate_legend_header <- function(
 
 
 
+## ugh this needs a clean
 downsample_the_samples <- function(
   downsampleSamplesKeepList,
   downsampleSamples,
@@ -2102,108 +2101,6 @@ get_rebundled_files <- function(inputdir, regionName) {
 
 
 
-# if the files already exist, good to go
-# otherwise, loop through files using 1 core
-# when doesn't exist, load next bunch
-# every once in a while, write to disk
-#
-rebundle_input <- function(
-  inputdir,
-  regionName,
-  bundling_info,
-  N,
-  tempdir,
-  nCores,
-  environment
-) {
-
-  print_message("Rebundle inputs")
-  out <- get_rebundled_files(inputdir, regionName)
-  files <- out$files
-  ranges <- out$ranges
-
-  if (sum(unlist(apply(ranges, 1, function(x) x[1]:x[2])) != 1:N) > 0) {
-      stop ("You are rebundling old input files, however, the originally bundled files do not span the number of files you have as inferred from sampleNames")
-  }
-
-  if (ranges[nrow(ranges), 2] != N) {
-      stop ("You are rebundling old input files, however, the number of samples as inferred from the input bundles is not the same as sampleNames")
-  }
-
-  files_do_not_exist <- unlist(lapply(bundling_info$list, function(m) {
-    sapply(m, function(a) {
-      s <- a[1]
-      e <- a[2]
-      file.exists(file_bundledSampleReads(inputdir, s, e, regionName)) == FALSE
-  })
-  }))
-  if (sum(files_do_not_exist) ==0) {
-    print_message("The previously bundled files are the right size. No need to rebundle")
-    print_message("Done rebundling inputs")
-    return(NULL)
-  }
-
-  rebundle_input
-  newBundle <- NULL
-  bundledSampleReads <- NULL
-
-
-  # multi-core re-bundling
-  sampleRanges <- getSampleRange(N, nCores)
-
-  f <- function(sampleRange, ranges, files, tempdir, regionName, bundling_info) {
-    # start with the first file
-    i_file <- 1
-    load(files[i_file])
-    cor <- ranges[i_file, ]
-    cor <- cor[1]:cor[2]
-
-    for(iSample in sampleRange[1]:sampleRange[2]) {
-      m <- match(iSample, cor)
-      if (is.na(m) == FALSE) {
-        sampleReads <- bundledSampleReads[[m]]
-    } else {
-      i_file <- which(iSample >= ranges[, 1] & iSample <= ranges[, 2])
-      load(files[i_file])
-      cor <- ranges[i_file, ]
-      cor <- cor[1]:cor[2]
-        m <- match(iSample, cor)
-        if (is.na(m)) stop("There is faulty logic in rebundle_input is wrong. Please submit bug report")
-        sampleReads <- bundledSampleReads[[m]]
-      }
-      save(sampleReads, file = file_sampleReads(inputdir, iSample, regionName))
-      last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
-      if (last_in_bundle == 1) {
-        bundle_inputs_after_generation(
-          bundling_info = bundling_info,
-          iBam = iSample,
-          dir = inputdir,
-          regionName = regionName
-        )
-      }
-    }
-  }
-
-
-  if(environment=="server")
-  {
-    out2=mclapply(sampleRanges, mc.cores=nCores,FUN=f, ranges = ranges, files  = files, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info)
-  }
-  if(environment=="cluster")
-  {
-    cl = makeCluster(nCores, type = "FORK")
-    out2 = parLapply(cl, sampleRanges, fun=f, ranges = ranges, files  = files, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info)
-    stopCluster(cl)
-  }
-  error_check <- sapply(out2, class) == "try-error"
-  if (sum(error_check) > 0) {
-    print_message(out2[[which(error_check)[1]]])
-    stop("There has been an error rebundling the input. Please see error message above")
-  }
-
-  print_message("Done rebundling inputs")
-  return(NULL)
-}
 
 
 
@@ -2310,159 +2207,12 @@ loadBamAndConvert_across_a_range <- function(
 
 
 
-bundle_inputs_after_generation <- function(
-  bundling_info,
-  iBam,
-  dir,
-  regionName,
-  what = "sampleReads",
-  remove_files = TRUE
-) {
-  if (what == "sampleReads")
-    file_samples <- file_sampleReads
-  if (what == "sampleProbs")
-    file_samples <- file_sampleProbs
-  if (what == "referenceSampleReads")
-    file_samples <- file_referenceSampleReads
-  iC <- bundling_info$matrix[iBam, "iCore"]
-  iB <- bundling_info$matrix[iBam, "iBundle"]
-  y <- bundling_info$list[[iC]][[iB]]
-  s <- y[1]
-  e <- y[2]
-  #print_message(paste0("Bundle what=", what, ", iBam=", iBam, ", iCore=", iC, ", iBundle=", iB, ", samples=", s, "-", e))
-  # now, get these samples and write to disk
-  samples_in_core_bundle <- s:e
-  bundledSampleObject <- lapply(
-    samples_in_core_bundle,
-    function(iBam) {
-      if (what == "sampleReads") {
-        file <- file_sampleReads(dir, iBam, regionName)
-        load(file = file)
-        return(sampleReads)
-      } else if (what == "sampleProbs") {
-        file <- file_sampleProbs(dir, iBam, regionName)
-        load(file = file)
-        return(list(pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, srp = srp, delta = delta))
-      } else if (what == "referenceSampleReads") {
-        file <- file_referenceSampleReads(dir, iBam, regionName)
-        load(file = file)
-        return(sampleReads)
-      }
-    }
-  )
-  bundledSampleObject$name <- paste0(s, "_", e)
-  if (what == "sampleReads") {
-    bundledSampleReads <- bundledSampleObject
-    save(
-      bundledSampleReads,
-      file = file_bundledSampleReads(dir, s, e, regionName)
-    )
-  } else if (what == "sampleProbs") {
-    bundledSampleProbs <- bundledSampleObject
-    save(
-      bundledSampleProbs,
-      file = file_bundledSampleProbs(dir, s, e, regionName)
-    )
-  } else if (what == "referenceSampleReads") {
-    bundledSampleReads <- bundledSampleObject
-    save(
-      bundledSampleReads,
-      file = file_bundledReferenceSampleReads(dir, s, e, regionName)
-    )
-  }
-  if (remove_files == TRUE) {
-    out <- lapply(samples_in_core_bundle, function(iBam) {
-      system(paste0("rm ", file_samples(dir, iBam, regionName)))
-  })
-  }
-  return(NULL)
-}
 
 
 
 
-get_sampleReads_from_dir_for_sample <- function(
-  dir,
-  regionName,
-  iSample,
-  bundling_info,
-  bundledSampleReads = NULL,
-  what = "sampleReads"
-) {
-  if (what == "referenceSampleReads") {
-    file_loader <- file_referenceSampleReads
-    file_bundled_loader <- file_bundledReferenceSampleReads
-  } else if (what == "sampleReads") {
-    file_loader <- file_sampleReads
-    file_bundled_loader <- file_bundledSampleReads
-  }
-  if (length(bundling_info) == 0) {
-    load(file_loader(dir, iSample, regionName))
-  } else {
-    x <- bundling_info$matrix[iSample, ]
-    iC <- x["iCore"]
-    iB <- x["iBundle"]
-    iP <- x["iPosition"]
-    y <- bundling_info$list[[iC]][[iB]]
-    s <- y[1]
-    e <- y[2]
-    file <- file_bundled_loader(dir, s, e, regionName)
-    if (length(bundledSampleReads) == 0) {
-      load(file)
-    } else {
-      if (bundledSampleReads$name != paste0(s, "_", e))
-        load(file)
-    }
-    sampleReads <- bundledSampleReads[[iP]]
-  }
-  return(list(
-    sampleReads = sampleReads,
-    bundledSampleReads = bundledSampleReads
-  ))
-}
 
 
-
-
-get_sampleProbs_from_dir_for_sample <- function(
-  dir,
-  regionName,
-  iSample,
-  bundling_info,
-  bundledSampleProbs = NULL
-) {
-    if (length(bundling_info) == 0) {
-        load(file_sampleProbs(dir, iSample, regionName))
-    } else {
-        x <- bundling_info$matrix[iSample, ]
-        iC <- x["iCore"]
-        iB <- x["iBundle"]
-        iP <- x["iPosition"]
-        y <- bundling_info$list[[iC]][[iB]]
-        s <- y[1]
-        e <- y[2]
-        file <- file_bundledSampleProbs(dir, s, e, regionName)
-        if (length(bundledSampleProbs) == 0) {
-            load(file)
-        } else if (bundledSampleProbs$name != paste0(s, "_", e)) {
-            load(file)
-        }
-        sampleProbs <- bundledSampleProbs[[iP]]
-        pRgivenH1 <- sampleProbs$pRgivenH1
-        pRgivenH2 <- sampleProbs$pRgivenH2
-        srp <- sampleProbs$srp
-        delta <- sampleProbs$delta
-    }
-    return(
-        list(
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2,
-            srp = srp,
-            delta = delta,
-            bundledSampleProbs = bundledSampleProbs
-        )
-    )
-}
 
 
 
@@ -2915,15 +2665,18 @@ loadBamAndConvert <- function(
     sampleReads <- out$sampleReads
     sampleReadsInfo <- out$sampleReadsInfo
 
+    ## these are saved once - can be compressed!
     save(
         sampleReads,
-        file = file_sampleReads(inputdir, iBam, regionName)
+        file = file_sampleReads(inputdir, iBam, regionName),
+        compress = FALSE
     )
 
     if (save_sampleReadsInfo)
         save(
             sampleReadsInfo,
-            file = file_sampleReadsInfo(inputdir, iBam, regionName)
+            file = file_sampleReadsInfo(inputdir, iBam, regionName),
+            compress = FALSE
         )
 
     return(NULL)
@@ -4078,7 +3831,7 @@ within_EM_per_sample_heuristics <- function(
                 dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t * eHapsCurrent_t))
             }
         } else if(method == "diploid"){
-            out <- calculate_fbd_dosage(
+            out <- rcpp_calculate_fbd_dosage(
                 nGrids = nGrids,
                 nSNPs = nSNPs,
                 K = K,
@@ -4088,7 +3841,7 @@ within_EM_per_sample_heuristics <- function(
             )
             dosage <- out$dosage
         } else if(method == "diploid_subset") {
-            out <- calculate_fbd_dosage(
+            out <- rcpp_calculate_fbd_dosage(
                 nGrids = nGrids,
                 nSNPs = nSNPs,
                 K = K_subset,
@@ -4153,7 +3906,7 @@ within_EM_per_sample_heuristics <- function(
 
 
 
-calculate_gp_from_fbsoL <- function(
+calculate_gp_t_from_fbsoL <- function(
     nGrids,
     nSNPs,
     K,
@@ -4176,49 +3929,50 @@ calculate_gp_from_fbsoL <- function(
     }
     ## get allele counts for HWE, info calcs, AF
     ## get most likely genotype - add to count
-    for(i in 1:length(fbsoL)) {
-        if ( method == "diploid") {
-            ## calculate dosage here
-            out <- calculate_fbd_dosage(
-                nGrids = nGrids,
-                nSNPs = nSNPs,
-                K = K,
-                eHaps_t = eHapsCurrent_t,
-                gamma_t = fbsoL[[1]]$gamma_t,
-                grid = grid
-            )
-            gp <- out$genProbs
-        } else if (method == "pseudoHaploid") {
-            gp <- array(0, c(nSNPs, 3))
-            if (nSNPs == nGrids) {
-                g10 <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))
-                g20 <- colSums(fbsoL[[2]]$gamma_t * (1-eHapsCurrent_t))
-            } else {
-                g10 <- colSums(fbsoL[[1]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
-                g20 <- colSums(fbsoL[[2]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
-            }
-            gp[, 1] <- g10 * g20
-            gp[, 2] <- g10 * (1-g20) + (1-g10) * g20
-            gp[, 3] <- (1-g10) * (1-g20)
-        } else if (method == "diploid_subset") {
-            ## calculate dosage here
-            out <- calculate_fbd_dosage(
-                nGrids = nGrids,
-                nSNPs = nSNPs,
-                K = K_subset,
-                eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
-                gamma_t = fbsoL[[iNor]]$gamma_t,
-                grid = grid
-            )
-            gp <- out$genProbs
+    if ( method == "diploid") {
+        ## calculate dosage here
+        out <- rcpp_calculate_fbd_dosage(
+            nGrids = nGrids,
+            nSNPs = nSNPs,
+            K = K,
+            eHaps_t = eHapsCurrent_t,
+            gamma_t = fbsoL[[1]]$gamma_t,
+            grid = grid
+        )
+        gp_t<- out$genProbs_t
+    } else if (method == "pseudoHaploid") {
+        gp_t <- array(0, c(3, nSNPs))        
+        if (nSNPs == nGrids) {
+            g10 <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))
+            g20 <- colSums(fbsoL[[2]]$gamma_t * (1-eHapsCurrent_t))
+        } else {
+            g10 <- colSums(fbsoL[[1]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
+            g20 <- colSums(fbsoL[[2]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
         }
+        gp_t[1, ] <- g10 * g20
+        gp_t[2, ] <- g10 * (1 - g20) + (1 - g10) * g20
+        gp_t[3, ] <- (1 - g10) * (1 - g20)
+    } else if (method == "diploid_subset") {
+        ## calculate dosage here
+        out <- rcpp_calculate_fbd_dosage(
+            nGrids = nGrids,
+            nSNPs = nSNPs,
+            K = K_subset,
+            eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
+            gamma_t = fbsoL[[1]]$gamma_t,
+            grid = grid
+        )
+        gp_t <- out$genProbs_t
     }
-    return(gp)
+    return(gp_t)
 }
 
 
-subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrentL,outputBlockSize, bundling_info, transMatRate_t, x3, N, shuffleHaplotypeIterations, niterations, L, samples_with_phase, nbreaks, breaks, vcf.piece_unique, grid, grid_eHaps_distance) {
 
+subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrentL,outputBlockSize, bundling_info, transMatRate_t, x3, N, shuffleHaplotypeIterations, niterations, L, samples_with_phase, nbreaks, breaks, vcf.piece_unique, grid, grid_eHaps_distance, list_of_gp_raw_t, output_format) {
+
+    ## know what core we are in for writing
+    i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))    
     ## initialize bundling variables
     bundledSampleReads <- NULL
     bundledSampleProbs <- NULL
@@ -4303,6 +4057,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
 
     for (iSample in sampleRange[1]:sampleRange[2]) {
 
+        ## get these from list?
         out <- get_sampleReads_from_dir_for_sample(
             dir = tempdir,
             regionName = regionName,
@@ -4357,21 +4112,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         )
         fbsoL <- out$fbsoL
 
-
-        ## 
-        ## get update pieces
-        ##
-        ##for(iNor in 1:nor) {
-            ## which <- fbsoL[[iNor]]$gammaUpdate_t[1, , 1] > 0
-            ##gammaSum_t[best_K_for_sample, which, ] <-
-            ##    gammaSum_t[best_K_for_sample, which , ] +
-            ##    fbsoL[[iNor]]$gammaUpdate_t[, which, ]
-            ## alphaMatSum_t[best_K_for_sample, ] <-
-            ##    alphaMatSum_t[best_K_for_sample, ] +
-            ##    fbsoL[[iNor]]$jUpdate_t
-            ## priorSum <- priorSum +
-            ##    fbsoL[[iNor]]$gammaK_t[, 1]
-        ##}
 
         ## pass by reference
         ## note - hapSum_t divided by 2 later on for pseudoHaploid        
@@ -4433,7 +4173,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
 
         ## prepare output
         if (iteration == niterations) {
-            gp <- calculate_gp_from_fbsoL(
+            gp_t <- calculate_gp_t_from_fbsoL(
                 nGrids = nGrids,
                 nSNPs = nSNPs,
                 K = K,
@@ -4443,42 +4183,59 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
                 fbsoL = fbsoL
             )
             ##
-            eij <- gp[,2] + 2 * gp[,3]
-            fij <- gp[,2] + 4 * gp[,3]
-            infoCount[,1] <- infoCount[,1] + eij
-            infoCount[,2] <- infoCount[,2] + (fij - eij**2)
-            w <- get_max_gen_rapid(gp)
-            hweCount[w] <- hweCount[w]+1
-            afCount <- afCount + (gp[,2] + 2*gp[,3]) / 2
+            eij <- gp_t[2, ] + 2 * gp_t[3, ]
+            fij <- gp_t[2, ] + 4 * gp_t[3, ]
+            infoCount[, 1] <- infoCount[, 1] + eij
+            infoCount[, 2] <- infoCount[, 2] + (fij - eij**2)
+            w <- get_max_gen_rapid(gp_t)
+            hweCount[t(w)] <- hweCount[t(w)] + 1 ## hmmmmm not ideal
+            afCount <- afCount + (eij) / 2
             ##
             ## add column to VCF to matrix, and possibly write matrix to disk
             ##
             ## add into appropriate column
-            vcf_matrix_to_out[
-               ,
-                iSample - vcf_matrix_to_out_offset
-            ] <- rcpp_make_column_of_vcf(gp, 0, matrix())
-            iBlock <- match(iSample, outputBlockRange)
-            if (iBlock > 1 & is.na(iBlock) == FALSE) {
-                i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
-                write_block_of_vcf(
-                    i_core = i_core,
-                    iBlock = iBlock,
-                    vcf_matrix_to_out = vcf_matrix_to_out,
-                    outputdir = outputdir,
+            if (output_format == "gvcf") {
+                vcf_matrix_to_out[
+                   ,
+                    iSample - vcf_matrix_to_out_offset
+                ] <- rcpp_make_column_of_vcf(gp_t, 0, matrix()) ## werwer
+                iBlock <- match(iSample, outputBlockRange)
+                if (iBlock > 1 & is.na(iBlock) == FALSE) {
+                    write_block_of_vcf(
+                        i_core = i_core,
+                        iBlock = iBlock,
+                        vcf_matrix_to_out = vcf_matrix_to_out,
+                        outputdir = outputdir,
                     regionName = regionName,
                     outputBlockRange = outputBlockRange,
                     vcf.piece_unique = vcf.piece_unique
-                )
-                ## initialize new matrix if not last one
-                if (iBlock <= (length(outputBlockRange) - 1)) {
-                    vcf_matrix_to_out <- data.frame(matrix(
-                        data = NA,
-                        nrow = nSNPs,
-                        ncol = outputBlockRange[iBlock + 1] - outputBlockRange[iBlock]
-                    ))
-                    vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
+                    )
+                    ## initialize new matrix if not last one
+                    if (iBlock <= (length(outputBlockRange) - 1)) {
+                        vcf_matrix_to_out <- data.frame(matrix(
+                            data = NA,
+                            nrow = nSNPs,
+                            ncol = outputBlockRange[iBlock + 1] - outputBlockRange[iBlock]
+                        ))
+                        vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
+                    }
                 }
+            } else {
+                ## bgen! so have gp
+                ## need to convert, stick in place
+                ## so this works with nSNPs x 3 gp
+                ## and converts it to some slightly weird format
+                ## re-do to work on gp_t!
+                rrbgen::rcpp_make_raw_data_vector_for_probabilities(
+                    gp_sub = gp,
+                    B_bit_prob = B_bit_prob
+                )
+                x <- make_raw_data_vector_for_probabilities(
+                    gp[, who[i_sample], ],
+                    B_bit_prob
+                )
+                ## something C++ here!
+                list_of_gp_raw_t[[i_core]]
             }
         }
 
@@ -4546,7 +4303,7 @@ get_transMatRate <- function(method, sigmaCurrent) {
     return(transMatRate_t)
 }
 
-completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent,alphaMatCurrent,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrent,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid
+completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent,alphaMatCurrent,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrent,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, output_format
 ) {
 
     print_message(paste0("Start of iteration ", iteration))
@@ -4604,14 +4361,32 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
     } else {
         grid_eHaps_distance <- NULL
     }
+
+    list_of_gp_raw_t <- NULL
+    if (iteration == niterations) {
+        if (output_format == "bgen") {
+            print_message("Initializing output raw output holder")
+            list_of_gp_raw_t <- lapply(1:length(x3), function(i_x3) {
+                sampleRange <- x3[[i_x3]]
+                N <- sampleRange[2] - sampleRange[1] + 1
+                return(
+                    matrix(
+                        data = raw(0),
+                        nrow = N * 2 * (B_bit_prob / 8),
+                        ncol = nSNPs
+                    )
+                )
+            })
+        }
+    }
     
 
     if(environment=="server") {
-        single_iteration_results <- mclapply(x3,mc.cores=nCores,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks, vcf.piece_unique = vcf.piece_unique, grid = grid, FUN=subset_of_complete_iteration, grid_eHaps_distance = grid_eHaps_distance)
+        single_iteration_results <- mclapply(x3,mc.cores=nCores,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks, vcf.piece_unique = vcf.piece_unique, grid = grid, FUN=subset_of_complete_iteration, grid_eHaps_distance = grid_eHaps_distance, list_of_gp_raw_t  = list_of_gp_raw_t, output_format = output_format)
     }
     if(environment=="cluster") {
         cl <- makeCluster(nCores, type = "FORK")
-        single_iteration_results <- parLapply(cl, x3, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs, nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations,niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance)
+        single_iteration_results <- parLapply(cl, x3, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs, nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations,niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, list_of_gp_raw_t = list_of_gp_raw_t, output_format = output_format)
         stopCluster(cl)
     }
 

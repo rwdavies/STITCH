@@ -62,8 +62,8 @@ forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t, alph
 }
 
 #' @export
-calculate_fbd_dosage <- function(nGrids, nSNPs, K, eHaps_t, gamma_t, grid) {
-    .Call('_STITCH_calculate_fbd_dosage', PACKAGE = 'STITCH', nGrids, nSNPs, K, eHaps_t, gamma_t, grid)
+rcpp_calculate_fbd_dosage <- function(nGrids, nSNPs, K, eHaps_t, gamma_t, grid) {
+    .Call('_STITCH_rcpp_calculate_fbd_dosage', PACKAGE = 'STITCH', nGrids, nSNPs, K, eHaps_t, gamma_t, grid)
 }
 
 #' @export
@@ -107,7 +107,7 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
 }
 
 #' @export
-rcpp_make_column_of_vcf <- function(gp, use_read_proportions, read_proportions) {
-    .Call('_STITCH_rcpp_make_column_of_vcf', PACKAGE = 'STITCH', gp, use_read_proportions, read_proportions)
+rcpp_make_column_of_vcf <- function(gp_t, use_read_proportions, read_proportions) {
+    .Call('_STITCH_rcpp_make_column_of_vcf', PACKAGE = 'STITCH', gp_t, use_read_proportions, read_proportions)
 }
 

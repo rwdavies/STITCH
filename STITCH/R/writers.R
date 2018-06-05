@@ -241,16 +241,17 @@ make_column_of_vcf_from_pl_and_rd <- function(
 
 
 
+## now works on transpose, i.e. 3 x nSNPs, find max id per-col
 get_max_gen_rapid <- function(x) {
-  # assume matrix 3 columns >1 row
-  z <- rep(1, nrow(x))
-  y <- x[,1]
-  for(i in 2:3) {
-    w <- x[,i]>y
-    z[w] <- i
-    y[w] <- x[w,i]
-  }
-  return(cbind(1:nrow(x), z))
+    ## assume matrix 3 columns >1 row
+    z <- rep(1, ncol(x))
+    y <- x[1, ]
+    for(i in 2:3) {
+        w <- x[i, ] > y
+        z[w] <- i
+        y[w] <- x[i, w]
+    }
+    return(cbind(z, 1:ncol(x)))
 }
 
 
@@ -259,7 +260,7 @@ get_max_gen_rapid <- function(x) {
 ## note - C++ version does not have "read_proportions" functionality
 ## I think this was for the phasing things
 make_column_of_vcf <- function(
-    gp,
+    gp_t,
     read_proportions = NULL
 ) {
     ## write out genotype, genotype likelihood, and dosage
@@ -269,14 +270,14 @@ make_column_of_vcf <- function(
     ##FORMAT=<ID=DS,Number=1,Type=Float,Description="Dosage">
     ## 1/1:0,0.054,0.946:1.946
     ## add one samples worth of info to a VCF
-    z <- get_max_gen_rapid(gp)
-    gt <- c("0/0","0/1","1/1")[z[,2]]
-    gt[gp[z] < 0.9] <- "./."
+    z <- get_max_gen_rapid(gp_t)
+    gt <- c("0/0","0/1","1/1")[z[, 1]]
+    gt[gp_t[z] < 0.9] <- "./."
     precision <- 3
     format_string <- paste0(":%.", precision, "f,%.", precision, "f,%.", precision, "f:%.", precision, "f")
     str <- paste0(
         gt, 
-        sprintf(format_string, gp[, 1], gp[, 2], gp[, 3], gp[, 2] + 2 * gp[, 3])
+        sprintf(format_string, gp_t[1, ], gp_t[2, ], gp_t[3, ], gp_t[2, ] + 2 * gp_t[3, ])
     )
     if (is.null(read_proportions) == FALSE) {
         format_string <- paste0(":%.", precision, "f,%.", precision, "f,%.", precision, "f,%.", precision, "f")
@@ -432,7 +433,6 @@ write_vcf_after_EM <- function(
         shQuote(output_vcf)
        ,'"'
     )
-    print(command)
     ##cat(command, file = temp_runfile)
     ##system(paste0("bash ", temp_runfile))
     ## temp_runfile <- tempfile()

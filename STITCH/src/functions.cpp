@@ -595,9 +595,9 @@ Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads,const int nReads
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, const arma::mat& eHaps_t, const arma::mat& gamma_t, const Rcpp::IntegerVector grid) {
+Rcpp::List rcpp_calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, const arma::mat& eHaps_t, const arma::mat& gamma_t, const Rcpp::IntegerVector grid) {
     // basically, copy and paste, either using grid or not
-    arma::mat genProbs = arma::zeros(nSNPs,3);
+    arma::mat genProbs_t = arma::zeros(3, nSNPs);
     arma::vec dosage = arma::zeros(nSNPs);
     // new
     int t, k1, k2, j, k;
@@ -609,16 +609,17 @@ Rcpp::List calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, 
                     k=k1+K*k2;
                     a=eHaps_t(k1, t);
                     b=eHaps_t(k2, t);
-                    genProbs(t,0) = genProbs(t,0) +             \
+                    genProbs_t(0, t) = genProbs_t(0, t) + \
                         gamma_t(k, grid(t)) * (1-a) * (1-b);
-                    genProbs(t,1) = genProbs(t,1) +                     \
+                    genProbs_t(1, t) = genProbs_t(1, t) + \
                         gamma_t(k, grid(t)) * (a * (1 - b) + (1 - a) * b);
-                    genProbs(t,2) = genProbs(t,2) +     \
+                    genProbs_t(2, t) = genProbs_t(2, t) + \
                         gamma_t(k, grid(t)) * a * b;
                 } // k2
             } //k1
-            for(j=1;j<=2;j++)
-                dosage(t)=dosage(t)+j*genProbs(t,j)/2;
+            for(j=1;j<=2;j++) {
+                dosage(t)=dosage(t)+j*genProbs_t(j, t)/2;
+            }
         }
     } else {
         for(t=0; t<=nSNPs-1; t++) {
@@ -627,21 +628,21 @@ Rcpp::List calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, 
                     k=k1+K*k2;
                     a=eHaps_t(k1, t);
                     b=eHaps_t(k2, t);
-                    genProbs(t,0) = genProbs(t,0) +             \
+                    genProbs_t(0, t) = genProbs_t(0, t) +  \
                         gamma_t(k, t) * (1-a) * (1-b);
-                    genProbs(t,1) = genProbs(t,1) +                     \
+                    genProbs_t(1, t) = genProbs_t(1, t) + \
                         gamma_t(k, t) * (a * (1 - b) + (1 - a) * b);
-                    genProbs(t,2) = genProbs(t,2) +     \
+                    genProbs_t(2, t) = genProbs_t(2, t) +  \
                         gamma_t(k, t) * a * b;
                 } // k2
             } //k1
             for(j=1;j<=2;j++)
-                dosage(t)=dosage(t)+j*genProbs(t,j)/2;
+                dosage(t)=dosage(t)+j*genProbs_t(j, t)/2;
         }
     }
     return(wrap(Rcpp::List::create(
       Rcpp::Named("dosage") = dosage,
-      Rcpp::Named("genProbs") = genProbs
+      Rcpp::Named("genProbs_t") = genProbs_t
                                    )));
 }
 

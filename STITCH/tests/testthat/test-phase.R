@@ -137,9 +137,11 @@ test_that("can write out VCF column with expected read counts", {
         "1/1:0.000,0.100,0.900:1.900:0.100,0.200,0.300,0.400",
         "./.:0.000,0.200,0.800:1.800:10.000,30.000,40.000,20.000"
     )
+    gp_t <- t(gp)
+    rm(gp)
     
-    test1 <- make_column_of_vcf(gp, read_proportions)
-    test2 <- rcpp_make_column_of_vcf(gp, 1, read_proportions)    
+    test1 <- make_column_of_vcf(gp_t, read_proportions)
+    test2 <- rcpp_make_column_of_vcf(gp_t, 1, read_proportions)    
     expect_equal(test1, truth)
     expect_equal(test2, truth)    
 
