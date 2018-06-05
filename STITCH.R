@@ -336,9 +336,9 @@ option_list <- list(
         default = 10
     ), 
     make_option(
-        "--vcf_output_name",
+        "--output_filename",
         type = "character",
-        help = "Override the default VCF output name with this given file name. Please note that this does not change the names of inputs or outputs (e.g. RData, plots), so if outputdir is unchanged and if multiple STITCH runs are processing on the same region then they may over-write each others inputs and outputs [default NULL] ",
+        help = "Override the default bgzip-VCF / bgen output name with this given file name. Please note that this does not change the names of inputs or outputs (e.g. RData, plots), so if outputdir is unchanged and if multiple STITCH runs are processing on the same region then they may over-write each others inputs and outputs [default NULL] ",
         default = NULL
     ), 
     make_option(
@@ -444,7 +444,7 @@ STITCH(
     reference_populations = eval(parse(text=opt$reference_populations)),
     reference_phred = opt$reference_phred,
     reference_iterations = opt$reference_iterations,
-    vcf_output_name = opt$vcf_output_name,
+    output_filename = opt$output_filename,
     initial_min_hapProb = opt$initial_min_hapProb,
     initial_max_hapProb = opt$initial_max_hapProb,
     regenerateInputWithDefaultValues = opt$regenerateInputWithDefaultValues,
