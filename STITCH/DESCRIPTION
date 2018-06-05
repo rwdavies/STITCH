@@ -29,7 +29,7 @@ Getting started: A minimum run requires the following options to be
         pseudoHaploid mode, what iteration to switch from pseudoHaploid
         to diploid (switchModelIteration).
 Depends: parallel
-Imports: Rcpp
+Imports: Rcpp, data.table
 LinkingTo: Rcpp, RcppArmadillo
 Packaged: 2017-02-14 13:27:59 UTC; rdavies
 RoxygenNote: 6.0.1

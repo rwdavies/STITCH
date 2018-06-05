@@ -347,6 +347,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_make_column_of_vcf
+Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp, const int use_read_proportions, const arma::mat& read_proportions);
+RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gpSEXP, SEXP use_read_proportionsSEXP, SEXP read_proportionsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type gp(gpSEXP);
+    Rcpp::traits::input_parameter< const int >::type use_read_proportions(use_read_proportionsSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type read_proportions(read_proportionsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp, use_read_proportions, read_proportions));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_header_using_SeqLib", (DL_FUNC) &_STITCH_get_header_using_SeqLib, 1},
@@ -370,6 +383,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
     {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 3},
     {NULL, NULL, 0}
 };
 

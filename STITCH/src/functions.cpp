@@ -1155,3 +1155,4 @@ Rcpp::List rcpp_get_update_pieces(
     }
     return R_NilValue;
 }
+

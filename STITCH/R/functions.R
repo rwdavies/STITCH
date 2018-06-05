@@ -719,7 +719,7 @@ STITCH <- function(
     print_message("Clean up and end")
     warnings()
     ## remove things from tempdir
-    if(keepTempDir==FALSE) {
+    if (keepTempDir == FALSE) {
         unlink(tempdir, recursive = TRUE)
     }
 
@@ -4274,10 +4274,11 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     )
     if(iteration==niterations) {
         iBlock <- 1
-        vcf_matrix_to_out <- array(
-            NA,
-            c(nSNPs, outputBlockRange[iBlock + 1] - outputBlockRange[iBlock])
-        )
+        vcf_matrix_to_out <- data.frame(matrix(
+            data = NA,
+            nrow = nSNPs,
+            ncol = outputBlockRange[iBlock + 1] - outputBlockRange[iBlock]
+        ))
         vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
     }
     ##
@@ -4456,7 +4457,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             vcf_matrix_to_out[
                ,
                 iSample - vcf_matrix_to_out_offset
-            ] <- make_column_of_vcf(gp, read_proportions = NULL)
+            ] <- rcpp_make_column_of_vcf(gp, 0, matrix())
             iBlock <- match(iSample, outputBlockRange)
             if (iBlock > 1 & is.na(iBlock) == FALSE) {
                 i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))
@@ -4471,10 +4472,11 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
                 )
                 ## initialize new matrix if not last one
                 if (iBlock <= (length(outputBlockRange) - 1)) {
-                    vcf_matrix_to_out <- array(
-                        NA,
-                        c(nSNPs, outputBlockRange[iBlock + 1] - outputBlockRange[iBlock])
-                    )
+                    vcf_matrix_to_out <- data.frame(matrix(
+                        data = NA,
+                        nrow = nSNPs,
+                        ncol = outputBlockRange[iBlock + 1] - outputBlockRange[iBlock]
+                    ))
                     vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
                 }
             }

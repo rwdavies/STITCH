@@ -106,3 +106,8 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
 }
 
+#' @export
+rcpp_make_column_of_vcf <- function(gp, use_read_proportions, read_proportions) {
+    .Call('_STITCH_rcpp_make_column_of_vcf', PACKAGE = 'STITCH', gp, use_read_proportions, read_proportions)
+}
+

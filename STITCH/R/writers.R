@@ -33,10 +33,10 @@ outputInputInVCFFunction <- function(
             sampleRange,
             outputBlockSize
         )
-        vcf_matrix_to_out <- array(
+        vcf_matrix_to_out <- data.frame(array(
             NA,
             c(nSNPs, outputBlockRange[2] - outputBlockRange[1])
-        )
+        ))
         vcf_matrix_to_out_offset <- outputBlockRange[1]
         for (iSample in sampleRange[1]:sampleRange[2]) {
             out <- get_sampleReads_from_dir_for_sample(
@@ -71,10 +71,10 @@ outputInputInVCFFunction <- function(
                 )
                 ## initialize new matrix if not last one
                 if (iBlock < length(outputBlockRange)) {
-                    vcf_matrix_to_out <- array(
+                    vcf_matrix_to_out <- data.frame(array(
                         NA,
                         c(nSNPs, outputBlockRange[iBlock] - outputBlockRange[iBlock - 1])
-                    )
+                    ))
                     vcf_matrix_to_out_offset <- outputBlockRange[iBlock - 1]
                 }
             }
@@ -146,9 +146,10 @@ outputInputInVCFFunction <- function(
     ##
     ## get number of cores and blocks
     ##
-    unlisted_files_to_paste <- get_files_to_paste(
+    files_to_paste <- get_files_to_paste(
         N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName
-    )    
+    )
+    unlisted_files_to_paste <- paste(unlist(files_to_paste), collapse = " ")    
     ##
     ## merge together
     ##
@@ -167,19 +168,11 @@ outputInputInVCFFunction <- function(
     ##
     ## remove
     ##
-    x3 <- getSampleRange(N, nCores)
-    for(i_core in 1:length(x3)) {
-        nBlocks <- length(getOutputBlockRange(
-            sampleRange = x3[[i_core]],
-            outputBlockSize
-        ))
-        unlink(
-            paste0(
-                outputdir, "vcf.piece",
-                vcf.piece_unique, i_core,
-                ".", 2:nBlocks, ".", regionName, ".txt.gz"
-            )
-        )
+    files_to_remove <- get_files_to_paste(
+        N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName, as_command = FALSE
+    )
+    for(file in unlist(files_to_remove)) {
+        unlink(file)
     }
     print_message("Done building VCF from input")
     return(NULL)
@@ -202,27 +195,23 @@ write_block_of_vcf <- function(
         "Write block of VCF for samples:",
         (outputBlockRange[iBlock - 1] + 1), "-", outputBlockRange[iBlock]
     ))
-    ##m <- matrix(
-    ##    sapply(list_of_vcf_columns_to_out[iSample_list], I),
-    ##    ncol = length(iSample_list)
-    ##)
-    write.table(
+    file <- file.path(
+        outputdir,
+        paste0(
+            "vcf.piece",
+            vcf.piece_unique,
+            i_core, ".", iBlock, ".", regionName, ".txt"
+        )
+    )
+    data.table::fwrite(
         vcf_matrix_to_out,
-        file = gzfile(
-            file.path(
-                outputdir,
-                paste0(
-                    "vcf.piece",
-                    vcf.piece_unique,
-                    i_core, ".", iBlock, ".", regionName, ".txt.gz"
-                )
-            )
-        ),
+        file = file,
         row.names = FALSE,
         col.names = FALSE,
         sep = "\t",
         quote = FALSE
     )
+    system(paste0("gzip -1 '", file, "'"))
     return(NULL)
 }
 
@@ -267,9 +256,11 @@ get_max_gen_rapid <- function(x) {
 
 
 ## write out a single samples worth of VCF entry
+## note - C++ version does not have "read_proportions" functionality
+## I think this was for the phasing things
 make_column_of_vcf <- function(
     gp,
-    read_proportions
+    read_proportions = NULL
 ) {
     ## write out genotype, genotype likelihood, and dosage
     ##GT:GL:DS
@@ -282,21 +273,24 @@ make_column_of_vcf <- function(
     gt <- c("0/0","0/1","1/1")[z[,2]]
     gt[gp[z] < 0.9] <- "./."
     precision <- 3
+    format_string <- paste0(":%.", precision, "f,%.", precision, "f,%.", precision, "f:%.", precision, "f")
     str <- paste0(
-        gt,":",
-        round(gp[,1], precision), ",",
-        round(gp[,2], precision), ",",
-        round(gp[,3], precision), ":",
-        round(gp[,2] + 2 * gp[,3], precision)
+        gt, 
+        sprintf(format_string, gp[, 1], gp[, 2], gp[, 3], gp[, 2] + 2 * gp[, 3])
     )
-    if (is.null(read_proportions) == FALSE)
+    if (is.null(read_proportions) == FALSE) {
+        format_string <- paste0(":%.", precision, "f,%.", precision, "f,%.", precision, "f,%.", precision, "f")
         str <- paste0(
-            str, ":",
-            round(read_proportions[, 1], precision), ",",
-            round(read_proportions[, 2], precision), ",",
-            round(read_proportions[, 3], precision), ",",
-            round(read_proportions[, 4], precision)
+            str, 
+            sprintf(
+                format_string,
+                read_proportions[, 1],
+                read_proportions[, 2],
+                read_proportions[, 3],
+                read_proportions[, 4]
+            )
         )
+    }
     return(str)
 }
 
@@ -421,9 +415,10 @@ write_vcf_after_EM <- function(
     ##
     ## get number of cores and blocks
     ##
-    unlisted_files_to_paste <- get_files_to_paste(
+    files_to_paste <- get_files_to_paste(
         N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName
-    )    
+    )
+    unlisted_files_to_paste <- paste(unlist(files_to_paste), collapse = " ")    
     ##
     ## this command is crazy - write to tempfile then run
     ## merge together
@@ -437,6 +432,7 @@ write_vcf_after_EM <- function(
         shQuote(output_vcf)
        ,'"'
     )
+    print(command)
     ##cat(command, file = temp_runfile)
     ##system(paste0("bash ", temp_runfile))
     ## temp_runfile <- tempfile()
@@ -444,28 +440,20 @@ write_vcf_after_EM <- function(
     unlink(output_vcf_header)
     unlink(output_vcf_left)
     ##
-    ## remove
+    ## remove files
     ##
-    x3 <- getSampleRange(N, nCores)
-    for(i_core in 1:length(x3)) {
-        nBlocks <- length(getOutputBlockRange(
-            sampleRange = x3[[i_core]],
-            outputBlockSize
-        ))
-        unlink(
-            paste0(
-                outputdir, "vcf.piece",
-                vcf.piece_unique, i_core,
-                ".", 2:nBlocks, ".", regionName, ".txt.gz"
-            )
-        )
+    files_to_remove <- get_files_to_paste(
+        N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName, as_command = FALSE
+    )
+    for(file in unlist(files_to_remove)) {
+        unlink(file)
     }
     return(NULL)
 }
 
 
 
-get_files_to_paste <- function(N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName) {
+get_files_to_paste <- function(N, nCores, outputBlockSize, outputdir, vcf.piece_unique, regionName, as_command = TRUE) {
     x3 <- getSampleRange(N, nCores)
     files_to_paste <- lapply(1:length(x3), function(i_core) {
         nBlocks <- length(getOutputBlockRange(
@@ -484,11 +472,14 @@ get_files_to_paste <- function(N, nCores, outputBlockSize, outputdir, vcf.piece_
                         regionName, ".txt.gz"
                     )
                 )
-                files_x <- c(files_x, paste0('<(gunzip -c ', shQuote(file_x), ' | cat ) '))
+                if (as_command) {
+                    files_x <- c(files_x, paste0('<(gunzip -c ', shQuote(file_x), ' | cat ) '))
+                } else {
+                    files_x <- c(files_x, file_x)
+                }
             }
             return(files_x)
         }
     })
-    unlisted_files_to_paste <- paste(unlist(files_to_paste), collapse = " ")
-    return(unlisted_files_to_paste)
+    return(files_to_paste)
 }
