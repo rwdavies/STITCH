@@ -10,7 +10,7 @@
 #' @param reference Path to reference fasta used for making cram files. Only required if cramlist is defined
 #' @param genfile Path to gen file with high coverage results. Empty for no genfile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = hom ref, 1 = het, 2 = hom alt and NA indicating missing genotype, with rows corresponding to rows of the posfile. Note therefore this file has one more row than posfile which has no header
 #' @param method How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K
-#' @param output_format one of gvcf (i.e. bgzip'ed VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)
+#' @param output_format one of gvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)
 #' @param B_bit_prob when using bgen, how many bits to use to store each double. Optiosn are 8, 16, 24 or 32
 #' @param outputInputInVCFFormat Whether to output the input in vcf format
 #' @param downsampleToCov What coverage to downsample individual sites to. This ensures no floating point errors at sites with really high coverage

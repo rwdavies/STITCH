@@ -66,6 +66,18 @@ option_list <- list(
         default = "diploid"
     ), 
     make_option(
+        "--output_format",
+        type = "character",
+        help = "one of gvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1) [default gvcf] ",
+        default = "gvcf"
+    ), 
+    make_option(
+        "--B_bit_prob",
+        type = "integer",
+        help = "when using bgen, how many bits to use to store each double. Optiosn are 8, 16, 24 or 32 [default 16] ",
+        default = 16
+    ), 
+    make_option(
         "--outputInputInVCFFormat",
         type = "logical",
         help = "Whether to output the input in vcf format [default FALSE] ",
@@ -110,7 +122,7 @@ option_list <- list(
     make_option(
         "--regionEnd",
         type = "integer",
-        help = "When running imputation, where to stop [default NA] ",
+        help = "When running imputation, where to stop. [default NA] ",
         default = NA
     ), 
     make_option(
@@ -399,6 +411,8 @@ STITCH(
     reference = opt$reference,
     genfile = opt$genfile,
     method = opt$method,
+    output_format = opt$output_format,
+    B_bit_prob = opt$B_bit_prob,
     outputInputInVCFFormat = opt$outputInputInVCFFormat,
     downsampleToCov = opt$downsampleToCov,
     downsampleFraction = opt$downsampleFraction,

@@ -30,9 +30,9 @@ make_STITCH_cli <- function(
 
     ## manually specify types here
     logical_params <- c("outputInputInVCFFormat", "readAware", "regenerateInput", "keepInterimFiles", "keepTempDir", "generateInputOnly", "useSoftClippedBases", "regenerateInputWithDefaultValues", "plotHapSumDuringIterations", "plotAfterImputation", "save_sampleReadsInfo")
-    integer_params <- c("K", "chrStart", "chrEnd", "regionStart", "regionEnd", "buffer", "niterations", "nCores", "Jmax", "pseudoHaploidModel", "switchModelIteration", "outputBlockSize", "inputBundleBlockSize", "reference_phred", "reference_iterations", "gridWindowSize")
+    integer_params <- c("K", "chrStart", "chrEnd", "regionStart", "regionEnd", "buffer", "niterations", "nCores", "Jmax", "pseudoHaploidModel", "switchModelIteration", "outputBlockSize", "inputBundleBlockSize", "reference_phred", "reference_iterations", "gridWindowSize", "B_bit_prob")
     double_params <- c("nGen", "downsampleToCov", "downsampleFraction", "maxDifferenceBetweenReads", "maxEmissionMatrixDifference", "alphaMatThreshold", "emissionThreshold", "iSizeUpperLimit", "bqFilter", "expRate", "maxRate", "minRate", "downsampleSamples", "initial_min_hapProb", "initial_max_hapProb")
-    character_params <- c("chr", "posfile", "outputdir", "tempdir", "bamlist", "cramlist", "reference", "genfile", "method", "shuffleHaplotypeIterations", "splitReadIterations", "originalRegionName", "environment", "restartIterations", "refillIterations", "downsampleSamplesKeepList", "subsetSNPsfile", "reference_haplotype_file", "reference_legend_file", "reference_sample_file", "reference_populations", "vcf_output_name", "output_filename")
+    character_params <- c("chr", "posfile", "outputdir", "tempdir", "bamlist", "cramlist", "reference", "genfile", "method", "shuffleHaplotypeIterations", "splitReadIterations", "originalRegionName", "environment", "restartIterations", "refillIterations", "downsampleSamplesKeepList", "subsetSNPsfile", "reference_haplotype_file", "reference_legend_file", "reference_sample_file", "reference_populations", "vcf_output_name", "output_filename", "output_format")
     ## deprecated
     integer_params <- c(integer_params, "diploidModel")
     logical_params <- c(logical_params, "outputHaplotypeProbabilities")
@@ -104,8 +104,12 @@ make_STITCH_cli <- function(
             if (default == "\"\"") {
                 default_string <- "\\\"\\\""
             }
+            ## this is so hacky
             if (default == "\"diploid\"") {
                 default_string <- "diploid"
+            }
+            if (default == "\"gvcf\"") {
+                default_string <- "gvcf"
             }
             if (default == "\"server\"") {
                 default_string <- "server"
