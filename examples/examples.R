@@ -97,6 +97,7 @@ human_reference_haplotype_file <- paste0(human_datadir, "1000GP_Phase3_chr20.hap
 # Mouse example 11 - Run on CRAM files
 # Mouse example 12 - Change VCF output name
 # Mouse example 13 - Use gridWindowSize to speed up analysis
+# Mouse example 14 - Write to bgen
 
 # ------ Human examples
 # Human example 1 - Run diploid on previously generated input, downsample samples and coverage
@@ -351,7 +352,7 @@ STITCH(
 setwd(mouse_datadir)
 outputdir <- paste0(mouse_resultsdir, "change_name/")
 system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
-STITCH(vcf_output_name = "test.vcf.gz", method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+STITCH(output_filename = "test.vcf.gz", method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 # Mouse example 13 - Use gridWindowSize to speed up analysis
 setwd(mouse_datadir)
@@ -365,6 +366,11 @@ STITCH(
   inputBundleBlockSize = 100,  
   method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
 
+# Mouse example 14 - Write to bgen
+setwd(mouse_datadir)
+outputdir <- paste0(mouse_resultsdir, "bgen/")
+system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
+STITCH(method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize, output_format = "bgen")
 
 
 
