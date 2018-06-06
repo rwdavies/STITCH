@@ -49,14 +49,16 @@ inputBundleBlockSize <- NA
 # Set directories for testing
 # IMPORTANT NOTE - make these new directories, as they are over-written before being written to
 mouse_datadir <- file.path(getwd(), "test-data/mouse_data/")
+dir.create(mouse_datadir)
 mouse_resultsdir <- file.path(getwd(), "test-results/mouse_tests/")
 human_datadir <- file.path(getwd(), "test-data/human_data/")
 human_matched_to_reference_datadir <- file.path(getwd(), "test-data/human_data_matched_to_reference/")
 human_resultsdir <- file.path(getwd(), "test-results/human_tests/")
-system(paste0("mkdir -p ", mouse_datadir))
-system(paste0("mkdir -p ", mouse_resultsdir))
-system(paste0("mkdir -p ", human_datadir))
-system(paste0("mkdir -p ", human_resultsdir))
+dir.create(mouse_datadir)
+dir.create(mouse_resultsdir)
+dir.create(human_datadir)
+dir.create(human_resultsdir)
+dir.create(human_matched_to_reference_datadir)
 
 
 # Mouse variables - does not need modifying
@@ -129,7 +131,6 @@ get_and_untar_if_tgz_file <- function(file) {
 }
 
 ## Download and prepare mouse data
-system(paste0("mkdir -p ", mouse_datadir))
 setwd(mouse_datadir)
 get_and_untar_if_tgz_file("STITCH_example_2016_05_10.tgz")
 
@@ -138,7 +139,6 @@ get_and_untar_if_tgz_file("STITCH_mouse_crams_2017_02_05.tgz")
 
 
 ## Download and prepare human data
-system(paste0("mkdir -p ", human_datadir))
 setwd(human_datadir)
 get_and_untar_if_tgz_file("STITCH_human_example_2016_10_18.tgz")
 
@@ -150,7 +150,6 @@ for(file in files) {
 }
 
 ## Get example of human data with reference data at exactly the same sites
-system(paste0("mkdir -p ", human_matched_to_reference_datadir))
 setwd(human_matched_to_reference_datadir)
 get_and_untar_if_tgz_file("STITCH_human_reference_example_2017_05_24.tgz")
 
