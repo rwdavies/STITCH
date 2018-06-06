@@ -357,6 +357,11 @@ check_vcf_against_phase <- function(
         truth_dosage <- phase[, i_sample - 9, 1] + phase[, i_sample - 9, 2]
         expect_equal(sum(dosage < 0), 0)
         expect_equal(sum(dosage > 2), 0)
+        ## print to screen first
+        if (sum(abs(dosage - truth_dosage) > tol) > 0) {
+            print(paste0("i_sample = ", i_sample))
+            print(cbind("dosage" = dosage, "truth_dosage" = truth_dosage))
+        }
         expect_equal(max(abs(dosage - truth_dosage)) <= tol, TRUE)
         ## check genotype probability
         genotype_posteriors <- t(sapply(strsplit(vcf_col_split[, "GP"], ","), as.numeric))
@@ -369,6 +374,27 @@ check_vcf_against_phase <- function(
         expect_equal(sum(abs(d2 - dosage) > 0.00101), 0)
     }
 }
+
+check_bgen_gp_against_phase <- function(
+    gp,
+    phase,
+    tol = 0.2
+) {
+    for(i_sample in 1:dim(gp)[[2]]) {
+        ## check genotype probability
+        genotype_posteriors <- gp[, i_sample, ]        
+        r <- rowSums(genotype_posteriors)
+        ## check their sum, up to a tolerance
+        expect_equal(sum(abs(r - 1) > 0.00101), 0)
+        expect_equal(sum(genotype_posteriors + 1e-8 < 0), 0)
+        expect_equal(sum(genotype_posteriors - 1e-8 > 1), 0)
+        gp_dosage <- genotype_posteriors[, 2] + 2 * genotype_posteriors[, 3]
+        truth_dosage <- phase[, i_sample, 1] + phase[, i_sample, 2]
+        expect_equal(max(abs(gp_dosage - truth_dosage)) <= tol, TRUE)        
+    }
+}
+
+
 
 simple_write <- function(matrix, file, gzip = FALSE, col.names = TRUE) {
     if (gzip)

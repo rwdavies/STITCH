@@ -251,7 +251,7 @@ get_max_gen_rapid <- function(x) {
         z[w] <- i
         y[w] <- x[i, w]
     }
-    return(cbind(z, 1:ncol(x)))
+    return(cbind(1:ncol(x), z))
 }
 
 
@@ -271,8 +271,9 @@ make_column_of_vcf <- function(
     ## 1/1:0,0.054,0.946:1.946
     ## add one samples worth of info to a VCF
     z <- get_max_gen_rapid(gp_t)
-    gt <- c("0/0","0/1","1/1")[z[, 1]]
-    gt[gp_t[z] < 0.9] <- "./."
+    gt <- c("0/0","0/1","1/1")[z[, 2]]
+    z2 <- cbind(z[, 2], z[, 1]) ## flip - argh
+    gt[gp_t[z2] < 0.9] <- "./."
     precision <- 3
     format_string <- paste0(":%.", precision, "f,%.", precision, "f,%.", precision, "f:%.", precision, "f")
     str <- paste0(
@@ -310,7 +311,7 @@ get_output_filename <- function(
     if (output_format == "gvcf") {
         extension <- ".vcf.gz"
     } else {
-        extension <- "bgen"
+        extension <- ".bgen"
     }
     if (is.null(output_filename)) {
         return(
@@ -332,12 +333,25 @@ get_output_filename <- function(
 }
 
 
+make_var_info <- function(pos, start_and_end_minus_buffer) {
+    pos_local <- pos[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2], ]
+    var_info <- matrix("", nrow = nrow(pos_local), ncol = 6)
+    colnames(var_info) <- c("chr", "snpid", "rsid", "position", "ref", "alt")
+    var_info[, "chr"] <- pos_local[, "CHR"]
+    var_info[, "snpid"] <- paste0(pos_local[, "CHR"], ":", pos_local[, "POS"], ":", pos_local[, "REF"], ":", pos_local[, "ALT"])
+    var_info[, "rsid"] <- "."
+    var_info[, "position"] <- pos_local[, "POS"]
+    var_info[, "ref"] <- as.character(pos_local[, "REF"])
+    var_info[, "alt"] <- as.character(pos_local[, "ALT"])
+    return(var_info)
+}
+
 ## build the header
 ## build the left part of the VCF
 ## paste together the interim VCF files
 ## gzip the whole thing together
 write_vcf_after_EM <- function(
-    output_filename,
+    to_use_output_filename,
     outputdir,
     regionName,
     sampleNames,
@@ -348,20 +362,17 @@ write_vcf_after_EM <- function(
     estimatedAlleleFrequency,
     pos,
     N,
+    nSNPs,
     outputBlockSize,
     reference_panel_SNPs,
     method,
     output_format,
+    start_and_end_minus_buffer,
     vcf.piece_unique = "."
 ) {
     ## set up file names
     print_message("Build final VCF")
-    output_vcf <- get_output_filename(
-        output_filename = output_filename,
-        outputdir = outputdir,
-        regionName = regionName,
-        output_format = output_format
-    )
+    output_vcf <- to_use_output_filename
     output_vcf_header <- paste0(output_vcf, ".header.gz")
     output_vcf_left <- paste0(output_vcf, ".left.gz")
     ##
@@ -397,16 +408,33 @@ write_vcf_after_EM <- function(
     ## build first part of file
     ##
     options(scipen=6)
+    ##
+    inRegion <- array(FALSE, nSNPs)
+    inRegion[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2]] <- TRUE
+    ##
     INFO <- paste0(
         "EAF=", round(estimatedAlleleFrequency, 5), ";",
         "INFO_SCORE=", round(info, 5), ";",
         "HWE=", hwe
     )
     if (sum(reference_panel_SNPs) > 0) {
-        INFO <- paste0(INFO, ";REF_PANEL=", as.integer(reference_panel_SNPs))
+        INFO <- paste0(INFO, ";REF_PANEL=", as.integer(reference_panel_SNPs[inRegion]))
     }
     write.table(
-        matrix(paste(pos[,1], pos[,2], ".", pos[,3], pos[,4], ".", "PASS", INFO, "GT:GP:DS", sep="\t"), ncol=1),
+        matrix(
+            paste(
+                pos[inRegion, 1],
+                pos[inRegion, 2],
+                ".",
+                pos[inRegion, 3],
+                pos[inRegion, 4],
+                ".",
+                "PASS",
+                INFO,
+                "GT:GP:DS",
+                sep = "\t"
+            ), ncol = 1
+        ),
         file = gzfile(output_vcf_left),
         row.names = FALSE,
         col.names = FALSE,

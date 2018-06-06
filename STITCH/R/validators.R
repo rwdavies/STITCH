@@ -38,6 +38,14 @@ validate_output_filename <- function(
 }
 
 
+validate_B_bit_prob <- function(B_bit_prob, output_format) {
+    if (output_format == "bgen") {
+        if ( (as.numeric(B_bit_prob) %in% c(8, 16, 24, 32)) == FALSE) {
+            stop(paste0("B_bit_prob must be either 8, 16, 24 or 32 but you have selected:", B_bit_prob))
+        }
+    }
+}
+
 validate_pos_and_legend_snps_for_niterations_equals_1 <- function(legend_snps, pos_snps, niterations) {
     if (niterations == 1) {
         x <- is.na(match(legend_snps, pos_snps))

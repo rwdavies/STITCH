@@ -6,7 +6,7 @@
 \usage{
 STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   cramlist = "", reference = "", genfile = "", method = "diploid",
-  output_format = "gvcf", outputInputInVCFFormat = FALSE,
+  output_format = "gvcf", B_bit_prob = 16, outputInputInVCFFormat = FALSE,
   downsampleToCov = 50, downsampleFraction = 1, readAware = TRUE,
   chrStart = NA, chrEnd = NA, regionStart = NA, regionEnd = NA,
   buffer = NA, maxDifferenceBetweenReads = 1000,
@@ -54,6 +54,10 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{method}{How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K}
 
+\item{output_format}{one of gvcf (i.e. bgzip'ed VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)}
+
+\item{B_bit_prob}{when using bgen, how many bits to use to store each double. Optiosn are 8, 16, 24 or 32}
+
 \item{outputInputInVCFFormat}{Whether to output the input in vcf format}
 
 \item{downsampleToCov}{What coverage to downsample individual sites to. This ensures no floating point errors at sites with really high coverage}
@@ -68,7 +72,7 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{regionStart}{When running imputation, where to start from. The 1-based position x is kept if regionStart <= x <= regionEnd}
 
-\item{regionEnd}{When running imputation, where to stop}
+\item{regionEnd}{When running imputation, where to stop.}
 
 \item{buffer}{Buffer of region to perform imputation over. So imputation is run form regionStart-buffer to regionEnd+buffer, and reported for regionStart to regionEnd, including the bases of regionStart and regionEnd}
 
