@@ -97,14 +97,6 @@ test_that("STITCH diploid works under default parameters", {
     
     sink("/dev/null")
 
-    library("testthat"); library("STITCH"); library("rrbgen")
-    ## dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/Google Drive/STITCH/"
-    setwd(paste0(dir, "/STITCH/R"))
-    o <- sapply(dir(pattern = "*R"), source)
-    setwd(dir)
-    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
-    set.seed(10)
     STITCH(
         chr = data_package$chr,
         bamlist = data_package$bamlist,
@@ -1236,6 +1228,38 @@ test_that("STITCH diploid can write to bgen", {
 
     
 })
+
+test_that("STITCH diploid can write to bgen with multiple cores", {
+
+    skip_test_if_TRUE(run_acceptance_tests)
+    outputdir <- make_unique_tempdir()
+    
+    sink("/dev/null")
+    
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,        
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        output_format = "bgen",
+        nCores = 4
+    )
+
+    sink()
+
+    out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
+    
+    check_bgen_gp_against_phase(
+        gp = out_gp$gp,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+    
+})
+
 
 test_that("STITCH diploid can write to bgen with regionStart and regionEnd", {
 

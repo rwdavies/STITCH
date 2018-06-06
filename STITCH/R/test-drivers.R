@@ -390,6 +390,11 @@ check_bgen_gp_against_phase <- function(
         expect_equal(sum(genotype_posteriors - 1e-8 > 1), 0)
         gp_dosage <- genotype_posteriors[, 2] + 2 * genotype_posteriors[, 3]
         truth_dosage <- phase[, i_sample, 1] + phase[, i_sample, 2]
+        ## pre-check
+        if (sum(abs(gp_dosage - truth_dosage) > tol) > 0) {
+            print(paste0("i_sample = ", i_sample))
+            print(cbind("gp_dosage" = gp_dosage, "truth_dosage" = truth_dosage))
+        }
         expect_equal(max(abs(gp_dosage - truth_dosage)) <= tol, TRUE)        
     }
 }
