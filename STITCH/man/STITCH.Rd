@@ -54,7 +54,7 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{method}{How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K}
 
-\item{output_format}{one of gvcf (i.e. bgzip'ed VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)}
+\item{output_format}{one of gvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)}
 
 \item{B_bit_prob}{when using bgen, how many bits to use to store each double. Optiosn are 8, 16, 24 or 32}
 

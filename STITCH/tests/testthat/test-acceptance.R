@@ -28,6 +28,7 @@ n_reads <- 5 / (reads_span_n_snps / n_snps) ## want about 5X / sample
 if (run_acceptance_tests | run_only_one_acceptance_test) {
     phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
     phasemaster[2, ] <- c(1, 0)
+    phasemaster[3, ] <- c(0, 0)    
     phasemaster[7, ] <- c(1, 0)    
     data_package <- make_acceptance_test_data_package(
         n_samples = 10,
@@ -50,6 +51,7 @@ if (run_acceptance_tests) {
     )
     phasemasterC <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
     phasemasterC[1, ] <- c(1, 0)
+    phasemasterC[4, ] <- c(0, 0)        
     phasemasterC[5, ] <- c(1, 0)    
     phasemasterC[6, ] <- c(1, 0)    
     data_package_crams <- make_acceptance_test_data_package(
@@ -67,6 +69,7 @@ if (run_acceptance_tests) {
     chr <- "X"
     phasemasterX <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
     phasemasterX[3, ] <- c(1, 0)
+    phasemasterX[5, ] <- c(0, 0)
     phasemasterX[6, ] <- c(1, 0)    
     data_packageX <- make_acceptance_test_data_package(
         n_samples = 10,
@@ -94,11 +97,19 @@ test_that("STITCH diploid works under default parameters", {
     
     sink("/dev/null")
 
+    library("testthat"); library("STITCH"); library("rrbgen")
+    ## dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "~/Google Drive/STITCH/"
+    setwd(paste0(dir, "/STITCH/R"))
+    o <- sapply(dir(pattern = "*R"), source)
+    setwd(dir)
+    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     set.seed(10)
     STITCH(
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -138,6 +149,7 @@ test_that("STITCH diploid works under default parameters when outputdir has a sp
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -186,6 +198,7 @@ test_that("STITCH diploid works under default parameters with nCores = 40 and N 
         chr = data_package25$chr,
         bamlist = data_package25$bamlist,
         posfile = data_package25$posfile,
+        genfile = data_package$genfile,
         outputdir = outputdir,
         K = 4,
         nGen = 100,
@@ -230,6 +243,7 @@ test_that("STITCH diploid works under default parameters with N = 25 and nCores 
         chr = data_package25$chr,
         bamlist = data_package25$bamlist,
         posfile = data_package25$posfile,
+        genfile = data_package$genfile,                
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -261,6 +275,7 @@ test_that("STITCH pseudoHaploid works under default parameters", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,                
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -295,6 +310,7 @@ test_that("STITCH pseudoHaploid works with switchModelIteration", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -378,6 +394,7 @@ test_that("STITCH can initialize with reference data", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,                
         outputdir = data_package$outputdir,
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
@@ -418,6 +435,7 @@ test_that("STITCH can initialize with reference data with defined regionStart an
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
@@ -1040,6 +1058,7 @@ test_that("STITCH diploid works with regionStart, regionEnd and buffer", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -1080,6 +1099,7 @@ test_that("STITCH diploid works with snap to grid", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -1116,6 +1136,7 @@ test_that("STITCH diploid works with snap to grid with a buffer", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -1149,12 +1170,14 @@ test_that("STITCH pseudoHaploid works with grid", {
 
     skip_test_if_TRUE(run_acceptance_tests)
     outputdir <- make_unique_tempdir()
+    
     sink("/dev/null")
-    set.seed(10)
+
     STITCH(
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -1193,6 +1216,7 @@ test_that("STITCH diploid can write to bgen", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -1223,6 +1247,7 @@ test_that("STITCH diploid can write to bgen with regionStart and regionEnd", {
         chr = data_package$chr,
         bamlist = data_package$bamlist,
         posfile = data_package$posfile,
+        genfile = data_package$genfile,        
         outputdir = outputdir,
         K = 2,
         nGen = 100,
@@ -1243,6 +1268,5 @@ test_that("STITCH diploid can write to bgen with regionStart and regionEnd", {
         phase = data_package$phase[3:7, , ],
         tol = 0.2
     )
-
     
 })

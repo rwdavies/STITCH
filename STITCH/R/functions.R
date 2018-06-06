@@ -3873,10 +3873,12 @@ within_EM_per_sample_heuristics <- function(
     ## check high coverage samples if applicable
     ##
     if (is.na(match(iSample, highCovInLow)) ==FALSE) {
-        dosage <- array(0, nSNPs)
         if (method == "pseudoHaploid") {
-            for(iNor in 1:nor) {
-                dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t * eHapsCurrent_t))
+            dosage <- array(0, nSNPs)
+            if (method == "pseudoHaploid") {
+                for(iNor in 1:nor) {
+                    dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
+                }
             }
         } else if(method == "diploid"){
             out <- rcpp_calculate_fbd_dosage(
@@ -5222,7 +5224,7 @@ getR2DuringEMAlgorithm <- function(
         ## print_message(paste0("range(y) = ", range(y, na.rm=TRUE)))
         x[to_flip] <- 2 - x[to_flip]
         y[to_flip] <- 2 - y[to_flip]
-        store[isample] <- cor(x, y, use = "complete.obs") ** 2
+        store[isample] <- suppressWarnings(cor(x, y, use = "complete.obs") ** 2)
     }
     store[n_hc + 1]=mean(store[1:n_hc])
     return(store)
