@@ -108,8 +108,8 @@ make_STITCH_cli <- function(
             if (default == "\"diploid\"") {
                 default_string <- "diploid"
             }
-            if (default == "\"gvcf\"") {
-                default_string <- "gvcf"
+            if (default == "\"bgvcf\"") {
+                default_string <- "bgvcf"
             }
             if (default == "\"server\"") {
                 default_string <- "server"

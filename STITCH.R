@@ -68,8 +68,8 @@ option_list <- list(
     make_option(
         "--output_format",
         type = "character",
-        help = "one of gvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1) [default gvcf] ",
-        default = "gvcf"
+        help = "one of bgvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1) [default bgvcf] ",
+        default = "bgvcf"
     ), 
     make_option(
         "--B_bit_prob",
