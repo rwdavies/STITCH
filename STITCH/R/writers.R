@@ -336,9 +336,9 @@ get_output_filename <- function(
 make_var_info <- function(pos, start_and_end_minus_buffer) {
     pos_local <- pos[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2], ]
     var_info <- matrix("", nrow = nrow(pos_local), ncol = 6)
-    colnames(var_info) <- c("chr", "snpid", "rsid", "position", "ref", "alt")
-    var_info[, "chr"] <- pos_local[, "CHR"]
-    var_info[, "snpid"] <- paste0(pos_local[, "CHR"], ":", pos_local[, "POS"], ":", pos_local[, "REF"], ":", pos_local[, "ALT"])
+    colnames(var_info) <- c("chr", "varid", "rsid", "position", "ref", "alt")
+    var_info[, "chr"] <- as.character(pos_local[, "CHR"])
+    var_info[, "varid"] <- paste0(pos_local[, "CHR"], ":", pos_local[, "POS"], ":", pos_local[, "REF"], ":", pos_local[, "ALT"])
     var_info[, "rsid"] <- "."
     var_info[, "position"] <- pos_local[, "POS"]
     var_info[, "ref"] <- as.character(pos_local[, "REF"])

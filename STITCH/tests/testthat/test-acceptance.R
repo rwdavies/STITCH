@@ -35,7 +35,7 @@ if (run_acceptance_tests | run_only_one_acceptance_test) {
         n_snps = n_snps,
         n_reads = n_reads,
         seed = 3,
-        chr = chr,
+        chr = "chr5",
         K = 2,
         reads_span_n_snps = reads_span_n_snps,
         phasemaster = phasemaster
@@ -1219,6 +1219,11 @@ test_that("STITCH diploid can write to bgen", {
     sink()
 
     out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
+
+    expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[, "CHR"]))
+    expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[, "POS"]))
+    expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[, "REF"]))
+    expect_equal(as.character(out_gp$var_info[, "alt"]), as.character(data_package$pos[, "ALT"]))        
     
     check_bgen_gp_against_phase(
         gp = out_gp$gp,
