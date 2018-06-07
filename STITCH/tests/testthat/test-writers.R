@@ -2,8 +2,8 @@ test_that("can validate B_bit_prob", {
     for(B_bit_prob in c(8, 16, 24, 32)) {
         expect_null(validate_B_bit_prob(B_bit_prob, "bgen"))
     }
-    expect_null(validate_B_bit_prob(8, "gvcf"))
-    expect_null(validate_B_bit_prob(9, "gvcf"))
+    expect_null(validate_B_bit_prob(8, "bgvcf"))
+    expect_null(validate_B_bit_prob(9, "bgvcf"))
     expect_error(validate_B_bit_prob(9, "bgen"))
     expect_error(validate_B_bit_prob(-1, "bgen"))
     expect_error(validate_B_bit_prob("-1", "bgen"))

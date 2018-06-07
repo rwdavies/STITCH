@@ -1,6 +1,6 @@
 test_that("can validate output format", {
     expect_null(validate_output_format("bgen"))
-    expect_null(validate_output_format("gvcf"))
+    expect_null(validate_output_format("bgvcf"))
     expect_error(validate_output_format(NA))
     expect_error(validate_output_format("word"))    
     expect_error(validate_output_format(FALSE))
@@ -10,7 +10,7 @@ test_that("can validate output format", {
 
 
 test_that("output_filename throws an error when too short", {
-    expect_error(validate_output_filename("A", "gvcf"), "output_filename must have at least 8 characters and end with .vcf.gz, and you have supplied:A")
+    expect_error(validate_output_filename("A", "bgvcf"), "output_filename must have at least 8 characters and end with .vcf.gz, and you have supplied:A")
 })
 
 test_that("bgen_output_name throws an error when too short", {
@@ -18,7 +18,7 @@ test_that("bgen_output_name throws an error when too short", {
 })
 
 test_that("output_filename throws an error if no .vcf.gz", {
-    expect_error(validate_output_filename("A.vcf", "gvcf"), "output_filename must have at least 8 characters and end with .vcf.gz, and you have supplied:A.vcf")
+    expect_error(validate_output_filename("A.vcf", "bgvcf"), "output_filename must have at least 8 characters and end with .vcf.gz, and you have supplied:A.vcf")
 })
 
 test_that("bgen_output_name throws an error no bgen", {
@@ -30,7 +30,7 @@ test_that("vcf_output_name can be OK", {
 })
 
 test_that("output_filename can be OK", {
-    expect_equal(validate_output_filename("A.vcf.gz", "gvcf"), NULL)
+    expect_equal(validate_output_filename("A.vcf.gz", "bgvcf"), NULL)
     expect_equal(validate_output_filename("A.bgen", "bgen"), NULL)    
 })
 
@@ -62,7 +62,7 @@ test_that("if output_filename is NULL, output_filename is constructed in the def
     output_filename <- NULL
     outputdir <- "/path/to/folder"
     regionName <- "20.10.20"    
-    output_vcf <- get_output_filename(output_filename, outputdir, regionName, "gvcf")
+    output_vcf <- get_output_filename(output_filename, outputdir, regionName, "bgvcf")
     expect_equal(
         output_vcf,
         file.path(

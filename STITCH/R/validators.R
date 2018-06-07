@@ -2,8 +2,8 @@ validate_output_format <- function(output_format) {
     if (class(output_format) != "character") {
         stop(paste0("output_format must have class character but you have selected:", class(output_format)))
     }
-    if ((output_format != "bgen") & (output_format != "gvcf")) {
-        stop(paste0("output_format must be either gvcf of bgen"))
+    if ((output_format != "bgen") & (output_format != "bgvcf")) {
+        stop(paste0("output_format must be either bgvcf of bgen"))
     }
     return(NULL)
 }
@@ -13,7 +13,7 @@ validate_output_filename <- function(
     output_filename,
     output_format
 ) {
-    if (output_format == "gvcf") {
+    if (output_format == "bgvcf") {
         extension <- ".vcf.gz"
     } else if (output_format == "bgen") {
         extension <- ".bgen"

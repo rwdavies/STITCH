@@ -10,7 +10,7 @@
 #' @param reference Path to reference fasta used for making cram files. Only required if cramlist is defined
 #' @param genfile Path to gen file with high coverage results. Empty for no genfile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = hom ref, 1 = het, 2 = hom alt and NA indicating missing genotype, with rows corresponding to rows of the posfile. Note therefore this file has one more row than posfile which has no header
 #' @param method How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K
-#' @param output_format one of gvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)
+#' @param output_format one of bgvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)
 #' @param B_bit_prob when using bgen, how many bits to use to store each double. Optiosn are 8, 16, 24 or 32
 #' @param outputInputInVCFFormat Whether to output the input in vcf format
 #' @param downsampleToCov What coverage to downsample individual sites to. This ensures no floating point errors at sites with really high coverage
@@ -80,7 +80,7 @@ STITCH <- function(
     reference = "",
     genfile = "",
     method = "diploid",
-    output_format = "gvcf",
+    output_format = "bgvcf",
     B_bit_prob = 16,
     outputInputInVCFFormat = FALSE,
     downsampleToCov = 50,
@@ -582,7 +582,7 @@ STITCH <- function(
         regionName = regionName,
         output_format = output_format
     )
-    if (output_format == "gvcf") {
+    if (output_format == "bgvcf") {
         print_message("Write output to bgzip-VCF file")        
         write_vcf_after_EM(to_use_output_filename = to_use_output_filename, outputdir = outputdir, regionName = regionName, sampleNames = sampleNames, tempdir = tempdir, nCores = nCores, info = info, hwe = hwe, estimatedAlleleFrequency = estimatedAlleleFrequency, pos = pos, N = N, outputBlockSize = outputBlockSize, reference_panel_SNPs = reference_panel_SNPs, method = method, vcf.piece_unique = vcf.piece_unique, output_format = output_format, start_and_end_minus_buffer = start_and_end_minus_buffer, nSNPs = nSNPs)
     } else {
@@ -4082,7 +4082,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             afCount <- array(0, nSNPsInRegionMinusBuffer)
         }
         ## set up output things here
-        if (output_format == "gvcf") {
+        if (output_format == "bgvcf") {
             outputBlockRange <- getOutputBlockRange(
                 sampleRange,
                 outputBlockSize
@@ -4267,7 +4267,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             ## add column to VCF to matrix, and possibly write matrix to disk
             ##
             ## add into appropriate column
-            if (output_format == "gvcf") {
+            if (output_format == "bgvcf") {
                 vcf_matrix_to_out[
                    ,
                     iSample - vcf_matrix_to_out_offset

@@ -308,7 +308,7 @@ get_output_filename <- function(
     output_format,
     prefix = "stitch"
 ) {
-    if (output_format == "gvcf") {
+    if (output_format == "bgvcf") {
         extension <- ".vcf.gz"
     } else {
         extension <- ".bgen"
