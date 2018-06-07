@@ -1291,6 +1291,11 @@ test_that("STITCH diploid can write to bgen with regionStart and regionEnd", {
 
     regionName <- paste0(data_package$chr, ".", 3, ".", 7)
     out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", regionName, ".bgen")))
+
+    expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[3:7, "CHR"]))
+    expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[3:7, "POS"]))
+    expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[3:7, "REF"]))
+    expect_equal(as.character(out_gp$var_info[, "alt"]), as.character(data_package$pos[3:7, "ALT"]))        
     
     check_bgen_gp_against_phase(
         gp = out_gp$gp,
