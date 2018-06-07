@@ -360,7 +360,8 @@ check_output_against_phase <- function(
         ## 
         check_bgen_gp_against_phase(
             gp = out$gp,
-            phase = data_package$phase[which_snps, , ],
+            phase = data_package$phase,
+            which_snps = which_snps,
             tol = tol
         )
     } else {
@@ -373,7 +374,8 @@ check_output_against_phase <- function(
         ## check imputation worked here
         check_vcf_against_phase(
             vcf,
-            data_package$phase[which_snps, , ],
+            data_package$phase,
+            which_snps,
             tol = tol
         )
     }
@@ -383,6 +385,7 @@ check_output_against_phase <- function(
 check_vcf_against_phase <- function(
     vcf,
     phase,
+    which_snps,
     tol = 0.2
 ) {
     if (length(unique(vcf[, 9])) > 1)
@@ -394,7 +397,7 @@ check_vcf_against_phase <- function(
         colnames(vcf_col_split) <- gt_names
         ## check dosage
         dosage <- as.numeric(vcf_col_split[, "DS"])
-        truth_dosage <- phase[, i_sample - 9, 1] + phase[, i_sample - 9, 2]
+        truth_dosage <- phase[which_snps, i_sample - 9, 1] + phase[which_snps, i_sample - 9, 2]
         expect_equal(sum(dosage < 0), 0)
         expect_equal(sum(dosage > 2), 0)
         ## print to screen first
@@ -418,6 +421,7 @@ check_vcf_against_phase <- function(
 check_bgen_gp_against_phase <- function(
     gp,
     phase,
+    which_snps,    
     tol = 0.2
 ) {
     for(i_sample in 1:dim(gp)[[2]]) {
@@ -429,7 +433,7 @@ check_bgen_gp_against_phase <- function(
         expect_equal(sum(genotype_posteriors + 1e-8 < 0), 0)
         expect_equal(sum(genotype_posteriors - 1e-8 > 1), 0)
         gp_dosage <- genotype_posteriors[, 2] + 2 * genotype_posteriors[, 3]
-        truth_dosage <- phase[, i_sample, 1] + phase[, i_sample, 2]
+        truth_dosage <- phase[which_snps, i_sample, 1] + phase[which_snps, i_sample, 2]
         ## pre-check
         if (sum(abs(gp_dosage - truth_dosage) > tol) > 0) {
             print(paste0("i_sample = ", i_sample))

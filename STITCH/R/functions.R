@@ -1773,7 +1773,7 @@ extract_validate_and_load_haplotypes <- function(
         na.strings = "-"
     )
 
-    system(paste0("rm ", temp_haps_file))
+    unlink(temp_haps_file)
     haps <- as.matrix(haps)
 
     haps <- remove_NA_columns_from_haps(haps)
@@ -1927,152 +1927,151 @@ validate_legend_header <- function(
 
 ## ugh this needs a clean
 downsample_the_samples <- function(
-  downsampleSamplesKeepList,
-  downsampleSamples,
-  highCovInLow,
-  nCores,
-  blockSize,
-  N,
-  inputBundleBlockSize,
-  bundling_info,
-  sampleNames,
-  regionName,
-  tempdir,
-  outputdir,
-  environment
-) {
-
-  print_message(paste0("Begin downsample samples to ",100 * downsampleSamples , "% of the original numbers"))
-  keep <- array(FALSE,N)
-  keelList <- NULL
-  # keep - either those on a list, or the high coverage
-  if (is.na(downsampleSamplesKeepList) == FALSE) {
-    if (file.exists(downsampleSamplesKeepList)) {
-      keepList <- read.table(downsampleSamplesKeepList)
-      keep[unlist(keepList)]=TRUE
-    }
-  }
-  if (length(highCovInLow) > 0) {
-    keep[highCovInLow] <- TRUE
-  }
-  # sample remaining samples to keep
-  which <- sample(
-    1:sum(keep == FALSE),
-    N * downsampleSamples - sum(keep)
-  )
-  keep[keep == FALSE][which] <- TRUE
-
-  new_N <- sum(keep)
-  keepL <- which(keep)
-  new_sampleNames <- sampleNames[keep]
-
-  if (length(highCovInLow > 0))
-    new_highCovInLow <- match(sampleNames[highCovInLow], new_sampleNames)
-
-
-  new_bundling_info <- get_bundling_position_information(
-    N = new_N,
-    nCores = nCores,
-    blockSize = inputBundleBlockSize
-  )
-
-  sampleRanges <- getSampleRange(new_N, nCores)
-
-  f <- function(sampleRange, keepL, tempdir, regionName, bundling_info, new_bundling_info) {
-    bundledSampleReads <- NULL
-    for(iSample in sampleRange[1]:sampleRange[2])
-    {
-
-      oldSample <- keepL[iSample]
-      newSample <- iSample
-
-      out <- get_sampleReads_from_dir_for_sample(
-        dir = tempdir,
-        regionName = regionName,
-        iSample = oldSample,
-        bundling_info = bundling_info,
-        bundledSampleReads = bundledSampleReads
-      )
-      sampleReads <- out$sampleReads
-      bundledSampleReads <- out$bundledSampleReads
-
-      # hack - if inputBundleBlockSize = NA, then would overwrite
-      # so save to slightly different name, then push
-      regionNameLocal <- regionName
-      if (length(bundling_info) == 0)
-        regionNameLocal <- paste0(regionName, ".TEMP.")
-
-      save(
-        sampleReads,
-        file = file_sampleReads(tempdir, newSample, regionNameLocal)
-      )
-
-      if (length(new_bundling_info) > 0) {
-      last_in_bundle <- new_bundling_info$matrix[newSample, "last_in_bundle"]
-        if (last_in_bundle == 1) {
-          bundle_inputs_after_generation(
-            bundling_info = new_bundling_info,
-            iBam = newSample,
-            dir = tempdir,
-            regionName = regionName
-          )
-        }
-      }
-
-    }
-  }
-
-
-  if(environment=="server")
-  {
-    out2=mclapply(sampleRanges, mc.cores=nCores,FUN=f, keepL= keepL, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info, new_bundling_info = new_bundling_info)
-  }
-  if(environment=="cluster")
-  {
-    cl = makeCluster(nCores, type = "FORK")
-    out2 = parLapply(cl, sampleRanges, fun=f, keepL= keepL, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info, new_bundling_info = new_bundling_info)
-    stopCluster(cl)
-  }
-  error_check <- sapply(out2, class) == "try-error"
-  if (sum(error_check) > 0) {
-    print_message(out2[[which(error_check)[1]]])
-    stop("There has been an error downsampling the samples. Please see error message above")
-  }
-
-  # continuation of hack from above
-  # do not want to over-write files
-  if (length(bundling_info) == 0) {
-    # remove original ones, push new ones
-    system(paste0("rm ", file_sampleReads(tempdir, "*", regionName)))
-    regionNameLocal <- paste0(regionName, ".TEMP.")
-    for(iSample in 1:new_N) {
-      system(paste0("mv ",
-        file_sampleReads(tempdir, iSample, regionNameLocal),
-        " ",
-        file_sampleReads(tempdir, iSample, regionName)
-      ))
-    }
-  }
-
-
-  save(
+    downsampleSamplesKeepList,
+    downsampleSamples,
+    highCovInLow,
+    nCores,
+    blockSize,
+    N,
+    inputBundleBlockSize,
+    bundling_info,
     sampleNames,
-    keepL,
-    file = paste0(
-      outputdir, "RData/keepL.", regionName, ".RData"
+    regionName,
+    tempdir,
+    outputdir,
+    environment
+) {
+    
+    print_message(paste0("Begin downsample samples to ",100 * downsampleSamples , "% of the original numbers"))
+    keep <- array(FALSE,N)
+    keelList <- NULL
+    ## keep - either those on a list, or the high coverage
+    if (is.na(downsampleSamplesKeepList) == FALSE) {
+        if (file.exists(downsampleSamplesKeepList)) {
+            keepList <- read.table(downsampleSamplesKeepList)
+            keep[unlist(keepList)]=TRUE
+        }
+    }
+    if (length(highCovInLow) > 0) {
+        keep[highCovInLow] <- TRUE
+    }
+    ## sample remaining samples to keep
+    which <- sample(
+        1:sum(keep == FALSE),
+        N * downsampleSamples - sum(keep)
     )
-  )
+    keep[keep == FALSE][which] <- TRUE
+
+    new_N <- sum(keep)
+    keepL <- which(keep)
+    new_sampleNames <- sampleNames[keep]
+    
+    if (length(highCovInLow > 0)) {
+        new_highCovInLow <- match(sampleNames[highCovInLow], new_sampleNames)
+    }
+    
+    
+    new_bundling_info <- get_bundling_position_information(
+        N = new_N,
+        nCores = nCores,
+        blockSize = inputBundleBlockSize
+    )
+    
+    sampleRanges <- getSampleRange(new_N, nCores)
+    
+    f <- function(sampleRange, keepL, tempdir, regionName, bundling_info, new_bundling_info) {
+        bundledSampleReads <- NULL
+        for(iSample in sampleRange[1]:sampleRange[2]) {
+            
+            oldSample <- keepL[iSample]
+            newSample <- iSample
+            
+            out <- get_sampleReads_from_dir_for_sample(
+                dir = tempdir,
+                regionName = regionName,
+                iSample = oldSample,
+                bundling_info = bundling_info,
+                bundledSampleReads = bundledSampleReads
+            )
+            sampleReads <- out$sampleReads
+            bundledSampleReads <- out$bundledSampleReads
+
+            ## hack - if inputBundleBlockSize = NA, then would overwrite
+            ## so save to slightly different name, then push
+            regionNameLocal <- regionName
+            if (length(bundling_info) == 0)
+                regionNameLocal <- paste0(regionName, ".TEMP.")
+            
+            save(
+                sampleReads,
+                file = file_sampleReads(tempdir, newSample, regionNameLocal)
+            )
+            
+            if (length(new_bundling_info) > 0) {
+                last_in_bundle <- new_bundling_info$matrix[newSample, "last_in_bundle"]
+                if (last_in_bundle == 1) {
+                    bundle_inputs_after_generation(
+                        bundling_info = new_bundling_info,
+                        iBam = newSample,
+                        dir = tempdir,
+                        regionName = regionName
+                    )
+                }
+            }
+            
+        }
+    }
+    
+    
+    if(environment=="server") {
+        out2=mclapply(sampleRanges, mc.cores=nCores,FUN=f, keepL= keepL, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info, new_bundling_info = new_bundling_info)
+    }
+    if(environment=="cluster") {
+        cl = makeCluster(nCores, type = "FORK")
+        out2 = parLapply(cl, sampleRanges, fun=f, keepL= keepL, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info, new_bundling_info = new_bundling_info)
+        stopCluster(cl)
+    }
+    check_mclapply_OK(out2, "There has been an error downsampling the samples. Please see error message above")
+
+    ## continuation of hack from above
+    ## do not want to over-write files
+    if (length(bundling_info) == 0) {
+        ## remove original ones, push new ones
+        for(iSample in 1:N) {
+            unlink(file_sampleReads(tempdir, iSample, regionName))
+        }
+        regionNameLocal <- paste0(regionName, ".TEMP.")
+        for(iSample in 1:new_N) {
+            system(
+                paste0(
+                    "mv ",
+                    "'", file_sampleReads(tempdir, iSample, regionNameLocal), "'",
+                    " ",
+                    "'", file_sampleReads(tempdir, iSample, regionName), "'"
+                )
+            )
+        }
+    }
+    
+
+    save(
+        sampleNames,
+        keepL,
+        file = file.path(
+            outputdir, "RData", paste0("keepL.", regionName, ".RData")
+        )
+    )
 
   print_message("End downsample samples")
-
-  return(
-    list(
-      N = new_N,
-      sampleNames = new_sampleNames,
-      bundling_info = new_bundling_info,
-      highCovInLow = new_highCovInLow
+    
+    return(
+        list(
+            N = new_N,
+            sampleNames = new_sampleNames,
+            bundling_info = new_bundling_info,
+            highCovInLow = new_highCovInLow
+        )
     )
-  )
 }
 
 
@@ -4384,6 +4383,16 @@ get_transMatRate <- function(method, sigmaCurrent) {
     return(transMatRate_t)
 }
 
+check_mclapply_OK <- function(out, stop_message = "An error occured during STITCH. The first such error is above") {
+    te <- sapply(out, class) == "try-error"
+    if (sum(te) > 0) {
+        print_message(out[[which(te)[1]]]) # print first error
+        stop(stop_message)
+    }
+    return(NULL)
+}
+
+
 completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent,alphaMatCurrent,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrent,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, output_format, B_bit_prob, nSNPsInRegion, start_and_end_minus_buffer
 ) {
 
@@ -4452,16 +4461,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         single_iteration_results <- parLapply(cl, x3, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs, nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, x3 = x3, N = N, shuffleHaplotypeIterations = shuffleHaplotypeIterations,niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, breaks = breaks, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, output_format = output_format, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer)
         stopCluster(cl)
     }
-
-    ##
-    ## done running samples
-    ## first, check if there was an error, print it
-    ##
-    te <- sapply(single_iteration_results, class) == "try-error"
-    if (sum(te) > 0) {
-        print_message(single_iteration_results[[which(te)[1]]]) # print first error
-        stop("An error occured during STITCH. The first such error is above")
-    }
+    check_mclapply_OK(single_iteration_results)
 
 
     ##
