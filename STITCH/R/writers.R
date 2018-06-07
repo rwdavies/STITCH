@@ -1,5 +1,5 @@
 ## functions to do with writing results to disk
-## either VCF or bgen
+## either bgvcf or bgen
 
 
 ## if want to output genotype probabilities in VCF format
@@ -368,6 +368,7 @@ write_vcf_after_EM <- function(
     method,
     output_format,
     start_and_end_minus_buffer,
+    alleleCount,
     vcf.piece_unique = "."
 ) {
     ## set up file names
@@ -378,16 +379,26 @@ write_vcf_after_EM <- function(
     ##
     ## do header lines
     ##
-    header_line_if_ref_panel_snps <- NULL
-    if (sum(reference_panel_SNPs) > 0)
-        header_line_if_ref_panel_snps <- '##INFO=<ID=REF_PANEL,Number=.,Type=Integer,Description="Whether a SNP was (1) or was not (0) found in the reference panel during imputation">\n'
+    inRegion <- array(FALSE, nSNPs)
+    inRegion[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2]] <- TRUE
+    ##
+    out <- get_per_snp_annot(
+        output_format = output_format,
+        estimatedAlleleFrequency = estimatedAlleleFrequency,
+        info = info,
+        hwe = hwe,
+        reference_panel_SNPs = reference_panel_SNPs,
+        inRegion = inRegion,
+        alleleCount = alleleCount
+    )
+    ##
+    INFO <- out$INFO
+    annot_header <- out$annot_header
+    ## 
     header <- paste0(
         '##fileformat=VCFv4.0\n',
-        '##INFO=<ID=INFO_SCORE,Number=.,Type=Float,Description="Info score">\n',
-        '##INFO=<ID=EAF,Number=.,Type=Float,Description="Estimated allele frequency">\n',
-        '##INFO=<ID=HWE,Number=.,Type=Float,Description="Hardy-Weinberg p-value">\n',
-        header_line_if_ref_panel_snps,
         '##FORMAT=<ID=GT,Number=1,Type=String,Description="Best Guessed Genotype with posterior probability threshold of 0.9">\n',
+        annot_header,
         '##FORMAT=<ID=GP,Number=3,Type=Float,Description="Posterior genotype probability of 0/0, 0/1, and 1/1">\n',
         '##FORMAT=<ID=DS,Number=1,Type=Float,Description="Dosage">\n'
     )
@@ -409,17 +420,6 @@ write_vcf_after_EM <- function(
     ##
     options(scipen=6)
     ##
-    inRegion <- array(FALSE, nSNPs)
-    inRegion[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2]] <- TRUE
-    ##
-    INFO <- paste0(
-        "EAF=", round(estimatedAlleleFrequency, 5), ";",
-        "INFO_SCORE=", round(info, 5), ";",
-        "HWE=", hwe
-    )
-    if (sum(reference_panel_SNPs) > 0) {
-        INFO <- paste0(INFO, ";REF_PANEL=", as.integer(reference_panel_SNPs[inRegion]))
-    }
     write.table(
         matrix(
             paste(
@@ -511,3 +511,132 @@ get_files_to_paste <- function(N, nCores, outputBlockSize, outputdir, vcf.piece_
     })
     return(files_to_paste)
 }
+
+
+## centralize this to assure that whatever the output method, the same annotations are written to both files
+get_per_snp_annot <- function(
+    output_format,
+    estimatedAlleleFrequency,
+    info,
+    hwe,
+    reference_panel_SNPs,
+    inRegion,
+    alleleCount
+) {
+    if (output_format == "bgvcf") {
+        INFO <- paste0(
+            "EAF=", round(estimatedAlleleFrequency, 5), ";",
+            "INFO_SCORE=", round(info, 5), ";",
+            "HWE=", hwe, ";",
+            "ERC=", round(alleleCount[inRegion, 1], 5), ";",
+            "EAC=", round(alleleCount[inRegion, 2] - alleleCount[inRegion, 1], 5), ";",
+            "PAF=", round(alleleCount[inRegion, 3], 5)
+        )
+        annot_header <- paste0(
+            '##INFO=<ID=INFO_SCORE,Number=.,Type=Float,Description="Info score">\n',
+            '##INFO=<ID=EAF,Number=.,Type=Float,Description="Estimated allele frequency">\n',
+            '##INFO=<ID=HWE,Number=.,Type=Float,Description="Hardy-Weinberg p-value">\n',
+            '##INFO=<ID=ERC,Number=.,Type=Float,Description="Estimated number of copies of the reference allele from the pileup">\n',
+            '##INFO=<ID=EAC,Number=.,Type=Float,Description="Estimated number of copies of the alternate allele from the pileup">\n',
+            '##INFO=<ID=PAF,Number=.,Type=Float,Description="Estimated allele frequency using the pileup of reference and alternate alleles">\n'
+        )
+        if (sum(reference_panel_SNPs) > 0) {
+            INFO <- paste0(INFO, ";REF_PANEL=", as.integer(reference_panel_SNPs[inRegion]))
+            annot_header <- paste0(
+                annot_header,
+                '##INFO=<ID=REF_PANEL,Number=.,Type=Integer,Description="Whether a SNP was (1) or was not (0) found in the reference panel during imputation">\n'
+            )
+        }
+    } else {
+        INFO <- data.frame(
+            "EAF" =  round(estimatedAlleleFrequency, 5),
+            "INFO_SCORE" = round(info, 5),
+            "HWE" = hwe,
+            "ERC" = round(alleleCount[inRegion, 1], 5),
+            "EAC" = round(alleleCount[inRegion, 2] - alleleCount[inRegion, 1], 5),
+            "PAF" = round(alleleCount[inRegion, 3], 5)
+        )
+        annot_header <- c(
+            '#INFO_SCORE Imputation info score, same as IMPUTE info measure I_A',
+            '#EAF Estimated allele frequency after imputation',
+            '#HWE Hardy-Weinberg p-value',
+            '#ERC Estimated number of copies of the reference allele from the pileup',
+            '#EAC Estimated number of copies of the alternate allele from the pileup',
+            '#PAF Estimated allele frequency using the pileup of reference and alternate alleles'
+        )
+        if (sum(reference_panel_SNPs) > 0) {
+            INFO$REF_PANEL <- as.integer(reference_panel_SNPs[inRegion])
+            annot_header <- c(
+                annot_header,
+                '#REF_PANEL Whether a SNP was (1) or was not (0) found in the reference panel during imputation'
+            )
+        }
+    }
+    return(
+        list(
+            INFO = INFO,
+            annot_header = annot_header
+        )
+    )
+}
+
+
+make_and_write_bgen_per_snp_annot_file <- function(
+    to_use_output_filename,
+    estimatedAlleleFrequency,
+    info,
+    hwe,
+    reference_panel_SNPs,
+    start_and_end_minus_buffer,
+    nSNPs,
+    alleleCount,
+    var_info
+    ) {
+    save(
+        to_use_output_filename,
+    estimatedAlleleFrequency,
+    info,
+    hwe,
+    reference_panel_SNPs,
+    start_and_end_minus_buffer,
+    nSNPs,
+    alleleCount,
+    var_info,
+    file = "~/temp.RData")
+    ## first six columns match gen spec
+    ## next columns give more
+    inRegion <- array(FALSE, nSNPs)
+    inRegion[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2]] <- TRUE
+    ## this returns a data.frame for bgen
+    out <- get_per_snp_annot(
+        output_format = "bgen",
+        estimatedAlleleFrequency = estimatedAlleleFrequency,
+        info = info,
+        hwe = hwe,
+        reference_panel_SNPs = reference_panel_SNPs,
+        inRegion = inRegion,
+        alleleCount = alleleCount
+    )
+    INFO <- out$INFO
+    annot_header <- out$annot_header
+    out_file <- paste0(to_use_output_filename, ".per_snp_stats.txt")
+    annot_header <- c(
+        paste0("#STITCH ", sessionInfo()$otherPkgs$STITCH$Version, " per-SNP imputation statistics and other annotations"),
+        paste0("#First 6 columns are from .gen specification, where VAR_ID=<chr>:<position>:<ref>:<alt>. The rest are as follows"),
+        annot_header
+    )
+    cat(annot_header, file = out_file, sep = "\n")
+    ## add in POS and VARID defined as above
+    suppressWarnings(write.table(
+        cbind(var_info, INFO),
+        file = out_file,
+        row.names = FALSE,
+        col.names = TRUE,
+        sep = "\t",
+        quote = FALSE,
+        append = TRUE
+    ))
+    system(paste0("gzip -1 '", out_file, "'"))
+    return(NULL)
+}
+    

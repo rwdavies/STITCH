@@ -584,14 +584,27 @@ STITCH <- function(
     )
     if (output_format == "bgvcf") {
         print_message("Write output to bgzip-VCF file")        
-        write_vcf_after_EM(to_use_output_filename = to_use_output_filename, outputdir = outputdir, regionName = regionName, sampleNames = sampleNames, tempdir = tempdir, nCores = nCores, info = info, hwe = hwe, estimatedAlleleFrequency = estimatedAlleleFrequency, pos = pos, N = N, outputBlockSize = outputBlockSize, reference_panel_SNPs = reference_panel_SNPs, method = method, vcf.piece_unique = vcf.piece_unique, output_format = output_format, start_and_end_minus_buffer = start_and_end_minus_buffer, nSNPs = nSNPs)
+        write_vcf_after_EM(to_use_output_filename = to_use_output_filename, outputdir = outputdir, regionName = regionName, sampleNames = sampleNames, tempdir = tempdir, nCores = nCores, info = info, hwe = hwe, estimatedAlleleFrequency = estimatedAlleleFrequency, pos = pos, N = N, outputBlockSize = outputBlockSize, reference_panel_SNPs = reference_panel_SNPs, method = method, vcf.piece_unique = vcf.piece_unique, output_format = output_format, start_and_end_minus_buffer = start_and_end_minus_buffer, nSNPs = nSNPs, alleleCount = alleleCount)
     } else {
         print_message("Write output to bgen file")
+        ## write annot first
+        var_info <- make_var_info(pos, start_and_end_minus_buffer)
+        make_and_write_bgen_per_snp_annot_file(
+            to_use_output_filename = to_use_output_filename,
+            estimatedAlleleFrequency = estimatedAlleleFrequency,
+            info = info,
+            hwe = hwe,
+            reference_panel_SNPs = reference_panel_SNPs,
+            start_and_end_minus_buffer = start_and_end_minus_buffer,
+            nSNPs = nSNPs,
+            alleleCount = alleleCount,
+            var_info = var_info
+        )
         ## see rrbgen for var_info spec
         rrbgen::rrbgen_write(
             bgen_file = to_use_output_filename,
             sample_names = sampleNames,
-            var_info = make_var_info(pos, start_and_end_minus_buffer),
+            var_info = var_info,
             gp = NULL, ## set these to null as we use list approach
             list_of_gp_raw_t = list_of_gp_raw_t,
             free = NULL, ## free space in header, leave blank
@@ -4254,8 +4267,8 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
                 gp_t <- gp_t[, inRegion]
             }
             ##
-            eij <- gp_t[2, ] + 2 * gp_t[3, ]
-            fij <- gp_t[2, ] + 4 * gp_t[3, ]
+            eij <- round(gp_t[2, ] + 2 * gp_t[3, ], 3) ## prevent weird rounding issues
+            fij <- round(gp_t[2, ] + 4 * gp_t[3, ], 3) ## 
             infoCount[, 1] <- infoCount[, 1] + eij
             infoCount[, 2] <- infoCount[, 2] + (fij - eij**2)
             ## this returns un-transposed results
@@ -4506,6 +4519,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         thetaHat <- infoCount[,1] / 2 / N
         denom <- 2 * N * thetaHat * (1-thetaHat)
         info <- 1 - infoCount[,2] / denom
+        info[(thetaHat == 0) | (thetaHat == 1)] <- 1
         estimatedAlleleFrequency <- afCount / N
         hwe <- generate_hwe_on_counts(hweCount, nSNPsInRegionMinusBuffer, nCores)
     }

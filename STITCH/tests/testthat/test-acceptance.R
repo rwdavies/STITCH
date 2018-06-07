@@ -24,6 +24,7 @@ n_snps <- 10
 reads_span_n_snps <- 6
 chr <- 1
 n_reads <- 5 / (reads_span_n_snps / n_snps) ## want about 5X / sample
+extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
 
 if (run_acceptance_tests | run_only_one_acceptance_test) {
     phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
@@ -125,6 +126,88 @@ test_that("STITCH diploid works under default parameters", {
 
 })
 
+
+test_that("STITCH diploid can write to bgen", {
+
+    skip_test_if_TRUE(run_acceptance_tests)
+    outputdir <- make_unique_tempdir()
+    
+    sink("/dev/null")
+
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,        
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        output_format = "bgen"
+    )
+
+    sink()
+
+    out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
+
+    expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[, "CHR"]))
+    expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[, "POS"]))
+    expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[, "REF"]))
+    expect_equal(as.character(out_gp$var_info[, "alt"]), as.character(data_package$pos[, "ALT"]))        
+    check_bgen_gp_against_phase(
+        gp = out_gp$gp,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+    var_info <- read.table(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen.per_snp_stats.txt.gz")),
+        header = TRUE
+    )
+    expect_equal(nrow(snp_info), 10)
+    expect_equal((var_info[, "INFO_SCORE"] > 0.98), rep(TRUE, nrow(snp_info)))    
+    
+})
+
+
+
+## afterwards, everything should test both bgen and bgvcf
+
+test_that("STITCH diploid works with multiple cores", {
+
+    skip_test_if_TRUE(run_acceptance_tests | run_only_one_acceptance_test)
+    
+    for(output_format in c("bgvcf", "bgen")) {
+
+        sink("/dev/null")
+
+        outputdir <- make_unique_tempdir()        
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            nCores = 4,
+            output_format = output_format
+        )
+
+        sink()
+        
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 0.2
+        )
+        
+    }
+
+
+})
 
 
 test_that("STITCH diploid works under default parameters when outputdir has a space in it", {
@@ -415,7 +498,8 @@ test_that("STITCH can initialize with reference data", {
 test_that("STITCH can initialize with reference data with defined regionStart and regionEnd", {
 
     skip_test_if_TRUE(run_acceptance_tests)
-    outputdir <- make_unique_tempdir()    
+    outputdir <- make_unique_tempdir()
+    
     sink("/dev/null")
 
     set.seed(10)
@@ -506,8 +590,10 @@ test_that("STITCH can initialize with reference data for certain populations", {
 
 
 test_that("STITCH can initialize with reference data for certain populations for defined regionStart and regionEnd", {
+    
     skip_test_if_TRUE(run_acceptance_tests)
-    outputdir <- make_unique_tempdir()    
+    outputdir <- make_unique_tempdir()
+    
     sink("/dev/null")
 
     regionStart <- 3
@@ -533,11 +619,12 @@ test_that("STITCH can initialize with reference data for certain populations for
 
     sink()
 
+    vcf_file <- file.path(
+        outputdir,
+        paste0("stitch.", data_package$chr, ".", regionStart, ".", regionEnd, ".vcf.gz")
+    )
     vcf <- read.table(
-        file.path(
-            outputdir,
-            paste0("stitch.", data_package$chr, ".", regionStart, ".", regionEnd, ".vcf.gz")
-        ),
+        vcf_file,
         header = FALSE,
         stringsAsFactors = FALSE
     )
@@ -1084,30 +1171,29 @@ test_that("STITCH diploid works with snap to grid", {
 
     skip_test_if_TRUE(run_acceptance_tests)
     outputdir <- make_unique_tempdir()
-    sink("/dev/null")
-    
-    set.seed(10)
-    STITCH(
-        chr = data_package$chr,
-        bamlist = data_package$bamlist,
-        posfile = data_package$posfile,
-        genfile = data_package$genfile,        
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        nCores = 1,
-        outputBlockSize = 3,
-        gridWindowSize = 2
-    )
 
-    sink()
+    set.seed(10)    
+    for(output_format in c("bgvcf", "bgen")) {
 
-    vcf <- read.table(
-        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
-        header = FALSE,
-        stringsAsFactors = FALSE
-    )
+        sink("/dev/null")
+        
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,        
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            nCores = 1,
+            outputBlockSize = 3,
+            gridWindowSize = 2
+        )
 
+        sink()
+
+        file <- file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz"))
+        
     check_vcf_against_phase(
         vcf = vcf,
         phase = data_package$phase,
@@ -1198,109 +1284,4 @@ test_that("STITCH pseudoHaploid works with grid", {
 
 
 
-test_that("STITCH diploid can write to bgen", {
 
-    skip_test_if_TRUE(run_acceptance_tests)
-    outputdir <- make_unique_tempdir()    
-    sink("/dev/null")
-
-    STITCH(
-        chr = data_package$chr,
-        bamlist = data_package$bamlist,
-        posfile = data_package$posfile,
-        genfile = data_package$genfile,        
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        nCores = 1,
-        output_format = "bgen"
-    )
-
-    sink()
-
-    out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
-
-    expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[, "CHR"]))
-    expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[, "POS"]))
-    expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[, "REF"]))
-    expect_equal(as.character(out_gp$var_info[, "alt"]), as.character(data_package$pos[, "ALT"]))        
-    
-    check_bgen_gp_against_phase(
-        gp = out_gp$gp,
-        phase = data_package$phase,
-        tol = 0.2
-    )
-
-    
-})
-
-test_that("STITCH diploid can write to bgen with multiple cores", {
-
-    skip_test_if_TRUE(run_acceptance_tests)
-    outputdir <- make_unique_tempdir()
-    
-    sink("/dev/null")
-    
-    STITCH(
-        chr = data_package$chr,
-        bamlist = data_package$bamlist,
-        posfile = data_package$posfile,
-        genfile = data_package$genfile,        
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        output_format = "bgen",
-        nCores = 4
-    )
-
-    sink()
-
-    out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
-    
-    check_bgen_gp_against_phase(
-        gp = out_gp$gp,
-        phase = data_package$phase,
-        tol = 0.2
-    )
-    
-})
-
-
-test_that("STITCH diploid can write to bgen with regionStart and regionEnd", {
-
-    skip_test_if_TRUE(run_acceptance_tests)
-    outputdir <- make_unique_tempdir()    
-    sink("/dev/null")
-
-    STITCH(
-        chr = data_package$chr,
-        bamlist = data_package$bamlist,
-        posfile = data_package$posfile,
-        genfile = data_package$genfile,        
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        nCores = 1,
-        output_format = "bgen",
-        regionStart = 3,
-        regionEnd = 7,
-        buffer = 1
-    )
-
-    sink()
-
-    regionName <- paste0(data_package$chr, ".", 3, ".", 7)
-    out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", regionName, ".bgen")))
-
-    expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[3:7, "CHR"]))
-    expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[3:7, "POS"]))
-    expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[3:7, "REF"]))
-    expect_equal(as.character(out_gp$var_info[, "alt"]), as.character(data_package$pos[3:7, "ALT"]))        
-    
-    check_bgen_gp_against_phase(
-        gp = out_gp$gp,
-        phase = data_package$phase[3:7, , ],
-        tol = 0.2
-    )
-    
-})

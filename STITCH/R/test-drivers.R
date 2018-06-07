@@ -340,6 +340,46 @@ make_acceptance_test_data_package <- function(
 }
 
 
+check_output_against_phase <- function(
+    file,
+    data_package,
+    output_format,
+    which_snps = NULL,
+    tol = 0.2
+) {
+    if (is.null(which_snps)) {
+        which_snps <- 1:length(data_package$L)
+    }
+    if (substr(file, nchar(file) - 4, nchar(file)) == ".bgen") {
+        out <- rrbgen::rrbgen_load(bgen_file = file)
+        ## check what was written to .bgen
+        expect_equal(as.character(out$var_info[, "chr"]), as.character(data_package$pos[which_snps, "CHR"]))
+        expect_equal(as.character(out$var_info[, "position"]), as.character(data_package$pos[which_snps, "POS"]))
+        expect_equal(as.character(out$var_info[, "ref"]), as.character(data_package$pos[which_snps, "REF"]))
+        expect_equal(as.character(out$var_info[, "alt"]), as.character(data_package$pos[which_snps, "ALT"]))
+        ## 
+        check_bgen_gp_against_phase(
+            gp = out$gp,
+            phase = data_package$phase[which_snps, , ],
+            tol = tol
+        )
+    } else {
+        ## 
+        vcf <- read.table(
+            file,
+            header = FALSE,
+            stringsAsFactors = FALSE
+        )
+        ## check imputation worked here
+        check_vcf_against_phase(
+            vcf,
+            data_package$phase[which_snps, , ],
+            tol = tol
+        )
+    }
+    return(NULL)
+}
+
 check_vcf_against_phase <- function(
     vcf,
     phase,
