@@ -1,3 +1,7 @@
+* v1.5.0
+	* Add option to write to bgen output
+	* Make writing bgzipped VCFs more efficient
+	* Various other minor speedups
 * v1.4.2
 	* Introduce new variable maxEmissionMatrixDifference to better control magnitude of differences in emission matrix, and reduce underflow likelihood when using gridWindowSize
 	* Apply downsampling to gridded sampleReads to reduce underflow likelihood
