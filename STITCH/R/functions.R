@@ -40,7 +40,6 @@
 #' @param keepInterimFiles Whether to keep interim parameter estimates
 #' @param keepTempDir Whether to keep files in temporary directory
 #' @param environment Whether to use server or cluster multicore options
-#' @param pseudoHaploidModel How to model read probabilities in pseudo diploid model (shouldn't be changed)
 #' @param switchModelIteration Whether to switch from pseudoHaploid to diploid and at what iteration (NA for no switching)
 #' @param generateInputOnly Whether to just generate input data then quit
 #' @param restartIterations In pseudoHaploid method, which iterations to look for collapsed haplotype prnobabilities to resolve
@@ -110,7 +109,6 @@ STITCH <- function(
     keepInterimFiles = FALSE,
     keepTempDir = FALSE,
     environment = "server",
-    pseudoHaploidModel = 9,
     outputHaplotypeProbabilities = FALSE,
     switchModelIteration = NA,
     generateInputOnly = FALSE,
@@ -147,12 +145,15 @@ STITCH <- function(
     )
     print_message(paste0("Running ", command_line))
 
+    ## #' @param pseudoHaploidModel How to model read probabilities in pseudo diploid model (shouldn't be changed)    
+    pseudoHaploidModel <- 9 ## remove this from being settable
+    
     ##    K_subset = NA,
     ##    K_random = NA
     ## #' @param K_subset In diploid_subset mode, how many haplotypes to investigate per sample
     ## #' @param K_random In diploid_subset mode, how many random haplotypes to use per-sample (taken from K_subset)
     
-    phasefile = "" ## do not export for now
+    phasefile <- "" ## do not export for now
     ##  #' @param phasefile Path to phase file with truth phasing results. Empty for no phasefile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = ref and 1 = alt, separated by a vertical bar |, e.g. 0|0 or 0|1. Note therefore this file has one more row than posfile which has no header
 
     outputHaplotypeProbabilities <- FALSE ## do not export for now
@@ -196,6 +197,7 @@ STITCH <- function(
     ## validate parameters
     ##
     ##
+    validate_method(method)
     validate_chr(chr)
     validate_nGen(nGen)
     validate_nCores(nCores)
@@ -365,7 +367,7 @@ STITCH <- function(
     ##
     ## if necessary, shrink BAMs, but only if regenerateInput = FALSE
     ##
-    shrinkReads(N = N, nCores = nCores, sampleRange = sampleRange, originalRegionName = originalRegionName, regionName = regionName, bundling_info = bundling_info, tempdir = tempdir, inputdir = inputdir, inRegionL = inRegionL, environment = environment, regenerateInput = regenerateInput, inputBundleBlockSize = inputBundleBlockSize)
+    shrinkReads(N = N, nCores = nCores, originalRegionName = originalRegionName, regionName = regionName, bundling_info = bundling_info, tempdir = tempdir, inputdir = inputdir, inRegionL = inRegionL, environment = environment, regenerateInput = regenerateInput, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -2898,18 +2900,17 @@ file_haplotypes <- function(
 
 
 shrinkReads <- function(
-  N,
-  nCores,
-  sampleRange,
-  originalRegionName,
-  regionName,
-  bundling_info,
-  tempdir,
-  inputdir,
-  inRegionL,
-  environment,
-  regenerateInput,
-  inputBundleBlockSize
+    N,
+    nCores,
+    originalRegionName,
+    regionName,
+    bundling_info,
+    tempdir,
+    inputdir,
+    inRegionL,
+    environment,
+    regenerateInput,
+    inputBundleBlockSize
 ) {
 
     if(regenerateInput == TRUE | regionName == originalRegionName) {
@@ -2946,7 +2947,7 @@ shrinkReads <- function(
         }
         if(environment == "cluster") {
             cl <- makeCluster(nCores, type = "FORK")
-            out <- parLapply(cl, sampleRanges,fun=shrinkReads,originalRegionName = originalRegionName, regionName = regionName, bundling_info = bundling_info, tempdir = tempdir, inputdir = inputdir, inRegionL = inRegionL)
+            out <- parLapply(cl, sampleRanges,fun=shrinkReads_on_range,originalRegionName = originalRegionName, regionName = regionName, bundling_info = bundling_info, tempdir = tempdir, inputdir = inputdir, inRegionL = inRegionL)
             stopCluster(cl)
         }
         error_check <- sapply(out, class) == "try-error"
@@ -3763,7 +3764,6 @@ run_forward_backwards <- function(
                 pi = priorCurrent,
                 pRgivenH1 = pRgivenH1L,
                 pRgivenH2 = pRgivenH2L,
-                pState = matrix(0, c(2, 2)), ## hmm, deprecated?
                 eHaps_t = eHapsCurrent_t,
                 alphaMat_t = alphaMatCurrent_t,
                 transMatRate_t = transMatRate_t,
@@ -3771,23 +3771,21 @@ run_forward_backwards <- function(
                 maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
                 whatToReturn = whatToReturn,
                 suppressOutput = as.integer(1),
-                model = as.integer(pseudoHaploidModel)
+                model = as.integer(pseudoHaploidModel),
+                run_pseudo_haploid = as.integer(1)
             )
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
         }
     }
     if(method=="haploid") {
-        ## OK
-        ## how best to do this?
         iNor <- 1
         fbsoL[[iNor]] <- forwardBackwardHaploid(
             sampleReads = sampleReads,
             nReads = as.integer(length(sampleReads)),
             Jmax = as.integer(Jmax),
             pi = priorCurrent,
-            pRgivenH1 = pRgivenH1L,
-            pRgivenH2 = pRgivenH2L,
-            pState = matrix(0, c(2, 2)), ## hmm, deprecated?
+            pRgivenH1 = as.double(0),
+            pRgivenH2 = as.double(0),
             eHaps_t = eHapsCurrent_t,
             alphaMat_t = alphaMatCurrent_t,
             transMatRate_t = transMatRate_t,
@@ -3795,7 +3793,8 @@ run_forward_backwards <- function(
             maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
             whatToReturn = whatToReturn,
             suppressOutput = as.integer(1),
-            model = as.integer(pseudoHaploidModel)
+            model = -1, ## irrelevant for haploid
+            run_pseudo_haploid = as.integer(0)
         )
         fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
     }
@@ -3903,7 +3902,10 @@ within_EM_per_sample_heuristics <- function(
                 for(iNor in 1:nor) {
                     dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
                 }
+                dosage <- dosage / 2
             }
+        } else if(method == "haploid"){
+            dosage <- (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
         } else if(method == "diploid"){
             out <- rcpp_calculate_fbd_dosage(
                 nGrids = nGrids,
@@ -3924,9 +3926,6 @@ within_EM_per_sample_heuristics <- function(
                 grid = grid
             )
             dosage <- out$dosage                
-        }
-        if (nor == 2) {
-            dosage <- dosage / 2
         }
         save(dosage, file=file_dosages(tempdir, iSample, regionName))
     } # end of check on high coverage sample
@@ -4014,6 +4013,13 @@ calculate_gp_t_from_fbsoL <- function(
             grid = grid
         )
         gp_t<- out$genProbs_t
+    } else if (method == "haploid") {
+        ## there are only two posteriors here!
+        gp_t <- array(0, c(2, nSNPs))
+        ## 1 is reference
+        ## 2 is alternate
+        gp_t[2, ] <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))        
+        gp_t[1, ] <- 1 - gp_t[2, ]
     } else if (method == "pseudoHaploid") {
         gp_t <- array(0, c(3, nSNPs))        
         if (nSNPs == nGrids) {
@@ -4131,7 +4137,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     whatToReturnOriginal <- whatToReturn
 
     ## run either once (default) or more than once
-    nor <- 1 # number of runs - 1 for normal diploid method
+    nor <- 1 # number of runs - 1 for normal diploid method, or haploid
     ## run both haplotypes
     if (method == "pseudoHaploid") {
         nor <- 2
@@ -4144,6 +4150,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
 
     who_to_run <- sampleRange[1]:sampleRange[2]
     for (iiSample in 1:length(who_to_run)) {
+        
         iSample <- who_to_run[iiSample]
 
         ## get these from list?
@@ -4383,7 +4390,7 @@ get_transMatRate <- function(method, sigmaCurrent) {
     if (method == "diploid" | method == "diploid_subset") {
         x <- sigmaCurrent
         transMatRate_t <- rbind(x ** 2, x * (1 - x), (1 - x) ** 2)
-    } else if (method == "pseudoHaploid") {
+    } else if ((method == "pseudoHaploid") | (method == "haploid")) {
         transMatRate_t <- rbind(sigmaCurrent, 1 - sigmaCurrent)
     } else {
         stop("bad method")

@@ -54,7 +54,6 @@ Rcpp::NumericVector increment2N(int yT, int xT, Rcpp::NumericVector y, Rcpp::Num
 
 
 
-////Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const arma::mat& eMatHap_t1, const arma::mat& eMatHap_t2, const arma::mat& gamma_t1, const arma::mat& gamma_t2, int K, const arma::ivec& srp) {
 
 //' @export
 // [[Rcpp::export]]
@@ -659,7 +658,7 @@ Rcpp::List rcpp_calculate_fbd_dosage(const int nGrids, const int nSNPs, const in
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int whatToReturn, const int Jmax, const int suppressOutput, const int model, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, arma::mat pState) {
+Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int whatToReturn, const int Jmax, const int suppressOutput, const int model, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid) {
   double prev=clock();
   std::string prev_section="Null";
   std::string next_section="Initialize variables";
@@ -711,63 +710,65 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  for(iRead=0; iRead<=nReads-1; iRead++)
-  {
-    Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-    // recal that below is what is used to set each element of sampleRead
-    // note - this is no longer quite accurate
-    // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
-    J = as<int>(readData[0]); // number of Unique SNPs on read
-    readSNP = as<int>(readData[1]); // leading SNP from read
-    arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
-    arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-    // once each SNP is done, have P(read | k), can multiply to get P(read|(k1,k2))
-    if(J>=Jmax)
-      J=Jmax;
-    for(j=0; j<=J; j++) {
-        if(bqU(j)<0) {
-            eps = pow(10,(double(bqU(j))/10));
-            pR=1-eps;
-            pA=eps/3;
-        }
-        if(bqU(j)>0) {
-            eps = pow(10,(-double(bqU(j))/10));
-            pR=eps/3;
-            pA=1-eps;
-        }
-        jj=pRU(j);
-        for(k=0; k<=K-1; k++)
-            eMatHapOri_t(k,iRead) = eMatHapOri_t(k,iRead) *   \
-                ( eHaps_t(k, jj) * pA + (1-eHaps_t(k,jj)) * pR);
-    } 
-    // 
-    //
-    x=pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
-    //
-    if((model==7) | (model==9))
-        for(k=0; k<=K-1; k++)
-            eMatHap_t(k,iRead) = x * eMatHapOri_t(k,iRead) + (1-x) * pRgivenH2(iRead);
-    if((model==8) | (model==10)) {
-        if(model==8) {
-            pRead=0;
-            for(k=0; k<=K-1; k++)
-                pRead=pRead + eMatHapOri_t(k,iRead) * pState(readSNP,k);
-        }
-        for(k=0; k<=K-1; k++)
-            eMatHap_t(k,iRead) = x * eMatHapOri_t(k,iRead) + (1-x) * pRead;
-    }
-    //
-    // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
-    //
-    x=0;
-    for(k=0; k<=K-1; k++)
-        if(eMatHap_t(k,iRead)>x)
-            x=eMatHap_t(k,iRead);
-    x = x / maxDifferenceBetweenReads;
-    // x is the maximum now
-    for(k=0; k<=K-1; k++)
-        if(eMatHap_t(k,iRead)<x)
-            eMatHap_t(k,iRead) = x;
+  for(iRead=0; iRead<=nReads-1; iRead++) {
+      Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
+      // recal that below is what is used to set each element of sampleRead
+      // note - this is no longer quite accurate
+      // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
+      J = as<int>(readData[0]); // number of Unique SNPs on read
+      readSNP = as<int>(readData[1]); // leading SNP from read
+      arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
+      arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
+      // once each SNP is done, have P(read | k), can multiply to get P(read|(k1,k2))
+      if(J>=Jmax) {
+          J=Jmax;
+      }
+      for(j=0; j<=J; j++) {
+          if(bqU(j)<0) {
+              eps = pow(10,(double(bqU(j))/10));
+              pR=1-eps;
+              pA=eps/3;
+          }
+          if(bqU(j)>0) {
+              eps = pow(10,(-double(bqU(j))/10));
+              pR=eps/3;
+              pA=1-eps;
+          }
+          jj=pRU(j);
+          for(k=0; k<=K-1; k++) {
+              eMatHapOri_t(k,iRead) = eMatHapOri_t(k,iRead) * \
+                  ( eHaps_t(k, jj) * pA + (1-eHaps_t(k,jj)) * pR);
+          }
+      }
+      if (run_pseudo_haploid == 1) {
+          //
+          // pseudo-haploid          
+          //
+          x=pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
+          //
+          for(k=0; k<=K-1; k++) {
+              eMatHap_t(k,iRead) = x * eMatHapOri_t(k,iRead) + (1-x) * pRgivenH2(iRead);
+          }
+      } else {
+          //
+          // regular haploid
+          //
+          for(k=0; k<=K-1; k++) {
+              eMatHap_t(k, iRead) = eMatHapOri_t(k, iRead); // hmm, not efficient, but OK
+          }
+      }
+      //
+      // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
+      //
+      x=0;
+      for(k=0; k<=K-1; k++)
+          if(eMatHap_t(k,iRead)>x)
+              x=eMatHap_t(k,iRead);
+      x = x / maxDifferenceBetweenReads;
+      // x is the maximum now
+      for(k=0; k<=K-1; k++)
+          if(eMatHap_t(k,iRead)<x)
+              eMatHap_t(k,iRead) = x;
   }
   //
   //
@@ -883,62 +884,7 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  //
-  // I should probably delete the below
-  //
-  if((model==7) | (model==8))
-  {
-    for(iRead=0; iRead<=nReads-1; iRead++)
-    {
-      // recal that below is what is used to set each element of sampleRead
-      // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
-      Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-      int J = as<int>(readData[0]); // number of SNPs on read
-      arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
-      arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-      for(j=0; j<=J; j++) // for each SNP in the read
-      {
-        t=pRU(j); // position of this SNP in full T sized matrix
-        //
-        // first haplotype (ie (k,k1))
-        //
-        for(k=0; k<=K-1;k++)
-        {
-          // less than 0 - reference base more likely
-          if(bqU(j)<0)
-          {
-            eps = pow(10,(double(bqU(j))/10));
-            pR=1-eps;
-            pA=eps/3;
-          }
-          if(bqU(j)>0)
-          {
-            eps = pow(10,(-double(bqU(j))/10));
-            pR=eps/3;
-            pA=1-eps;
-          }
-          //
-          //
-          //    
-          x=pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
-          d1 = x * pA * eHaps_t(k, t);
-          d2 = x * pR * (1-eHaps_t(k, t));
-          d= gamma_t(k,t) / eMatHap_t(k,iRead) ;
-          // d1 = x * phiU(j) * eHaps(t,k);
-          // d2 = x * (1-phiU(j)) * (1-eHaps(t,k));
-          // d3 = d1 + d2 + (1-x) * pRgivenH2(iRead); // denom
-          gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + d * d1;
-          gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + d * (d1 + d2);
-        } // end of k
-      } // end of SNP in read 
-    } // end of read
-  } // end of method 7
-  //
-  //
-  if((model==9) | (model==10))
-  {
-    for(iRead=0; iRead<=nReads-1; iRead++)
-    {
+  for(iRead=0; iRead<=nReads-1; iRead++) {
       // recal that below is what is used to set each element of sampleRead
       // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
       Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
@@ -946,7 +892,9 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
       int cr = as<int>(readData[1]); // central SNP in read
       arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
       arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-      d3 = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
+      if (run_pseudo_haploid == 1) {      
+          d3 = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
+      }
       for(j=0; j<=J; j++) {
           t=pRU(j);
           if(bqU(j)<0) {
@@ -960,20 +908,29 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
               pA=1-eps;
           }
           //
-          for(k=0; k<=K-1;k++) {
-              a1 = pA * eHaps_t(k,t);
-              a2 = pR * (1-eHaps_t(k,t)); 
-              y = a1 + a2;
-              b = eMatHapOri_t(k,iRead) * d3 / y;
-              d1 = a1 * b;
-              d2 = a2 * b;
-              d = gamma_t(k,cr) / eMatHap_t(k,iRead);
-              gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + d * d1;
-              gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + d * (d1 + d2);
-          } // end of k
+          if (run_pseudo_haploid == 1) {
+              for(k=0; k<=K-1;k++) {
+                  a1 = pA * eHaps_t(k,t);
+                  a2 = pR * (1-eHaps_t(k,t)); 
+                  y = a1 + a2;
+                  b = eMatHapOri_t(k,iRead) * d3 / y;
+                  d1 = a1 * b;
+                  d2 = a2 * b;
+                  d = gamma_t(k,cr) / eMatHap_t(k,iRead);
+                  gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + d * d1;
+                  gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + d * (d1 + d2);
+              }
+          } else {
+              for(k=0; k<=K-1;k++) {
+                  a1 = pA * eHaps_t(k,t);
+                  a2 = pR * (1-eHaps_t(k,t)); 
+                  d = gamma_t(k,cr) / (a1 + a2);
+                  gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + a1 * d;
+                  gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + d;
+              }
+          }
       } // end of SNP in read 
     } // end of read
-  } // end of method 9
   //
   //
   // make jUpdate
@@ -983,9 +940,11 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  for(t=0; t<=T-2; t++)
-      for(k=0; k<=K-1; k++)
+  for(t=0; t<=T-2; t++) {
+      for(k=0; k<=K-1; k++) {
           jUpdate_t(k,t) = transMatRate_t(1, t) * alphaMat_t(k,t) * betaHat_t(k,t+1) * eMatHapSNP_t(k,t+1);
+      }
+  }
   //
   //
   //

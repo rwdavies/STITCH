@@ -1,3 +1,17 @@
+validate_method <- function(method) {
+    if (class(method) != "character") {
+        stop(paste0("method must have class character but you have selected:", class(method)))
+    }
+    if (
+    (method != "diploid") &
+    (method != "pseudoHaploid") &
+    (method != "haploid")
+    ) {
+        stop(paste0("method must be either diploid, pseudoHaploid or haploid"))
+    }
+    return(NULL)
+}
+
 validate_output_format <- function(output_format) {
     if (class(output_format) != "character") {
         stop(paste0("output_format must have class character but you have selected:", class(output_format)))

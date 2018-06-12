@@ -129,23 +129,25 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
 
-    out <- forwardBackwardHaploid(
-        sampleReads = sampleReads,
-        nReads = as.integer(length(sampleReads)),
-        Jmax = as.integer(10),
-        pi = pi,
-        pRgivenH1 = pRgivenH1L,
-        pRgivenH2 = pRgivenH2L,
-        pState = eHaps,
-        eHaps = t(eHaps),
-        alphaMat = t(alphaMat),
-        transMatRate = t(transMatRate),
-        maxDifferenceBetweenReads = as.double(1000),
-        maxEmissionMatrixDifference = as.double(1e4),        
-        whatToReturn = as.integer(0),
-        suppressOutput=as.integer(1),
-        model=as.integer(9)
-    )
+    for(run_pseudo_haploid in c(TRUE, FALSE)) {
+        out <- forwardBackwardHaploid(
+            sampleReads = sampleReads,
+            nReads = as.integer(length(sampleReads)),
+            Jmax = as.integer(10),
+            pi = pi,
+            pRgivenH1 = pRgivenH1L,
+            pRgivenH2 = pRgivenH2L,
+            eHaps = t(eHaps),
+            alphaMat = t(alphaMat),
+            transMatRate = t(transMatRate),
+            maxDifferenceBetweenReads = as.double(1000),
+            maxEmissionMatrixDifference = as.double(1e4),        
+            whatToReturn = as.integer(0),
+            suppressOutput=as.integer(1),
+            model = as.integer(9),
+            run_pseudo_haploid = run_pseudo_haploid
+        )
+    }
 
     ## basic checks
     expect_equal(ncol(out$gamma_t), n_snps)

@@ -67,8 +67,8 @@ rcpp_calculate_fbd_dosage <- function(nGrids, nSNPs, K, eHaps_t, gamma_t, grid) 
 }
 
 #' @export
-forwardBackwardHaploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, pState) {
-    .Call('_STITCH_forwardBackwardHaploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, pState)
+forwardBackwardHaploid <- function(sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, run_pseudo_haploid) {
+    .Call('_STITCH_forwardBackwardHaploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, whatToReturn, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, run_pseudo_haploid)
 }
 
 #' @export

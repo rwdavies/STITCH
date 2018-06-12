@@ -190,28 +190,30 @@ test_that("can use grid", {
         sigmaCurrent = sigma
     )
 
-    out <- forwardBackwardHaploid(
-        sampleReads = sampleReads,
-        nReads = as.integer(length(sampleReads)),
-        Jmax = as.integer(10),
-        pi = pi,
-        pRgivenH1 = pRgivenH1L,
-        pRgivenH2 = pRgivenH2L,
-        pState = eHaps,
-        eHaps = t(eHaps),
-        alphaMat = t(alphaMat),
-        transMatRate = transMatRate_t,
-        maxDifferenceBetweenReads = as.double(1000),
-        maxEmissionMatrixDifference = as.double(1e10),        
-        whatToReturn = as.integer(0),
-        suppressOutput=as.integer(1),
-        model=as.integer(9)
-    )
+    for(run_pseudo_haploid in c(TRUE, FALSE)) {
+        out <- forwardBackwardHaploid(
+            sampleReads = sampleReads,
+            nReads = as.integer(length(sampleReads)),
+            Jmax = as.integer(10),
+            pi = pi,
+            pRgivenH1 = pRgivenH1L,
+            pRgivenH2 = pRgivenH2L,
+            eHaps = t(eHaps),
+            alphaMat = t(alphaMat),
+            transMatRate = transMatRate_t,
+            maxDifferenceBetweenReads = as.double(1000),
+            maxEmissionMatrixDifference = as.double(1e10),        
+            whatToReturn = as.integer(0),
+            suppressOutput=as.integer(1),
+            model=as.integer(9),
+            run_pseudo_haploid = run_pseudo_haploid
+        )
 
-    expect_equal(ncol(out$gamma_t), nGrids)
-    expect_equal(min(out$gamma_t) >= 0, TRUE)
-    expect_equal(max(out$gamma_t) <= 1, TRUE)    
-
+        expect_equal(ncol(out$gamma_t), nGrids)
+        expect_equal(min(out$gamma_t) >= 0, TRUE)
+        expect_equal(max(out$gamma_t) <= 1, TRUE)
+    }
+        
 })
 
 
