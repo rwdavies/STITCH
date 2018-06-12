@@ -488,7 +488,8 @@ STITCH <- function(
             tempdir = tempdir,
             bundling_info = bundling_info,
             grid = grid,
-            downsampleToCov = downsampleToCov
+            downsampleToCov = downsampleToCov,
+            sampleNames = sampleNames
         )
     }
 
@@ -5836,7 +5837,7 @@ assign_positions_to_grid <- function(L, gridWindowSize) {
 
 
 
-snap_reads_to_grid <- function(N, nCores, regionName, tempdir, bundling_info, grid, downsampleToCov, whatKindOfReads = "sampleReads", verbose = TRUE) {
+snap_reads_to_grid <- function(N, nCores, regionName, tempdir, bundling_info, grid, downsampleToCov, sampleNames, whatKindOfReads = "sampleReads", verbose = TRUE) {
 
     x3 <- getSampleRange(N = N, nCores = nCores)
     print_message("Snap reads to grid")
@@ -5851,6 +5852,7 @@ snap_reads_to_grid <- function(N, nCores, regionName, tempdir, bundling_info, gr
         whatKindOfReads = whatKindOfReads,
         downsampleToCov = downsampleToCov,
         verbose = verbose,
+        sampleNames = sampleNames,
         FUN = snap_reads_to_grid_subfunction
     )
 
@@ -5872,6 +5874,7 @@ snap_reads_to_grid_subfunction <- function(
     grid,
     bundling_info,
     downsampleToCov,
+    sampleNames,
     whatKindOfReads = "sampleReads",
     verbose = TRUE
 ) {

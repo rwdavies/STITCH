@@ -1,13 +1,14 @@
 if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
-    ## dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/Google Drive/STITCH/"
+    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    ## dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     o <- sapply(dir(pattern = "*R"), source)
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     
+
 }
 
 run_only_one_acceptance_test <- TRUE
@@ -1249,6 +1250,8 @@ test_that("STITCH diploid works with snap to grid", {
 })
 
 
+
+
 test_that("STITCH diploid works with snap to grid with a buffer", {
 
     skip_test_if_TRUE(run_acceptance_tests)
@@ -1326,6 +1329,61 @@ test_that("STITCH pseudoHaploid works with grid", {
             tol = 0.5 ## not good!
         )
 
+    }
+
+})
+
+
+test_that("STITCH diploid works with snap to grid with downsampleToCov", {
+
+    ## here need something that gets re-downsampled
+    ## need more snps to make this happen easily
+    skip_test_if_TRUE(run_acceptance_tests)
+    outputdir <- make_unique_tempdir()
+
+    n_snps <- 100
+    phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
+    data_package <- make_acceptance_test_data_package(
+        n_samples = 4,
+        n_snps = n_snps,
+        n_reads = n_snps * 4,
+        seed = 1355,
+        chr = "chr5",
+        K = 2,
+        reads_span_n_snps = 2,
+        phasemaster = phasemaster
+    )
+    
+    for(output_format in c("bgvcf", "bgen")) {
+
+        sink("/dev/null")
+        set.seed(10)
+        
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,        
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            nCores = 1,
+            outputBlockSize = 3,
+            gridWindowSize = 5,
+            output_format = output_format,
+            downsampleToCov = 2 ## insanely low!
+        )
+
+        sink()
+
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 2 ## basically, disable. only care about whether it worked with this toy example
+        )
+        
     }
 
 })
