@@ -3611,9 +3611,8 @@ initialize_readProbs <- function(
             pRgivenH1 <- out$pRgivenH1
             pRgivenH2 <- out$pRgivenH2
             srp <- out$srp
-            delta <- out$delta
             save(
-                pRgivenH1, pRgivenH2, srp, delta,
+                pRgivenH1, pRgivenH2, srp, 
                 file = file_sampleProbs(tempdir, iSample, regionName)
             )
             if (length(bundling_info) > 0) {
@@ -3652,16 +3651,10 @@ get_default_hapProbs <- function(
     pRgivenH1=a1+(b1-a1)*runif(length(sampleReads))
     pRgivenH2=a1+(b1-a1)*runif(length(sampleReads))
     srp <- unlist(lapply(sampleReads,function(x) x[[2]]))
-    delta=0
-    if(pseudoHaploidModel==6) {
-        delta=array(0,length(srp)) # may or may not use?
-        delta=a1+(b1-a1)*runif(length(sampleReads))
-    }
     return(list(
         pRgivenH1 = pRgivenH1,
         pRgivenH2 = pRgivenH2,
-        srp = srp,
-        delta = delta
+        srp = srp
     ))
 }
 
@@ -3691,7 +3684,6 @@ run_forward_backwards <- function(
     pRgivenH1,
     pRgivenH2,
     srp,
-    delta,
     pseudoHaploidModel
 ) {
     
@@ -3759,12 +3751,10 @@ run_forward_backwards <- function(
             if (iNor==1) {
                 pRgivenH1L <- pRgivenH1
                 pRgivenH2L <- pRgivenH2
-                deltaL <- delta
             }
             if (iNor==2) {
                 pRgivenH1L <- pRgivenH2
                 pRgivenH2L <- pRgivenH1
-                deltaL <- 1 - delta
             }
             fbsoL[[iNor]] <- forwardBackwardHaploid(
                 sampleReads = sampleReads,
@@ -3785,6 +3775,29 @@ run_forward_backwards <- function(
             )
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
         }
+    }
+    if(method=="haploid") {
+        ## OK
+        ## how best to do this?
+        iNor <- 1
+        fbsoL[[iNor]] <- forwardBackwardHaploid(
+            sampleReads = sampleReads,
+            nReads = as.integer(length(sampleReads)),
+            Jmax = as.integer(Jmax),
+            pi = priorCurrent,
+            pRgivenH1 = pRgivenH1L,
+            pRgivenH2 = pRgivenH2L,
+            pState = matrix(0, c(2, 2)), ## hmm, deprecated?
+            eHaps_t = eHapsCurrent_t,
+            alphaMat_t = alphaMatCurrent_t,
+            transMatRate_t = transMatRate_t,
+            maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
+            maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
+            whatToReturn = whatToReturn,
+            suppressOutput = as.integer(1),
+            model = as.integer(pseudoHaploidModel)
+        )
+        fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
     }
     if(method=="diploid") {
         fbsoL[[1]] <- forwardBackwardDiploid(
@@ -3832,7 +3845,6 @@ within_EM_per_sample_heuristics <- function(
     pRgivenH1,
     pRgivenH2,
     nSNPs,
-    delta,
     eHapsCurrent_t,
     alphaMatCurrent_t,
     sigmaCurrent,
@@ -3873,12 +3885,11 @@ within_EM_per_sample_heuristics <- function(
     ## update pseudo diploid probabilities
     ##
     if (method == "pseudoHaploid") {
-        r <- pseudoHaploidUpdate(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp,delta=delta, K = K)
+        r <- pseudoHaploidUpdate(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp, K = K)
         pRgivenH1 <- r$pRgivenH1
         pRgivenH2 <- r$pRgivenH2
-        delta <- r$delta
         save(
-            srp, pRgivenH1, pRgivenH2, delta,
+            srp, pRgivenH1, pRgivenH2,
             file = file.path(tempdir, paste0("sample.",iSample,".readProbs.",regionName,".RData"))
         )
     }
@@ -4129,7 +4140,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     pRgivenH1 <- NULL
     pRgivenH2 <- NULL
     srp <- NULL
-    delta <- NULL
     bundledSampleProbs <- NULL
 
     who_to_run <- sampleRange[1]:sampleRange[2]
@@ -4158,7 +4168,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             pRgivenH1 <- out$pRgivenH1
             pRgivenH2 <- out$pRgivenH2
             srp <- out$srp
-            delta <- out$delta
             bundledSampleProbs <- out$bundledSampleProbs
         }
 
@@ -4186,7 +4195,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             pRgivenH1 = pRgivenH1,
             pRgivenH2 = pRgivenH2,
             srp = srp,
-            delta = delta,
             pseudoHaploidModel = pseudoHaploidModel
         )
         fbsoL <- out$fbsoL
@@ -4225,7 +4233,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             pRgivenH1 = pRgivenH1,
             pRgivenH2 = pRgivenH2,
             nSNPs = nSNPs,
-            delta = delta,
             eHapsCurrent_t = eHapsCurrent_t,
             alphaMatCurrent_t = alphaMatCurrent_t,
             sigmaCurrent = sigmaCurrent,
@@ -5605,114 +5612,72 @@ pseudoHaploid_update_9 <- function(
 
 
 pseudoHaploidUpdate <- function(
-    pRgivenH1,pRgivenH2,fbsoL,pseudoHaploidModel,srp,delta, K
+    pRgivenH1,
+    pRgivenH2,
+    fbsoL,
+    pseudoHaploidModel,
+    srp,
+    K
 ) {
-      #
-      # once both haplotypes are available - update omega immediately
-      #
-      # for each read, get new phasing
-      # srp comes in with readProbs originally - doesnt change
-      # 4 things here
-      # 1 - pRgivenH1 - P(R | h1)
-      # 2 - pRgivenH2 - P(R | h2)
-      # note that
-      # 3 - pRandH1 - P(R and H1) = 1/2 P(R| H1)
-      # 4 - pRandH2 - P(R and H2) = 1/2 P(R| H2)
-      ###
-      ### MODEL 1 - divide one by other (y1/(y1+y2)) to get readProbs
-      ###
-      # readProbs is y1/(y1+y2) from above
-      # then probabilities using
-      #    eMatHap(iRead,k) = eMatHap(iRead,k) * readProbs(iRead) + (1/Kd)  * (1-readProbs(iRead));
-      # then updating using multiply both by readProbs
-      # y1=(fbsoL[[1]]$gamma[srp+1,] * fbsoL[[1]]$eMatHap)
-      # y2=(fbsoL[[2]]$gamma[srp+1,] * fbsoL[[2]]$eMatHap)
-      # readProbs=y1/(y1+y2)
-      ###
-      ### MODEL 3, 7 - try to predict which haplotype it came from
-      ###
-      if(pseudoHaploidModel==7 | pseudoHaploidModel==9) {
-          ## original flavour
-          #x=pRgivenH1/(pRgivenH1+pRgivenH2)
-          #y1=(fbsoL[[1]]$eMatHap - (1-x)*pRgivenH2)/x
-          #rowSums(fbsoL[[1]]$gamma[srp+1,] * y1)
-          ## TRANSPOSE - write this in C++
-          out <- pseudoHaploid_update_model_9(
-              pRgivenH1 = pRgivenH1,
-              pRgivenH2 = pRgivenH2,
-              eMatHap_t1 = fbsoL[[1]]$eMatHap_t,
-              eMatHap_t2 = fbsoL[[2]]$eMatHap_t,
-              gamma_t1 = fbsoL[[1]]$gamma_t,
-              gamma_t2 = fbsoL[[2]]$gamma_t,
-              K = K,
-              srp = srp
-          )
-          pRgivenH1 <- out$pRgivenH1
-          pRgivenH2 <- out$pRgivenH2
-          ## bound above below
-          pRgivenH1[pRgivenH1<0.001]=0.001
-          pRgivenH2[pRgivenH2<0.001]=0.001
-          pRgivenH1[pRgivenH1>0.999]=0.999
-          pRgivenH2[pRgivenH2>0.999]=0.999
-      }
-      ###
-      ### MODEL 8
-      ###
-      if(pseudoHaploidModel==8 | pseudoHaploidModel==10)
-      {
+    ##
+    ## once both haplotypes are available - update omega immediately
+    ##
+    ## for each read, get new phasing
+    ## srp comes in with readProbs originally - doesnt change
+    ## 4 things here
+    ## 1 - pRgivenH1 - P(R | h1)
+    ## 2 - pRgivenH2 - P(R | h2)
+    ## note that
+    ## 3 - pRandH1 - P(R and H1) = 1/2 P(R| H1)
+    ## 4 - pRandH2 - P(R and H2) = 1/2 P(R| H2)
+    ##
+    ## MODEL 1 - divide one by other (y1/(y1+y2)) to get readProbs
+    ##
+    ## readProbs is y1/(y1+y2) from above
+    ## then probabilities using
+    ##    eMatHap(iRead,k) = eMatHap(iRead,k) * readProbs(iRead) + (1/Kd)  * (1-readProbs(iRead));
+    ## then updating using multiply both by readProbs
+    ## y1=(fbsoL[[1]]$gamma[srp+1,] * fbsoL[[1]]$eMatHap)
+    ## y2=(fbsoL[[2]]$gamma[srp+1,] * fbsoL[[2]]$eMatHap)
+    ## readProbs=y1/(y1+y2)
+    ##
+    ## MODEL 3, 7 - try to predict which haplotype it came from
+    ##
+    if(pseudoHaploidModel==7 | pseudoHaploidModel==9) {
+        out <- pseudoHaploid_update_model_9(
+            pRgivenH1 = pRgivenH1,
+            pRgivenH2 = pRgivenH2,
+            eMatHap_t1 = fbsoL[[1]]$eMatHap_t,
+            eMatHap_t2 = fbsoL[[2]]$eMatHap_t,
+            gamma_t1 = fbsoL[[1]]$gamma_t,
+            gamma_t2 = fbsoL[[2]]$gamma_t,
+            K = K,
+            srp = srp
+        )
+        pRgivenH1 <- out$pRgivenH1
+        pRgivenH2 <- out$pRgivenH2
+        ## bound above below
+        pRgivenH1[pRgivenH1<0.001]=0.001
+        pRgivenH2[pRgivenH2<0.001]=0.001
+        pRgivenH1[pRgivenH1>0.999]=0.999
+        pRgivenH2[pRgivenH2>0.999]=0.999
+    }
+    ##
+    ## MODEL 8
+    ##
+    if(pseudoHaploidModel==8 | pseudoHaploidModel==10) {
         x=pRgivenH1/(pRgivenH1+pRgivenH2)
-        # get eMatHap without the second part
+        ## get eMatHap without the second part
         y1=fbsoL[[1]]$eMatHapOri # shouldn't change 1 or 2
         pRgivenH1=rowSums(fbsoL[[1]]$gamma[srp+1,] * y1)
         pRgivenH2=rowSums(fbsoL[[2]]$gamma[srp+1,] * y1)
-        # bound above below
+        ## bound above below
         pRgivenH1[pRgivenH1<0.001]=0.001
         pRgivenH2[pRgivenH2<0.001]=0.001
         pRgivenH1[pRgivenH1>0.999]=0.999
         pRgivenH2[pRgivenH2>0.999]=0.999
-      }
-      ###
-      ### MODEL 4 -
-      ###
-      if(pseudoHaploidModel==4)
-      {
-        # model 3 -
-        #x=0.5;
-        #for(k=0; k<=K-1; k++)
-        #  eMatHap(iRead,k) = x * eMatHap(iRead,k) + (1-x) * pRgivenH2(iRead);
-        # update using proportions
-        x=0.5;
-        # get eMatHap without the second part
-        y1=(fbsoL[[1]]$eMatHap - (1-x)*pRgivenH2)/x
-        y2=(fbsoL[[2]]$eMatHap - (x)*pRgivenH1)/(1-x)
-        pRgivenH1=rowSums(fbsoL[[1]]$gamma[srp+1,] * y1)
-        pRgivenH2=rowSums(fbsoL[[2]]$gamma[srp+1,] * y2)
-        # bound above below
-        pRgivenH1[pRgivenH1<0.001]=0.001
-        pRgivenH2[pRgivenH2<0.001]=0.001
-        pRgivenH1[pRgivenH1>0.999]=0.999
-        pRgivenH2[pRgivenH2>0.999]=0.999
-      }
-      ###
-      ### MODEL 5 - complete proportioning
-      ###
-      if(pseudoHaploidModel==5)
-      {
-        # update using proportions
-        x=pRgivenH1/(pRgivenH1+pRgivenH2)
-        # get eMatHap without the second part
-        y1=(fbsoL[[1]]$eMatHap - (1-x)*pRgivenH2)/x
-        y2=(fbsoL[[2]]$eMatHap - (x)*pRgivenH1)/(1-x)
-        # might have NA's - if so, replace one with other
-        y=array(0,dim(y1))
-        w=is.na(y1[,1])==FALSE; y[w,]=y1[w,]
-        w=is.na(y2[,1])==FALSE; y[w,]=y2[w,]
-        a1=rowSums(fbsoL[[1]]$gamma[srp+1,] * y)
-        a2=rowSums(fbsoL[[2]]$gamma[srp+1,] * y)
-        pRgivenH1=as.integer(runif(length(srp))<a1/(a1+a2))
-        pRgivenH2=1-pRgivenH1
-      }
-  return(list(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,delta=delta))
+    }
+    return(list(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2))
 }
 
 

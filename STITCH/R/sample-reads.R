@@ -25,14 +25,12 @@ get_sampleProbs_from_dir_for_sample <- function(
         pRgivenH1 <- sampleProbs$pRgivenH1
         pRgivenH2 <- sampleProbs$pRgivenH2
         srp <- sampleProbs$srp
-        delta <- sampleProbs$delta
     }
     return(
         list(
             pRgivenH1 = pRgivenH1,
             pRgivenH2 = pRgivenH2,
             srp = srp,
-            delta = delta,
             bundledSampleProbs = bundledSampleProbs
         )
     )
@@ -114,7 +112,7 @@ bundle_inputs_after_generation <- function(
             } else if (what == "sampleProbs") {
                 file <- file_sampleProbs(dir, iBam, regionName)
                 load(file = file)
-                return(list(pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, srp = srp, delta = delta))
+                return(list(pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, srp = srp))
             } else if (what == "referenceSampleReads") {
                 file <- file_referenceSampleReads(dir, iBam, regionName)
                 load(file = file)
