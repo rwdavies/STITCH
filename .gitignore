@@ -1,5 +1,6 @@
 test-data/
 test-results/
+*#*
 *~
 samtools
 bgzip
@@ -14,3 +15,12 @@ future
 scratch
 testing
 TODO
+debug
+bams
+RData
+input
+gen.txt
+pos.txt
+bamlist.txt
+STITCH_example_2016_05_10.tgz
+Rplots.pdf
