@@ -94,6 +94,12 @@ out <- system2(
 )
 stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
 stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+if (out > 0) {
+    message("---stderr---")
+    print(stderr)
+    message("---stdout---")
+    print(stdout)
+}
 expect_equal(0, out)
 
 
