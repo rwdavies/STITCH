@@ -45,10 +45,13 @@ message("test that STITCH CLI produces help message")
 ## this is bad - optparse exits with code 1 on desired behaviour
 ## so can't check help message printed on error code alone
 ## do some super minimal parsing of the output
-out <- suppressWarnings(system(
+out <- system(
     paste0(cli_output_file, " --help "), intern = TRUE
-))
+)
 expect_equal(grep("Options", out) > 0, TRUE)
+print("TEMPORARY-START")
+print(out)
+print("TEMPORARY-END")
 if (attr(out, "status") != 1) {
     message("---output---")
     print(out)
