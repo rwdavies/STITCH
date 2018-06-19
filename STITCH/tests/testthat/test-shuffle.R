@@ -75,21 +75,32 @@ test_that("can define breaks on tiny region", {
     maxRate <- 100
     shuffle_bin_radius <- 2000
 
-    ## just generate something 
-    sigmaSum_unnormalized <- runif(nGrids - 1)
+    for(i in 1:2) {
+        
+        if (i == 1) {
+            sigmaSum_unnormalized <- runif(nGrids - 1)
+        } else {
+            sigmaSum_unnormalized <- rep(0.8, nGrids - 1)
+        }
 
-    define_and_save_breaks_to_consider(
-        tempdir,
-        regionName,
-        sigmaSum_unnormalized,
-        L_grid,
-        grid_distances,
-        nGrids,
-        nGen,
-        minRate,
-        maxRate,
-        shuffle_bin_radius = 2000,
-        plot_shuffle_haplotype_attempts = FALSE
-    )
-    
+        define_and_save_breaks_to_consider(
+            tempdir,
+            regionName,
+            sigmaSum_unnormalized,
+            L_grid,
+            grid_distances,
+            nGrids,
+            nGen,
+            minRate,
+            maxRate,
+            shuffle_bin_radius = 2000,
+            plot_shuffle_haplotype_attempts = FALSE
+        )
+
+        load(file_break_results(tempdir, regionName))
+        ## have an output
+        expect_equal(length(break_results) > 0, TRUE)
+    }
+        
 })
+
