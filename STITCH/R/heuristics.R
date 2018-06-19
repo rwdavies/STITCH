@@ -293,6 +293,9 @@ define_and_save_breaks_to_consider <- function(
             x2 <- exp(-nGen * maxRate * grid_distances/100/1000000) # upper
             ## make matrix with useful things
             realized_rate <- (-log(sigmaSum_unnormalized) / grid_distances)
+            realized_rate_no_NA <- realized_rate
+            realized_rate_no_NA[is.na(realized_rate)] <- 0
+            cumu_rate <- cumsum(realized_rate_no_NA) - realized_rate_no_NA[1]
             recomb_usage <- cbind(
                 grid_distances = grid_distances,
                 min_prob = x1,
@@ -301,7 +304,7 @@ define_and_save_breaks_to_consider <- function(
                 min_rate = (-log(x1) / grid_distances),
                 realized_rate = realized_rate,
                 max_rate = (-log(x2) / grid_distances),
-                cumu_rate = cumsum(realized_rate) - realized_rate[1]
+                cumu_rate = cumu_rate
             )
             save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName))
         }
@@ -374,12 +377,14 @@ choose_points_to_break <- function(
     ## boundaries where < thresh or start rising 5+ SNPs
     thresh <-  min(1, quantile(smoothed_rate[smoothed_rate != 0], probs = 0.95, na.rm = TRUE))
     ideal <- smoothed_rate > thresh
+    ideal[is.na(ideal)] <- FALSE
     available <- array(TRUE, length(smoothed_rate))
     available[is.na(smoothed_rate)] <- FALSE
     best <- order(smoothed_rate, decreasing = TRUE)
     ##
     results <- NULL
-    if (sum(available) == 0) {
+    ## if nothing really available, return
+    if (sum(available) <= 3) {
         ## return NULL
         return(list(results = results, thresh = thresh))
     }
@@ -417,7 +422,7 @@ choose_points_to_break <- function(
         nuke_right <- min(nGrids - 2, max(snp_right, snp_best + 50))
         available[nuke_left:nuke_right] <- FALSE
         ideal[nuke_left:nuke_right] <- FALSE
-        if (sum(available) == 0) {
+        if (sum(available, na.rm = TRUE) == 0) {
             iBest <- nGrids
         } else if (nrow(results) == max_breaks) {
             iBest <- nGrids
@@ -542,7 +547,7 @@ plot_attempt_to_find_shuffles <- function(
     ##
     ## 0) find peaks to check
     ##
-    ylim <- c(0, max(break_thresh, max(smoothed_rate)))
+    ylim <- c(0, max(break_thresh, max(smoothed_rate, na.rm = TRUE)))
     plot(x = 0, y = 0, xlab = "Physical position", ylab = "Rate", main = "Location of shuffles to check", ylim = ylim, xlim = xlim)
     add_grey_background(L)
     lines(x = x, y = smoothed_rate, lwd = 2)
@@ -566,7 +571,7 @@ plot_attempt_to_find_shuffles <- function(
         range(recomb_usage[, "realized_rate"]),
         range(recomb_usage[, "max_rate"])
     )
-    ylim <- log10(range(unlist(r)))
+    ylim <- log10(range(unlist(r), na.rm = TRUE))
     z <- recomb_usage[, "cumu_rate"]
     z <- z * (1 / max(z)) ## 0-1 scaled
     cumu_rate_scaled <- ylim[2] + z * (ylim[1] - ylim[2])
