@@ -336,6 +336,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_make_smoothed_rate
+Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigmaSum, const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const Rcpp::IntegerVector& grid_distances, const int nGrids, const int shuffle_bin_radius);
+RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigmaSumSEXP, SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP grid_distancesSEXP, SEXP nGridsSEXP, SEXP shuffle_bin_radiusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigmaSum(sigmaSumSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigma_rate(sigma_rateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type L_grid(L_gridSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid_distances(grid_distancesSEXP);
+    Rcpp::traits::input_parameter< const int >::type nGrids(nGridsSEXP);
+    Rcpp::traits::input_parameter< const int >::type shuffle_bin_radius(shuffle_bin_radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_smoothed_rate(sigmaSum, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_calculate_hwe_p
 Rcpp::NumericVector rcpp_calculate_hwe_p(const Rcpp::IntegerVector reference_hap);
 RcppExport SEXP _STITCH_rcpp_calculate_hwe_p(SEXP reference_hapSEXP) {
@@ -382,6 +398,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 10},
     {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
     {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
+    {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 6},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
     {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 3},
     {NULL, NULL, 0}
