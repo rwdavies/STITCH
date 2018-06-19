@@ -246,12 +246,6 @@ option_list <- list(
         default = "server"
     ), 
     make_option(
-        "--pseudoHaploidModel",
-        type = "integer",
-        help = "How to model read probabilities in pseudo diploid model (shouldn't be changed) [default 9] ",
-        default = 9
-    ), 
-    make_option(
         "--switchModelIteration",
         type = "integer",
         help = "Whether to switch from pseudoHaploid to diploid and at what iteration (NA for no switching) [default NA] ",
@@ -378,6 +372,12 @@ option_list <- list(
         default = FALSE
     ), 
     make_option(
+        "--plot_shuffle_haplotype_attempts",
+        type = "logical",
+        help = "Boolean TRUE/FALSE about whether to make a plot that tries to show the selection of ancestral haplotypes to check for shuffling / flipping [default FALSE] ",
+        default = FALSE
+    ), 
+    make_option(
         "--plotAfterImputation",
         type = "logical",
         help = "Boolean TRUE/FALSE about whether to make plots after imputation has run (can be set to FALSE if this throws errors on systems without x11) [default TRUE] ",
@@ -394,6 +394,18 @@ option_list <- list(
         type = "integer",
         help = "Whether to work on a grid where reads are binned into windows of this size (1 based, i.e. first bin is bases 1-gridWindowSize). This is particularly appropriate for very low coverage data (e.g. less than 0.2X) and can substantially speed up analyses [default NA] ",
         default = NA
+    ), 
+    make_option(
+        "--shuffle_bin_nSNPs",
+        type = "integer",
+        help = "Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then break per-SNP (or per-grid) every this many SNPs / grids, and compare each to detect whether haplotypes either 1) are more likely to stay where they are or 2) switch from one haplotype to another. Note that only one of shuffle_bin_nSNPs or shuffle_bin_radius should be non-NULL [default NULL] ",
+        default = NULL
+    ), 
+    make_option(
+        "--shuffle_bin_radius",
+        type = "integer",
+        help = "Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then recombination rate is calculated around pairs of SNPs in window of twice this value, and those that exceed what should be the maximum (defined by nGen and maxRate) are checked for whether they are shuffled [default 5000] ",
+        default = 5000
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -441,7 +453,6 @@ STITCH(
     keepInterimFiles = opt$keepInterimFiles,
     keepTempDir = opt$keepTempDir,
     environment = opt$environment,
-    pseudoHaploidModel = opt$pseudoHaploidModel,
     switchModelIteration = opt$switchModelIteration,
     generateInputOnly = opt$generateInputOnly,
     restartIterations = opt$restartIterations,
@@ -463,7 +474,10 @@ STITCH(
     initial_max_hapProb = opt$initial_max_hapProb,
     regenerateInputWithDefaultValues = opt$regenerateInputWithDefaultValues,
     plotHapSumDuringIterations = opt$plotHapSumDuringIterations,
+    plot_shuffle_haplotype_attempts = opt$plot_shuffle_haplotype_attempts,
     plotAfterImputation = opt$plotAfterImputation,
     save_sampleReadsInfo = opt$save_sampleReadsInfo,
-    gridWindowSize = opt$gridWindowSize
+    gridWindowSize = opt$gridWindowSize,
+    shuffle_bin_nSNPs = opt$shuffle_bin_nSNPs,
+    shuffle_bin_radius = opt$shuffle_bin_radius
 )
