@@ -923,10 +923,11 @@ Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nRead
           } else {
               for(k=0; k<=K-1;k++) {
                   a1 = pA * eHaps_t(k,t);
-                  a2 = pR * (1-eHaps_t(k,t)); 
-                  d = gamma_t(k,cr) / (a1 + a2);
+                  a2 = pR * (1-eHaps_t(k,t));
+                  y = a1 + a2;
+                  d = gamma_t(k,cr) / y;
                   gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + a1 * d;
-                  gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + d;
+                  gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + y * d;
               }
           }
       } // end of SNP in read 

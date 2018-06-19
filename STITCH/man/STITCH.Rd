@@ -28,8 +28,10 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   reference_phred = 20, reference_iterations = 10, output_filename = NULL,
   initial_min_hapProb = 0.4, initial_max_hapProb = 0.6,
   regenerateInputWithDefaultValues = FALSE,
-  plotHapSumDuringIterations = FALSE, plotAfterImputation = TRUE,
-  save_sampleReadsInfo = FALSE, gridWindowSize = NA)
+  plotHapSumDuringIterations = FALSE,
+  plot_shuffle_haplotype_attempts = FALSE, plotAfterImputation = TRUE,
+  save_sampleReadsInfo = FALSE, gridWindowSize = NA,
+  shuffle_bin_nSNPs = NULL, shuffle_bin_radius = 5000)
 }
 \arguments{
 \item{chr}{What chromosome to run. Should match BAM headers}
@@ -156,11 +158,17 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{plotHapSumDuringIterations}{Boolean TRUE/FALSE about whether to make a plot that shows the relative number of individuals using each ancestral haplotype in each iteration}
 
+\item{plot_shuffle_haplotype_attempts}{Boolean TRUE/FALSE about whether to make a plot that tries to show the selection of ancestral haplotypes to check for shuffling / flipping}
+
 \item{plotAfterImputation}{Boolean TRUE/FALSE about whether to make plots after imputation has run (can be set to FALSE if this throws errors on systems without x11)}
 
 \item{save_sampleReadsInfo}{Experimental. Boolean TRUE/FALSE about whether to save additional information about the reads that were extracted}
 
 \item{gridWindowSize}{Whether to work on a grid where reads are binned into windows of this size (1 based, i.e. first bin is bases 1-gridWindowSize). This is particularly appropriate for very low coverage data (e.g. less than 0.2X) and can substantially speed up analyses}
+
+\item{shuffle_bin_nSNPs}{Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then break per-SNP (or per-grid) every this many SNPs / grids, and compare each to detect whether haplotypes either 1) are more likely to stay where they are or 2) switch from one haplotype to another. Note that only one of shuffle_bin_nSNPs or shuffle_bin_radius should be non-NULL}
+
+\item{shuffle_bin_radius}{Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then recombination rate is calculated around pairs of SNPs in window of twice this value, and those that exceed what should be the maximum (defined by nGen and maxRate) are checked for whether they are shuffled}
 }
 \value{
 Results in properly formatted version
