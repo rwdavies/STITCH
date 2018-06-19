@@ -49,7 +49,12 @@ out <- suppressWarnings(system(
     paste0(cli_output_file, " --help "), intern = TRUE
 ))
 expect_equal(grep("Options", out) > 0, TRUE)
+if (attr(out, "status") != 1) {
+    message("---output---")
+    print(out)
+}
 expect_equal(attr(out, "status"), 1)
+
 
 
 
