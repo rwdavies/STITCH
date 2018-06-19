@@ -42,21 +42,22 @@ system(paste0("chmod +x ", cli_output_file))
 
 
 message("test that STITCH CLI produces help message")
-## this is bad - optparse exits with code 1 on desired behaviour
-## so can't check help message printed on error code alone
-## do some super minimal parsing of the output
-out <- system(
-    paste0(cli_output_file, " --help "), intern = TRUE
+## behaviour of optparse changed!
+## now exits code 0 as one would hope on --help
+stdout_file <- tempfile()
+stderr_file <- tempfile()
+out <- system2(
+    cli_output_file,
+    args = c(
+        "--help"
+    ),
+    stdout = stdout_file, stderr = stderr_file
 )
-expect_equal(grep("Options", out) > 0, TRUE)
-print("TEMPORARY-START")
-print(out)
-print("TEMPORARY-END")
-if (attr(out, "status") != 1) {
-    message("---output---")
-    print(out)
-}
-expect_equal(attr(out, "status"), 1)
+stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
+stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+expect_equal(0, out)
+
+
 
 
 
