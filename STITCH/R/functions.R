@@ -134,11 +134,11 @@ STITCH <- function(
     initial_max_hapProb = 0.6,
     regenerateInputWithDefaultValues = FALSE,
     plotHapSumDuringIterations = FALSE,
-    plot_shuffle_haplotype_attempts = FALSE,    
+    plot_shuffle_haplotype_attempts = FALSE,
     plotAfterImputation = TRUE,
     save_sampleReadsInfo = FALSE,
     gridWindowSize = NA,
-    shuffle_bin_nSNPs = NULL,    
+    shuffle_bin_nSNPs = NULL,
     shuffle_bin_radius = 5000
 ) {
 

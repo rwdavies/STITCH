@@ -102,8 +102,8 @@ rcpp_calculate_many_likelihoods <- function(swap_mat, reads_at_SNPs, eMatHap_t, 
 }
 
 #' @export
-rcpp_make_smoothed_rate <- function(sigmaSum, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius) {
-    .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigmaSum, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius)
+rcpp_make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius) {
+    .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius)
 }
 
 #' @export

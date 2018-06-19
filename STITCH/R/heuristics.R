@@ -262,7 +262,7 @@ define_and_save_breaks_to_consider <- function(
         save(break_results, file = file_break_results(tempdir, regionName))
     } else {
         ## generate smoothed rate
-        smoothed_rate <- make_smoothed_rate(
+        smoothed_rate <- rcpp_make_smoothed_rate(
             sigmaSum = sigmaSum_unnormalized,
             sigma_rate = -log(sigmaSum_unnormalized) / grid_distances,
             L_grid = L_grid,
@@ -309,14 +309,16 @@ define_and_save_breaks_to_consider <- function(
     return(NULL)
 }
 
-make_smoothed_rate <- function(sigmaSum, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius = 5000) {
+make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius = 5000) {
     smoothed_rate <- array(0, nGrids - 1) ## between SNPs
-    ## 
+    ##
+    min_L_grid <- min(L_grid)
+    max_L_grid <- max(L_grid)
     for(iSNP in 1:(nGrids - 1)) {
         focal_point <- round((L_grid[iSNP] + L_grid[iSNP + 1]) / 2)        
         if (
-            min(L_grid) <= (focal_point - shuffle_bin_radius) &
-            (focal_point + shuffle_bin_radius) <= max(L_grid)
+            min_L_grid <= (focal_point - shuffle_bin_radius) &
+            (focal_point + shuffle_bin_radius) <= max_L_grid
         ) {
             ## left
             iSNP_left <- iSNP
@@ -348,6 +350,8 @@ make_smoothed_rate <- function(sigmaSum, sigma_rate, L_grid, grid_distances, nGr
                 ## add bit
                 smoothed_rate[iSNP] <- smoothed_rate[iSNP] + bp_to_add * sigma_rate[iSNP_right]
             }
+        } else {
+            smoothed_rate[iSNP] <- NA
         }
     }
     return(smoothed_rate)
@@ -368,22 +372,29 @@ choose_points_to_break <- function(
     ## remember, nothing forces it to make the change later, so can be really liberal here
     ## so choose as threshold lower of 1, or 50th percentile
     ## boundaries where < thresh or start rising 5+ SNPs
-    thresh <-  min(1, quantile(smoothed_rate[smoothed_rate != 0], probs = 0.95))
+    thresh <-  min(1, quantile(smoothed_rate[smoothed_rate != 0], probs = 0.95, na.rm = TRUE))
     ideal <- smoothed_rate > thresh
     available <- array(TRUE, length(smoothed_rate))
+    available[is.na(smoothed_rate)] <- FALSE
     best <- order(smoothed_rate, decreasing = TRUE)
     ##
     results <- NULL
+    if (sum(available) == 0) {
+        ## return NULL
+        return(list(results = results, thresh = thresh))
+    }
     ## keep going to get
     iBest <- 1 ## ordered on "best" ordered vector
     while(iBest < nGrids) {
         ## now find start, end for this
         snp_best <- best[iBest]
+        ##
         snp_left <- determine_where_to_stop(
             smoothed_rate,
             available,
             snp_best,
             thresh,
+            nGrids,
             side = "left"
         )
         snp_right <- determine_where_to_stop(
@@ -391,6 +402,7 @@ choose_points_to_break <- function(
             available,
             snp_best,
             thresh,
+            nGrids,
             side = "right"
         )
         ## store
@@ -433,6 +445,7 @@ determine_where_to_stop <- function(
     available,
     snp_best,
     thresh,
+    nGrids,
     side = "left"
 ) {
     if (side == "left") {

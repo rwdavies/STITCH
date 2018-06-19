@@ -4,7 +4,12 @@ if (1 == 0) {
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
     ## dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
-    o <- sapply(dir(pattern = "*R"), source)
+    a <- dir(pattern = "*R")
+    b <- grep("~", a)
+    if (length(b) > 0) {
+        a <- a[-b]
+    }
+    o <- sapply(a, source)
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     

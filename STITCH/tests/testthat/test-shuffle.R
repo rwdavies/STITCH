@@ -18,10 +18,48 @@ test_that("can determine switches", {
 })
 
 
+test_that("can smooth rate", {
+
+    set.seed(10)            
+    shuffle_bin_radius <- 5000
+    L <- sort(sample(100000, 100))
+    gridWindowSize <- NA
+    out <- assign_positions_to_grid(L = L, gridWindowSize = gridWindowSize)
+    grid <- out$grid
+    grid_distances <- out$grid_distances
+    L_grid <- out$L_grid
+    nGrids <- out$nGrids
+
+    ## now simulate a rate
+    sigmaSum_unnormalized <- runif(nGrids - 1)
+    sigma_rate <- -log(sigmaSum_unnormalized) / grid_distances ## by definition
+
+    ## just check the same
+    results1 <- make_smoothed_rate(
+        sigmaSum_unnormalized,
+        sigma_rate,
+        L_grid,
+        grid_distances,
+        nGrids,
+        shuffle_bin_radius
+    )
+
+    results2 <- rcpp_make_smoothed_rate(
+        sigmaSum_unnormalized,
+        sigma_rate,
+        L_grid,
+        grid_distances,
+        nGrids,
+        shuffle_bin_radius
+    )
+
+    expect_equal(as.numeric(results1), as.numeric(results2))
+    
+})
+
+
 test_that("can define breaks on tiny region", {
 
-    skip("wer")
-    
     set.seed(10)        
     tempdir <- tempdir()
     regionName <- "blargh"
@@ -38,7 +76,7 @@ test_that("can define breaks on tiny region", {
     shuffle_bin_radius <- 2000
 
     ## just generate something 
-    sigmaSum_unnormalized <- runif(nGrids)    
+    sigmaSum_unnormalized <- runif(nGrids - 1)
 
     define_and_save_breaks_to_consider(
         tempdir,

@@ -337,18 +337,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_smoothed_rate
-Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigmaSum, const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const Rcpp::IntegerVector& grid_distances, const int nGrids, const int shuffle_bin_radius);
-RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigmaSumSEXP, SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP grid_distancesSEXP, SEXP nGridsSEXP, SEXP shuffle_bin_radiusSEXP) {
+Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigmaSum_unnormalized, const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const Rcpp::IntegerVector& grid_distances, const int nGrids, const int shuffle_bin_radius);
+RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigmaSum_unnormalizedSEXP, SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP grid_distancesSEXP, SEXP nGridsSEXP, SEXP shuffle_bin_radiusSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigmaSum(sigmaSumSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigmaSum_unnormalized(sigmaSum_unnormalizedSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigma_rate(sigma_rateSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type L_grid(L_gridSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid_distances(grid_distancesSEXP);
     Rcpp::traits::input_parameter< const int >::type nGrids(nGridsSEXP);
     Rcpp::traits::input_parameter< const int >::type shuffle_bin_radius(shuffle_bin_radiusSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_smoothed_rate(sigmaSum, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius));
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_smoothed_rate(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius));
     return rcpp_result_gen;
 END_RCPP
 }
