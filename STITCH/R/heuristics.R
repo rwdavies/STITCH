@@ -87,6 +87,7 @@ get_nbreaks <- function(
         if (is.null(shuffle_bin_radius) == FALSE) {
             ## have previously (previous iteration) ended with define_breaks_to_consider
             ## now, load break_results
+            ## NOTE - can be NULL, but unlikely
             load(file_break_results(tempdir, regionName))
         } else {
             ## mimic format here as well
@@ -280,6 +281,7 @@ define_and_save_breaks_to_consider <- function(
         )
         break_results <- out$results
         break_thresh <- out$thresh
+        ## NULL return unlikely but probably probable
         if (plot_shuffle_haplotype_attempts == FALSE) {
             save(break_results, file = file_break_results(tempdir, regionName))
         } else {
@@ -380,6 +382,8 @@ choose_points_to_break <- function(
     min_breaks = 10,
     max_breaks = Inf
 ) {
+    smoothed_rate[1] <- NA
+    smoothed_rate[length(smoothed_rate)] <- NA    
     ## now, those > 1 are great candidates
     ## alternatively, if nGen not quite right (or rates not changed!)
     ## anything really "peaky"
@@ -396,7 +400,7 @@ choose_points_to_break <- function(
     results <- NULL
     ## if nothing really available, return
     if (sum(available) <= 3) {
-        ## return NULL
+        ## return results as NULL
         return(list(results = results, thresh = thresh))
     }
     ## keep going to get
@@ -404,28 +408,32 @@ choose_points_to_break <- function(
     while(iBest < nGrids) {
         ## now find start, end for this
         snp_best <- best[iBest]
-        ##
-        snp_left <- determine_where_to_stop(
-            smoothed_rate,
-            available,
-            snp_best,
-            thresh,
-            nGrids,
-            side = "left"
-        )
-        snp_right <- determine_where_to_stop(
-            smoothed_rate,
-            available,
-            snp_best,
-            thresh,
-            nGrids,
-            side = "right"
-        )
-        ## store
-        results <- rbind(
-            results,
-            c(snp_left, snp_best, snp_best + 1, snp_right)
-        )
+        ## only consider if have >1 SNP either side
+        if (sum(available[snp_best + -1:1]) == 3) {
+            ##
+            snp_left <- determine_where_to_stop(
+                smoothed_rate,
+                available,
+                snp_best,
+                thresh,
+                nGrids,
+                side = "left"
+            )
+            ##
+            snp_right <- determine_where_to_stop(
+                smoothed_rate,
+                available,
+                snp_best,
+                thresh,
+                nGrids,
+                side = "right"
+            )
+            ## store
+            results <- rbind(
+                results,
+                c(snp_left, snp_best, snp_best + 1, snp_right)
+            )
+        }
         ## nuke out (do not consider) at least
         ##   those SNPs under consideration
         ##   50 SNPs either way
@@ -435,11 +443,11 @@ choose_points_to_break <- function(
         ideal[nuke_left:nuke_right] <- FALSE
         if (sum(available, na.rm = TRUE) == 0) {
             iBest <- nGrids
-        } else if (nrow(results) == max_breaks) {
+        } else if ((length(results) / 4) == max_breaks) {
             iBest <- nGrids
         } else {
-            if ((sum(ideal) == 0) & (nrow(results) >= min_breaks)) {
-                iBest <- nGrids
+            if ((sum(ideal) == 0) & ((length(results) / 4) >= min_breaks)) {
+                    iBest <- nGrids
             } else {
                 ## move forward in iBest
                 iBest <- iBest + 1
@@ -449,10 +457,16 @@ choose_points_to_break <- function(
             }
         }
     }
-    colnames(results) <- c("left_break", "left_focal", "right_focal", "right_break")
-    ##
-    results <- results[order(results[, "left_focal"]), ]
-    return(list(results = results, thresh = thresh))
+    if ((length(results) / 4) > 0) {
+        colnames(results) <- c("left_break", "left_focal", "right_focal", "right_break")
+        results <- results[order(results[, "left_focal"]), ]        
+    }
+    return(
+        list(
+            results = results,
+            thresh = thresh
+        )
+    )
 }
 
 

@@ -106,3 +106,37 @@ test_that("can define breaks on tiny region", {
     }
         
 })
+
+
+test_that("can choose points to break if highest on the left", {
+
+    smoothed_rate <- runif(100)
+    smoothed_rate[1:10] <- NA
+    smoothed_rate[11] <- 100
+    nGrids <- 100
+    
+    choose_points_to_break(
+        smoothed_rate,
+        nGrids
+    )
+    
+    expect_equal(length(out) > 0, TRUE)    
+    
+})
+
+
+test_that("can choose points to break if highest on the right", {
+
+    smoothed_rate <- runif(100)
+    smoothed_rate[90:100] <- NA
+    smoothed_rate[89] <- 100
+    nGrids <- 100
+    
+    out <- choose_points_to_break(
+        smoothed_rate,
+        nGrids
+    )
+    expect_equal(length(out) > 0, TRUE)
+
+})
+
