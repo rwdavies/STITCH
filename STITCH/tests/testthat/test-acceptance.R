@@ -16,8 +16,8 @@ if (1 == 0) {
 
 }
 
-run_only_one_acceptance_test <- FALSE
-run_acceptance_tests <- FALSE
+run_only_one_acceptance_test <- TRUE
+run_acceptance_tests <- TRUE
 
 make_unique_tempdir <- function() {
     ## make every folder have a space!
