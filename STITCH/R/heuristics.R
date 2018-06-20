@@ -318,40 +318,51 @@ make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_d
     min_L_grid <- min(L_grid)
     max_L_grid <- max(L_grid)
     for(iSNP in 1:(nGrids - 1)) {
-        focal_point <- round((L_grid[iSNP] + L_grid[iSNP + 1]) / 2)        
+        focal_point <- floor((L_grid[iSNP] + L_grid[iSNP + 1]) / 2)        
         if (
-            min_L_grid <= (focal_point - shuffle_bin_radius) &
-            (focal_point + shuffle_bin_radius) <= max_L_grid
+            min_L_grid < (focal_point - shuffle_bin_radius) &
+            (focal_point + shuffle_bin_radius) < max_L_grid
         ) {
             ## left
+            ## so re-call
+            ## start with focal SNP, defined by position average of iSNP and iSNP + 1
+            ## first region is iSNP_left
             iSNP_left <- iSNP
             bp_remaining <- shuffle_bin_radius
+            bp_prev <- focal_point
             while(0 < bp_remaining) {
-                bp_to_add <- (L_grid[iSNP_left + 1] - L_grid[iSNP_left] + 1)
+                bp_to_add <- (bp_prev - L_grid[iSNP_left] + 1)
                 if ((bp_remaining - bp_to_add) < 0) {
                     bp_to_add <- bp_remaining
                     bp_remaining <- 0
                 } else {
                     bp_remaining <- bp_remaining - bp_to_add
-                    iSNP_left <- iSNP_left - 1
+                    bp_prev <- L_grid[iSNP_left]
                 }
                 ## add bit
                 smoothed_rate[iSNP] <- smoothed_rate[iSNP] + bp_to_add * sigma_rate[iSNP_left]
+                iSNP_left <- iSNP_left - 1                
             }
             ## right
+            ## so recall. start with iSNP, then iSNP_right starts one to the right
+            ## at first, difference between focal point (mid-way between iSNP and iSNP + 1)
+            ## and iSNP + 1. then rate for that region is for iSNP (iSNP_right -1)
             iSNP_right <- iSNP + 1
             bp_remaining <- shuffle_bin_radius
+            bp_prev <- focal_point
             while(0 < bp_remaining) {
-                bp_to_add <- (L_grid[iSNP_right] - L_grid[iSNP_right - 1] + 1)
+                bp_to_add <- (L_grid[iSNP_right] - bp_prev + 1)
                 if ((bp_remaining - bp_to_add) < 0) {
                     bp_to_add <- bp_remaining
                     bp_remaining <- 0
                 } else {
                     bp_remaining <- bp_remaining - bp_to_add
-                    iSNP_right <- iSNP_right + 1
+                    bp_prev <- L_grid[iSNP_right] ## reset
                 }
                 ## add bit
-                smoothed_rate[iSNP] <- smoothed_rate[iSNP] + bp_to_add * sigma_rate[iSNP_right]
+                smoothed_rate[iSNP] <- smoothed_rate[iSNP] +
+                    bp_to_add * sigma_rate[iSNP_right - 1]
+                iSNP_right <- iSNP_right + 1
             }
         } else {
             smoothed_rate[iSNP] <- NA

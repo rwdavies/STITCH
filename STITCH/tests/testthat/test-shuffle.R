@@ -64,6 +64,10 @@ test_that("can define breaks on tiny region", {
     tempdir <- tempdir()
     regionName <- "blargh"
     L <- sort(sample(100000, 100))
+    shuffle_bin_radius <- 2000
+    ## make sure it tests going to the end
+    L <- unique(sort(c(1, shuffle_bin_radius, L)))
+    L <- unique(sort(c(L, 100000 - shuffle_bin_radius + 1, 100000)))
     gridWindowSize <- NA
     out <- assign_positions_to_grid(L = L, gridWindowSize = gridWindowSize)
     grid <- out$grid
@@ -73,7 +77,6 @@ test_that("can define breaks on tiny region", {
     nGen <- 100
     minRate <- 0.1
     maxRate <- 100
-    shuffle_bin_radius <- 2000
 
     for(i in 1:2) {
         
@@ -103,4 +106,3 @@ test_that("can define breaks on tiny region", {
     }
         
 })
-
