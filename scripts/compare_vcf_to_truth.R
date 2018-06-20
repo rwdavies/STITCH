@@ -18,12 +18,14 @@ source("STITCH/R/functions.R") ## for function generate_hwe_on_counts
 
 library("data.table")
 library("optparse")
+library("rrbgen")
 
 option_list <- list(
     make_option(
-        "--vcf",
+        "--test-file",
         type = "character",
-        help = "VCF output"
+        help = "VCF output",
+        default = NA
     ),
     make_option(
         "--truth-vcf",
@@ -67,8 +69,21 @@ option_list <- list(
 
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
 
-## vcf_file <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/whole_chr_CFW_1.3.5/stitch.chr19.vcf.gz"; chr <- "chr19"; compare_against <- "megamuga"; verbose = TRUE
-vcf_file <- opt$vcf
+if (1 == 0) {
+
+    opt <- list(
+        "test-file" = "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/whole_chr_CFW_1.5.0_bgen/stitch.chr19.bgen",
+        chr = "chr19",
+        compare_against = "megamuga",
+        verbose = TRUE,
+        mega_save_file = NA,
+        cfw_data_dir = "/data/smew1/rdavies/stitch_development/truth/cfw/"
+    )
+    ## opt[["test-file"]] <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results//whole_chr_CFW_1.5.0//stitch.chr19.vcf.gz";
+    
+}
+
+test_file <- opt[["test-file"]]
 truth_vcf_file <- opt$truth_vcf
 chr <- opt$chr
 compare_against <- opt$compare_against
@@ -78,7 +93,11 @@ cfw_data_dir <- opt$cfw_data_dir
 megamugadir <- file.path(cfw_data_dir, "megamuga")
 affydir <- file.path(cfw_data_dir, "affy")
 
-
+if (substr(test_file, nchar(test_file) - 3, nchar(test_file)) == "bgen") {
+    output_format <- "bgen"
+} else {
+    output_format <- "bgvcf"
+}
 
 
 if (is.na(chr))
@@ -98,7 +117,15 @@ if (compare_against == "affy") {
 } else if (compare_against == "megamuga") {
 
     message("--- Compare MegaMUGA to Input VCF ---")
-    if (is.na(mega_save_file) | file.exists(mega_save_file) == FALSE) {
+    rebuild <- TRUE    
+    if (is.na(mega_save_file) == FALSE) {
+        if (file.exists(mega_save_file)) {
+            message("Load previous MegaMuga file")
+            load(mega_save_file)
+            rebuild <- FALSE
+        }
+    }
+    if (rebuild == TRUE) {
         megamuga <- get_megamuga_calls_for_chr(chr)
         mega_calls <- convert_megamuga_to_calls(megamuga, chr)
         mega_calls <- filter_calls_for_chr(mega_calls)
@@ -106,13 +133,19 @@ if (compare_against == "affy") {
         if (is.na(mega_save_file) == FALSE) {
             save(mega_calls, subjects, file = mega_save_file)
         }
-    } else {
-        message("Load previous MegaMuga file")
-        load(mega_save_file)
     }
-    out <- get_dosages_for_vcf(vcf_file, chr, subjects, mega_calls)
+
+    if (output_format == "bgvcf") {
+        out <- get_dosages_for_vcf(test_file, chr, subjects, mega_calls)
+        ## out$dosages with row = SNP, col = sample, content is 0-2 dosage
+        ## rows labelled with chr-snp-ref-alt
+        ## out$dosages_meta = 3 cols with hwe, eaf, info
+    } else {
+        out <- get_dosages_for_bgen(test_file, subjects, mega_calls)
+    }
     dosages <- out$dosages
     dosages_meta <- out$dosages_meta
+    
     compare_array_calls_and_dosages(mega_calls, dosages, dosages_meta)
 
 } else if (compare_against == "truth_vcf") {
@@ -120,7 +153,7 @@ if (compare_against == "affy") {
     message("--- Compare Truth VCF to Input VCF ---")
     out <- get_dosages_for_vcf(truth_vcf_file, chr, subjects = NULL, calls = NULL, use_fread = FALSE, tabix = FALSE)
     truth_dosages <- out$dosages
-    out <- get_dosages_for_vcf(vcf_file, chr, subjects = NULL, calls = NULL, use_fread = FALSE, tabix = FALSE)
+    out <- get_dosages_for_vcf(test_file, chr, subjects = NULL, calls = NULL, use_fread = FALSE, tabix = FALSE)
     dosages <- out$dosages
 
 } else {

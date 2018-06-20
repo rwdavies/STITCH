@@ -28,7 +28,8 @@ get_megamuga_calls_for_chr <- function(chr) {
     data <- fread(
         in_file,
         data.table = FALSE,
-        showProgress = FALSE
+        showProgress = FALSE,
+        skip = 9
     )
 
     ##
@@ -349,21 +350,95 @@ get_col_from_info <- function(y, col = "EAF=") {
 }
 
 
+## for a VCF
+## return calls as appropriate
+## possibly filter on subjects and SNPs
+get_dosages_for_bgen <- function(
+    test_file,
+    subjects = NULL,
+    vars_to_get = NULL
+) {
+
+    if (verbose)
+        message("Get dosages for bgen")
+
+    ## pre-intersect
+    var_info <- rrbgen_load_variant_info(test_file)
+    var_info[, "varid"] <- gsub("-", ":", var_info[, "varid"])
+    snps1 <- gsub("-", ":", rownames(mega_calls))
+    x <- t(sapply(strsplit(snps1, ":"), I))
+    snps2 <- paste0(x[, 1], ":", x[, 2], ":", x[, 4], ":", x[, 3])
+    vars_to_get <- intersect(var_info[, "varid"], c(snps1, snps2))
+    
+    outX <- rrbgen_load(
+        bgen_file = test_file,
+        samples_to_get = subjects,
+        vars_to_get = vars_to_get
+    )
+
+    ##dosages <- cbind(
+    ##    chr = outX$var_info[, "chr"],
+    ##    pos = outX$var_info[, "position"],
+    ##    outX$gp[, , 2] + 2 * outX$gp[, , 3]
+    ## )
+
+    dosages <- outX$gp[, , 2] + 2 * outX$gp[, , 3]
+    rownames(dosages) <- gsub(":", "-", rownames(dosages))
+    
+    per_snp_stats <- read.table(paste0(test_file, ".per_snp_stats.txt.gz"), header = TRUE)
+
+    dosages_meta <- per_snp_stats[match(vars_to_get, per_snp_stats[, "varid"]), c("HWE", "EAF", "INFO_SCORE")]
+    colnames(dosages_meta) <- c("hwe", "eaf", "info")
+
+    ## out$dosages with row = SNP, col = sample, content is 0-2 dosage
+    ## rows labelled with chr-snp-ref-alt
+    ## out$dosages_meta = 3 cols with hwe, eaf, info
+
+    return(
+        list(
+            dosages = dosages,
+            dosages_meta = dosages_meta
+        )
+    )
+
+}
+
+
+get_col_from_info <- function(y, col = "EAF=") {
+    z <- substr(y, 1, nchar(col)) == col
+    if (sum(z) == 1) {
+        return(as.numeric(strsplit(y[z], "=")[[1]][2]))
+    } else {
+        return(NA)
+    }
+}
+
+
 compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
     if (verbose)
         message("Compare array calls and dosages")
 
+    ## match on both alleles
+    ## if match on flip, then flip dosages
     ## actually, only merge on first two items
     ## then reject if alleles mismatch
-    c1 <- t(sapply(strsplit(rownames(calls), "-"), I))
-    c2 <- t(sapply(strsplit(rownames(dosages), "-"), I))
-    d1 <- paste0(c1[, 1], c1[, 2], sep = "-")
-    d2 <- paste0(c2[, 1], c2[, 2], sep = "-")
+    
+    c1A <- t(sapply(strsplit(rownames(calls), "-"), I))
+    c1B <- c1A[, c(1, 2, 4, 3)]
+    c1A <- apply(c1A, 1, paste, collapse = "-")
+    c1B <- apply(c1B, 1, paste, collapse = "-")
+    
+    ## which ones required flips? flip now, then re-align
+    ## I think I was just matching on position before?
+    t1 <- match(c1B, rownames(dosages))
+    to_flip_from_calls <- which(is.na(t1) == FALSE)
+    calls[to_flip_from_calls, -c(1:2)] <- 2 - calls[to_flip_from_calls, -c(1:2)]
+    rownames(calls)[to_flip_from_calls] <- c1B[to_flip_from_calls]
 
-    joint <- intersect(d1, d2)
-    callsS <- calls[match(joint, d1), ]
-    dosagesS <- dosages[match(joint, d2), ]
-    dosages_metaS <- dosages_meta[match(joint, d2), ]
+    joint <- intersect(rownames(calls), rownames(dosages))
+    callsS <- calls[match(joint, rownames(calls)), ]
+    dosagesS <- dosages[match(joint, rownames(dosages)), ]
+    dosages_metaS <- dosages_meta[match(joint, rownames(dosages)), ]
 
     c1 <- colnames(callsS)
     c2 <- colnames(dosagesS)
