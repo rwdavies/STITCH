@@ -115,7 +115,7 @@ test_that("can choose points to break if highest on the left", {
     smoothed_rate[11] <- 100
     nGrids <- 100
     
-    choose_points_to_break(
+    out <- choose_points_to_break(
         smoothed_rate,
         nGrids
     )
