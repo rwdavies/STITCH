@@ -15,7 +15,10 @@ test_that("HWE in C++ is the same as in R", {
         c(10000, 101, 10),
         c(10000, 102, 10),
         c(10000, 103, 10),
-        c(10000, 10000, 10)
+        c(10000, 10000, 10),
+        c(44102, 39965, 9218), ## threw error before long int
+        c(100000, 100, 1),
+        c(1000000, 100, 1)
     )
 
     apply(mat, 1, function(x) {
