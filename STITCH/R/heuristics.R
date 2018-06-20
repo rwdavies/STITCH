@@ -433,14 +433,18 @@ choose_points_to_break <- function(
                 results,
                 c(snp_left, snp_best, snp_best + 1, snp_right)
             )
+            ## nuke out (do not consider) at least
+            ##   those SNPs under consideration
+            ##   50 SNPs either way
+            nuke_left <- max(1, min(snp_left, snp_best - 50))
+            nuke_right <- min(nGrids - 2, max(snp_right, snp_best + 50))
+            available[nuke_left:nuke_right] <- FALSE
+            ideal[nuke_left:nuke_right] <- FALSE
+        } else {
+            ## otherwise, either SNP upstream or downstream cannot be considered
+            ## remove consideration
+            available[snp_best + -1:1] <- FALSE
         }
-        ## nuke out (do not consider) at least
-        ##   those SNPs under consideration
-        ##   50 SNPs either way
-        nuke_left <- max(1, min(snp_left, snp_best - 50))
-        nuke_right <- min(nGrids - 2, max(snp_right, snp_best + 50))
-        available[nuke_left:nuke_right] <- FALSE
-        ideal[nuke_left:nuke_right] <- FALSE
         if (sum(available, na.rm = TRUE) == 0) {
             iBest <- nGrids
         } else if ((length(results) / 4) == max_breaks) {
