@@ -11,7 +11,7 @@ export PATH=`pwd`/:${PATH}
 
 if [ ! -e megamuga_2018_06_21.RData ]
 then
-    curl -O http://www.well.ox.ac.uk/~rwdavies/ancillary/megamuga_2018_06_21.RData
+    curl -O http://www.well.ox.ac.uk/~rwdavies/megamuga_2018_06_21.RData
 fi
 
 mkdir -p test-data/mouse_data/
