@@ -109,7 +109,7 @@ if (compare_against == "affy") {
     affy_calls <- get_affymetrix_calls_for_chr(chr)
     affy_calls <- filter_calls_for_chr(affy_calls)
     subjects <- colnames(affy_calls)[grep("Q_", colnames(affy_calls))]
-    out <- get_dosages_for_vcf(vcf_file, chr, subjects, affy_calls)
+    out <- get_dosages_for_vcf(test_file, chr, subjects, affy_calls)
     dosages <- out$dosages
     dosages_meta <- out$dosages_meta
     compare_array_calls_and_dosages(affy_calls, dosages, dosages_meta)
@@ -126,11 +126,13 @@ if (compare_against == "affy") {
         }
     }
     if (rebuild == TRUE) {
+        message("Get MegaMUGA calls for chr")
         megamuga <- get_megamuga_calls_for_chr(chr)
         mega_calls <- convert_megamuga_to_calls(megamuga, chr)
         mega_calls <- filter_calls_for_chr(mega_calls)
         subjects <- colnames(mega_calls)[grep("Q_", colnames(mega_calls))]
         if (is.na(mega_save_file) == FALSE) {
+            message("Save MegaMUGA calls for chr")
             save(mega_calls, subjects, file = mega_save_file)
         }
     }
