@@ -20,7 +20,7 @@ if [ ! -e STITCH_example_2016_05_10.tgz ]
 then
     curl -O http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
 fi
-tar -xzvf STITCH_example_2016_05_10.tgz
+tar -xzf STITCH_example_2016_05_10.tgz
 cd ../../
 
 ./scripts/profile.R
