@@ -617,7 +617,7 @@ Rcpp::List rcpp_calculate_fbd_dosage(const int nGrids, const int nSNPs, const in
                 } // k2
             } //k1
             for(j=1;j<=2;j++) {
-                dosage(t)=dosage(t)+j*genProbs_t(j, t)/2;
+                dosage(t) = dosage(t) + j * genProbs_t(j, t);
             }
         }
     } else {
@@ -636,7 +636,7 @@ Rcpp::List rcpp_calculate_fbd_dosage(const int nGrids, const int nSNPs, const in
                 } // k2
             } //k1
             for(j=1;j<=2;j++)
-                dosage(t)=dosage(t)+j*genProbs_t(j, t)/2;
+                dosage(t)=dosage(t)+j * genProbs_t(j, t);
         }
     }
     return(wrap(Rcpp::List::create(

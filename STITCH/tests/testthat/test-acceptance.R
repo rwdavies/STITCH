@@ -13,7 +13,6 @@ if (1 == 0) {
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     
-
 }
 
 ## deprecated! but remove later

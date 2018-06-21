@@ -9,7 +9,7 @@
 #' @param cramlist Path to file with cram file locations. File is one row per entry, path to cram files. cram files are converted to bam files on the fly for parsing into STITCH
 #' @param reference Path to reference fasta used for making cram files. Only required if cramlist is defined
 #' @param genfile Path to gen file with high coverage results. Empty for no genfile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = hom ref, 1 = het, 2 = hom alt and NA indicating missing genotype, with rows corresponding to rows of the posfile. Note therefore this file has one more row than posfile which has no header
-#' @param method How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K
+#' @param method How to run imputation - either diploid, pseudoHaploid, or diploid-inbred. Please see main README for more information. All methods assume diploid samples. diploid is the most accurate but slowest, while pseudoHaploid may be advantageous for large sample sizes and K. diploid-inbred assumes all samples are inbred and invokes an internal haploid mathematical model but outputs diploid genotypes and probabilities
 #' @param output_format one of bgvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)
 #' @param B_bit_prob when using bgen, how many bits to use to store each double. Optiosn are 8, 16, 24 or 32
 #' @param outputInputInVCFFormat Whether to output the input in vcf format
@@ -3724,7 +3724,8 @@ run_forward_backwards <- function(
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
         }
     }
-    if(method=="haploid") {
+    if(method=="diploid-inbred") {
+        ## is diploid, but fully inbred, so use statistical haploid model
         iNor <- 1
         fbsoL[[iNor]] <- forwardBackwardHaploid(
             sampleReads = sampleReads,
@@ -3878,15 +3879,14 @@ within_EM_per_sample_heuristics <- function(
     if (is.na(match(iSample, highCovInLow)) ==FALSE) {
         if (method == "pseudoHaploid") {
             dosage <- array(0, nSNPs)
-            if (method == "pseudoHaploid") {
-                for(iNor in 1:nor) {
-                    dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
-                }
-                dosage <- dosage / 2
+            for(iNor in 1:nor) {
+                dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
             }
-        } else if(method == "haploid"){
-            dosage <- (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
-        } else if(method == "diploid"){
+            dosage <- dosage
+        } else if(method == "diploid-inbred"){
+            ## so basically, is haploid, but doubled!
+            dosage <- 2 * (colSums(fbsoL[[1]]$gamma_t[, grid + 1] * eHapsCurrent_t))
+        } else if(method == "diploid") {
             out <- rcpp_calculate_fbd_dosage(
                 nGrids = nGrids,
                 nSNPs = nSNPs,
@@ -3994,13 +3994,12 @@ calculate_gp_t_from_fbsoL <- function(
             grid = grid
         )
         gp_t<- out$genProbs_t
-    } else if (method == "haploid") {
+    } else if (method == "diploid-inbred") {
+        ## this is a diploid organisms, so output genotypes appropriately
         ## there are only two posteriors here!
-        gp_t <- array(0, c(2, nSNPs))
-        ## 1 is reference
-        ## 2 is alternate
-        gp_t[2, ] <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))        
-        gp_t[1, ] <- 1 - gp_t[2, ]
+        gp_t <- array(0, c(3, nSNPs))
+        gp_t[1, ] <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))        
+        gp_t[3, ] <- 1 - gp_t[1, ]
     } else if (method == "pseudoHaploid") {
         gp_t <- array(0, c(3, nSNPs))        
         if (nSNPs == nGrids) {
@@ -4190,7 +4189,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         )
         fbsoL <- out$fbsoL
 
-
         ## pass by reference
         ## note - hapSum_t divided by 2 later on for pseudoHaploid        
         for(iNor in 1:nor) {
@@ -4251,7 +4249,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         restartMatrixList <- out$restartMatrixList
         fromMat <- out$fromMat
         fbd_store <- out$fbd_store
-
 
         ## prepare output
         if (iteration == niterations) {
@@ -4354,7 +4351,7 @@ get_transMatRate <- function(method, sigmaCurrent) {
     if (method == "diploid" | method == "diploid_subset") {
         x <- sigmaCurrent
         transMatRate_t <- rbind(x ** 2, x * (1 - x), (1 - x) ** 2)
-    } else if ((method == "pseudoHaploid") | (method == "haploid")) {
+    } else if ((method == "pseudoHaploid") | (method == "diploid-inbred")) {
         transMatRate_t <- rbind(sigmaCurrent, 1 - sigmaCurrent)
     } else {
         stop("bad method")
@@ -5159,7 +5156,7 @@ getR2DuringEMAlgorithm <- function(
     to_flip <- alleleCount[, 3] > 0.5
     for(isample in 1:n_hc) {
         x <- gen[, isample]
-        y <- 2 * out[[isample]]
+        y <- out[[isample]] ## dosage here is 0-2 now
         ## print_message(paste0("range(x) = ", range(x, na.rm=TRUE)))
         ## print_message(paste0("range(y) = ", range(y, na.rm=TRUE)))
         x[to_flip] <- 2 - x[to_flip]

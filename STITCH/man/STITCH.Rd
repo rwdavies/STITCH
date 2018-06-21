@@ -54,7 +54,7 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 
 \item{genfile}{Path to gen file with high coverage results. Empty for no genfile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = hom ref, 1 = het, 2 = hom alt and NA indicating missing genotype, with rows corresponding to rows of the posfile. Note therefore this file has one more row than posfile which has no header}
 
-\item{method}{How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K}
+\item{method}{How to run imputation - either diploid, pseudoHaploid, or diploid-inbred. Please see main README for more information. All methods assume diploid samples. diploid is the most accurate but slowest, while pseudoHaploid may be advantageous for large sample sizes and K. diploid-inbred assumes all samples are inbred and invokes an internal haploid mathematical model but outputs diploid genotypes and probabilities}
 
 \item{output_format}{one of bgvcf (i.e. bgziped VCF) or bgen (Layout = 2, CompressedSNPBlocks = 1)}
 
