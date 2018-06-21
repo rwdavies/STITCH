@@ -11,13 +11,25 @@ export PATH=${PATH}:`pwd`/
 # symlink them into the STITCH directory
 
 # only bother if library files not presen
-one_if_curl_installed=`which curl | wc -l`
-one_if_wget_installed=`which wget | wc -l`
-ancillary_http="http://www.well.ox.ac.uk/~rwdavies/ancillary/"
-samv=1.3.1
-bcftoolsv=1.3.1
-htslibv=1.3.2
+# Curl seems always installed?
+http_stem="https://github.com/samtools/samtools/releases/download/"
+samv=1.8
+bcftoolsv=1.8
+htslibv=1.8
 mkdir -p dependencies
+
+get_url () {
+    url=${1}
+    one_if_curl_installed=`which curl | wc -l`
+    one_if_wget_installed=`which wget | wc -l`
+    if [ ${one_if_curl_installed} == 1 ]
+    then
+	curl -L -O ${url}
+    elif [ ${one_if_wget_installed} == 1 ]
+    then
+	wget ${url}
+    fi
+}
 
 # This is no longer required in STITCH 1.3.0
 # but leave in for now, can be useful to have easy install
@@ -27,13 +39,7 @@ if [ $zero_if_samtools_not_installed == 0 ] || [ "$force_install" == "samtools" 
 then
     echo install samtools
     cd dependencies
-    if [ $one_if_curl_installed == 1 ]
-    then
-	curl "${ancillary_http}samtools-${samv}.tar.bz2" -o "samtools-${samv}.tar.bz2"
-    elif [ $one_if_wget_installed == 1 ]
-    then
-	wget "${ancillary_http}samtools-${samv}.tar.bz2"
-    fi
+    get_url "https://github.com/samtools/samtools/releases/download/${samv}/samtools-${samv}.tar.bz2"
     bzip2 -df samtools-${samv}.tar.bz2
     tar -xvf samtools-${samv}.tar
     cd samtools-${samv}
@@ -47,17 +53,11 @@ then
 fi
 
 
-if [ "$force_install" == "bcftools" ]
+if [ "`which bcftools | wc -l`" == "0" ] || [ "$force_install" == "bcftools" ]
 then
     echo install bcftools
     cd dependencies
-    if [ $one_if_curl_installed == 1 ]
-    then
-	curl "${ancillary_http}bcftools-${bcftoolsv}.tar.bz2" -o "bcftools-${bcftoolsv}.tar.bz2"
-    elif [ $one_if_wget_installed == 1 ]
-    then
-	wget "${ancillary_http}bcftools-${bcftoolsv}.tar.bz2"
-    fi
+    get_url "https://github.com/samtools/bcftools/releases/download/${bcftoolsv}/bcftools-${samv}.tar.bz2"    
     bzip2 -df bcftools-${bcftoolsv}.tar.bz2
     tar -xvf bcftools-${bcftoolsv}.tar
     cd bcftools-${bcftoolsv}
@@ -71,18 +71,11 @@ fi
 
 
 
-zero_if_bgzip_not_installed=`which bgzip | wc -l` 
-if [ $zero_if_bgzip_not_installed == 0 ] || [ "$force_install" == "bgzip" ]
+if [ "`which bgzip | wc -l`" == "0" ] || [ "`which tabix | wc -l`" == "0" ] || [ "$force_install" == "bgzip" ] || [ "$force_install" == "tabix" ]
 then
     echo install bgzip
     cd dependencies
-    if [ $one_if_curl_installed == 1 ]
-    then
-	curl "${ancillary_http}htslib-${htslibv}.tar.bz2" -o "htslib-${htslibv}.tar.bz2"
-    elif [ $one_if_wget_installed == 1 ]
-    then
-	wget "${ancillary_http}htslib-${htslibv}.tar.bz2"
-    fi
+    get_url "https://github.com/samtools/htslib/releases/download/${htslibv}/htslib-${htslibv}.tar.bz2"        
     bzip2 -df htslib-${htslibv}.tar.bz2
     tar -xvf htslib-${htslibv}.tar
     cd htslib-${htslibv}
@@ -93,4 +86,5 @@ then
     dir=`pwd`
     rm -f bgzip
     ln -s "${dir}/dependencies/htslib-${htslibv}/bgzip" "${dir}/bgzip"
+    ln -s "${dir}/dependencies/htslib-${htslibv}/tabix" "${dir}/tabix"    
 fi
