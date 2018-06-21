@@ -1,15 +1,16 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.0__**
-Release date: June 11, 2018
+**__Current Version: 1.5.1__**
+Release date: June 21, 2018
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Add option to write to bgen output
-2. Make writing bgzipped VCFs more efficient
-3. Various other minor speedups
+1. Add method diploid-inbred
+2. Improve capabilities of heuristic looking for shuffled haplotypes
+3. Fix C++ bug with HWE
+4. Internal improvements with testing flexibility and packaging efficiency
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -26,7 +27,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.5.0.tar.gz
+R CMD INSTALL ./releases/STITCH_1.5.1.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
@@ -77,6 +78,14 @@ The best way to get help is to consult the forum and mailing list
 https://groups.google.com/forum/#!forum/stitch-imputation
 
 For more detailed questions or other concerns please contact Robert Davies robertwilliamdavies@gmail.com
+
+## Output format
+
+STITCH supports writing to both bgzipped vcfs and bgen, see output_format variable
+
+## What method to run
+
+STITCH can run using one of three "methods" reflecting different underlying statistical and biological models: "diploid", which is the best general method and has the best statistical properties, but has run time proportional to the square of K and so may be slow for large, diverse populations; "pseudoHaploid", which uses statistical approximations that make it less accurate than the diploid method but has run time proportional to K, and so may be suitable for large, diverse populations; and "diploid-inbred", which assumes all samples are completely inbred and as such uses an underlying haplotype based imputation model with run time proportional to K. Note that each of these assumes subjects are diploid, and as such, all methods output diploid genotypes and probabilities.
 
 ## Note on the selection of K and nGen
 

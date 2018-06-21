@@ -1,3 +1,8 @@
+* v1.5.1
+	* Add method diploid-inbred
+	* Improve capabilities of heuristic looking for shuffled haplotypes
+	* Fix C++ bug with HWE
+	* Internal improvements with testing flexibility and packaging efficiency
 * v1.5.0
 	* Add option to write to bgen output
 	* Make writing bgzipped VCFs more efficient

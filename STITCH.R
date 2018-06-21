@@ -62,7 +62,7 @@ option_list <- list(
     make_option(
         "--method",
         type = "character",
-        help = "How to run imputation - either diploid or pseudoHaploid, the former being the original method quadratic in K, the later being linear in K [default diploid] ",
+        help = "How to run imputation - either diploid, pseudoHaploid, or diploid-inbred. Please see main README for more information. All methods assume diploid samples. diploid is the most accurate but slowest, while pseudoHaploid may be advantageous for large sample sizes and K. diploid-inbred assumes all samples are inbred and invokes an internal haploid mathematical model but outputs diploid genotypes and probabilities [default diploid] ",
         default = "diploid"
     ), 
     make_option(
