@@ -6,4 +6,4 @@ script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 export PATH=`pwd`/:${PATH}
 
-./scripts/test-using-testthat.sh unit
+./scripts/test-with-testthat.sh unit

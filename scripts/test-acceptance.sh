@@ -17,4 +17,4 @@ else
     exit 1
 fi
 
-./scripts/test-using-testthat.sh ${what_to_test}
+./scripts/test-with-testthat.sh ${what_to_test}
