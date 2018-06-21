@@ -2,7 +2,14 @@
 
 set -e
 
-# Run unit test on uncompiled package using devtools::check
+what_to_test=$1
+if [ "${what_to_test}" != "unit" ] && [ "${what_to_test}" != "acceptance" ] && [ "${what_to_test}" != "acceptance-one" ]
+then
+    echo Must select either unit or acceptance tests, but you have selected:${what_to_test}
+    exit 1
+fi
+
+# Run unit or acceptance tests on uncompiled package using devtools::check
 # This is the fastest way I'm aware of for checking the tests using compiled code but not worrying about other packaging details
 # This doesn't seem to return error codes hence the crude wrapper below
 # There is probably a better way to do this that maintains speed
@@ -15,7 +22,7 @@ export PATH=`pwd`/:${PATH}
 logfile="temp.txt"
 # suppressPackageStartupMessages
 # --slave
-R -e 'devtools::document("STITCH"); devtools::test("STITCH", reporter = "summary")' 2>&1 | tee ${logfile}
+R -e 'devtools::document("STITCH"); devtools::test("STITCH", filter = "'${what_to_test}'", reporter = "summary")' 2>&1 | tee ${logfile}
 
 # somehow this gives 0 exit code on parse failure
 started_if_1=`cat ${logfile} | grep 'Testing STITCH' | wc -l`
