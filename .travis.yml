@@ -10,4 +10,4 @@ install:
  - ./scripts/install-dependencies.sh
 
 script:
-  - ./scripts/test-unit.sh && ./scripts/build-and-install.R && ./scripts/test-cli.R && ./scripts/test-compare-vcf.sh
+  - ./scripts/test-unit.sh &&  ./scripts/test-acceptance.sh && ./scripts/build-and-install.R && ./scripts/test-cli.R && ./scripts/test-compare-vcf.sh
