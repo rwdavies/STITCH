@@ -16,15 +16,8 @@ if (1 == 0) {
 
 }
 
-run_only_one_acceptance_test <- TRUE
-run_acceptance_tests <- TRUE
-
-make_unique_tempdir <- function() {
-    ## make every folder have a space!
-    x <- tempfile(pattern = "folder", fileext = "wer wer2")
-    dir.create(x)
-    return(x)
-}
+run_only_one_acceptance_test <- FALSE
+run_acceptance_tests <- FALSE
 
 n_snps <- 10
 reads_span_n_snps <- 6

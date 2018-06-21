@@ -1,3 +1,12 @@
+make_unique_tempdir <- function() {
+    ## make every folder have a space!
+    x <- tempfile(pattern = "folder", fileext = "wer wer2")
+    dir.create(x)
+    return(x)
+}
+
+
+
 skip_test_if_TRUE <- function(run_acceptance_tests) {
     if (run_acceptance_tests == FALSE)
         skip("skipping")
