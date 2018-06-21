@@ -14,8 +14,8 @@ then
     curl -O http://www.well.ox.ac.uk/~rwdavies/ancillary/megamuga_2018_06_21.RData
 fi
 
-mkdir -p test-results/mouse_data/
-cd test-results/mouse_data/
+mkdir -p test-data/mouse_data/
+cd test-data/mouse_data/
 if [ ! -e STITCH_example_2016_05_10.tgz ]
 then
     curl -O http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
