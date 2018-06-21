@@ -63,8 +63,8 @@ test_that("STITCH diploid-inbred works under default parameters", {
         sink()
         
         check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
-            data_package,
+            file.path(outputdir, paste0("stitch.", data_package_inbred$chr, extension[output_format])),
+            data_package_inbred,
             output_format,
             which_snps = NULL,
             tol = 0.2
