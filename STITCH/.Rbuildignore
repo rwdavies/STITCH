@@ -1,0 +1,15 @@
+src/SeqLib/seq_test
+src/SeqLib/.travis.scripts
+src/SeqLib/fermi-lite/test
+src/SeqLib/htslib/test
+src/SeqLib/benchmark
+src/SeqLib/Doxyfile
+src/SeqLib/bwa/ChangeLog
+src/SeqLib/bwa/bwakit/README.md
+src/SeqLib/bwa/README.md
+src/SeqLib/bwa/NEWS.md
+src/SeqLib/bwa/README-alt.md
+src/SeqLib/issue_tracking.md
+src/SeqLib/README.md
+src/SeqLib/fermi-lite/README.md
+src/SeqLib/htslib/README.md
