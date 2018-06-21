@@ -5,9 +5,9 @@ validate_method <- function(method) {
     if (
     (method != "diploid") &
     (method != "pseudoHaploid") &
-    (method != "haploid")
+    (method != "diploid-inbred")
     ) {
-        stop(paste0("method must be either diploid, pseudoHaploid or haploid"))
+        stop(paste0("method must be either diploid, pseudoHaploid or diploid-inbred"))
     }
     return(NULL)
 }
