@@ -23,6 +23,7 @@ fi
 tar -xzf STITCH_example_2016_05_10.tgz
 cd ../../
 
+mkdir -p test-results/profile-one-off/
 ./scripts/profile.R
 
 ./scripts/compare_vcf_to_truth.R --test-file=./test-results/profile-one-off/stitch.chr19.vcf.gz --chr=chr19 --compare-against=megamuga --mega-save-file=megamuga_2018_06_21.RData
