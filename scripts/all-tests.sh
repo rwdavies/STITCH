@@ -9,6 +9,7 @@ cd "${script_dir}"/../
 
 ./scripts/install-dependencies.sh
 ./scripts/test-unit.sh
+./scripts/test-acceptance.sh
 ./scripts/build-and-install.R
 ./scripts/test-cli.R
-./scripts/test-acceptance.sh
+./scripts/test-examples.sh
