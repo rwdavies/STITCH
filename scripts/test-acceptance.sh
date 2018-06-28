@@ -13,8 +13,12 @@ elif [ "${1}" == "one" ]
 then
     what_to_test=acceptance-one
 else
-    echo Acceptance test either runs all or one
-    exit 1
+    what_to_test="${1}"
+    if ! [ -e "STITCH/tests/testthat/test-acceptance-${what_to_test}.R" ]
+    then
+	echo Acceptance test either runs all, one, or specify file test-acceptance-{argument}.R
+	exit 1
+    fi
 fi
 
 ./scripts/test-with-testthat.sh ${what_to_test}

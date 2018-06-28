@@ -5,8 +5,11 @@ set -e
 what_to_test=$1
 if [ "${what_to_test}" != "unit" ] && [ "${what_to_test}" != "acceptance" ] && [ "${what_to_test}" != "acceptance-one" ]
 then
-    echo Must select either unit or acceptance tests, but you have selected:${what_to_test}
-    exit 1
+    if ! [ -e "STITCH/tests/testthat/test-acceptance-${what_to_test}.R" ]
+    then
+	echo Acceptance test either runs all, one, or specify file test-acceptance-{argument}.R
+	exit 1
+    fi
 fi
 
 # Run unit or acceptance tests on uncompiled package using devtools::check
