@@ -222,7 +222,7 @@ STITCH <- function(
     validate_output_format(output_format)    
     validate_output_filename(output_filename, output_format)
     validate_B_bit_prob(B_bit_prob, output_format)
-    
+
     ## more involved checks
     validate_regionStart_regionEnd_and_buffer(regionStart, regionEnd, buffer)
     validate_bamlist_and_cramlist_for_input_generation(regenerateInput, originalRegionName, bamlist, cramlist, regionStart, regionEnd, buffer, regenerateInputWithDefaultValues, reference)
@@ -585,7 +585,7 @@ STITCH <- function(
 
 
     ##
-    ## build final VCF from pieces
+    ## build final output
     ##
     to_use_output_filename <- get_output_filename(
         output_filename = output_filename,
@@ -639,7 +639,29 @@ STITCH <- function(
     ##
     ## now, if there was a buffer, remove the unwanted SNPs
     ##
-    if(is.na(regionStart)==FALSE & is.na(regionEnd)==FALSE) {
+    if (is.na(regionStart) == FALSE & is.na(regionEnd) == FALSE) {
+        ##
+        ## first, save (with buffer) to disk
+        ##
+        save(
+            eHapsCurrent, alphaMatCurrent,
+            sigmaCurrent, priorCurrent,
+            hapSumCurrent,
+            alleleCount,
+            estimatedAlleleFrequency,
+            pos, gen, L,
+            nCores, N, nSNPs, chr, K, niterations, nGen,
+            gen_imp,
+            grid, grid_distances, L_grid, nGrids,
+            inRegionL, start_and_end_minus_buffer,
+            reference_panel_SNPs,
+            file = file.path(
+            outputdir, "RData", paste0("EM.all.", regionName, ".withBuffer.RData")
+            )
+        )
+        ##
+        ## next, remove buffer
+        ##
         out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent = alphaMatCurrent, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, hapSum = hapSum, hapSumCurrent = hapSumCurrent, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize)
         pos <- out$pos
         gen <- out$gen
@@ -658,26 +680,30 @@ STITCH <- function(
         grid_distances <- out$grid_distances
         L_grid <- out$L_grid
         nGrids <- out$nGrids
-        ##
-        ## shrink the VCF - no longer necessary, pre-build correct size
-        ##
-        ## print_message("Remove buffer from VCF")
-        ## file <- get_output_filename(
-        ##     output_filename = output_filename,
-        ##     outputdir = outputdir,
-        ##     regionName = regionName,
-        ##     output_format = output_format
-        ## )
-        ## file_temp <- paste0(file, ".temp")
-        ## command <- paste0(
-        ##     "gunzip -c ", shQuote(file)," | cat | awk '{if(substr($0, 1, 1)==",'"#"'," || ( $2>=", regionStart, " && $2<=", regionEnd, ")) {print $0}}' | bgzip -c > ", shQuote(file_temp)
-        ## )
-        ## system(command)
-        ## system(paste0("mv ", shQuote(file_temp), " ", shQuote(file)))
+        reference_panel_SNPs <- out$reference_panel_SNPs
     }
 
 
 
+    ##
+    ## save important files from EM output
+    ##
+    save(
+        eHapsCurrent, alphaMatCurrent,
+        sigmaCurrent, priorCurrent,
+        hapSumCurrent,
+        alleleCount,
+        estimatedAlleleFrequency,
+        pos, gen, L,
+        nCores, N, nSNPs, chr, K, niterations, nGen,
+        gen_imp,
+        grid, grid_distances, L_grid, nGrids,
+        inRegionL, start_and_end_minus_buffer,
+        reference_panel_SNPs,
+        file = file.path(
+            outputdir, "RData", paste0("EM.all.", regionName, ".RData")
+        )
+    )
 
 
     ##
@@ -691,39 +717,6 @@ STITCH <- function(
     save(hapSum, file = file.path(outputdir, "RData", paste0("hapSum.",regionName,".RData")))
 
 
-
-    ##
-    ## save important files from EM output (ie eHaps, niterations)
-    ##
-    save(
-        eHapsCurrent, alphaMatCurrent,
-        sigmaCurrent, priorCurrent,
-        hapSumCurrent,
-        file = file.path(
-            outputdir, "RData", paste0("EMfinalestimates.", regionName, ".RData")
-        )
-    )
-    save(
-        alleleCount,
-        estimatedAlleleFrequency,
-        pos, gen, L,
-        file = file.path(
-            outputdir, "RData", paste0("EMnecessary.", regionName, ".RData")
-        )
-    )
-    save(
-        nCores, N, nSNPs, chr, K, niterations, nGen,
-        file = file.path(
-            outputdir, "RData", paste0("EMparameters.", regionName, ".RData")
-        )
-    )
-    if(length(highCovInLow) > 0)
-        save(
-            gen_imp,
-            file = file.path(
-                outputdir, "RData", paste0("gen_imp.", regionName, ".RData")
-            )
-        )
 
 
 
@@ -904,6 +897,7 @@ remove_buffer_from_variables <- function(
     L_grid = NULL,
     nGrids = NULL,
     gridWindowSize = NULL,
+    reference_panel_SNPs = NULL,
     verbose = TRUE
 ) {
     if (verbose)
@@ -920,6 +914,7 @@ remove_buffer_from_variables <- function(
     alleleCount <- alleleCount[inRegion2, ]
     L <- L[inRegion2]
     nSNPs <- as.integer(nrow(pos))
+    reference_panel_SNPs <- reference_panel_SNPs[inRegion2]
     ## hmm, there is no perfect answer here
     ## for now, save everything that intersected
     to_keep <- unique(grid[inRegion2L]) + 1
@@ -932,7 +927,7 @@ remove_buffer_from_variables <- function(
     ##
     ##
     eHapsCurrent <- eHapsCurrent[inRegion2,]
-    priorCurrent <- hapSum[1,]/sum(hapSum[1,])
+    priorCurrent <- hapSum[1, ] / sum(hapSum[1, ])
     ##
     info <- info[inRegion2]
     hwe <- hwe[inRegion2]
@@ -977,7 +972,8 @@ remove_buffer_from_variables <- function(
             grid = grid,
             grid_distances = grid_distances,
             L_grid = L_grid,
-            nGrids = nGrids
+            nGrids = nGrids,
+            reference_panel_SNPs = reference_panel_SNPs
         )
     )
 }
@@ -1348,8 +1344,6 @@ initialize_parameters <- function(
                 eHapsCurrent[is.na(eHapsCurrent[, 1]), ] <- to_replace
             }
 
-
-
             out <- run_EM_on_reference_sample_reads(reference_iterations = reference_iterations, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances)
 
             sigmaCurrent <- out$sigmaCurrent
@@ -1400,30 +1394,30 @@ initialize_parameters <- function(
 
 
 run_EM_on_reference_sample_reads <- function(
-  reference_iterations,
-  eHapsCurrent,
-  sigmaCurrent,
-  alphaMatCurrent,
-  priorCurrent,
-  hapSumCurrent,
-  N_haps,
-  nCores,
-  reference_bundling_info,
-  tempdir,
-  regionName,
-  nSNPs,
-  nGrids,
-  K,
-  L,
-  nGen,
-  emissionThreshold,
-  alphaMatThreshold,
-  expRate,
-  minRate,
-  maxRate,
-  pseudoHaploidModel,
-  reference_phred,
-  grid_distances
+    reference_iterations,
+    eHapsCurrent,
+    sigmaCurrent,
+    alphaMatCurrent,
+    priorCurrent,
+    hapSumCurrent,
+    N_haps,
+    nCores,
+    reference_bundling_info,
+    tempdir,
+    regionName,
+    nSNPs,
+    nGrids,
+    K,
+    L,
+    nGen,
+    emissionThreshold,
+    alphaMatThreshold,
+    expRate,
+    minRate,
+    maxRate,
+    pseudoHaploidModel,
+    reference_phred,
+    grid_distances
 ) {
 
     print_message("Begin EM using reference haplotypes")
@@ -2860,7 +2854,7 @@ shrinkReads <- function(
     inputBundleBlockSize
 ) {
 
-    if(regenerateInput == TRUE | regionName == originalRegionName) {
+    if((regenerateInput == TRUE) | (regionName == originalRegionName)) {
 
         print_message("Copying files onto tempdir")
         if (is.na(inputBundleBlockSize)) {
