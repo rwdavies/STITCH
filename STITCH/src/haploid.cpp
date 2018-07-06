@@ -18,69 +18,93 @@
 using namespace Rcpp;
 
 
+// can be for haploid (regular) or pseudo-haploid
 
 //' @export
 // [[Rcpp::export]]
-arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax) {
-  //
-  // constants
-  //
-  //const int T = eHaps_t.n_cols;
-  const int K = eHaps_t.n_rows; // traditional K for haplotypes
-  //
-  // new variables
-  //
-  double pR = 0;
-  double pA = 0;
-  double eps, x;
-  int j, k, J, readSNP, jj;
-  arma::mat eMatHap_t = arma::ones(K,nReads);
-  //
-  // now build
-  //
-  int iRead;
-  for(iRead=0; iRead<=nReads-1; iRead++) {
-    Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-    // recal that below is what is used to set each element of sampleRead
-    // note - this is no longer quite accurate
-    // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
-    J = as<int>(readData[0]); // number of Unique SNPs on read
-    readSNP = as<int>(readData[1]); // leading SNP from read
-    arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
-    arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-    // once each SNP is done, have P(read | k), can multiply to get P(read|(k1,k2))
-    if(J>=Jmax)
-      J=Jmax;
-    for(j=0; j<=J; j++) {
-        if(bqU(j)<0) {
-            eps = pow(10,(double(bqU(j))/10));
-            pR=1-eps;
-            pA=eps/3;
-        }
-        if(bqU(j)>0) {
-            eps = pow(10,(-double(bqU(j))/10));
-            pR=eps/3;
-            pA=1-eps;
-        }
-        jj=pRU(j);
+arma::mat rcpp_make_eMatHap_t(
+    const Rcpp::List& sampleReads,
+    const int nReads,
+    const arma::mat& eHaps_t,
+    const double maxDifferenceBetweenReads,
+    const int Jmax,
+    arma::mat& eMatHapOri_t,
+    const arma::vec& pRgivenH1,
+    const arma::vec& pRgivenH2,
+    const bool run_pseudo_haploid = false
+) {
+    //
+    // constants
+    //
+    //const int T = eHaps_t.n_cols;
+    const int K = eHaps_t.n_rows; // traditional K for haplotypes
+    //
+    // new variables
+    //
+    double pR = 0;
+    double pA = 0;
+    double eps, x;
+    int j, k, J, readSNP, jj;
+    arma::mat eMatHap_t = arma::ones(K,nReads);
+    //
+    // now build
+    //
+    int iRead;
+    for(iRead=0; iRead<=nReads-1; iRead++) {
+        Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
+        // recal that below is what is used to set each element of sampleRead
+        // note - this is no longer quite accurate
+        // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
+        J = as<int>(readData[0]); // number of Unique SNPs on read
+        readSNP = as<int>(readData[1]); // leading SNP from read
+        arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
+        arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
+        // once each SNP is done, have P(read | k), can multiply to get P(read|(k1,k2))
+        if(J>=Jmax)
+            J=Jmax;
+        for(j=0; j<=J; j++) {
+            if(bqU(j)<0) {
+                eps = pow(10,(double(bqU(j))/10));
+                pR=1-eps;
+                pA=eps/3;
+            }
+            if(bqU(j)>0) {
+                eps = pow(10,(-double(bqU(j))/10));
+                pR=eps/3;
+                pA=1-eps;
+            }
+            jj=pRU(j);
+            for(k=0; k<=K-1; k++) {
+                eMatHap_t(k,iRead) = eMatHap_t(k,iRead) * \
+                    ( eHaps_t(k, jj) * pA + (1-eHaps_t(k,jj)) * pR);
+            }
+            if (run_pseudo_haploid == true) {
+                //
+                // pseudo-haploid          
+                //
+                x=pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
+                //
+                for(k=0; k<=K-1; k++) {
+                    // inefficient?
+                    eMatHapOri_t(k, iRead) = eMatHap_t(k, iRead);
+                    eMatHap_t(k,iRead) = x * eMatHap_t(k,iRead) + (1-x) * pRgivenH2(iRead);
+                }
+            }
+        } 
+        //
+        // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
+        //
+        x=0;
         for(k=0; k<=K-1; k++)
-            eMatHap_t(k,iRead) = eMatHap_t(k,iRead) *   \
-                ( eHaps_t(k, jj) * pA + (1-eHaps_t(k,jj)) * pR);
-    } 
-    //
-    // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
-    //
-    x=0;
-    for(k=0; k<=K-1; k++)
-        if(eMatHap_t(k,iRead)>x)
-            x=eMatHap_t(k,iRead);
-    x = x / maxDifferenceBetweenReads;
-    // x is the maximum now
-    for(k=0; k<=K-1; k++)
-        if(eMatHap_t(k,iRead)<x)
-            eMatHap_t(k,iRead) = x;
-  }
-  return(eMatHap_t);
+            if(eMatHap_t(k,iRead)>x)
+                x=eMatHap_t(k,iRead);
+        x = x / maxDifferenceBetweenReads;
+        // x is the maximum now
+        for(k=0; k<=K-1; k++)
+            if(eMatHap_t(k,iRead)<x)
+                eMatHap_t(k,iRead) = x;
+    }
+    return(eMatHap_t);
 }
     
 
@@ -240,7 +264,19 @@ Rcpp::List rcpp_sample_multiple_paths(const int n_starts, const int n_its, const
     //
     // output variables go here
     //
-    arma::mat eMatHap_t = rcpp_make_eMatHap_t(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax);
+    arma::mat eMatHapPH_t;
+    arma::vec pRgivenH1;
+    arma::vec pRgivenH2;
+    arma::mat eMatHap_t = rcpp_make_eMatHap_t(
+        sampleReads,
+        nReads,
+        eHaps_t,
+        maxDifferenceBetweenReads,
+        Jmax,
+        eMatHapPH_t,
+        pRgivenH1,
+        pRgivenH2
+    );
     //
     // initialize random numbers
     //

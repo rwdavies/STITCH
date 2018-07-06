@@ -53,7 +53,11 @@ test_that("can calculate likelihoods of flips in C++", {
         nReads = length(sampleReads),
         eHaps_t = eHapsCurrent_t,
         maxDifferenceBetweenReads = 1000,
-        Jmax = 10
+        Jmax = 10,
+	eMatHapOri_t = array(0, c(1, 1)), ## argh?
+	pRgivenH1 = array(NA, c(1, 1)),
+	pRgivenH2 = array(NA, c(1, 1)),
+	run_pseudo_haploid = FALSE
     )
 
     ## 1 - how to sample

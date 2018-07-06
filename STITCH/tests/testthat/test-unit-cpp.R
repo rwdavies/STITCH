@@ -285,7 +285,11 @@ test_that("can calculate eMatHapSNP and sample a path", {
         nReads = length(sampleReads),
         eHaps_t = t(eHaps),
         maxDifferenceBetweenReads = 1000,
-        Jmax = 10
+	Jmax = 10,
+	eMatHapOri_t = array(0, c(1, 1)),
+	pRgivenH1 = array(NA, c(1, 1)),
+	pRgivenH2 = array(NA, c(1, 1)),
+	run_pseudo_haploid = FALSE
     )
 
     sigma <- runif(n_snps - 1)

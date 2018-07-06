@@ -471,6 +471,15 @@ STITCH <- function(
     nGrids <- out$nGrids
 
 
+    ## determine output regions (to follow werwerwer)
+    ## do not split grid
+    ##regionStart
+    ##regionEnd    
+    ##grid
+    ##L_grid    
+
+    
+
     ##
     ## initialize variables
     ##
@@ -3608,10 +3617,10 @@ get_default_hapProbs <- function(
 
 
 run_forward_backwards <- function(
-    whatToReturnOriginal,
-    tempdir,
-    regionName,
-    iSample,
+    whatToReturnOriginal = 1,
+    tempdir = tempdir,
+    regionName = "region",
+    iSample = 1,
     sampleReads,
     method,
     K,
@@ -3619,20 +3628,34 @@ run_forward_backwards <- function(
     alphaMatCurrent_t,
     eHapsCurrent_t,
     transMatRate_t,
-    nSNPs,
-    iteration,
-    K_random,
-    grid_eHaps_distance,
-    maxDifferenceBetweenReads,
-    maxEmissionMatrixDifference,
-    highCovInLow,
-    Jmax,
-    nor,
-    pRgivenH1,
-    pRgivenH2,
-    srp,
-    pseudoHaploidModel
+    iteration = NA,
+    K_random = NA,
+    grid_eHaps_distance = NA,
+    maxDifferenceBetweenReads = 1000,
+    maxEmissionMatrixDifference = 1e10,
+    highCovInLow = NULL,
+    Jmax = 10,
+    nor = NULL,
+    pRgivenH1 = NULL,
+    pRgivenH2 = NULL,
+    srp = NULL,
+    pseudoHaploidModel = 9,
+    run_fb_subset = FALSE,
+    alphaStart = 0,
+    betaEnd = 0,
+    run_fb_snp_offset = 0,
+    suppressOutput = as.integer(1)    
 ) {
+
+    ## re-declare obvious stuff
+    nSNPs <- ncol(eHapsCurrent_t)
+    if (length(nor) == 0) {
+        if (method == "pseudoHaploid") {
+            nor <- 2
+        } else {
+            nor <- 1
+        }
+    }
     
     whatToReturn <- whatToReturnOriginal
     if (is.na(match(iSample,highCovInLow)) == FALSE) {
@@ -3640,6 +3663,8 @@ run_forward_backwards <- function(
     }
     
     fbsoL <- as.list(1:nor)
+
+    ## experimental, probably not useful
     if (method == "diploid_subset") {
         ## choose best haplotypes
         out <- select_best_K_for_a_sample_diploid(
@@ -3670,7 +3695,7 @@ run_forward_backwards <- function(
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             whatToReturn = whatToReturn,
-            suppressOutput = as.integer(1),
+            suppressOutput = suppressOutput,
             return_a_sampled_path = as.integer(1)
         )
         ## save haplotypes for next time
@@ -3693,6 +3718,8 @@ run_forward_backwards <- function(
                 y[1:K_subset + (ii - 1) * K_subset, ]
         fbsoL[[1]]$gammaK_t <- gamma_t
     }
+
+    
     if(method=="pseudoHaploid") {
         for (iNor in 1:nor) {        
             if (iNor==1) {
@@ -3706,19 +3733,23 @@ run_forward_backwards <- function(
             fbsoL[[iNor]] <- forwardBackwardHaploid(
                 sampleReads = sampleReads,
                 nReads = as.integer(length(sampleReads)),
-                Jmax = as.integer(Jmax),
                 pi = priorCurrent,
-                pRgivenH1 = pRgivenH1L,
-                pRgivenH2 = pRgivenH2L,
-                eHaps_t = eHapsCurrent_t,
-                alphaMat_t = alphaMatCurrent_t,
                 transMatRate_t = transMatRate_t,
+                alphaMat_t = alphaMatCurrent_t,
+                eHaps_t = eHapsCurrent_t,
                 maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
                 maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
                 whatToReturn = whatToReturn,
-                suppressOutput = as.integer(1),
-                model = as.integer(pseudoHaploidModel),
-                run_pseudo_haploid = as.integer(1)
+                Jmax = as.integer(Jmax),
+                suppressOutput = suppressOutput,
+                model = as.integer(pseudoHaploidModel),                
+                pRgivenH1 = pRgivenH1L,
+                pRgivenH2 = pRgivenH2L,
+                run_pseudo_haploid = TRUE,
+                alphaStart = alphaStart,
+                betaEnd = betaEnd,
+                run_fb_subset = run_fb_subset,                
+                run_fb_snp_offset = run_fb_snp_offset            
             )
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
         }
@@ -3739,9 +3770,13 @@ run_forward_backwards <- function(
             maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
             maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
             whatToReturn = whatToReturn,
-            suppressOutput = as.integer(1),
+            suppressOutput = suppressOutput,
             model = -1, ## irrelevant for haploid
-            run_pseudo_haploid = as.integer(0)
+            run_pseudo_haploid = FALSE,
+            run_fb_subset = run_fb_subset,
+            alphaStart = alphaStart,
+            betaEnd = betaEnd,
+            run_fb_snp_offset = run_fb_snp_offset            
         )
         fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
     }
@@ -3757,7 +3792,11 @@ run_forward_backwards <- function(
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             whatToReturn = whatToReturn,
-            suppressOutput = as.integer(1)
+            suppressOutput = suppressOutput,
+            run_fb_subset = run_fb_subset,
+            alphaStart = alphaStart,
+            betaEnd = betaEnd,
+            run_fb_snp_offset = run_fb_snp_offset            
         )
     }
 
@@ -4172,7 +4211,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             alphaMatCurrent_t = alphaMatCurrent_t,
             eHapsCurrent_t = eHapsCurrent_t,
             transMatRate_t = transMatRate_t,
-            nSNPs = nSNPs,
             iteration = iteration,
             K_random = K_random,
             grid_eHaps_distance = grid_eHaps_distance,
@@ -5687,7 +5725,10 @@ snap_sampleReads_to_grid <- function(sampleReads, grid) {
 ## output is 1-based on grid coordinates, like
 ## 1-5 -> 0, 6-10 -> 1, etc
 ## remove holes, sigma will be made able to handle it with bounding
-assign_positions_to_grid <- function(L, gridWindowSize) {
+assign_positions_to_grid <- function(
+    L,
+    gridWindowSize
+) {
     if (is.na(gridWindowSize) == FALSE) {
         grid <- ceiling(L / gridWindowSize)
         grid <- grid - min(grid)
@@ -5865,3 +5906,28 @@ downsample_snapped_sampleReads <- function(
 
 
 
+determine_snp_blocks_for_output <- function(
+    grid,
+    outputSNPBlockSize = 1000
+) {
+    c <- 1
+    c2 <- 1
+    start <- 1
+    to_out <- array(NA, c(ceiling(length(grid) / outputSNPBlockSize) + 1, 2))
+    for(iSNP in 2:length(grid)) {
+        c <- c + 1
+        if ((outputSNPBlockSize < c) & (grid[iSNP - 1] < grid[iSNP])) {
+            to_out[c2, ] <- c(start, iSNP - 1)
+            c <- 0
+            c2 <- c2 + 1
+            start <- iSNP
+        }
+        if (iSNP == length(grid)) {
+            to_out[c2, ] <- c(start, iSNP)
+        }
+    }
+    to_out <- to_out[1:c2, , drop = FALSE]
+    colnames(to_out) <- c("snp_start", "snp_end")
+    ## if last region too small (smaller than 2 SNPs or 10%), merge back in
+    return(to_out)
+}
