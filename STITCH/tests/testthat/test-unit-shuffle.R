@@ -15,6 +15,11 @@ test_that("can determine switches", {
     }
     switchOrder <- determine_switch_order(fromMat, nbreaks, K)
 
+    expect_equal(
+        switchOrder,
+        matrix(rep(1:4, 3), nrow = 3, byrow = TRUE)
+    )
+
 })
 
 
