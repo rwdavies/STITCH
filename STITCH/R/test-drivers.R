@@ -451,7 +451,8 @@ check_bgen_gp_against_phase <- function(
 ) {
     for(i_sample in 1:dim(gp)[[2]]) {
         ## check genotype probability
-        genotype_posteriors <- gp[, i_sample, ]        
+        genotype_posteriors <- array(NA, c(dim(gp)[1], 3))
+        genotype_posteriors[, ] <- gp[, i_sample, , drop = FALSE]        
         r <- rowSums(genotype_posteriors)
         ## check their sum, up to a tolerance
         expect_equal(sum(abs(r - 1) > 0.00101), 0)

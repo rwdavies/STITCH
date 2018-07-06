@@ -494,8 +494,8 @@ test_that("STITCH pseudoHaploid works with a single sample and two cores", {
         sink()
 
         check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package3$chr, extension[output_format])),
-            data_package3,
+            file = file.path(outputdir, paste0("stitch.", data_package3$chr, extension[output_format])),
+            data_package = data_package3,
             output_format,
             which_snps = NULL,
             tol = 0.2
@@ -931,8 +931,8 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
             sink()
             
             check_output_against_phase(
-                file.path(outputdir, output_filename),
-                data_package_few,
+               file =  file.path(outputdir, output_filename),
+               data_package = data_package_few,
                 output_format,
                 which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
                 tol = 0.2
