@@ -602,3 +602,37 @@ validate_hapProb <- function(initial_min_hapProb, initial_max_hapProb) {
     if (initial_max_hapProb < 0 | 1 < initial_max_hapProb)
         stop("initial_max_hapProb must be between 0 and 1")
 }
+
+## note - require two SNPs - otherwise imputation is just genotyping!
+validate_region_to_impute_when_using_regionStart <- function(L, regionStart, regionEnd, buffer) {
+    for(i in 1:3) {
+        if (i == 1) {
+            s <- sum( ((regionStart - buffer) <= L) & (L < regionStart)) ## left region
+            x <- paste0((regionStart - buffer), " <= position < ", regionStart)
+        }
+        if (i == 2) {
+            s <- sum( (regionStart <= L) & (L <= regionEnd)) ## interior region
+            x <- paste0(regionStart, " <= position <= ", regionEnd)
+                nCentralSNPs <- s
+        }
+        if (i == 3) {
+            s <- sum( (regionEnd < L) & (L <= (regionEnd + buffer))) ## right region            
+            x <- paste0(regionEnd, " < position <= ", regionEnd + buffer)
+        }
+        print_message(
+            paste0(
+                "There are ", s, " variants in the ",
+                c("left buffer", "central", "right buffer")[i],
+                " region ",
+                x
+            )
+        )
+    }
+    if (length(L) < 2) {
+        stop("There are fewer than 2 SNPs to impute, i.e. there is 1 SNP to impute. In this case, imputation is really just genotyping. STITCH could support genotyping but does not, and note that this kind of defeats the point of imputation. Please use your favourite genotyper e.g. GATK to genotype these SNPs. If you strongly disagree please file a bug report and this can be re-examined")
+    }
+    if (nCentralSNPs < 1) {
+        stop("There are no SNPs to impute")
+    }
+    return(NULL)
+}

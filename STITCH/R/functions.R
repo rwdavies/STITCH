@@ -243,6 +243,7 @@ STITCH <- function(
         keepTempDir = keepTempDir,
         outputdir = outputdir
     )
+    outputdir <- out$outputdir ## path.expand
     tempdir <- out$tempdir
     inputdir <- out$inputdir
 
@@ -798,11 +799,14 @@ initialize_directories <- function(
     STITCH_again = FALSE,
     keep_generated_input = FALSE
 ) {
+    ## expand to remove tilda's, weird problems sometimes
+    outputdir <- path.expand(outputdir)
     ## not ideal - overriding input parameter
     ## also not ideal - same name as function
     if (is.na(tempdir)) {
         tempdir <- tempdir()
     }
+    tempdir <- path.expand(tempdir)
     tempdir <- file.path(
         tempdir,
         paste(
@@ -842,6 +846,7 @@ initialize_directories <- function(
     }
     return(
         list(
+            outputdir = outputdir,
             tempdir = tempdir,
             inputdir = inputdir
         )
@@ -1119,7 +1124,7 @@ shrink_region <- function(
     if ( is.na(regionStart) == FALSE & is.na(regionEnd) == FALSE ) {
         ## need to shrink pos, L, gen
         ## then, need to fix input
-        inRegion <- L>=(regionStart-buffer) & L<=(regionEnd+buffer)
+        inRegion <- ((regionStart-buffer) <= L) & (L <= (regionEnd + buffer))
         w <- which(inRegion)
         inRegionL <- c(head(w, 1), tail(w, 1)) ## 1-based, first SNP in buffer, last SNP outside buffer
         L <- L[inRegion]
@@ -1130,12 +1135,14 @@ shrink_region <- function(
         ## now, compare shrunk L to buffer region
         inRegion <- L >= (regionStart) & L <= (regionEnd)
         w <- which(inRegion)
-        start_and_end_minus_buffer <- c(head(w, 1), tail(w, 1)) ## first SNP 
+        start_and_end_minus_buffer <- c(head(w, 1), tail(w, 1)) ## first SNP
+        validate_region_to_impute_when_using_regionStart(L, regionStart, regionEnd, buffer)
     } else {
         inRegionL <- c(1, nSNPs)
         start_and_end_minus_buffer <- c(1, nSNPs)
         nSNPsInRegionMinusBuffer <- nSNPs
     }
+    ## print off number of SNPs in regions
     ## mostly useful to remember how to define
     ## nSNPsInRegionMinusBuffer <- start_and_end_minus_buffer[2] - start_and_end_minus_buffer[1] + 1    
     return(
@@ -1150,7 +1157,6 @@ shrink_region <- function(
         )
     )
 }
-
 
 compare_reference_haps_against_alleleCount <- function(
   alleleCount,
@@ -2874,12 +2880,18 @@ shrinkReads <- function(
         if (is.na(inputBundleBlockSize)) {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
             command1 <- paste0(
-                '(cd "', inputdir, '" && find . -name "',
+                'cd ', shQuote(inputdir), ' && find . -name "',
                 'sample.*.input.', regionName, '.RData',
-                '" > "', file_with_files_to_transfer, '")'
+                '" > ', shQuote(file_with_files_to_transfer)
             )
             system(command1)
-            command2 <- paste0("rsync -a --files-from='", file_with_files_to_transfer, "' '", inputdir, "' '", tempdir, "'")
+            command2 <- paste0(
+                "rsync -a ",
+                "--files-from=",
+                shQuote(file_with_files_to_transfer), " ",
+                shQuote(inputdir), " ",
+                tempdir
+            )
             system(command2)
         } else {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
@@ -4301,13 +4313,13 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             ## shrink gp_t here
             ## no obvious reason to do it earlier - need full region to run forward backwards
             if (region_has_buffer) {
-                gp_t <- gp_t[, inRegion]
+                gp_t <- gp_t[, inRegion, drop = FALSE]
             }
             ##
             eij <- round(gp_t[2, ] + 2 * gp_t[3, ], 3) ## prevent weird rounding issues
-            fij <- round(gp_t[2, ] + 4 * gp_t[3, ], 3) ## 
-            infoCount[, 1] <- infoCount[, 1] + eij
-            infoCount[, 2] <- infoCount[, 2] + (fij - eij**2)
+            fij <- round(gp_t[2, ] + 4 * gp_t[3, ], 3) ##
+            infoCount[, 1] <- infoCount[, 1, drop = FALSE] + eij
+            infoCount[, 2] <- infoCount[, 2, drop = FALSE] + (fij - eij**2)
             ## this returns un-transposed results
             max_gen <- get_max_gen_rapid(gp_t)
             ## hweCount is NOT transposed!
@@ -4728,14 +4740,14 @@ calculate_updates <- function(
     nGrids <- ncol(out2[[1]]$alphaMatSum_t) + 1
     priorSum <- array(0, K)
     alphaMatSum_t <- array(0, c(K, nGrids - 1))
-    gammaSum_t <- array(0, c(K, nSNPs, 2))
+    gammaSumBoth_t <- array(0, c(K, nSNPs, 2))
     hapSum_t <- array(0, c(K, nGrids))
     ## sum and sum
 
     for(i in 1:length(x3)) {
         priorSum <- priorSum + out2[[i]]$priorSum
         alphaMatSum_t <- alphaMatSum_t + out2[[i]]$alphaMatSum_t
-        gammaSum_t <- gammaSum_t + out2[[i]]$gammaSum_t
+        gammaSumBoth_t <- gammaSumBoth_t + out2[[i]]$gammaSum_t
         hapSum_t <- hapSum_t + out2[[i]]$hapSum_t
     }
 
@@ -4775,8 +4787,10 @@ calculate_updates <- function(
     sigmaSum[sigmaSum > x1] <- x1[sigmaSum > x1]
     sigmaSum[sigmaSum < x2] <- x2[sigmaSum < x2]
 
-    gammaSum_t <- gammaSum_t[, , 1] / gammaSum_t[, , 2]
-
+    ## needed if only 1 SNP. stupid R and not able to drop selective dimensions
+    gammaSum_t <- array(0, c(K, nSNPs))    
+    gammaSum_t[, ] <- gammaSumBoth_t[, , 1] / gammaSumBoth_t[, , 2] 
+    
     ## if missing, use alleleCount to fill in
     if (is.na(alleleCount[1])) {
         gammaSum_t[is.na(gammaSum_t)] <- 0.5 ## blank out entire SNP if no reads anywhere

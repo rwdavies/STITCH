@@ -327,7 +327,7 @@ get_output_filename <- function(
                 output_filename
             ))
         } else {
-            return(output_filename)
+            return(path.expand(output_filename))
         }
     }
 }

@@ -2,7 +2,7 @@ if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
     ## dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/Google Drive/STITCH_OFFLINE/"
+    dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
     b <- grep("~", a)
@@ -54,6 +54,25 @@ data_package_crams <- make_acceptance_test_data_package(
     use_crams = TRUE
 )
 
+
+n_snps <- 5
+n_reads <- 20
+reads_span_n_snps <- 2
+phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
+phasemaster[2, ] <- c(1, 0)
+phasemaster[4, ] <- c(1, 0)
+L_few <- 6:10
+data_package_few <- make_acceptance_test_data_package(
+    n_samples = 10,
+    n_snps = n_snps,
+    n_reads = n_reads,
+    seed = 3,
+    chr = "chr5",
+    K = 2,
+    reads_span_n_snps = reads_span_n_snps,
+    phasemaster = phasemaster,
+    L = L_few
+)
 
 
 test_that("STITCH diploid works under default parameters", {
@@ -134,6 +153,8 @@ test_that("STITCH diploid can write to bgen", {
 
 
 
+
+
 ## afterwards, everything should test both bgen and bgvcf
 
 test_that("STITCH diploid works with multiple cores", {
@@ -170,37 +191,50 @@ test_that("STITCH diploid works with multiple cores", {
 
 })
 
-test_that("STITCH diploid works under default parameters when outputdir has a space in it", {
+test_that("STITCH diploid works under default parameters when outputdir has a space or a tilda in it", {
 
-
-    for(output_format in c("bgvcf", "bgen")) {
+    ## not 100% sure I can write to this in all systems, so check it first
+    outputdirs <- c(
+        file.path(make_unique_tempdir(), "wer wer2"),
+        tempfile(tmpdir = "~/")
+    )
+    ## check can write to tilda
+    dir.create(outputdirs[2])
+    testfile <- file.path(outputdirs[2], "temp.txt")
+    cat("", file = testfile)
+    expect_equal(file.exists(testfile), TRUE)
+    unlink(outputdirs[2])
         
-        sink("/dev/null")
+    for(outputdir in outputdirs) {
 
-        outputdir <- file.path(make_unique_tempdir(), "wer wer2")    
-        set.seed(10)
-        STITCH(
-            chr = data_package$chr,
-            bamlist = data_package$bamlist,
-            posfile = data_package$posfile,
-            genfile = data_package$genfile,        
-            outputdir = outputdir,
-            K = 2,
-            nGen = 100,
-            nCores = 1,
-            outputBlockSize = 3,
-            output_format = output_format            
-        )
-    
-        sink()
+        for(output_format in c("bgvcf", "bgen")) {
         
-        check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
-            data_package,
-            output_format,
-            which_snps = NULL,
-            tol = 0.2
-        )
+            sink("/dev/null")
+
+            STITCH(
+                chr = data_package$chr,
+                bamlist = data_package$bamlist,
+                posfile = data_package$posfile,
+                genfile = data_package$genfile,        
+                outputdir = outputdir,
+                K = 2,
+                nGen = 100,
+                nCores = 1,
+                outputBlockSize = 3,
+                output_format = output_format            
+            )
+            
+            sink()
+            
+            check_output_against_phase(
+                file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+                data_package,
+                output_format,
+                which_snps = NULL,
+                tol = 0.2
+            )
+
+        }
     }
 
 })
@@ -208,9 +242,11 @@ test_that("STITCH diploid works under default parameters when outputdir has a sp
 
 
 
+
+
 test_that("STITCH diploid works under default parameters with nCores = 40 and N = 25", {
     
-
+    n_snps <- 10
     phasemaster25 <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
     phasemaster25[3, ] <- c(1, 0)
     phasemaster25[7, ] <- c(0, 1)    
@@ -822,5 +858,89 @@ test_that("STITCH diploid works with snap to grid with downsampleToCov", {
         )
         
     }
+
+})
+
+
+## fail if no SNPs to impute
+test_that("STITCH throws an error when no SNPs in region to impute, or if fewer than 2 SNPs to impute", {
+
+    sink("/dev/null")
+
+    for(i in 1:2) {
+        outputdir <- make_unique_tempdir()        
+        expect_error(
+            STITCH(
+                chr = data_package_few$chr,
+                bamlist = data_package_few$bamlist,
+                posfile = data_package_few$posfile,
+                genfile = data_package_few$genfile,
+                outputdir = outputdir,
+                K = 2,
+                nGen = 100,
+                nCores = 1,
+                regionStart = c(11, 10)[i],
+                regionEnd = c(100, 100)[i],
+                buffer = c(5, 0)[i]
+            ),
+            c(
+                "There are no SNPs to impute", 
+                "There are fewer than 2 SNPs to impute, i.e. there is 1 SNP to impute. In this case, imputation is really just genotyping. STITCH could support genotyping but does not, and note that this kind of defeats the point of imputation. Please use your favourite genotyper e.g. GATK to genotype these SNPs. If you strongly disagree please file a bug report and this can be re-examined"
+            )[i]
+        )
+    }
+
+    sink()
+
+})
+
+## OK if no SNPs in left buffer, 1 in central, 1 in left buffer
+test_that("STITCH works with very few SNPs in central region and buffer", {
+
+    for(output_format in c("bgvcf", "bgen")) {
+
+        for(i in 1:3) {
+            
+            if (i == 1) {
+                regionStart <- 10; regionEnd <- 100; buffer <- 1 ## 1 1 0
+            } else if (i == 2) {
+                regionStart <- 9; regionEnd <- 100; buffer <- 0 ## 0 2 0
+            } else if (i == 3) {
+                regionStart <- 1; regionEnd <- 6; buffer <- 1 ## 0 1 1
+            }
+
+            outputdir <- make_unique_tempdir()
+
+            output_filename <- paste0("jimmy", extension[output_format])
+            sink("/dev/null")
+            STITCH(
+                chr = data_package_few$chr,
+                bamlist = data_package_few$bamlist,
+                posfile = data_package_few$posfile,
+                genfile = data_package_few$genfile,        
+                outputdir = outputdir,
+                K = 2,
+                nGen = 100,
+                nCores = 1,
+                output_format = output_format,
+                regionStart = regionStart,
+                regionEnd = regionEnd,
+                buffer = buffer,
+                output_filename = output_filename
+            )
+            sink()
+            
+            check_output_against_phase(
+                file.path(outputdir, output_filename),
+                data_package_few,
+                output_format,
+                which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
+                tol = 0.2
+            )
+            
+        }
+        
+    }
+
 
 })

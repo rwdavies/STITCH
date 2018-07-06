@@ -216,6 +216,7 @@ make_acceptance_test_data_package <- function(
     chr = 10,
     K = 2,
     n_reads = 4,
+    L = NA,
     phasemaster = NULL,
     reads_span_n_snps = NULL,
     n_cores = 1,
@@ -238,7 +239,7 @@ make_acceptance_test_data_package <- function(
     dir.create(rawdir)
 
     posfile <- file.path(outputdir, "posfile.txt")
-    pos <- make_posfile(posfile, n_snps = n_snps, chr = chr)
+    pos <- make_posfile(posfile, L = L, n_snps = n_snps, chr = chr)
 
     phasefile <- file.path(outputdir, "phasefile.txt")
     phase <- make_phasefile(
