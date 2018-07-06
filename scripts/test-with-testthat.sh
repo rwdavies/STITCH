@@ -5,9 +5,9 @@ set -e
 what_to_test=$1
 if [ "${what_to_test}" != "unit" ] && [ "${what_to_test}" != "acceptance" ] && [ "${what_to_test}" != "acceptance-one" ]
 then
-    if ! [ -e "STITCH/tests/testthat/test-acceptance-${what_to_test}.R" ]
+    if ! [ -e "STITCH/tests/testthat/test-acceptance-${what_to_test}.R" ] && ! [ -e "STITCH/tests/testthat/test-unit-${what_to_test}.R" ]
     then
-	echo Acceptance test either runs all, one, or specify file test-acceptance-{argument}.R
+	echo Acceptance test either runs all, one, or specify file test-{unit/acceptance}-{argument}.R
 	exit 1
     fi
 fi
