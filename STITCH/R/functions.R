@@ -5943,6 +5943,7 @@ determine_snp_blocks_for_output <- function(
     if (start_and_end_minus_buffer[1] == start_and_end_minus_buffer[2]) {
         ## only 1 SNP in output region!
         to_out[1, ] <- start_and_end_minus_buffer
+        c2 <- 1
     } else {
         c <- 1
         c2 <- 1
