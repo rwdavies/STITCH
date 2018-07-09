@@ -163,21 +163,16 @@ test_that("can use grid", {
         method = "diploid",
         sigmaCurrent = sigma
     )
-    
-    out <- forwardBackwardDiploid(
-        sampleReads = sampleReads,
-        nReads = as.integer(length(sampleReads)),
-        pi = pi,
-        transMatRate = transMatRate_t,
-        alphaMat = t(alphaMat),
-        eHaps = t(eHaps),
-        maxDifferenceBetweenReads = as.double(1000),
-        maxEmissionMatrixDifference = as.double(1e10),
-        whatToReturn = as.integer(0),
-        Jmax = as.integer(10),
-        suppressOutput = as.integer(1)
-    )
 
+    out <- run_forward_backwards(
+        sampleReads = sampleReads,
+        priorCurrent = pi,
+        transMatRate_t = transMatRate_t,
+        alphaMatCurrent_t = t(alphaMat),
+        eHapsCurrent_t = t(eHaps),
+        method = "diploid"
+    )$fbsoL[[1]]
+    
     expect_equal(ncol(out$gamma_t), nGrids)
     expect_equal(min(out$gamma_t) >= 0, TRUE)
     expect_equal(max(out$gamma_t) <= 1, TRUE)    
@@ -190,25 +185,18 @@ test_that("can use grid", {
         sigmaCurrent = sigma
     )
 
-    for(run_pseudo_haploid in c(TRUE, FALSE)) {
-        out <- forwardBackwardHaploid(
+    for(method in c("pseudoHaploid", "diploid-inbred")) {
+        out <- run_forward_backwards(
             sampleReads = sampleReads,
-            nReads = as.integer(length(sampleReads)),
-            Jmax = as.integer(10),
-            pi = pi,
+            priorCurrent = pi,
+            transMatRate_t = t(transMatRate),
+            alphaMatCurrent_t = t(alphaMat),
+            eHapsCurrent_t = t(eHaps),
             pRgivenH1 = pRgivenH1L,
             pRgivenH2 = pRgivenH2L,
-            eHaps = t(eHaps),
-            alphaMat = t(alphaMat),
-            transMatRate = transMatRate_t,
-            maxDifferenceBetweenReads = as.double(1000),
-            maxEmissionMatrixDifference = as.double(1e10),        
-            whatToReturn = as.integer(0),
-            suppressOutput=as.integer(1),
-            model=as.integer(9),
-            run_pseudo_haploid = run_pseudo_haploid
-        )
-
+            method = method
+        )$fbsoL[[1]]
+        
         expect_equal(ncol(out$gamma_t), nGrids)
         expect_equal(min(out$gamma_t) >= 0, TRUE)
         expect_equal(max(out$gamma_t) <= 1, TRUE)

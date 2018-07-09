@@ -22,10 +22,11 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   restartIterations = NA, refillIterations = c(6, 10, 14, 18),
   downsampleSamples = 1, downsampleSamplesKeepList = NA,
   subsetSNPsfile = NA, useSoftClippedBases = FALSE,
-  outputBlockSize = 1000, inputBundleBlockSize = NA,
-  reference_haplotype_file = "", reference_legend_file = "",
-  reference_sample_file = "", reference_populations = NA,
-  reference_phred = 20, reference_iterations = 10, output_filename = NULL,
+  outputBlockSize = 1000, outputSNPBlockSize = 1000,
+  inputBundleBlockSize = NA, reference_haplotype_file = "",
+  reference_legend_file = "", reference_sample_file = "",
+  reference_populations = NA, reference_phred = 20,
+  reference_iterations = 10, output_filename = NULL,
   initial_min_hapProb = 0.4, initial_max_hapProb = 0.6,
   regenerateInputWithDefaultValues = FALSE,
   plotHapSumDuringIterations = FALSE,
@@ -133,6 +134,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{useSoftClippedBases}{Whether to use (TRUE) or not use (FALSE) bases in soft clipped portions of reads}
 
 \item{outputBlockSize}{How many samples to write out to disk at the same time when making temporary VCFs that are later pasted together at the end to make the final VCF. Smaller means lower RAM footprint, larger means faster write.}
+
+\item{outputSNPBlockSize}{How many SNPs to write to disk at one time to reduce RAM usage when making VCFs}
 
 \item{inputBundleBlockSize}{If NA, disable bundling of input files. If not NA, bundle together input files in sets of <= inputBundleBlockSize together}
 

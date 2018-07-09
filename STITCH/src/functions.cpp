@@ -460,6 +460,26 @@ arma::mat make_and_bound_eMat_t(
 }
 
 
+Rcpp::List make_fb_snp_offsets(
+    const arma::mat& alphaHat_t,
+    const arma::mat& betaHat_t,
+    const arma::mat& snp_blocks_for_output
+) {
+    int s, e;
+    arma::mat alphaHatBlocks_t = arma::zeros(alphaHat_t.n_rows, snp_blocks_for_output.n_rows);
+    arma::mat betaHatBlocks_t = arma::zeros(betaHat_t.n_rows, snp_blocks_for_output.n_rows);    
+    for(int i_output=0; i_output < snp_blocks_for_output.n_rows; i_output++) {
+        s = snp_blocks_for_output(i_output, 0) - 1; // these are 1-based
+        e = snp_blocks_for_output(i_output, 1) - 1;
+        alphaHatBlocks_t.col(i_output) = alphaHat_t.col(s);
+        betaHatBlocks_t.col(i_output) = betaHat_t.col(e);
+    }
+    return(wrap(Rcpp::List::create(
+                                   Rcpp::Named("alphaHatBlocks_t") = alphaHatBlocks_t,
+                                   Rcpp::Named("betaHatBlocks_t") = betaHatBlocks_t
+                                   )));
+}
+
 
 //' @export
 // [[Rcpp::export]]
@@ -475,6 +495,8 @@ Rcpp::List forwardBackwardDiploid(
     const int whatToReturn,
     const int Jmax,
     const int suppressOutput,
+    const arma::mat& snp_blocks_for_output,
+    const bool generate_fb_snp_offsets = false,
     const Rcpp::NumericVector alphaStart = 0,
     const Rcpp::NumericVector betaEnd = 0,
     const int return_a_sampled_path = 0,
@@ -509,6 +531,7 @@ Rcpp::List forwardBackwardDiploid(
   double a, b, d, e, d1, d2, d3, eps;
   double pR = 0;
   double pA = 0;
+  Rcpp::List alphaBetaBlocks;
   //
   //
   // eMat - make complete
@@ -607,6 +630,14 @@ Rcpp::List forwardBackwardDiploid(
                                      Rcpp::Named("alphaHat_t") = alphaHat_t,
                                      Rcpp::Named("betaHat_t") = betaHat_t
                                      )));
+  }
+  // make outputs here
+  if (generate_fb_snp_offsets == true) {
+      alphaBetaBlocks = make_fb_snp_offsets(
+          alphaHat_t,
+          betaHat_t,
+          snp_blocks_for_output
+      );
   }
   //
   //
@@ -713,38 +744,25 @@ Rcpp::List forwardBackwardDiploid(
   next_section="Done";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  if(whatToReturn==0) // full, debugging return
-    return(wrap(Rcpp::List::create(
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("gamma_t") = gamma_t,      
-      Rcpp::Named("betaHat_t") = betaHat_t,
-      Rcpp::Named("alphaHat_t") = alphaHat_t,      
-      Rcpp::Named("jUpdate_t") = jUpdate_t,      
-      Rcpp::Named("eMat_t") = eMat_t,
-      Rcpp::Named("eMatHap_t") = eMatHap_t,
-      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid,
-      Rcpp::Named("gammaK_t") = gammaK_t      
-                                   )));
-  if(whatToReturn==1) // update
-    return(wrap(Rcpp::List::create(
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
+  Rcpp::List to_return = Rcpp::List::create(
       Rcpp::Named("gamma_t") = gamma_t,
       Rcpp::Named("jUpdate_t") = jUpdate_t,
-      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid,
+      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
       Rcpp::Named("gammaK_t") = gammaK_t
-                                   )));
-  if(whatToReturn==2) // final run - no updating needed
-    return(wrap(Rcpp::List::create(
-      Rcpp::Named("gamma_t") = gamma_t,
-      Rcpp::Named("jUpdate_t") = jUpdate_t,
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("sampled_path_diploid") = sampled_path_diploid, 
-      Rcpp::Named("gammaK_t") = gammaK_t     
-                                   )));
-  // just put something to remove warning
-  return(wrap(Rcpp::List::create(
-      Rcpp::Named("c") = c)));
-  
+  );
+  if (whatToReturn == 0) {
+      to_return.push_back(alphaHat_t, "alphaHat_t");
+      to_return.push_back(betaHat_t, "betaHat_t");
+      to_return.push_back(eMat_t, "eMat_t");
+      to_return.push_back(eMatHap_t, "eMatHap_t");            
+  }
+  if (return_a_sampled_path == 1) {
+      to_return.push_back(sampled_path_diploid, "sampled_path_diploid");
+  }
+  if (generate_fb_snp_offsets == true) {
+      to_return.push_back(alphaBetaBlocks, "alphaBetaBlocks");
+  }
+  return(wrap(to_return));
 }
 
 
@@ -824,6 +842,8 @@ Rcpp::List forwardBackwardHaploid(
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
     const bool run_pseudo_haploid,
+    const arma::mat& snp_blocks_for_output,
+    const bool generate_fb_snp_offsets = false,
     const Rcpp::NumericVector alphaStart = 0,
     const Rcpp::NumericVector betaEnd = 0,
     const bool run_fb_subset = false,
@@ -864,6 +884,7 @@ Rcpp::List forwardBackwardHaploid(
   double pR = 0;
   double pA = 0;
   double rescale;
+  Rcpp::List alphaBetaBlocks;  
   //
   //
   //
@@ -1085,33 +1106,22 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  if(whatToReturn==0)
-    return(wrap(Rcpp::List::create(
-      Rcpp::Named("alphaHat_t") = alphaHat_t,
-      Rcpp::Named("betaHat_t") = betaHat_t,
+  Rcpp::List to_return = Rcpp::List::create(
+      Rcpp::Named("gamma_t") = gamma_t,                                            
       Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("eMatHapOri_t") = eMatHapOri_t,
-      Rcpp::Named("gamma_t") = gamma_t,
-      Rcpp::Named("jUpdate_t") = jUpdate_t,
-      Rcpp::Named("eMatHapSNP_t") = eMatHapSNP_t,
-      Rcpp::Named("eMatHap_t") = eMatHap_t)));
-  if(whatToReturn==1) // update
-    return(wrap(Rcpp::List::create(
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("gamma_t") = gamma_t,
       Rcpp::Named("eMatHap_t") = eMatHap_t,
       Rcpp::Named("eMatHapOri_t") = eMatHapOri_t,
-      Rcpp::Named("jUpdate_t") = jUpdate_t)));
-  if(whatToReturn==2) // same thing here - for simplicity 
-    return(wrap(Rcpp::List::create(
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("gamma_t") = gamma_t,
-      Rcpp::Named("eMatHap_t") = eMatHap_t,
-      Rcpp::Named("eMatHapOri_t") = eMatHapOri_t,
-      Rcpp::Named("jUpdate_t") = jUpdate_t)));
-  // just stick something below to avoid warning
-  return(wrap(Rcpp::List::create(
-      Rcpp::Named("c") = c)));
+      Rcpp::Named("jUpdate_t") = jUpdate_t
+  );
+  if (whatToReturn == 0) {
+      to_return.push_back(alphaHat_t, "alphaHat_t");
+      to_return.push_back(betaHat_t, "betaHat_t");
+      to_return.push_back(eMatHapSNP_t, "eMatHapSNP_t");      
+  }
+  if (generate_fb_snp_offsets == true) {
+      to_return.push_back(alphaBetaBlocks, "alphaBetaBlocks");
+  }
+  return(wrap(to_return));  
 }
 
 

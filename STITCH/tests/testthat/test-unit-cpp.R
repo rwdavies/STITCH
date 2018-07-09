@@ -106,54 +106,43 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
     transMatRate <- cbind(x ** 2, x * (1 - x), (1 - x) ** 2)
     pi <- runif(K) / K
 
-
-    out <- forwardBackwardDiploid(
+    ## run through R function
+    out <- run_forward_backwards(
         sampleReads = sampleReads,
-        nReads = as.integer(length(sampleReads)),
-        pi = pi,
-        transMatRate = t(transMatRate),
-        alphaMat = t(alphaMat),
-        eHaps = t(eHaps),
-        maxDifferenceBetweenReads = as.double(1000),
-        maxEmissionMatrixDifference = as.double(1e4),
-        whatToReturn = as.integer(0),
-        Jmax = as.integer(10),
-        suppressOutput = as.integer(1)
+        priorCurrent = pi,
+        transMatRate_t = t(transMatRate),
+        alphaMatCurrent_t = t(alphaMat),
+        eHapsCurrent_t = t(eHaps),
+        method = "diploid"
     )
 
     ## basic checks
-    expect_equal(ncol(out$gamma_t), n_snps)
-    expect_equal(min(out$gamma_t) >= 0, TRUE)
-    expect_equal(max(out$gamma_t) <= 1, TRUE)    
+    expect_equal(ncol(out$fbsoL[[1]]$gamma_t), n_snps)
+    expect_equal(min(out$fbsoL[[1]]$gamma_t) >= 0, TRUE)
+    expect_equal(max(out$fbsoL[[1]]$gamma_t) <= 1, TRUE)    
 
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
 
     for(run_pseudo_haploid in c(TRUE, FALSE)) {
-        out <- forwardBackwardHaploid(
+        ## run through R function
+        out <- run_forward_backwards(
             sampleReads = sampleReads,
-            nReads = as.integer(length(sampleReads)),
-            Jmax = as.integer(10),
-            pi = pi,
+            priorCurrent = pi,
+            transMatRate_t = t(transMatRate),
+            alphaMatCurrent_t = t(alphaMat),
+            eHapsCurrent_t = t(eHaps),
             pRgivenH1 = pRgivenH1L,
             pRgivenH2 = pRgivenH2L,
-            eHaps = t(eHaps),
-            alphaMat = t(alphaMat),
-            transMatRate = t(transMatRate),
-            maxDifferenceBetweenReads = as.double(1000),
-            maxEmissionMatrixDifference = as.double(1e4),        
-            whatToReturn = as.integer(0),
-            suppressOutput=as.integer(1),
-            model = as.integer(9),
-            run_pseudo_haploid = run_pseudo_haploid
+            method = "pseudoHaploid"
         )
+        ## basic checks
+        expect_equal(ncol(out$fbsoL[[1]]$gamma_t), n_snps)
+        expect_equal(min(out$fbsoL[[1]]$gamma_t) >= 0, TRUE)
+        expect_equal(max(out$fbsoL[[1]]$gamma_t) <= 1, TRUE)    
+    
     }
 
-    ## basic checks
-    expect_equal(ncol(out$gamma_t), n_snps)
-    expect_equal(min(out$gamma_t) >= 0, TRUE)
-    expect_equal(max(out$gamma_t) <= 1, TRUE)    
-    
 
 })
 
@@ -223,7 +212,8 @@ test_that("can sample one path from forwardBackwardDiploid", {
         whatToReturn = as.integer(0),
         Jmax = as.integer(10),
         suppressOutput = as.integer(1),
-        return_a_sampled_path = as.integer(1)
+        return_a_sampled_path = as.integer(1),
+        snp_blocks_for_output = array(NA, c(1, 1))
     )
 
     ## basically, these should be the same

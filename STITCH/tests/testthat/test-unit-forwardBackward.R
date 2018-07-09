@@ -1,16 +1,36 @@
+test_that("can determine how assign SNPs to blocks for output on toy example", {
+    
+    grid <- 0:9 ## 0-based
+    start_and_end_minus_buffer <- c(1, 10) ## 1-based
+    outputSNPBlockSize <- 1000
+    snp_blocks_for_output <- determine_snp_blocks_for_output(
+        grid = grid,
+        start_and_end_minus_buffer = start_and_end_minus_buffer,
+        outputSNPBlockSize = outputSNPBlockSize
+    )
+
+    expected_output <- array(c(1, 10), c(1, 2))
+    colnames(expected_output) <- c("snp_start", "snp_end")
+    expect_equal(snp_blocks_for_output, expected_output)
+    
+})
+
 test_that("can determine how assign SNPs to blocks for output", {
     
     L <- 1:1000
     gridWindowSize <- 24
     outputSNPBlockSize <- 57
+    start_and_end_minus_buffer <- c(50, 950) ## 1-based which SNPs in region to output
     
     out <- assign_positions_to_grid(L, gridWindowSize)
     grid <- out$grid
     
     snp_blocks_for_output <- determine_snp_blocks_for_output(
-        grid,
-        outputSNPBlockSize
+        grid = grid,
+        start_and_end_minus_buffer = start_and_end_minus_buffer,
+        outputSNPBlockSize = outputSNPBlockSize
     )
+
     temp <- array(NA, 1000)
     for(i in 1:nrow(snp_blocks_for_output)) {
         w <- snp_blocks_for_output[i, 1:2]
@@ -22,6 +42,10 @@ test_that("can determine how assign SNPs to blocks for output", {
         w <- unique(temp[which(grid == i)])
         expect(length(w), 1)
     }
+
+    ## check that
+    expect_equal(sum(is.na(temp[1:(start_and_end_minus_buffer[1] - 1)]) == FALSE), 0)
+    expect_equal(sum(is.na(temp[(start_and_end_minus_buffer[2] + 1):length(temp)]) == FALSE), 0)    
 
 })
 
