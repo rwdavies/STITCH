@@ -1049,7 +1049,7 @@ get_sample_names <- function(
     originalRegionName = NULL,
     save = TRUE,
     verbose = TRUE,
-    sampleNames_file = NULL
+    sampleNames_file = ""
 ) {
 
     bam_files <- NULL
