@@ -300,6 +300,12 @@ option_list <- list(
         default = 1000
     ), 
     make_option(
+        "--outputSNPBlockSize",
+        type = "integer",
+        help = "How many SNPs to write to disk at one time to reduce RAM usage when making VCFs [default 1000] ",
+        default = 1000
+    ), 
+    make_option(
         "--inputBundleBlockSize",
         type = "integer",
         help = "If NA, disable bundling of input files. If not NA, bundle together input files in sets of <= inputBundleBlockSize together [default NA] ",
@@ -462,6 +468,7 @@ STITCH(
     subsetSNPsfile = opt$subsetSNPsfile,
     useSoftClippedBases = opt$useSoftClippedBases,
     outputBlockSize = opt$outputBlockSize,
+    outputSNPBlockSize = opt$outputSNPBlockSize,
     inputBundleBlockSize = opt$inputBundleBlockSize,
     reference_haplotype_file = opt$reference_haplotype_file,
     reference_legend_file = opt$reference_legend_file,

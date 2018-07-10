@@ -7,6 +7,8 @@
 #' @param tempdir What directory to use as temporary directory. If set to NA, use default R tempdir. If possible, use ramdisk, like /dev/shm/
 #' @param bamlist Path to file with bam file locations. File is one row per entry, path to bam files. Bam index files should exist in same directory as for each bam, suffixed either .bam.bai or .bai
 #' @param cramlist Path to file with cram file locations. File is one row per entry, path to cram files. cram files are converted to bam files on the fly for parsing into STITCH
+#' @param sampleNames_file Optional, if not specified, sampleNames are taken from the SM tag in the header of the BAM / CRAM file. This argument is the path to file with sampleNames for samples. It is used directly to name samples in the order they appear in the bamlist / cramlist
+#' 
 #' @param reference Path to reference fasta used for making cram files. Only required if cramlist is defined
 #' @param genfile Path to gen file with high coverage results. Empty for no genfile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = hom ref, 1 = het, 2 = hom alt and NA indicating missing genotype, with rows corresponding to rows of the posfile. Note therefore this file has one more row than posfile which has no header
 #' @param method How to run imputation - either diploid, pseudoHaploid, or diploid-inbred. Please see main README for more information. All methods assume diploid samples. diploid is the most accurate but slowest, while pseudoHaploid may be advantageous for large sample sizes and K. diploid-inbred assumes all samples are inbred and invokes an internal haploid mathematical model but outputs diploid genotypes and probabilities
@@ -80,6 +82,7 @@ STITCH <- function(
     tempdir = NA,
     bamlist = "",
     cramlist = "",
+    sampleNames_file = "",
     reference = "",
     genfile = "",
     method = "diploid",
@@ -329,7 +332,8 @@ STITCH <- function(
         nCores = nCores,
         outputdir = outputdir,
         regionName = regionName,
-        originalRegionName = originalRegionName
+        originalRegionName = originalRegionName,
+        sampleNames_file = sampleNames_file
     )
     N <- out$N
     sampleNames <- out$sampleNames
@@ -1044,39 +1048,54 @@ get_sample_names <- function(
     regionName = NULL,
     originalRegionName = NULL,
     save = TRUE,
-    verbose = TRUE
+    verbose = TRUE,
+    sampleNames_file = NULL
 ) {
 
     bam_files <- NULL
     cram_files <- NULL
-    if (bamlist != "" | cramlist != "")
-    {
+    if (bamlist != "" | cramlist != "") {
         if (cramlist != "") {
             files <- as.character(read.table(cramlist)[,1])
             cram_files <- files
-            file_type = "CRAM"
+            file_type <- "CRAM"
         } else {
             files <- as.character(read.table(bamlist)[,1])
             bam_files <- files
-            file_type = "BAM"
+            file_type <- "BAM"
         }
-        sampleNames <- get_sample_names_from_bam_or_cram_files(
-            files,
-            nCores,
-            file_type,
-            verbose
-        )
+        if (sampleNames_file == "") {
+            sampleNames <- get_sample_names_from_bam_or_cram_files(
+                files,
+                nCores,
+                file_type,
+                verbose
+            )
+        } else {
+            if (file.exists(sampleNames_file) == FALSE) {
+                stop(paste0("Cannot find sampleNames_file:", sampleNames_file))
+            }
+            sampleNames <- read.table(sampleNames_file, stringsAsFactors = FALSE)[, 1]
+            if (
+            (length(sampleNames) != length(bam_files)) &
+            (length(sampleNames) != length(cram_files))
+            ) {
+                stop(paste0("There are ", length(sampleNames), " sample names according to the sampleNames_file but there are ", max(c(length(bam_files), length(cram_files))), " according to the bam / cram list"))
+            }
+        }
 
-        if(length(unique(sampleNames))!=length(sampleNames))
+        if(length(unique(sampleNames))!=length(sampleNames)) {
             stop("There are repeat sample names")
+        }
 
         ## save sample names
-        if (save)
+        if (save) {
             save(
                 sampleNames,
                 file = file.path(
                     outputdir, "RData", paste0("sampleNames.", regionName, ".RData"))
             )
+        }
 
     } else {
         ## otherwise, we won't be re-doing vinput anyway!

@@ -945,3 +945,53 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
 
 
 })
+
+test_that("STITCH can get sample names from a file", {
+
+    ## here need something that gets re-downsampled
+    ## need more snps to make this happen easily
+    outputdir <- make_unique_tempdir()
+
+    sampleNames_file <- tempfile()
+    N <- length(data_package$sample_names)
+    newNames <- sapply(1:N, function(i) return(paste0(sample(letters, 10), collapse = "")))
+    write.table(
+        matrix(newNames, ncol = 1),
+        file = sampleNames_file,
+        row.names = FALSE,
+        col.names = FALSE,
+        quote = FALSE
+    )
+
+    for(output_format in c("bgvcf", "bgen")) {
+
+        sink("/dev/null")
+        set.seed(10)
+        
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            output_format = output_format,
+            sampleNames_file = sampleNames_file
+        )
+
+        sink()
+
+        file <- file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format]))
+        if (output_format == "bgvcf") {
+            x <- system(paste0("gunzip -c ", shQuote(file), " | grep CHROM"), intern = TRUE)
+            output_sample_names <- strsplit(x, "\t")[[1]][-c(1:9)]
+        } else {
+            output_sample_names <- rrbgen_load_samples(file)
+        }
+
+        expect_equivalent(output_sample_names, newNames)
+        
+    }
+
+})
+

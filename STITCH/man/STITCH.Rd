@@ -5,8 +5,8 @@
 \title{Sequencing To Imputation Through Constructing Haplotypes}
 \usage{
 STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
-  cramlist = "", reference = "", genfile = "", method = "diploid",
-  output_format = "bgvcf", B_bit_prob = 16,
+  cramlist = "", sampleNames_file = "", reference = "", genfile = "",
+  method = "diploid", output_format = "bgvcf", B_bit_prob = 16,
   outputInputInVCFFormat = FALSE, downsampleToCov = 50,
   downsampleFraction = 1, readAware = TRUE, chrStart = NA, chrEnd = NA,
   regionStart = NA, regionEnd = NA, buffer = NA,
@@ -50,6 +50,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{bamlist}{Path to file with bam file locations. File is one row per entry, path to bam files. Bam index files should exist in same directory as for each bam, suffixed either .bam.bai or .bai}
 
 \item{cramlist}{Path to file with cram file locations. File is one row per entry, path to cram files. cram files are converted to bam files on the fly for parsing into STITCH}
+
+\item{sampleNames_file}{Optional, if not specified, sampleNames are taken from the SM tag in the header of the BAM / CRAM file. This argument is the path to file with sampleNames for samples. It is used directly to name samples in the order they appear in the bamlist / cramlist}
 
 \item{reference}{Path to reference fasta used for making cram files. Only required if cramlist is defined}
 
