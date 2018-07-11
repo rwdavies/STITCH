@@ -210,18 +210,17 @@ test_that("can calculate fbd dosage", {
     nSNPs <- 10
     K <- 3
     KK <- K * K
-    eHaps_t <- array(runif(K * nSNPs), c(K, nSNPs))
+    eHapsCurrent_t <- array(runif(K * nSNPs), c(K, nSNPs))
     gamma_t <- array(runif(KK * nSNPs), c(KK, nSNPs))
     grid <- 0:(nSNPs - 1)
     nGrids <- nSNPs ## since no grid
 
     out <- rcpp_calculate_fbd_dosage(
-        nGrids = nGrids,
-        nSNPs = nSNPs,
-        K = K,
-        eHaps_t = eHaps_t,
+        eHapsCurrent_t = eHapsCurrent_t,
         gamma_t = gamma_t,
-        grid = grid
+        grid = grid,
+        snp_start_1_based = 1,
+        snp_end_1_based = length(grid)
     )
 
     expect_equal(length(out$dosage), nSNPs)
@@ -240,17 +239,16 @@ test_that("can calculate fbd dosage using grid", {
     nGrids <- 3
     K <- 3
     KK <- K * K
-    eHaps_t <- array(runif(K * nSNPs), c(K, nSNPs))
+    eHapsCurrent_t <- array(runif(K * nSNPs), c(K, nSNPs))
     gamma_t <- array(runif(KK * nGrids), c(KK, nGrids))
     grid <- c(0, 0, 0, 1, 1, 1, 2, 2, 2, 2)
 
     out <- rcpp_calculate_fbd_dosage(
-        nGrids = nGrids,
-        nSNPs = nSNPs,
-        K = K,
-        eHaps_t = eHaps_t,
+        eHapsCurrent_t = eHapsCurrent_t,
         gamma_t = gamma_t,
-        grid = grid
+        grid = grid,
+        snp_start_1_based = 1,
+        snp_end_1_based = length(grid)
     )
     expect_equal(length(out$dosage), nSNPs)
     expect_equal(nrow(out$genProbs_t), 3)

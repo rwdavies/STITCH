@@ -54,8 +54,6 @@ test_that("STITCH can initialize with reference data", {
 
     for(output_format in c("bgvcf", "bgen")) {
         
-        sink("/dev/null")
-
         outputdir <- make_unique_tempdir()
         set.seed(478)
         
@@ -73,8 +71,6 @@ test_that("STITCH can initialize with reference data", {
             output_format = output_format
         )
         
-        sink()
-
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,
@@ -93,8 +89,6 @@ test_that("STITCH can initialize with reference data with defined regionStart an
 
     for(output_format in c("bgvcf", "bgen")) {
         
-        sink("/dev/null")
-
         outputdir <- make_unique_tempdir()
         set.seed(519)
         
@@ -118,8 +112,6 @@ test_that("STITCH can initialize with reference data with defined regionStart an
             output_format = output_format
         )
 
-        sink()
-
         which_snps <- regionStart:regionEnd
         regionName <- paste0(data_package$chr, ".", regionStart, ".", regionEnd)
         check_output_against_phase(
@@ -130,7 +122,7 @@ test_that("STITCH can initialize with reference data with defined regionStart an
             tol = 0.2
         )
 
-        load(file.path(outputdir, "RData", paste0("hwe.",regionName,".RData")))
+        load(file.path(outputdir, "RData", paste0("EM.all.",regionName,".RData")))
 
         ## check hweCount - looks OK!
         ## probably just need this the once?
@@ -138,6 +130,7 @@ test_that("STITCH can initialize with reference data with defined regionStart an
         expect_equal(rowSums(g == 0), hweCount[, 1])
         expect_equal(rowSums(g == 1), hweCount[, 2])
         expect_equal(rowSums(g == 2), hweCount[, 3])
+        
     }
 
 })

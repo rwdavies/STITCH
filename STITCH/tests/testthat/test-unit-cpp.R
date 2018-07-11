@@ -213,7 +213,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         Jmax = as.integer(10),
         suppressOutput = as.integer(1),
         return_a_sampled_path = as.integer(1),
-        snp_blocks_for_output = array(NA, c(1, 1))
+        blocks_for_output = array(NA, c(1, 1))
     )
 
     ## basically, these should be the same

@@ -159,10 +159,7 @@ test_that("STITCH diploid can write to bgen", {
 
 test_that("STITCH diploid works with multiple cores", {
 
-    
     for(output_format in c("bgvcf", "bgen")) {
-
-        sink("/dev/null")
 
         outputdir <- make_unique_tempdir()        
         STITCH(
@@ -177,8 +174,6 @@ test_that("STITCH diploid works with multiple cores", {
             output_format = output_format
         )
 
-        sink()
-        
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,
@@ -388,8 +383,6 @@ test_that("STITCH pseudoHaploid works under default parameters", {
 
     for(output_format in c("bgvcf", "bgen")) {
         
-        sink("/dev/null")
-
         outputdir <- file.path(make_unique_tempdir(), "wer wer2")    
         set.seed(357)
 
@@ -406,8 +399,6 @@ test_that("STITCH pseudoHaploid works under default parameters", {
             output_format = output_format
         )
         
-        sink()
-
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,
@@ -913,7 +904,6 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
             outputdir <- make_unique_tempdir()
 
             output_filename <- paste0("jimmy", extension[output_format])
-            sink("/dev/null")
             STITCH(
                 chr = data_package_few$chr,
                 bamlist = data_package_few$bamlist,
@@ -929,11 +919,10 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
                 buffer = buffer,
                 output_filename = output_filename
             )
-            sink()
             
             check_output_against_phase(
-               file =  file.path(outputdir, output_filename),
-               data_package = data_package_few,
+                file =  file.path(outputdir, output_filename),
+                data_package = data_package_few,
                 output_format,
                 which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
                 tol = 0.2
@@ -978,10 +967,8 @@ test_that("STITCH can get sample names from a file", {
             output_format = output_format,
             sampleNames_file = sampleNames_file
         )
-
-        sink()
-
-        file <- file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format]))
+        
+        file <- file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format]) )
         if (output_format == "bgvcf") {
             x <- system(paste0("gunzip -c ", shQuote(file), " | grep CHROM"), intern = TRUE)
             output_sample_names <- strsplit(x, "\t")[[1]][-c(1:9)]
@@ -990,8 +977,81 @@ test_that("STITCH can get sample names from a file", {
         }
 
         expect_equivalent(output_sample_names, newNames)
+    }
+    
+})
+
+
+test_that("STITCH works in a situation with grid, buffer, outputBlockSize, etc", {
+
+    ## lots of samples, K, varying coverages, has grid, etc
+    set.seed(9950)
+    n_snps <- 50
+    reads_span_n_snps <- 4
+    chr <- 1
+    K <- 2
+    extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
+    phasemaster <- matrix(
+        c(
+            sample(c(0, 1), n_snps, replace = TRUE),
+            sample(c(0, 1), n_snps, replace = TRUE)
+        ),
+        ncol = K
+    )
+    phasemaster[10, 1] <- 1
+    phasemaster[10, -1] <- 0
+    phasemaster[15, ] <- 0
+    regionStart <- 4
+    regionEnd <- 36
+    L <- 1:50
+    buffer <- 2
+    n_samples <- 30
+    n_reads <- round(seq(5 * n_samples, 0, length.out = n_samples))
+    data_package <- make_acceptance_test_data_package(
+        n_samples = n_samples,
+        n_snps = n_snps,
+        n_reads = n_reads,
+        seed = 6,
+        chr = "chr5",
+        K = K,
+        reads_span_n_snps = reads_span_n_snps,
+        phasemaster = phasemaster,
+        L = L
+    )
+
+    for(output_format in c("bgvcf", "bgen")) {    
+
+        outputdir <- make_unique_tempdir()        
+        output_filename <- paste0("jimmy", extension[output_format])    
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            output_filename = output_filename,
+            output_format = output_format,
+            K = 2,
+            nGen = 100,
+            nCores = 1,
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            buffer = buffer,
+            gridWindowSize = 3,
+            outputSNPBlockSize = 8
+        )
+
+        which_snps <- which((regionStart <= L) & (L <= regionEnd))
+        who <- which(n_reads >= 10 )
+        check_output_against_phase(
+            file =  file.path(outputdir, output_filename),
+            data_package = data_package,
+            output_format = output_format,
+            which_snps = which_snps,
+            tol = 0.2,
+            who = who
+        )
         
     }
 
 })
-

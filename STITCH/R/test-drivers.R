@@ -226,6 +226,10 @@ make_acceptance_test_data_package <- function(
     samples_are_inbred = FALSE
 ) {
 
+    if (length(n_reads) == 1) {
+        n_reads <- rep(n_reads, n_samples)
+    }
+    
     if (is.null(reads_span_n_snps))
         reads_span_n_snps <- n_snps
 
@@ -266,7 +270,6 @@ make_acceptance_test_data_package <- function(
     a <- as.character(pos[, "ALT"])
     n <- reads_span_n_snps
     cigar <- paste0(n, "M")
-    read_names <- paste0("r00", 1:n_reads)
     bq <- paste0(rep(":", n), collapse = "")
 
     if (is.null(sample_names)) {
@@ -278,7 +281,7 @@ make_acceptance_test_data_package <- function(
 
     sample_files <- lapply(1:n_samples, function(i_sample) {
         reads <- mclapply(
-            1:n_reads,
+            1:n_reads[i_sample],
             mc.cores = n_cores,
             function(i_read) {
             ## w is 1-based sampling of start to end 
@@ -288,7 +291,7 @@ make_acceptance_test_data_package <- function(
             seq[h == 1] <- a[w][h == 1]
             seq <- paste0(seq, collapse = "")
             return(
-                c(read_names[i_read], "0", chr, pos[w[1], 2], "60",
+                c(paste0("r00", i_read), "0", chr, pos[w[1], 2], "60",
                   cigar, "*", "0", "0",
                   seq, bq)
             )
@@ -370,10 +373,14 @@ check_output_against_phase <- function(
     data_package,
     output_format,
     which_snps = NULL,
-    tol = 0.2
+    tol = 0.2,
+    who = NULL
 ) {
     if (is.null(which_snps)) {
         which_snps <- 1:length(data_package$L)
+    }
+    if (is.null(who)) {
+        who <- 1:dim(data_package$phase)[2]
     }
     if (substr(file, nchar(file) - 4, nchar(file)) == ".bgen") {
         out <- rrbgen::rrbgen_load(bgen_file = file)
@@ -387,7 +394,8 @@ check_output_against_phase <- function(
             gp = out$gp,
             phase = data_package$phase,
             which_snps = which_snps,
-            tol = tol
+            tol = tol,
+            who = who
         )
     } else {
         ## 
@@ -401,7 +409,8 @@ check_output_against_phase <- function(
             vcf,
             data_package$phase,
             which_snps,
-            tol = tol
+            tol = tol,
+            who = who
         )
     }
     return(NULL)
@@ -411,12 +420,17 @@ check_vcf_against_phase <- function(
     vcf,
     phase,
     which_snps,
+    who = NULL,
     tol = 0.2
 ) {
-    if (length(unique(vcf[, 9])) > 1)
+    if (length(unique(vcf[, 9])) > 1) {
         stop("not written for this")
+    }
+    if (is.null(who)) {
+        who <- 1:(ncol(vcf) - 9)
+    }
     gt_names <- strsplit(vcf[1, 9], ":")[[1]]
-    for(i_sample in 10:ncol(vcf)) {
+    for(i_sample in (9 + who)) {
         vcf_col <- vcf[, i_sample]
         vcf_col_split <- t(sapply(strsplit(vcf_col, ":"), I))
         colnames(vcf_col_split) <- gt_names
@@ -446,10 +460,14 @@ check_vcf_against_phase <- function(
 check_bgen_gp_against_phase <- function(
     gp,
     phase,
-    which_snps,    
+    which_snps,
+    who = NULL,
     tol = 0.2
 ) {
-    for(i_sample in 1:dim(gp)[[2]]) {
+    if (is.null(who)) {
+        who <- 1:dim(gp)[2]
+    }
+    for(i_sample in who) {
         ## check genotype probability
         genotype_posteriors <- array(NA, c(dim(gp)[1], 3))
         genotype_posteriors[, ] <- gp[, i_sample, , drop = FALSE]        

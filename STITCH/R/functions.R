@@ -293,8 +293,7 @@ STITCH <- function(
         L = L,
         pos = pos,
         gen = gen,
-        phase = phase,
-        nSNPs = nSNPs
+        phase = phase
     )
     pos <- out$pos
     gen <- out$gen
@@ -448,7 +447,6 @@ STITCH <- function(
     alleleCount <- buildAlleleCount(nSNPs = nSNPs,N=N,nCores=nCores,regionName=regionName,tempdir=tempdir,environment=environment, bundling_info = bundling_info)
 
 
-
     ##
     ## toggle read aware
     ##
@@ -457,8 +455,6 @@ STITCH <- function(
         splitReadsCompletely(N=N,nCores=nCores,tempdir=tempdir,regionName=regionName,environment=environment)
         print_message("Done splitting reads")
     }
-
-
 
     ##
     ## if we're so inclined, output input in VCF format, then exit
@@ -479,7 +475,7 @@ STITCH <- function(
 
 
     ## determine output regions
-    snp_blocks_for_output <- determine_snp_blocks_for_output(
+    blocks_for_output <- determine_snp_and_grid_blocks_for_output(
         grid = grid,
         start_and_end_minus_buffer = start_and_end_minus_buffer,
         outputSNPBlockSize = outputSNPBlockSize
@@ -557,7 +553,7 @@ STITCH <- function(
         ##
         ## fork out and get results
         ##
-        results <- completeSampleIteration(N=N,tempdir=tempdir,chr=chr,K=K,K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids,priorCurrent=priorCurrent,eHapsCurrent=eHapsCurrent,alphaMatCurrent=alphaMatCurrent,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,environment=environment,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrent=hapSumCurrent,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, output_format = output_format, B_bit_prob = B_bit_prob, nSNPsInRegion = nSNPsInRegion, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, snp_blocks_for_output = snp_blocks_for_output)
+        results <- completeSampleIteration(N=N,tempdir=tempdir,chr=chr,K=K,K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids,priorCurrent=priorCurrent,eHapsCurrent=eHapsCurrent,alphaMatCurrent=alphaMatCurrent,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,environment=environment,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrent=hapSumCurrent,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, output_format = output_format, B_bit_prob = B_bit_prob, nSNPsInRegion = nSNPsInRegion, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output)
         ##
         ## save previous results to disk
         eHapsFuture <- results$eHapsFuture
@@ -565,12 +561,7 @@ STITCH <- function(
         sigmaFuture <- results$sigmaFuture
         priorFuture <- results$priorFuture
         hapSumFuture <- results$hapSum
-        ## new - get hwe, info, estimatedAlleleFrequency
-        hwe <- results$hwe
-        info <- results$info
-        estimatedAlleleFrequency <- results$estimatedAlleleFrequency
-        list_of_gp_raw_t <- results$list_of_gp_raw_t
-        hweCount <- results$hweCount
+        alphaBetaBlockList <- results$alphaBetaBlockList
         rm(results)
         ## save everything if needed
         if (keepInterimFiles) {
@@ -602,57 +593,44 @@ STITCH <- function(
     ##
     ## build final output
     ##
-    to_use_output_filename <- get_output_filename(
+    out <- make_and_write_output_file(
         output_filename = output_filename,
         outputdir = outputdir,
         regionName = regionName,
-        output_format = output_format
+        output_format = output_format,
+        blocks_for_output = blocks_for_output,
+        alphaBetaBlockList = alphaBetaBlockList,
+        reference_panel_SNPs = reference_panel_SNPs,
+        priorCurrent = priorCurrent,
+        sigmaCurrent = sigmaCurrent,
+        alphaMatCurrent_t = t(alphaMatCurrent),
+        eHapsCurrent_t = t(eHapsCurrent),
+        N = N,
+        method = method,
+        sampleNames = sampleNames,
+        nSNPs = nSNPs,
+        nCores = nCores,
+        B_bit_prob = B_bit_prob,
+        bundling_info = bundling_info,
+        tempdir = tempdir,
+        grid = grid,
+        nGrids = nGrids,
+        alleleCount = alleleCount,
+        pos = pos,
+        K = K,
+        highCovInLow = highCovInLow,
+        start_and_end_minus_buffer = start_and_end_minus_buffer
     )
-    if (output_format == "bgvcf") {
-        print_message("Write output to bgzip-VCF file")        
-        write_vcf_after_EM(to_use_output_filename = to_use_output_filename, outputdir = outputdir, regionName = regionName, sampleNames = sampleNames, tempdir = tempdir, nCores = nCores, info = info, hwe = hwe, estimatedAlleleFrequency = estimatedAlleleFrequency, pos = pos, N = N, outputBlockSize = outputBlockSize, reference_panel_SNPs = reference_panel_SNPs, method = method, vcf.piece_unique = vcf.piece_unique, output_format = output_format, start_and_end_minus_buffer = start_and_end_minus_buffer, nSNPs = nSNPs, alleleCount = alleleCount)
-    } else {
-        print_message("Write output to bgen file")
-        ## write annot first
-        var_info <- make_var_info(pos, start_and_end_minus_buffer)
-        make_and_write_bgen_per_snp_annot_file(
-            to_use_output_filename = to_use_output_filename,
-            estimatedAlleleFrequency = estimatedAlleleFrequency,
-            info = info,
-            hwe = hwe,
-            reference_panel_SNPs = reference_panel_SNPs,
-            start_and_end_minus_buffer = start_and_end_minus_buffer,
-            nSNPs = nSNPs,
-            alleleCount = alleleCount,
-            var_info = var_info
-        )
-        ## see rrbgen for var_info spec
-        rrbgen::rrbgen_write(
-            bgen_file = to_use_output_filename,
-            sample_names = sampleNames,
-            var_info = var_info,
-            gp = NULL, ## set these to null as we use list approach
-            list_of_gp_raw_t = list_of_gp_raw_t,
-            free = NULL, ## free space in header, leave blank
-            Layout = 2,
-            CompressedSNPBlocks = 1,
-            B_bit_prob = B_bit_prob
-        )
-    }
-    print_message("Done EM and outputting")
-
+    gen_imp <- out$gen_imp
+    estimatedAlleleFrequency <- out$estimatedAlleleFrequency
+    info <- out$info
+    hwe <- out$hwe
+    hweCount <- out$hweCount
+    passQC <- info > 0.4 & hwe > 1e-6 # one interpretation of passQC
 
     ##
-    ## get imputed dosages back in matrix form
-    ##
-    gen_imp <- NULL
-    if(length(highCovInLow) > 0) {
-        gen_imp <- get_high_coverage_final_imputed_genotypes(highCovInLow = highCovInLow, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs)
-    }
-
-
-    ##
-    ## now, if there was a buffer, remove the unwanted SNPs
+    ## now, if there was a buffer, remove the unwanted SNPs from what's saved to disk
+    ## not sure how useful it is to save without buffer?
     ##
     if (is.na(regionStart) == FALSE & is.na(regionEnd) == FALSE) {
         ##
@@ -670,14 +648,15 @@ STITCH <- function(
             grid, grid_distances, L_grid, nGrids,
             inRegionL, start_and_end_minus_buffer,
             reference_panel_SNPs,
+            info, hwe, passQC, hweCount,
             file = file.path(
-            outputdir, "RData", paste0("EM.all.", regionName, ".withBuffer.RData")
+                outputdir, "RData", paste0("EM.all.", regionName, ".withBuffer.RData")
             )
         )
         ##
         ## next, remove buffer
         ##
-        out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent = alphaMatCurrent, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, hapSum = hapSum, hapSumCurrent = hapSumCurrent, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize)
+        out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent = alphaMatCurrent, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, hapSum = hapSum, hapSumCurrent = hapSumCurrent, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize, hwe = hwe, hweCount = hweCount, info = info, passQC = passQC, estimatedAlleleFrequency = estimatedAlleleFrequency)
         pos <- out$pos
         gen <- out$gen
         phase <- out$phase
@@ -696,6 +675,11 @@ STITCH <- function(
         L_grid <- out$L_grid
         nGrids <- out$nGrids
         reference_panel_SNPs <- out$reference_panel_SNPs
+        hwe <- out$hwe
+        hweCount <- out$hweCount
+        info <- out$info
+        estimatedAlleleFrequency <- out$estimatedAlleleFrequency
+        passQC <- out$passQC
     }
 
 
@@ -703,6 +687,7 @@ STITCH <- function(
     ##
     ## save important files from EM output
     ##
+    print_message("Save RData objects to disk")
     save(
         eHapsCurrent, alphaMatCurrent,
         sigmaCurrent, priorCurrent,
@@ -715,23 +700,11 @@ STITCH <- function(
         grid, grid_distances, L_grid, nGrids,
         inRegionL, start_and_end_minus_buffer,
         reference_panel_SNPs,
+        info, hwe, passQC, hweCount,
         file = file.path(
             outputdir, "RData", paste0("EM.all.", regionName, ".RData")
         )
     )
-
-
-    ##
-    ## save various important objects to disk
-    ##
-    print_message("Save RData objects to disk")
-    save(info, file = file.path(outputdir, "RData", paste0("info.",regionName,".RData")))
-    save(hwe, hweCount, file = file.path(outputdir, "RData", paste0("hwe.",regionName,".RData")))
-    passQC <- info > 0.4 & hwe > 1e-6 # one interpretation of passQC
-    save(passQC, file = file.path(outputdir, "RData", paste0("passQC.",regionName,".RData")))
-    save(hapSum, file = file.path(outputdir, "RData", paste0("hapSum.",regionName,".RData")))
-
-
 
 
 
@@ -741,10 +714,10 @@ STITCH <- function(
         ##
         print_message("Make metrics plot")
         plotMetricsForPostImputationQC(
-            iSample=NULL,highCovList=NULL,gen=gen, gen_imp = gen_imp,
-            alleleCount=alleleCount,chr=chr,L=L,
-            estimatedAlleleFrequency=estimatedAlleleFrequency,info=info,
-            outputdir=outputdir,hwe=hwe,regionName=regionName
+            iSample = NULL, highCovList = NULL, gen = gen, gen_imp = gen_imp,
+            alleleCount = alleleCount, chr = chr, L = L,
+            estimatedAlleleFrequency = estimatedAlleleFrequency, info = info,
+            outputdir = outputdir, hwe = hwe, regionName = regionName
         )
         ##
         ## plot hapProbs sum - should tell what states are being used
@@ -917,6 +890,8 @@ remove_buffer_from_variables <- function(
     nGrids = NULL,
     gridWindowSize = NULL,
     reference_panel_SNPs = NULL,
+    hweCount = NULL,
+    passQC = NULL,
     verbose = TRUE
 ) {
     if (verbose)
@@ -948,8 +923,10 @@ remove_buffer_from_variables <- function(
     eHapsCurrent <- eHapsCurrent[inRegion2,]
     priorCurrent <- hapSum[1, ] / sum(hapSum[1, ])
     ##
-    info <- info[inRegion2]
     hwe <- hwe[inRegion2]
+    hweCount <- hweCount[inRegion2, , drop = FALSE]    
+    info <- info[inRegion2]
+    passQC <- passQC[inRegion2]
     estimatedAlleleFrequency <- estimatedAlleleFrequency[inRegion2]
     ## phasing stuff
     phase_entropy <- phase_entropy[inRegion2]
@@ -983,6 +960,8 @@ remove_buffer_from_variables <- function(
             priorCurrent = priorCurrent,
             info = info,
             hwe = hwe,
+            hweCount = hweCount,
+            passQC = passQC,
             estimatedAlleleFrequency = estimatedAlleleFrequency,
             phase_entropy = phase_entropy,
             strandedness = strandedness,
@@ -1136,10 +1115,10 @@ shrink_region <- function(
     regionEnd,
     buffer,
     L,
-    pos,
-    gen,
-    phase,
-    nSNPs
+    pos = NULL,
+    gen = NULL,
+    phase = NULL,
+    validate = TRUE
 ) {
     if ( is.na(regionStart) == FALSE & is.na(regionEnd) == FALSE ) {
         ## need to shrink pos, L, gen
@@ -1156,8 +1135,11 @@ shrink_region <- function(
         inRegion <- L >= (regionStart) & L <= (regionEnd)
         w <- which(inRegion)
         start_and_end_minus_buffer <- c(head(w, 1), tail(w, 1)) ## first SNP
-        validate_region_to_impute_when_using_regionStart(L, regionStart, regionEnd, buffer)
+        if (validate) {
+            validate_region_to_impute_when_using_regionStart(L, regionStart, regionEnd, buffer)
+        }
     } else {
+        nSNPs <- length(L) 
         inRegionL <- c(1, nSNPs)
         start_and_end_minus_buffer <- c(1, nSNPs)
         nSNPsInRegionMinusBuffer <- nSNPs
@@ -1558,7 +1540,7 @@ single_reference_iteration <- function(
                 suppressOutput = as.integer(1),
                 model = -1, ## irrelavent here
                 run_pseudo_haploid = as.integer(0), ## just run haploid
-                snp_blocks_for_output = array(0, c(1, 1))                
+                blocks_for_output = array(0, c(1, 1))                
             )
 
             which <- fbsoL$gammaUpdate_t[1, , 1] > 0
@@ -1582,14 +1564,10 @@ single_reference_iteration <- function(
     }
     )
 
-    error_check <- sapply(out2, class) == "try-error"
-    if (sum(error_check) > 0) {
-        print_message(out[[which(error_check)[1]]])
-        stop("There has been an error generating the input. Please see error message above")
-    }
+    check_mclapply_OK(out2, "There has been an error generating the input. Please see error message above")
 
     out <- calculate_updates(
-        out2 = out2, x3 = sampleRanges, K = K, nSNPs = nSNPs, N = N_haps,
+        out2 = out2, sampleRanges = sampleRanges, K = K, nSNPs = nSNPs, N = N_haps,
         nGen = nGen, expRate = expRate, minRate = minRate, maxRate = maxRate,
         emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, L = L, grid_distances = grid_distances
     )
@@ -2850,14 +2828,19 @@ file_bundledSampleProbs <- function(
 }
 
 
+file_besthaps <- function(tempdir, iSample, regionName) {
+    return(file.path(tempdir, paste0("sample.",iSample,".haps.",regionName,".RData")))
+}
+
 file_dosages <- function(
   dir,
   iBam,
-  regionName
+  regionName,
+  what = "dosage"
 ) {
     return(file.path(
         dir,
-        paste0("sample.", iBam, ".input.",regionName,".dosage.RData")
+        paste0("sample.", iBam, ".input.", regionName, ".", what, ".RData")
     ))
 }
 
@@ -2906,25 +2889,22 @@ shrinkReads <- function(
                 '" > ', shQuote(file_with_files_to_transfer)
             )
             system(command1)
-            command2 <- paste0(
-                "rsync -a ",
-                "--files-from=",
-                shQuote(file_with_files_to_transfer), " ",
-                shQuote(inputdir), " ",
-                tempdir
-            )
-            system(command2)
         } else {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
             command1 <- paste0(
-                '(cd "', inputdir, '" && find . -name "',
+                '(cd "', shQuote(inputdir), '" && find . -name "',
                 "bundledSamples.*-*.", regionName, ".RData",
-                '" > "', file_with_files_to_transfer, '")'
+                '" > "', shQuote(file_with_files_to_transfer), '")'
             )
             system(command1)
-            command2 <- paste0("rsync -a --files-from='", file_with_files_to_transfer, "' '", inputdir, "' '", tempdir, "'")
-            system(command2)
         }
+        command2 <- paste0(
+            "rsync -a --files-from=",
+            shQuote(file_with_files_to_transfer),  " ",
+            shQuote(inputdir), " ",
+            shQuote(tempdir)
+        )
+        system(command2)
         print_message("Done copying files onto tempdir")
     } else {
 
@@ -3674,12 +3654,12 @@ run_forward_backwards <- function(
     srp = NULL,
     pseudoHaploidModel = 9,
     run_fb_subset = FALSE,
-    alphaStart = 0,
-    betaEnd = 0,
-    run_fb_snp_offset = 0,
+    alphaBetaBlock = NULL,
+    run_fb_grid_offset = 0,
     suppressOutput = as.integer(1),
     generate_fb_snp_offsets = FALSE,    
-    snp_blocks_for_output = array(0, c(1, 1))
+    blocks_for_output = array(0, c(1, 1)),
+    i_snp_block_for_alpha_beta = 1
 ) {
 
     ## re-declare obvious stuff
@@ -3690,6 +3670,18 @@ run_forward_backwards <- function(
         } else {
             nor <- 1
         }
+    }
+
+    ## dummy up input
+    if (is.null(alphaBetaBlock)) {
+        alphaBetaBlock <- lapply(1:nor, function(nor) {
+            return(
+                list(
+                    alphaHatBlocks_t = array(0, c(1, 1)),
+                    betaHatBlocks_t = array(0, c(1, 1))
+                )
+            )
+        })
     }
     
     whatToReturn <- whatToReturnOriginal
@@ -3781,11 +3773,11 @@ run_forward_backwards <- function(
                 pRgivenH1 = pRgivenH1L,
                 pRgivenH2 = pRgivenH2L,
                 run_pseudo_haploid = TRUE,
-                alphaStart = alphaStart,
-                betaEnd = betaEnd,
+                alphaStart = alphaBetaBlock[[iNor]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
+                betaEnd = alphaBetaBlock[[iNor]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
                 run_fb_subset = run_fb_subset,                
-                run_fb_snp_offset = run_fb_snp_offset,
-                snp_blocks_for_output = snp_blocks_for_output,
+                run_fb_grid_offset = run_fb_grid_offset,
+                blocks_for_output = blocks_for_output,
                 generate_fb_snp_offsets = generate_fb_snp_offsets
             )
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
@@ -3811,16 +3803,17 @@ run_forward_backwards <- function(
             model = -1, ## irrelevant for haploid
             run_pseudo_haploid = FALSE,
             run_fb_subset = run_fb_subset,
-            alphaStart = alphaStart,
-            betaEnd = betaEnd,
-            run_fb_snp_offset = run_fb_snp_offset,
-            snp_blocks_for_output = snp_blocks_for_output,
+            alphaStart = alphaBetaBlock[[iNor]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
+            betaEnd = alphaBetaBlock[[iNor]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
+            run_fb_grid_offset = run_fb_grid_offset,
+            blocks_for_output = blocks_for_output,
             generate_fb_snp_offsets = generate_fb_snp_offsets
         )
         fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
     }
     
     if(method=="diploid") {
+
         fbsoL[[1]] <- forwardBackwardDiploid(
             sampleReads = sampleReads,
             nReads = as.integer(length(sampleReads)),
@@ -3834,10 +3827,10 @@ run_forward_backwards <- function(
             whatToReturn = whatToReturn,
             suppressOutput = suppressOutput,
             run_fb_subset = run_fb_subset,
-            alphaStart = alphaStart,
-            betaEnd = betaEnd,
-            run_fb_snp_offset = run_fb_snp_offset,
-            snp_blocks_for_output = snp_blocks_for_output,
+            alphaStart = alphaBetaBlock[[1]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
+            betaEnd = alphaBetaBlock[[1]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
+            run_fb_grid_offset = run_fb_grid_offset,
+            blocks_for_output = blocks_for_output,
             generate_fb_snp_offsets = generate_fb_snp_offsets
         )
     }
@@ -3957,36 +3950,13 @@ within_EM_per_sample_heuristics <- function(
     ## check high coverage samples if applicable
     ##
     if (is.na(match(iSample, highCovInLow)) ==FALSE) {
-        if (method == "pseudoHaploid") {
-            dosage <- array(0, nSNPs)
-            for(iNor in 1:nor) {
-                dosage <- dosage + (colSums(fbsoL[[iNor]]$gamma_t[, grid + 1] * eHapsCurrent_t))
-            }
-            dosage <- dosage
-        } else if(method == "diploid-inbred"){
-            ## so basically, is haploid, but doubled!
-            dosage <- 2 * (colSums(fbsoL[[1]]$gamma_t[, grid + 1] * eHapsCurrent_t))
-        } else if(method == "diploid") {
-            out <- rcpp_calculate_fbd_dosage(
-                nGrids = nGrids,
-                nSNPs = nSNPs,
-                K = K,
-                eHaps_t = eHapsCurrent_t,
-                gamma_t = fbsoL[[1]]$gamma_t,
-                grid = grid
-            )
-            dosage <- out$dosage
-        } else if(method == "diploid_subset") {
-            out <- rcpp_calculate_fbd_dosage(
-                nGrids = nGrids,
-                nSNPs = nSNPs,
-                K = K_subset,
-                eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
-                gamma_t = fbsoL[[1]]$gamma_t,
-                grid = grid
-            )
-            dosage <- out$dosage                
-        }
+        gp_t <- calculate_gp_t_from_fbsoL(
+            eHapsCurrent_t = eHapsCurrent_t,
+            grid = grid,
+            method = method,
+            fbsoL = fbsoL
+        )
+        dosage <- gp_t[2, ] + 2 * gp_t[3, ]
         save(dosage, file=file_dosages(tempdir, iSample, regionName))
     } # end of check on high coverage sample
     ##
@@ -4040,15 +4010,23 @@ within_EM_per_sample_heuristics <- function(
 
 
 
+## so given variables below
+## calculate output
 calculate_gp_t_from_fbsoL <- function(
-    nGrids,
-    nSNPs,
-    K,
     eHapsCurrent_t,
     grid,
     method,
-    fbsoL
+    fbsoL,
+    snp_start_1_based = NA,
+    snp_end_1_based = NA,
+    grid_offset_0_based = 0
 ) {
+    nSNPs <- ncol(eHapsCurrent_t)
+    if (is.na(snp_start_1_based)) {
+        snp_start_1_based <- 1
+        snp_end_1_based <- length(grid)
+    }
+    K <- nrow(eHapsCurrent_t)
     ## if pseudo-haploid, get probabilities
     ## disable outputting for now
     if (method == "pseudoHaploid" && 1 == 0) {
@@ -4063,15 +4041,15 @@ calculate_gp_t_from_fbsoL <- function(
     }
     ## get allele counts for HWE, info calcs, AF
     ## get most likely genotype - add to count
-    if ( method == "diploid") {
+    if (method == "diploid") {
         ## calculate dosage here
         out <- rcpp_calculate_fbd_dosage(
-            nGrids = nGrids,
-            nSNPs = nSNPs,
-            K = K,
-            eHaps_t = eHapsCurrent_t,
+            eHapsCurrent_t = eHapsCurrent_t,
             gamma_t = fbsoL[[1]]$gamma_t,
-            grid = grid
+            grid = grid,
+            snp_start_1_based = snp_start_1_based,
+            snp_end_1_based = snp_end_1_based,
+            grid_offset = grid_offset_0_based
         )
         gp_t<- out$genProbs_t
     } else if (method == "diploid-inbred") {
@@ -4082,7 +4060,7 @@ calculate_gp_t_from_fbsoL <- function(
         gp_t[3, ] <- 1 - gp_t[1, ]
     } else if (method == "pseudoHaploid") {
         gp_t <- array(0, c(3, nSNPs))        
-        if (nSNPs == nGrids) {
+        if (ncol(fbsoL[[1]]$gamma_t) == nSNPs) {
             g10 <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))
             g20 <- colSums(fbsoL[[2]]$gamma_t * (1-eHapsCurrent_t))
         } else {
@@ -4095,14 +4073,14 @@ calculate_gp_t_from_fbsoL <- function(
     } else if (method == "diploid_subset") {
         ## calculate dosage here
         out <- rcpp_calculate_fbd_dosage(
-            nGrids = nGrids,
-            nSNPs = nSNPs,
-            K = K_subset,
-            eHaps_t = eHapsCurrent_t[best_K_for_sample, ],
+            eHapsCurrent_t = eHapsCurrent_t[best_K_for_sample, ],
             gamma_t = fbsoL[[1]]$gamma_t,
-            grid = grid
+            grid = grid,
+            snp_start_1_based = snp_start_1_based,
+            snp_end_1_based = snp_end_1_based,
+            grid_offset = grid_offset_0_based
         )
-        gp_t <- out$genProbs_t
+        gp_t<- out$genProbs_t
     }
     return(gp_t)
 }
@@ -4110,10 +4088,11 @@ calculate_gp_t_from_fbsoL <- function(
 
 
 
-subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrentL,outputBlockSize, bundling_info, transMatRate_t, x3, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, grid_eHaps_distance, output_format, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, snp_blocks_for_output) {
+subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrentL,outputBlockSize, bundling_info, transMatRate_t, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, grid_eHaps_distance, output_format, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output) {
 
     ## know what core we are in for writing
-    i_core <- match(sampleRange[1], sapply(x3, function(x) x[[1]]))    
+    i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
+    who_to_run <- sampleRange[1]:sampleRange[2]    
     ## initialize bundling variables
     bundledSampleReads <- NULL
     bundledSampleProbs <- NULL
@@ -4151,51 +4130,8 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     fromMat <- array(0, c(nbreaks, K, K))
     restartMatrixList <- as.list(1:N)
 
-    ## make exist, no matter what, for outputting
-    hweCount <- NA
-    afCount <- NA
-    infoCount <- NA
-    gp_raw_t <- NULL
-    if (iteration == niterations) {
-        ## if buffer, define
-        nSNPsInRegionMinusBuffer <- start_and_end_minus_buffer[2] - start_and_end_minus_buffer[1] + 1        
-        if (nSNPsInRegionMinusBuffer != nSNPs) {
-            ## so here we only care about some subset
-            inRegion <- array(FALSE, nSNPs)
-            inRegion[start_and_end_minus_buffer[1]:start_and_end_minus_buffer[2]] <- TRUE
-            region_has_buffer <- TRUE
-        } else {
-            region_has_buffer <- FALSE
-        }
-        ##
-        if (iteration == niterations) {
-            hweCount <- array(0, c(nSNPsInRegionMinusBuffer, 3))
-            infoCount <- array(0, c(nSNPsInRegionMinusBuffer, 2))
-            afCount <- array(0, nSNPsInRegionMinusBuffer)
-        }
-        ## set up output things here
-        if (output_format == "bgvcf") {
-            outputBlockRange <- getOutputBlockRange(
-                sampleRange,
-                outputBlockSize
-            )
-            iBlock <- 1
-            vcf_matrix_to_out <- data.frame(matrix(
-                data = NA,
-                nrow = nSNPsInRegionMinusBuffer,
-                ncol = outputBlockRange[iBlock + 1] - outputBlockRange[iBlock]
-            ))
-            vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
-        } else {
-            N <- sampleRange[2] - sampleRange[1] + 1
-            gp_raw_t <- matrix(
-                data = raw(0),
-                nrow = N * 2 * (B_bit_prob / 8),
-                ncol = nSNPsInRegionMinusBuffer
-            )
-        }
-    }
-
+    ##
+    alphaBetaBlockList <- as.list(1:length(who_to_run))
     whatToReturnOriginal <- whatToReturn
 
     ## run either once (default) or more than once
@@ -4211,7 +4147,12 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     bundledSampleProbs <- NULL
     fbd_store <- NULL ## for plotting shuffle haplotype itetself
 
-    who_to_run <- sampleRange[1]:sampleRange[2]
+    if (iteration == niterations) {
+        generate_fb_snp_offsets <- TRUE
+    } else {
+        generate_fb_snp_offsets <- FALSE
+    }
+
     for (iiSample in 1:length(who_to_run)) {
         
         iSample <- who_to_run[iiSample]
@@ -4265,9 +4206,16 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             pRgivenH2 = pRgivenH2,
             srp = srp,
             pseudoHaploidModel = pseudoHaploidModel,
-            snp_blocks_for_output = snp_blocks_for_output
+            blocks_for_output = blocks_for_output,
+            generate_fb_snp_offsets = generate_fb_snp_offsets
         )
         fbsoL <- out$fbsoL
+
+        ## prepare output
+        if (iteration == niterations) {
+            ## right - there are potentially two of them!
+            alphaBetaBlockList[[iiSample]] <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
+        }
 
         ## pass by reference
         ## note - hapSum_t divided by 2 later on for pseudoHaploid        
@@ -4330,75 +4278,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         fromMat <- out$fromMat
         fbd_store <- out$fbd_store
 
-        ## prepare output
-        if (iteration == niterations) {
-            gp_t <- calculate_gp_t_from_fbsoL(
-                nGrids = nGrids,
-                nSNPs = nSNPs,
-                K = K,
-                eHapsCurrent_t = eHapsCurrent_t,
-                grid = grid,
-                method = method,
-                fbsoL = fbsoL
-            )
-            ## shrink gp_t here
-            ## no obvious reason to do it earlier - need full region to run forward backwards
-            if (region_has_buffer) {
-                gp_t <- gp_t[, inRegion, drop = FALSE]
-            }
-            ##
-            eij <- round(gp_t[2, ] + 2 * gp_t[3, ], 3) ## prevent weird rounding issues
-            fij <- round(gp_t[2, ] + 4 * gp_t[3, ], 3) ##
-            infoCount[, 1] <- infoCount[, 1, drop = FALSE] + eij
-            infoCount[, 2] <- infoCount[, 2, drop = FALSE] + (fij - eij**2)
-            ## this returns un-transposed results
-            max_gen <- get_max_gen_rapid(gp_t)
-            ## hweCount is NOT transposed!
-            hweCount[max_gen] <- hweCount[max_gen] + 1 ## hmmmmm not ideal
-            afCount <- afCount + (eij) / 2
-            ##
-            ## add column to VCF to matrix, and possibly write matrix to disk
-            ##
-            ## add into appropriate column
-            if (output_format == "bgvcf") {
-                vcf_matrix_to_out[
-                   ,
-                    iSample - vcf_matrix_to_out_offset
-                ] <- rcpp_make_column_of_vcf(gp_t, 0, matrix()) ## werwer
-                iBlock <- match(iSample, outputBlockRange)
-                if (iBlock > 1 & is.na(iBlock) == FALSE) {
-                    write_block_of_vcf(
-                        i_core = i_core,
-                        iBlock = iBlock,
-                        vcf_matrix_to_out = vcf_matrix_to_out,
-                        outputdir = outputdir,
-                    regionName = regionName,
-                    outputBlockRange = outputBlockRange,
-                    vcf.piece_unique = vcf.piece_unique
-                    )
-                    ## initialize new matrix if not last one
-                    if (iBlock <= (length(outputBlockRange) - 1)) {
-                        vcf_matrix_to_out <- data.frame(matrix(
-                            data = NA,
-                            nrow = nSNPsInRegionMinusBuffer,
-                            ncol = outputBlockRange[iBlock + 1] - outputBlockRange[iBlock]
-                        ))
-                        vcf_matrix_to_out_offset <- outputBlockRange[iBlock]
-                    }
-                }
-            } else {
-                ## list_of_gp_raw_t is pre-filled, and we fill here pass-by-reference
-                ## so this should place directly into the output in the proper way
-                rrbgen::rcpp_place_gp_t_into_output(
-                    gp_t,
-                    gp_raw_t, ## storage matrix
-                    iiSample, ## relative position
-                    nSNPs = ncol(gp_t), ## ncol(gp_t) = nSNPsInRegion here
-                    B_bit_prob
-                )
-            }
-        }
-
     }
 
     if (method == "pseudoHaploid") {
@@ -4416,10 +4295,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             readsTotal = readsTotal,
             restartMatrixList = restartMatrixList,
             refillMatrixList = refillMatrixList,
-            infoCount = infoCount,
-            afCount = afCount,
-            hweCount = hweCount,
-            gp_raw_t = gp_raw_t
+            alphaBetaBlockList = alphaBetaBlockList
         )
     )
 }
@@ -4449,7 +4325,7 @@ check_mclapply_OK <- function(out, stop_message = "An error occured during STITC
 }
 
 
-completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent,alphaMatCurrent,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrent,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, output_format, B_bit_prob, nSNPsInRegion, start_and_end_minus_buffer, shuffle_bin_nSNPs, shuffle_bin_radius, plot_shuffle_haplotype_attempts, snp_blocks_for_output
+completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent,alphaMatCurrent,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,hapSumCurrent,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, output_format, B_bit_prob, nSNPsInRegion, start_and_end_minus_buffer, shuffle_bin_nSNPs, shuffle_bin_radius, plot_shuffle_haplotype_attempts, blocks_for_output
 ) {
 
     print_message(paste0("Start of iteration ", iteration))
@@ -4488,7 +4364,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
     if(is.na(match(iteration,splitReadIterations))==FALSE)
         nsplit <- 1
     ##
-    x3 <- getSampleRange(N, nCores)
+    sampleRanges <- getSampleRange(N, nCores)
     ##
     hapSumCurrentL <- hapSumCurrent/rowSums(hapSumCurrent)
     ##
@@ -4518,11 +4394,11 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
     
 
     if(environment=="server") {
-        single_iteration_results <- mclapply(x3,mc.cores=nCores,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, x3 = x3, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, FUN=subset_of_complete_iteration, grid_eHaps_distance = grid_eHaps_distance, output_format = output_format, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, snp_blocks_for_output = snp_blocks_for_output)
+        single_iteration_results <- mclapply(sampleRanges,mc.cores=nCores,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, FUN=subset_of_complete_iteration, grid_eHaps_distance = grid_eHaps_distance, output_format = output_format, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output)
     }
     if(environment=="cluster") {
         cl <- makeCluster(nCores, type = "FORK")
-        single_iteration_results <- parLapply(cl, x3, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs, nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, x3 = x3, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, output_format = output_format, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, snp_blocks_for_output = snp_blocks_for_output)
+        single_iteration_results <- parLapply(cl, sampleRanges, fun=subset_of_complete_iteration,tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs, nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t = alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,hapSumCurrentL=hapSumCurrentL,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t= transMatRate_t, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, output_format = output_format, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output)
         stopCluster(cl)
     }
     check_mclapply_OK(single_iteration_results)
@@ -4531,7 +4407,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
     ##
     ## update results
     ##
-    out <- calculate_updates(out2 = single_iteration_results, x3 = x3, K = K, nSNPs = nSNPs, N = N, nGen = nGen, expRate = expRate, minRate = minRate, maxRate = maxRate, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, L = L, grid_distances = grid_distances, alleleCount = alleleCount)
+    out <- calculate_updates(out2 = single_iteration_results, sampleRanges = sampleRanges, K = K, nSNPs = nSNPs, N = N, nGen = nGen, expRate = expRate, minRate = minRate, maxRate = maxRate, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, L = L, grid_distances = grid_distances, alleleCount = alleleCount)
     sigmaSum <- out$sigmaSum
     sigmaSum_unnormalized <- out$sigmaSum_unnormalized
     priorSum <- out$priorSum
@@ -4543,50 +4419,28 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
     ##
     ## get other updates
     ##
-    out <- calculate_misc_updates(N = N, nsplit = nsplit, nbreaks = nbreaks, x3 = x3, out2 = single_iteration_results, fromMat = fromMat, K = K)
+    out <- calculate_misc_updates(N = N, nsplit = nsplit, nbreaks = nbreaks, sampleRanges = sampleRanges, out2 = single_iteration_results, fromMat = fromMat, K = K)
     restartMatrixList <- out$restartMatrixList
     readsTotal <- out$readsTotal
     readsSplit <- out$readsSplit
     fromMat <- out$fromMat
     rm(out)
 
-
-    ##
-    ## calculate HWE, info, EAF if final iteration
-    ##
-    hwe <- NA
-    info <- NA
-    estimatedAlleleFrequency <- NA
-    hweCount <- NA
-    list_of_gp_raw_t <- NULL
-    if(iteration == niterations) {
-        print_message("Calculate INFO and HWE")
-        nSNPsInRegionMinusBuffer <- start_and_end_minus_buffer[2] - start_and_end_minus_buffer[1] + 1         
-        infoCount <- array(0, c(nSNPsInRegionMinusBuffer, 2))
-        hweCount <- array(0, c(nSNPsInRegionMinusBuffer, 3))
-        afCount <- array(0, nSNPsInRegionMinusBuffer)
-        for(i in 1:length(single_iteration_results)) {
-            infoCount <- infoCount + single_iteration_results[[i]]$infoCount
-            hweCount <- hweCount + single_iteration_results[[i]]$hweCount
-            afCount <- afCount + single_iteration_results[[i]]$afCount
-        }
-        if (output_format == "bgen") {
-            print_message("Re-capture raw bgen input")            
-            list_of_gp_raw_t <- lapply(1:length(x3), function(i_core) {
-                gp_raw_t <- single_iteration_results[[i_core]]$gp_raw_t
-                return(gp_raw_t)
-            })
-            print_message("Done re-capture raw bgen input")                        
-        }
-    }
-    rm(single_iteration_results) ## remove this no matter what at this point
+    ## re-build alphaBetaBlockList as per-individual
+    ## this feels really ugly, and does not need to be lists, maybe re-write as cubes etc
     if (iteration == niterations) {
-        thetaHat <- infoCount[,1] / 2 / N
-        denom <- 2 * N * thetaHat * (1-thetaHat)
-        info <- 1 - infoCount[,2] / denom
-        info[(thetaHat == 0) | (thetaHat == 1)] <- 1
-        estimatedAlleleFrequency <- afCount / N
-        hwe <- generate_hwe_on_counts(hweCount, nSNPsInRegionMinusBuffer, nCores)
+        alphaBetaBlockList <- as.list(1:N)
+        for(i_core in 1:length(single_iteration_results)) {
+            sampleRange <- sampleRanges[[i_core]]
+            who_to_run <- sampleRange[1]:sampleRange[2]
+            abSmall <- single_iteration_results[[i_core]]$alphaBetaBlockList
+            for(iiSample in 1:length(who_to_run)) {
+                iSample <- who_to_run[[iiSample]]
+                alphaBetaBlockList[[iSample]] <- abSmall[[iiSample]]
+            }
+        }
+    } else {
+        alphaBetaBlockList <- NULL
     }
 
 
@@ -4721,11 +4575,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
             priorFuture = priorSum,
             alphaMatFuture = alphaMatSum,
             hapSum = hapSum,
-            info = info,
-            estimatedAlleleFrequency = estimatedAlleleFrequency,
-            hwe = hwe,
-            hweCount = hweCount,
-            list_of_gp_raw_t = list_of_gp_raw_t
+            alphaBetaBlockList = alphaBetaBlockList
         )
     )
 
@@ -4734,14 +4584,20 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
 
 
 calculate_misc_updates <- function(
-N, nsplit, nbreaks, x3, out2, fromMat, K
+    N,
+    nsplit,
+    nbreaks,
+    sampleRanges,
+    out2,
+    fromMat,
+    K                                   
 ) {
     fromMat <- array(0, c(nbreaks, K, K))
     restartMatrixList <- as.list(1:N)
     ## note - already defined fromMat before the function f above
     readsTotal <- array(0, N)
     readsSplit <- array(0, N)
-    for(i in 1:length(x3)) {
+    for(i in 1:length(sampleRanges)) {
         if(nbreaks > 0) {
             fromMat <- fromMat + out2[[i]][["fromMat"]]
         }
@@ -4749,7 +4605,7 @@ N, nsplit, nbreaks, x3, out2, fromMat, K
             readsTotal <- readsTotal + out2[[i]][["readsTotal"]]
             readsSplit <- readsSplit + out2[[i]][["readsSplit"]]
         }
-        restartMatrixList[x3[[i]][1]:x3[[i]][2]]=out2[[i]]$restartMatrixList[x3[[i]][1]:x3[[i]][2]]
+        restartMatrixList[sampleRanges[[i]][1]:sampleRanges[[i]][2]]=out2[[i]]$restartMatrixList[sampleRanges[[i]][1]:sampleRanges[[i]][2]]
     }
     return(
         list(
@@ -4763,7 +4619,7 @@ N, nsplit, nbreaks, x3, out2, fromMat, K
 
 
 calculate_updates <- function(
-    out2, x3, K, nSNPs, N,
+    out2, sampleRanges, K, nSNPs, N,
     nGen, expRate, minRate, maxRate,
     emissionThreshold, alphaMatThreshold, L,
     grid_distances, alleleCount = NA
@@ -4776,7 +4632,7 @@ calculate_updates <- function(
     hapSum_t <- array(0, c(K, nGrids))
     ## sum and sum
 
-    for(i in 1:length(x3)) {
+    for(i in 1:length(sampleRanges)) {
         priorSum <- priorSum + out2[[i]]$priorSum
         alphaMatSum_t <- alphaMatSum_t + out2[[i]]$alphaMatSum_t
         gammaSumBoth_t <- gammaSumBoth_t + out2[[i]]$gammaSum_t
@@ -4928,7 +4784,7 @@ restartSample <- function(sampleReads, srp, pRgivenH1, pRgivenH2,fbsoL, nSNPs,eH
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,            
             whatToReturn = as.integer(1),
             suppressOutput = as.integer(1),
-            snp_blocks_for_output = array(0, c(1, 1))            
+            blocks_for_output = array(0, c(1, 1))            
         )
         fbd$gamma <- t(fbd$gamma_t)
         fbd$jUpdate <- t(fbd$jUpdate_t)
@@ -5157,8 +5013,8 @@ generate_hwe_on_counts <- function(
     nSNPs,
     nCores
 ) {
-    x3 <- getSampleRange(nSNPs, nCores) ## should work on this as well
-    out <- mclapply(x3, mc.cores = nCores, function(i) {
+    snpRanges <- getSampleRange(nSNPs, nCores) ## should work on this as well
+    out <- mclapply(snpRanges, mc.cores = nCores, function(i) {
         hwe_out <- array(NA, i[2] - i[1] + 1)
         for(j in i[1]:i[2]) {
             hwe_out[j - i[1] + 1] <- rcpp_calculate_hwe_p(hweCount[j, ])
@@ -5315,34 +5171,48 @@ calculate_pse <- function(
 }
 
 
-### plot HWE, info, MAF, coloured by discrepency
-plotMetricsForPostImputationQC=function(iSample,highCovList,gen,gen_imp,alleleCount,chr,L,estimatedAlleleFrequency,info,outputdir,colour=TRUE,hwe,regionName) {
-  if(is.null(iSample)==FALSE)
-  {
-    m1A=cbind(gen[,iSample]/2,gen_imp[, iSample])
-    m1A[alleleCount[,3]>0.5,]=1-m1A[alleleCount[,3]>0.5,]
-    dist=abs(m1A[,1]-m1A[,2])
-    dist[dist>0.1]=0.1
-  } else {
-    dist=rep(0,T)
-  }
-  colfunc <- colorRampPalette(c("blue", "red"))
-  col=colfunc(11)[round(dist,2)*100+1]
-  ### plot
-  jpeg(file.path(outputdir, "plots", paste0("metricsForPostImputationQC.",regionName,".sample",iSample,".jpg")),height=1000,width=3000,qual=100)
-  par(mfrow=c(1,3))
-  plot(info,log10(hwe) ,cex.lab=3 ,col=col)
-  plot(info,estimatedAlleleFrequency,cex.lab=3,col=col)
-  plot(estimatedAlleleFrequency,log10(hwe) ,cex.lab=3,col=col )
-  dev.off()
-  ### now plot along the chromosome as well
-  jpeg(file.path(outputdir, "plots", paste0("metricsForPostImputationQCChromosomeWide.",regionName,".sample",iSample,".jpg")),height=3000,width=3000,qual=100)
-  par(mfrow=c(3,1))
-  plot(L,log10(hwe) ,cex.lab=3 ,col=col)
-  plot(L,info,cex.lab=3,col=col)
-  plot(L,estimatedAlleleFrequency,cex.lab=3,col=col )
-  dev.off()
+## plot HWE, info, MAF, coloured by discrepency
+plotMetricsForPostImputationQC <- function(
+    iSample,
+    highCovList,
+    gen,
+    gen_imp,
+    alleleCount,
+    chr,
+    L,
+    estimatedAlleleFrequency,
+    info,
+    outputdir,
+    colour = TRUE,
+    hwe,
+    regionName
+) {
+    if (is.null(iSample)==FALSE) {
+        m1A <- cbind(gen[,iSample] / 2, gen_imp[, iSample])
+        m1A[alleleCount[,3]>0.5,] <- 1 - m1A[alleleCount[,3]>0.5,]
+        dist <- abs(m1A[,1]-m1A[,2])
+        dist[dist > 0.1] <- 0.1
+    } else {
+        dist <- rep(0, T)
+    }
+    colfunc <- colorRampPalette(c("blue", "red"))
+    col=colfunc(11)[round(dist,2)*100+1]
+    ## plot
+    jpeg(file.path(outputdir, "plots", paste0("metricsForPostImputationQC.",regionName,".sample",iSample,".jpg")),height=1000,width=3000,qual=100)
+    par(mfrow=c(1,3))
+    plot(info,log10(hwe) ,cex.lab=3 ,col=col)
+    plot(info,estimatedAlleleFrequency,cex.lab=3,col=col)
+    plot(estimatedAlleleFrequency,log10(hwe) ,cex.lab=3,col=col )
+    dev.off()
+    ## now plot along the chromosome as well
+    jpeg(file.path(outputdir, "plots", paste0("metricsForPostImputationQCChromosomeWide.",regionName,".sample",iSample,".jpg")),height=3000,width=3000,qual=100)
+    par(mfrow=c(3,1))
+    plot(L,log10(hwe) ,cex.lab=3 ,col=col)
+    plot(L,info,cex.lab=3,col=col)
+    plot(L,estimatedAlleleFrequency,cex.lab=3,col=col )
+    dev.off()
 }
+
 
 ### plot hapSum along genome
 plotHapSum <- function(
@@ -5682,23 +5552,6 @@ pseudoHaploidUpdate <- function(
 }
 
 
-## on final iteration, get imputed dosages
-get_high_coverage_final_imputed_genotypes <- function(
-    highCovInLow,
-    tempdir,
-    regionName,
-    nSNPs
-) {
-    n_hc <- length(highCovInLow)
-    out <- array(NA, c(nSNPs, n_hc))
-    for(j in 1:n_hc) {
-        load(file = file_dosages(tempdir, highCovInLow[j], regionName))
-        out[, j] <- dosage
-    }
-    return(out)
-}
-
-
 
 
 estimate_read_proportions <- function(
@@ -5808,11 +5661,11 @@ assign_positions_to_grid <- function(
 
 snap_reads_to_grid <- function(N, nCores, regionName, tempdir, bundling_info, grid, downsampleToCov, sampleNames, whatKindOfReads = "sampleReads", verbose = TRUE) {
 
-    x3 <- getSampleRange(N = N, nCores = nCores)
+    sampleRanges <- getSampleRange(N = N, nCores = nCores)
     print_message("Snap reads to grid")
 
     out2 <- mclapply(
-        x3,
+        sampleRanges,
         mc.cores = nCores,
         tempdir = tempdir,
         regionName = regionName,
@@ -5824,12 +5677,7 @@ snap_reads_to_grid <- function(N, nCores, regionName, tempdir, bundling_info, gr
         sampleNames = sampleNames,
         FUN = snap_reads_to_grid_subfunction
     )
-
-    error_check <- sapply(out2, class) == "try-error"
-    if (sum(error_check) > 0) {
-        print_message(out2[[which(error_check)[1]]])
-        stop("There has been an error snapping reads to grid. Please see above")
-    }
+    check_mclapply_OK(out2, "There has been an error snapping reads to grid. Please see above")
 
     return(NULL)
 
@@ -5905,9 +5753,6 @@ snap_reads_to_grid_subfunction <- function(
 
 
 
-file_besthaps <- function(tempdir, iSample, regionName) {
-    return(file.path(tempdir, paste0("sample.",iSample,".haps.",regionName,".RData")))
-}
 
 
 
@@ -5952,36 +5797,74 @@ downsample_snapped_sampleReads <- function(
 
 
 
-
-determine_snp_blocks_for_output <- function(
+## so want to determine what are the grid points and the SNPs in each output "block"
+determine_snp_and_grid_blocks_for_output <- function(
     grid,
     start_and_end_minus_buffer,
     outputSNPBlockSize = 1000
 ) {
-    to_out <- array(NA, c(ceiling(length(grid) / outputSNPBlockSize) + 1, 2))
+    to_out <- array(NA, c(ceiling(length(grid) / outputSNPBlockSize) + 1, 4))
+    ## yay! mixture of 0 and 1 based indexing
+    colnames(to_out) <- c("snp_start_1_based", "snp_end_1_based", "grid_start_0_based", "grid_end_0_based")
     if (start_and_end_minus_buffer[1] == start_and_end_minus_buffer[2]) {
         ## only 1 SNP in output region!
-        to_out[1, ] <- start_and_end_minus_buffer
-        c2 <- 1
+        to_out[1, c("snp_start_1_based", "snp_end_1_based")] <- start_and_end_minus_buffer
+        to_out[1, c("grid_start_0_based", "grid_end_0_based")] <- start_and_end_minus_buffer
+        c2 <- 2
     } else {
         c <- 1
         c2 <- 1
         start <- start_and_end_minus_buffer[1] ## start SNP, 1-based
+        prev_grid <- grid[start]        
         for(iSNP in (start_and_end_minus_buffer[1] + 1):start_and_end_minus_buffer[2]) {
             ## so iSNP is 1-based here
             c <- c + 1
             if (iSNP == (start_and_end_minus_buffer[2])) {
-                to_out[c2, ] <- c(start, iSNP)
-            } else if ((outputSNPBlockSize < c) & (grid[iSNP - 1] < grid[iSNP])) {
-                to_out[c2, ] <- c(start, iSNP - 1)
+                to_out[c2, c("snp_start_1_based", "snp_end_1_based")] <- c(start, iSNP)
+                c2 <- c2 + 1
+            } else if (
+                (outputSNPBlockSize < c) &
+                (grid[iSNP - 1] < grid[iSNP]) &
+                ((prev_grid + 1) < (grid[iSNP]))
+            ) {
+                to_out[c2, c("snp_start_1_based", "snp_end_1_based")] <- c(start, iSNP - 1)
                 c <- 0
                 c2 <- c2 + 1
                 start <- iSNP
+                prev_grid <- grid[start]
             }
         }
     }
-    to_out <- to_out[1:c2, , drop = FALSE]
-    colnames(to_out) <- c("snp_start", "snp_end")
+    to_out <- to_out[1:(c2 - 1), , drop = FALSE]
+    to_out[, "grid_start_0_based"] <- grid[to_out[, "snp_start_1_based"]]
+    to_out[, "grid_end_0_based"] <- grid[to_out[, "snp_end_1_based"]]
+    ## now, if last output block has 1 grid in it, merge into previous
+    if ((2 <= nrow(to_out) )) {
+        c2 <- nrow(to_out) + 1
+        if ((to_out[(c2 - 1), "grid_end_0_based"] - to_out[(c2 - 1), "grid_start_0_based"]) == 0) {
+            to_out[(c2 - 2), "snp_end_1_based"] <-  to_out[(c2 - 1), "snp_end_1_based"]
+            to_out[(c2 - 2), "grid_end_0_based"] <-  to_out[(c2 - 1), "grid_end_0_based"]
+            c2 <- c2 - 1
+            to_out <- to_out[-nrow(to_out), , drop = FALSE]
+        }
+    }
     ## if last region too small (smaller than 2 SNPs or 10%), merge back in
+    ## print some stats
+    mess <- paste0(
+        "Outputting will be done in ", nrow(to_out), " blocks with on average ",
+        1 + round(mean(to_out[, "snp_end_1_based"] - to_out[, "snp_start_1_based"]), 1),
+        " SNPs in them"
+    )
+    if (tail(grid, 1) != (length(grid) - 1)) {
+        mess <- paste0(
+            mess,
+            " and ",
+            1 + round(mean(to_out[, "grid_end_0_based"] - to_out[, "grid_start_0_based"], 1)),
+            " grids"
+        )
+    }
+    print_message(mess)
     return(to_out)
 }
+
+

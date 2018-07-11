@@ -416,7 +416,7 @@ arma::mat make_and_bound_eMat_t(
     const int& K,
     const int& T,
     const double& maxEmissionMatrixDifference,
-    const int run_fb_snp_offset = 0
+    const int run_fb_grid_offset = 0
 ) {
     int k, k1, k2, iRead, prev_readSNP, readSNP;
     double x, rescale;
@@ -424,7 +424,7 @@ arma::mat make_and_bound_eMat_t(
     arma::mat eMat_t = arma::ones(KK, T);
     for(int iRead=0; iRead<=nReads-1; iRead++) {
         Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-        readSNP = as<int>(readData[1]) - run_fb_snp_offset; // leading SNP from read
+        readSNP = as<int>(readData[1]) - run_fb_grid_offset; // leading SNP from read
         for(k1=0; k1<=K-1; k1++) {
             for(k2=0; k2<=K-1; k2++) {
                 // work in log space?
@@ -438,7 +438,7 @@ arma::mat make_and_bound_eMat_t(
     prev_readSNP = -1;
     for(iRead=0; iRead<=nReads-1; iRead++) {
         Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-        readSNP = as<int>(readData[1]) - run_fb_snp_offset; // leading SNP from read
+        readSNP = as<int>(readData[1]) - run_fb_grid_offset; // leading SNP from read
         // do not bother if already been done
         if (readSNP != prev_readSNP) {
             // first, get maximum
@@ -463,14 +463,14 @@ arma::mat make_and_bound_eMat_t(
 Rcpp::List make_fb_snp_offsets(
     const arma::mat& alphaHat_t,
     const arma::mat& betaHat_t,
-    const arma::mat& snp_blocks_for_output
+    const arma::mat& blocks_for_output
 ) {
     int s, e;
-    arma::mat alphaHatBlocks_t = arma::zeros(alphaHat_t.n_rows, snp_blocks_for_output.n_rows);
-    arma::mat betaHatBlocks_t = arma::zeros(betaHat_t.n_rows, snp_blocks_for_output.n_rows);    
-    for(int i_output=0; i_output < snp_blocks_for_output.n_rows; i_output++) {
-        s = snp_blocks_for_output(i_output, 0) - 1; // these are 1-based
-        e = snp_blocks_for_output(i_output, 1) - 1;
+    arma::mat alphaHatBlocks_t = arma::zeros(alphaHat_t.n_rows, blocks_for_output.n_rows);
+    arma::mat betaHatBlocks_t = arma::zeros(betaHat_t.n_rows, blocks_for_output.n_rows);    
+    for(int i_output=0; i_output < blocks_for_output.n_rows; i_output++) {
+        s = blocks_for_output(i_output, 2); // these are 0-based. these are the grid entries
+        e = blocks_for_output(i_output, 3);
         alphaHatBlocks_t.col(i_output) = alphaHat_t.col(s);
         betaHatBlocks_t.col(i_output) = betaHat_t.col(e);
     }
@@ -495,13 +495,13 @@ Rcpp::List forwardBackwardDiploid(
     const int whatToReturn,
     const int Jmax,
     const int suppressOutput,
-    const arma::mat& snp_blocks_for_output,
+    const arma::mat& blocks_for_output,
     const bool generate_fb_snp_offsets = false,
     const Rcpp::NumericVector alphaStart = 0,
     const Rcpp::NumericVector betaEnd = 0,
     const int return_a_sampled_path = 0,
     const bool run_fb_subset = false,
-    const int run_fb_snp_offset = 0 // this is 0-based
+    const int run_fb_grid_offset = 0 // this is 0-based
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -561,7 +561,7 @@ Rcpp::List forwardBackwardDiploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  arma::mat eMat_t=make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_snp_offset);
+  arma::mat eMat_t=make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset);
   //
   // forward recursion
   //
@@ -636,7 +636,7 @@ Rcpp::List forwardBackwardDiploid(
       alphaBetaBlocks = make_fb_snp_offsets(
           alphaHat_t,
           betaHat_t,
-          snp_blocks_for_output
+          blocks_for_output
       );
   }
   //
@@ -770,55 +770,47 @@ Rcpp::List forwardBackwardDiploid(
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List rcpp_calculate_fbd_dosage(const int nGrids, const int nSNPs, const int K, const arma::mat& eHaps_t, const arma::mat& gamma_t, const Rcpp::IntegerVector grid) {
+Rcpp::List rcpp_calculate_fbd_dosage(
+    const arma::mat& eHapsCurrent_t,
+    const arma::mat& gamma_t,
+    const Rcpp::IntegerVector grid,
+    const int snp_start_1_based,
+    const int snp_end_1_based,
+    const int grid_offset = 0
+) {
     // basically, copy and paste, either using grid or not
+    const int nSNPs = snp_end_1_based - snp_start_1_based + 1;
+    const int K = eHapsCurrent_t.n_rows;
     arma::mat genProbs_t = arma::zeros(3, nSNPs);
     arma::vec dosage = arma::zeros(nSNPs);
     // new
-    int t, k1, k2, j, k;
+    int i_t, t, k1, k2, j, k, tt;
     double a, b;
-    if (nSNPs > nGrids) {
-        for(t=0; t<=nSNPs-1; t++) {
-            for(k1=0; k1<=K-1;k1++) {
-                for(k2=0; k2<=K-1;k2++) {
-                    k=k1+K*k2;
-                    a=eHaps_t(k1, t);
-                    b=eHaps_t(k2, t);
-                    genProbs_t(0, t) = genProbs_t(0, t) + \
-                        gamma_t(k, grid(t)) * (1-a) * (1-b);
-                    genProbs_t(1, t) = genProbs_t(1, t) + \
-                        gamma_t(k, grid(t)) * (a * (1 - b) + (1 - a) * b);
-                    genProbs_t(2, t) = genProbs_t(2, t) + \
-                        gamma_t(k, grid(t)) * a * b;
-                } // k2
-            } //k1
-            for(j=1;j<=2;j++) {
-                dosage(t) = dosage(t) + j * genProbs_t(j, t);
-            }
-        }
-    } else {
-        for(t=0; t<=nSNPs-1; t++) {
-            for(k1=0; k1<=K-1;k1++) {
-                for(k2=0; k2<=K-1;k2++) {
-                    k=k1+K*k2;
-                    a=eHaps_t(k1, t);
-                    b=eHaps_t(k2, t);
-                    genProbs_t(0, t) = genProbs_t(0, t) +  \
-                        gamma_t(k, t) * (1-a) * (1-b);
-                    genProbs_t(1, t) = genProbs_t(1, t) + \
-                        gamma_t(k, t) * (a * (1 - b) + (1 - a) * b);
-                    genProbs_t(2, t) = genProbs_t(2, t) +  \
-                        gamma_t(k, t) * a * b;
-                } // k2
-            } //k1
-            for(j=1;j<=2;j++)
-                dosage(t)=dosage(t)+j * genProbs_t(j, t);
+    // i_t is index from 0 to nSNPs + 1, controls where things go
+    // t is the index in the whole set of SNPs
+    // tt is the index in the grid
+    /// grid_offset refers to in what grids we are running
+    for(i_t = 0; i_t < nSNPs; i_t++) {
+        t = i_t + snp_start_1_based - 1;
+        tt = grid(t) - grid_offset;
+        for(k1=0; k1<=K-1;k1++) {
+            for(k2=0; k2<=K-1;k2++) {
+                k=k1+K*k2;
+                a=eHapsCurrent_t(k1, t);
+                b=eHapsCurrent_t(k2, t);
+                genProbs_t(0, i_t) = genProbs_t(0, i_t) + gamma_t(k, tt) * (1-a) * (1-b);
+                genProbs_t(1, i_t) = genProbs_t(1, i_t) + gamma_t(k, tt) * (a * (1 - b) + (1 - a) * b);
+                genProbs_t(2, i_t) = genProbs_t(2, i_t) + gamma_t(k, tt) * a * b;
+            } // k2
+        } //k1
+        for(j=1;j<=2;j++) {
+            dosage(i_t) = dosage(i_t) + j * genProbs_t(j, i_t);
         }
     }
     return(wrap(Rcpp::List::create(
-      Rcpp::Named("dosage") = dosage,
-      Rcpp::Named("genProbs_t") = genProbs_t
-                                   )));
+        Rcpp::Named("dosage") = dosage,
+        Rcpp::Named("genProbs_t") = genProbs_t
+    )));
 }
 
 
@@ -842,12 +834,12 @@ Rcpp::List forwardBackwardHaploid(
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
     const bool run_pseudo_haploid,
-    const arma::mat& snp_blocks_for_output,
+    const arma::mat& blocks_for_output,
     const bool generate_fb_snp_offsets = false,
     const Rcpp::NumericVector alphaStart = 0,
     const Rcpp::NumericVector betaEnd = 0,
     const bool run_fb_subset = false,
-    const int run_fb_snp_offset = 0 // this is 0-based
+    const int run_fb_grid_offset = 0 // this is 0-based
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -923,7 +915,7 @@ Rcpp::List forwardBackwardHaploid(
   //
   for(iRead=0; iRead<=nReads-1; iRead++) {
     Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-    readSNP = as<int>(readData[1]) - run_fb_snp_offset; // leading SNP from read
+    readSNP = as<int>(readData[1]) - run_fb_grid_offset; // leading SNP from read
     for(k=0; k<=K-1; k++) {
         eMatHapSNP_t(k, readSNP) = eMatHapSNP_t(k, readSNP) *  \
             eMatHap_t(k,iRead);
@@ -1026,6 +1018,14 @@ Rcpp::List forwardBackwardHaploid(
                                      Rcpp::Named("alphaHat_t") = alphaHat_t,
                                      Rcpp::Named("betaHat_t") = betaHat_t
                                      )));
+  }
+  // make outputs here
+  if (generate_fb_snp_offsets == true) {
+      alphaBetaBlocks = make_fb_snp_offsets(
+          alphaHat_t,
+          betaHat_t,
+          blocks_for_output
+      );
   }
   //
   //
