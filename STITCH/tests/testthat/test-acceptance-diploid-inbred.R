@@ -2,7 +2,7 @@ if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/Google Drive/STITCH/"
+    ##    dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
     b <- grep("~", a)
@@ -16,7 +16,7 @@ if (1 == 0) {
 }
 
 n_samples <- 20
-n_snps <- 10
+n_snps <- 20
 K <- 4
 reads_span_n_snps <- 6
 chr <- 1
@@ -43,8 +43,6 @@ test_that("STITCH diploid-inbred works under default parameters", {
 
     for(output_format in c("bgvcf", "bgen")) {
 
-        sink("/dev/null")
-
         outputdir <- make_unique_tempdir()                
         STITCH(
             chr = data_package_inbred$chr,
@@ -57,13 +55,13 @@ test_that("STITCH diploid-inbred works under default parameters", {
             nGen = 100,
             nCores = 1,
             keepTempDir = TRUE,
-            output_format = output_format
+            output_format = output_format,
+            outputSNPBlockSize = 5            
         )
-
-        sink()
         
+        file <- file.path(outputdir, paste0("stitch.", data_package_inbred$chr, extension[output_format]))
         check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package_inbred$chr, extension[output_format])),
+            file,
             data_package_inbred,
             output_format,
             which_snps = NULL,

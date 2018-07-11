@@ -1,8 +1,8 @@
 if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
-    ## dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/Google Drive/STITCH/"
+    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    ## dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
     b <- grep("~", a)
@@ -397,6 +397,40 @@ test_that("STITCH pseudoHaploid works under default parameters", {
             nCores = 1,
             method = "pseudoHaploid",
             output_format = output_format
+        )
+        
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 0.5
+        )
+
+    }
+    
+})
+
+
+test_that("STITCH pseudoHaploid works with outputSNPBlockSize", {
+    
+    for(output_format in c("bgvcf", "bgen")) {
+        
+        outputdir <- file.path(make_unique_tempdir(), "wer wer2")    
+
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,                
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            nCores = 1,
+            method = "pseudoHaploid",
+            output_format = output_format,
+            gridWindowSize = 4,
+            outputSNPBlockSize = 3            
         )
         
         check_output_against_phase(
@@ -1018,27 +1052,38 @@ test_that("STITCH works in a situation with grid, buffer, outputBlockSize, etc",
         phasemaster = phasemaster,
         L = L
     )
+    new_genfile <- tempfile()
+    write.table(
+        read.table(data_package$genfile, header = TRUE)[, c(5, 8, 10, 12)],
+        file = new_genfile,
+        row.names = FALSE,
+        col.names = TRUE,
+        sep = "\t",
+        quote = FALSE
+    )
 
     for(output_format in c("bgvcf", "bgen")) {    
 
         outputdir <- make_unique_tempdir()        
-        output_filename <- paste0("jimmy", extension[output_format])    
+        output_filename <- paste0("jimmy", extension[output_format])
+        
         STITCH(
             chr = data_package$chr,
             bamlist = data_package$bamlist,
             posfile = data_package$posfile,
-            genfile = data_package$genfile,
+            genfile = new_genfile,
             outputdir = outputdir,
             output_filename = output_filename,
             output_format = output_format,
             K = 2,
             nGen = 100,
-            nCores = 1,
+            nCores = 2,
             regionStart = regionStart,
             regionEnd = regionEnd,
             buffer = buffer,
             gridWindowSize = 3,
-            outputSNPBlockSize = 8
+            outputSNPBlockSize = 8,
+            inputBundleBlockSize = 5
         )
 
         which_snps <- which((regionStart <= L) & (L <= regionEnd))

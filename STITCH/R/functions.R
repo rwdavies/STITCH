@@ -2892,9 +2892,9 @@ shrinkReads <- function(
         } else {
             file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
             command1 <- paste0(
-                '(cd "', shQuote(inputdir), '" && find . -name "',
-                "bundledSamples.*-*.", regionName, ".RData",
-                '" > "', shQuote(file_with_files_to_transfer), '")'
+                'cd ', shQuote(inputdir), ' && find . -name "',
+                'bundledSamples.*-*.', regionName, '.RData',
+                '" > ', shQuote(file_with_files_to_transfer)
             )
             system(command1)
         }
@@ -4021,11 +4021,11 @@ calculate_gp_t_from_fbsoL <- function(
     snp_end_1_based = NA,
     grid_offset_0_based = 0
 ) {
-    nSNPs <- ncol(eHapsCurrent_t)
     if (is.na(snp_start_1_based)) {
         snp_start_1_based <- 1
         snp_end_1_based <- length(grid)
     }
+    nSNPs <- snp_end_1_based - snp_start_1_based + 1
     K <- nrow(eHapsCurrent_t)
     ## if pseudo-haploid, get probabilities
     ## disable outputting for now
@@ -4055,18 +4055,19 @@ calculate_gp_t_from_fbsoL <- function(
     } else if (method == "diploid-inbred") {
         ## this is a diploid organisms, so output genotypes appropriately
         ## there are only two posteriors here!
-        gp_t <- array(0, c(3, nSNPs))
-        gp_t[1, ] <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))        
-        gp_t[3, ] <- 1 - gp_t[1, ]
-    } else if (method == "pseudoHaploid") {
         gp_t <- array(0, c(3, nSNPs))        
-        if (ncol(fbsoL[[1]]$gamma_t) == nSNPs) {
-            g10 <- colSums(fbsoL[[1]]$gamma_t * (1-eHapsCurrent_t))
-            g20 <- colSums(fbsoL[[2]]$gamma_t * (1-eHapsCurrent_t))
-        } else {
-            g10 <- colSums(fbsoL[[1]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
-            g20 <- colSums(fbsoL[[2]]$gamma_t[, grid + 1] * (1-eHapsCurrent_t))
-        }
+        w2 <- snp_start_1_based:snp_end_1_based
+        w <- grid[w2] + 1 - grid_offset_0_based
+        gp_t[1, ] <- colSums(
+            fbsoL[[1]]$gamma_t[, w, drop = FALSE] * (1 - eHapsCurrent_t[, w2, drop = FALSE])
+        )
+        gp_t[3, ] <- 1 - gp_t[1, ]        
+    } else if (method == "pseudoHaploid") {
+        gp_t <- array(0, c(3, nSNPs))
+        w2 <- snp_start_1_based:snp_end_1_based
+        w <- grid[w2] + 1 - grid_offset_0_based
+        g10 <- colSums(fbsoL[[1]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
+        g20 <- colSums(fbsoL[[2]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
         gp_t[1, ] <- g10 * g20
         gp_t[2, ] <- g10 * (1 - g20) + (1 - g10) * g20
         gp_t[3, ] <- (1 - g10) * (1 - g20)

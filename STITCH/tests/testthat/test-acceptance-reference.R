@@ -395,7 +395,7 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
 
 test_that("STITCH can impute with reference panels with only 1 iteration if the initialize with reference data", {
 
-    n_snps <- 5
+    n_snps <- 20
     chr <- 10
     set.seed(10)
     refpack <- make_reference_package(
@@ -418,8 +418,6 @@ test_that("STITCH can impute with reference panels with only 1 iteration if the 
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()
-        sink("/dev/null")
-        set.seed(1008)
     
         STITCH(
             chr = data_package$chr,
@@ -434,11 +432,10 @@ test_that("STITCH can impute with reference panels with only 1 iteration if the 
             nGen = 100,
             nCores = 1,
             niterations = 1,
-            output_format = output_format
+            output_format = output_format,
+            outputSNPBlockSize = 4
         )
         
-        sink()
-
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,

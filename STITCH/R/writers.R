@@ -27,7 +27,7 @@ make_and_write_output_file <- function(
     highCovInLow,
     start_and_end_minus_buffer
 ) {
-
+    
     print_message("Begin making and writing output file")
     to_use_output_filename <- get_output_filename(
         output_filename = output_filename,
@@ -50,7 +50,8 @@ make_and_write_output_file <- function(
         bundling_info = bundling_info,
         nGrids = nGrids
     )     
-    
+
+    print_message("Initialize output file")
     if (output_format == "bgvcf") {
         ## put into temp file, then later bgzip (future: can I stream this?)
         output_unbgzipped <- paste0(to_use_output_filename, ".building.vcf")
@@ -73,6 +74,7 @@ make_and_write_output_file <- function(
         bgen_file_connection <- out$bgen_file_connection
         previous_offset <- out$final_binary_length
     }
+    print_message("Done initializing output file")    
 
     sampleRanges <- getSampleRange(N, nCores)    
     ## write blocks
@@ -90,8 +92,18 @@ make_and_write_output_file <- function(
         gen_imp <- NULL
     }
 
+    print_message("Loop over and write output file")
+    print_i_output_block <- round(seq(1, nrow(blocks_for_output), length.out = 10))    
     for(i_output_block in 1:nrow(blocks_for_output)) {
 
+        ## print out no more than 10 messages
+        if (i_output_block %in% print_i_output_block) {
+            print_message(paste0(
+                "Making output piece ",
+                i_output_block, " / ", nrow(blocks_for_output)
+            ))
+        }
+        
         first_snp_in_region <- blocks_for_output[i_output_block, "snp_start_1_based"]
         last_snp_in_region <- blocks_for_output[i_output_block, "snp_end_1_based"]        
         snps_in_output_block <- first_snp_in_region:last_snp_in_region
@@ -108,10 +120,6 @@ make_and_write_output_file <- function(
             ## what? is this right?
             alphaMatCurrentLocal_t <- alphaMatCurrent_t[, 1 + grids_to_use, drop = FALSE]
             transMatRateLocal_t <- transMatRate_t[, 1 + grids_to_use, drop = FALSE]
-        } else {
-            ## OK, so this should be very rare
-            ## this should really only happen if only one SNP in output region (!)
-            ## can directly multiply alphas, betas here
         }
         
         ##
@@ -174,10 +182,10 @@ make_and_write_output_file <- function(
             gc(reset = TRUE); gc(reset = TRUE)
         }
 
-        if(length(highCovInLow) > 0) {
+        if (length(highCovInLow) > 0) {
             for(j in 1:length(highCovInLow)) {
                 ## get gp_t
-                load(file = file_dosages(tempdir, j, regionName, "piece.gp_t"))
+                load(file = file_dosages(tempdir, highCovInLow[j], regionName, "piece.gp_t"))
                 gen_imp[snps_in_output_block, j] <- 0.5 * gp_t[2, ] + gp_t[3, ]
             }
         }
@@ -244,6 +252,7 @@ make_and_write_output_file <- function(
         }
 
     }
+    print_message("Done looping over and writing output file")
     
     ## 
     if (output_format == "bgvcf") {
@@ -385,8 +394,9 @@ per_core_get_results <- function(
                 return(list(gamma_t = gamma_t))
             })
         } else {    
+
             fbsoL <- run_forward_backwards(
-                sampleReads = sampleReads[which_reads],
+                sampleReads = sampleReads[which_reads[2]],
                 pRgivenH1 = pRgivenH1[which_reads],
                 pRgivenH2 = pRgivenH2[which_reads],
                 method = method,
@@ -398,8 +408,10 @@ per_core_get_results <- function(
                 alphaBetaBlock = alphaBetaBlockList[[iSample]],
                 i_snp_block_for_alpha_beta = i_output_block,
                 run_fb_grid_offset = first_grid_in_region,
-                run_fb_subset = TRUE
+                run_fb_subset = TRUE,
+                suppressOutput = 0
             )$fbsoL
+            
         }
 
         gp_t <- calculate_gp_t_from_fbsoL(
@@ -985,6 +997,8 @@ make_and_write_bgen_per_snp_annot_file <- function(
 
 
 
+## this assumes reads are sorted but that need not be the case for old STITCH
+## 
 determine_reads_in_output_blocks <- function(
     N,
     blocks_for_output,
@@ -1058,6 +1072,11 @@ determine_reads_in_output_blocks_subfunction <- function(
         bundledSampleReads <- out$bundledSampleReads
         ##
         central_snp_in_read <- sapply(sampleReads, function(x) x[[2]]) + 1
+        ## if not sorted, throw error
+        if (sum(diff(central_snp_in_read) < 0) > 0) {
+            x <- which.max(diff(central_snp_in_read) < 0)            
+            stop(paste0("In an internal format used by STITCH, the reads are not sorted by the central SNP in the read. For example, sample number ", iSample, " has read number ", x, " with central SNP ", sampleReads[[x]][[2]] + 1, " and read number ", x + 1, " with central SNP ", sampleReads[[x + 1]][[2]] + 1, ". This is probably caused by using previously generated input data from an older version of STITCH. Please regenerate input and try again. Otherwise, one can manually convert by ordering the sampleReads by the 2nd entry of each list member and saving again. If this does not seem correct please get in touch"))
+        }
         what_output_block_read_is_in <- blocks_in_vector_form[central_snp_in_read]
         s <- diff(what_output_block_read_is_in) != 0 ## where they switch
         ## start and end of regions

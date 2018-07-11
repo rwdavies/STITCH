@@ -28,16 +28,19 @@ fi
 
 source "${script_dir}/what_to_benchmark.sh"
 
-for i_version in $(seq 0 $((${#version_list[@]} - 1)))
+#for i_version in $(seq 0 $((${#version_list[@]} - 1)))
+for i_version in $(seq 1 3)
 do
     version=${version_list[$i_version]}
     extra=${extra_list[$i_version]}
     option=${options_list[$i_version]}    
     name=${name_list[$i_version]}
+    extension=${extension_list[$i_version]}
     echo version=${version}
     echo extra=${extra}
     echo name=${name}
-    echo option=${option}     
+    echo option=${option}
+    echo extension=${extension}
     cd ${STITCH_HOME}
     # note - not sure I need this anymore if installing locally
     # I think below should work on other machines

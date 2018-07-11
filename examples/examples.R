@@ -152,7 +152,7 @@ for(file in files) {
 
 ## Get example of human data with reference data at exactly the same sites
 setwd(human_matched_to_reference_datadir)
-get_and_untar_if_tgz_file("STITCH_human_reference_example_2017_05_24.tgz")
+get_and_untar_if_tgz_file("STITCH_human_reference_example_2018_07_11.tgz")
 
 
 ## Get mouse reference genome - need the reference genome to work with CRAM files
