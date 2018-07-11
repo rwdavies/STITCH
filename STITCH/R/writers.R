@@ -27,7 +27,7 @@ make_and_write_output_file <- function(
     highCovInLow,
     start_and_end_minus_buffer
 ) {
-    
+
     print_message("Begin making and writing output file")
     to_use_output_filename <- get_output_filename(
         output_filename = output_filename,
@@ -396,7 +396,7 @@ per_core_get_results <- function(
         } else {    
 
             fbsoL <- run_forward_backwards(
-                sampleReads = sampleReads[which_reads[2]],
+                sampleReads = sampleReads[which_reads],
                 pRgivenH1 = pRgivenH1[which_reads],
                 pRgivenH2 = pRgivenH2[which_reads],
                 method = method,
