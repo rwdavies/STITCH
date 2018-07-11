@@ -408,8 +408,7 @@ per_core_get_results <- function(
                 alphaBetaBlock = alphaBetaBlockList[[iSample]],
                 i_snp_block_for_alpha_beta = i_output_block,
                 run_fb_grid_offset = first_grid_in_region,
-                run_fb_subset = TRUE,
-                suppressOutput = 0
+                run_fb_subset = TRUE
             )$fbsoL
             
         }
