@@ -236,7 +236,8 @@ rebundle_input <- function(
         files = files,
         tempdir = tempdir,
         regionName = regionName,
-        bundling_info = bundling_info
+        bundling_info = bundling_info,
+        inputdir = inputdir    
     )
     check_mclapply_OK(out2)
     
@@ -250,7 +251,8 @@ rebundle_input_subfunction <- function(
     files,
     tempdir,
     regionName,
-    bundling_info
+    bundling_info,
+    inputdir
 ) {
 
     ## start with the file relevant to the first sample
