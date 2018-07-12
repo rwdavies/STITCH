@@ -48,6 +48,12 @@ option_list <- list(
         default = ""
     ), 
     make_option(
+        "--sampleNames_file",
+        type = "character",
+        help = "Optional, if not specified, sampleNames are taken from the SM tag in the header of the BAM / CRAM file. This argument is the path to file with sampleNames for samples. It is used directly to name samples in the order they appear in the bamlist / cramlist [default \"\"] ",
+        default = ""
+    ), 
+    make_option(
         "--reference",
         type = "character",
         help = "Path to reference fasta used for making cram files. Only required if cramlist is defined [default \"\"] ",
@@ -240,12 +246,6 @@ option_list <- list(
         default = FALSE
     ), 
     make_option(
-        "--environment",
-        type = "character",
-        help = "Whether to use server or cluster multicore options [default server] ",
-        default = "server"
-    ), 
-    make_option(
         "--switchModelIteration",
         type = "integer",
         help = "Whether to switch from pseudoHaploid to diploid and at what iteration (NA for no switching) [default NA] ",
@@ -302,8 +302,8 @@ option_list <- list(
     make_option(
         "--outputSNPBlockSize",
         type = "integer",
-        help = "How many SNPs to write to disk at one time to reduce RAM usage when making VCFs [default 1000] ",
-        default = 1000
+        help = "How many SNPs to write to disk at one time to reduce RAM usage when making VCFs [default 10000] ",
+        default = 10000
     ), 
     make_option(
         "--inputBundleBlockSize",
@@ -412,6 +412,12 @@ option_list <- list(
         type = "integer",
         help = "Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then recombination rate is calculated around pairs of SNPs in window of twice this value, and those that exceed what should be the maximum (defined by nGen and maxRate) are checked for whether they are shuffled [default 5000] ",
         default = 5000
+    ), 
+    make_option(
+        "--keepSampleReadsInRAM",
+        type = "logical",
+        help = "Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM [default TRUE] ",
+        default = TRUE
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -426,6 +432,7 @@ STITCH(
     tempdir = opt$tempdir,
     bamlist = opt$bamlist,
     cramlist = opt$cramlist,
+    sampleNames_file = opt$sampleNames_file,
     reference = opt$reference,
     genfile = opt$genfile,
     method = opt$method,
@@ -458,7 +465,6 @@ STITCH(
     originalRegionName = opt$originalRegionName,
     keepInterimFiles = opt$keepInterimFiles,
     keepTempDir = opt$keepTempDir,
-    environment = opt$environment,
     switchModelIteration = opt$switchModelIteration,
     generateInputOnly = opt$generateInputOnly,
     restartIterations = opt$restartIterations,
@@ -486,5 +492,6 @@ STITCH(
     save_sampleReadsInfo = opt$save_sampleReadsInfo,
     gridWindowSize = opt$gridWindowSize,
     shuffle_bin_nSNPs = opt$shuffle_bin_nSNPs,
-    shuffle_bin_radius = opt$shuffle_bin_radius
+    shuffle_bin_radius = opt$shuffle_bin_radius,
+    keepSampleReadsInRAM = opt$keepSampleReadsInRAM
 )
