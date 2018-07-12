@@ -162,6 +162,26 @@ bundle_inputs_after_generation <- function(
 
 
 
+get_rebundled_files <- function(inputdir, regionName) {
+    files <- system(paste0("ls ", file_bundledSampleReads(inputdir, "*", "*", regionName)), intern = TRUE)
+    ## get start and end of bundledSampleReads
+    a <- unlist(strsplit(files, paste0(".", regionName, ".RData")))
+    x <- strsplit(a, paste0( "bundledSamples."))
+    if (length(grep("bundledSamples", outputdir)) > 0)
+        stop ("Please choose an outputdir name that does not include the term bundledSamples")
+    ranges <-  sapply(x, function(x) x[2])
+    ranges <- t(sapply(strsplit(ranges, "-"), function(x) as.integer(x)))
+    files <- files[order(ranges[, 1])]
+    ranges <- ranges[order(ranges[, 1]), ]
+    ## also check - range is exact and fully spans
+    return(
+        list(
+            files = files,
+            ranges = ranges
+        )
+    )
+}
+
 ## if the files already exist, good to go
 ## otherwise, loop through files using 1 core
 ## when doesn't exist, load next bunch
@@ -173,8 +193,7 @@ rebundle_input <- function(
     bundling_info,
     N,
     tempdir,
-    nCores,
-    environment
+    nCores
 ) {
 
     print_message("Rebundle inputs")
@@ -203,65 +222,78 @@ rebundle_input <- function(
         return(NULL)
     }
     
-    rebundle_input
     newBundle <- NULL
     bundledSampleReads <- NULL
-    
     
     ## multi-core re-bundling
     sampleRanges <- getSampleRange(N, nCores)
 
-    f <- function(sampleRange, ranges, files, tempdir, regionName, bundling_info) {
-        ## start with the first file
-        i_file <- 1
-        load(files[i_file])
-        cor <- ranges[i_file, ]
-        cor <- cor[1]:cor[2]
-        
-        for(iSample in sampleRange[1]:sampleRange[2]) {
-            m <- match(iSample, cor)
-            if (is.na(m) == FALSE) {
-                sampleReads <- bundledSampleReads[[m]]
-            } else {
-                i_file <- which(iSample >= ranges[, 1] & iSample <= ranges[, 2])
-                load(files[i_file])
-                cor <- ranges[i_file, ]
-                cor <- cor[1]:cor[2]
-                m <- match(iSample, cor)
-                if (is.na(m)) stop("There is faulty logic in rebundle_input is wrong. Please submit bug report")
-                sampleReads <- bundledSampleReads[[m]]
-            }
-            save(
-                sampleReads,
-                file = file_sampleReads(inputdir, iSample, regionName),
-                compress = FALSE
-            )
-            last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
-            if (last_in_bundle == 1) {
-                bundle_inputs_after_generation(
-                    bundling_info = bundling_info,
-                    iBam = iSample,
-                    dir = inputdir,
-                    regionName = regionName
-                )
-            }
-        }
-    }
-
-
-    if(environment=="server") {
-        out2 <- mclapply(sampleRanges, mc.cores=nCores,FUN=f, ranges = ranges, files  = files, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info)
-    }
-    if(environment=="cluster") {
-        cl = makeCluster(nCores, type = "FORK")
-        out2 = parLapply(cl, sampleRanges, fun=f, ranges = ranges, files  = files, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info)
-        stopCluster(cl)
-    }
+    out2 <- mclapply(
+        sampleRanges,
+        mc.cores=nCores,
+        FUN = rebundle_input_subfunction,
+        ranges = ranges,
+        files = files,
+        tempdir = tempdir,
+        regionName = regionName,
+        bundling_info = bundling_info
+    )
     check_mclapply_OK(out2)
     
     print_message("Done rebundling inputs")
     return(NULL)
 }
+
+rebundle_input_subfunction <- function(
+    sampleRange,
+    ranges,
+    files,
+    tempdir,
+    regionName,
+    bundling_info
+) {
+
+    ## start with the file relevant to the first sample
+    iSample <- sampleRange[1]
+    i_file <- which(iSample >= ranges[, 1] & iSample <= ranges[, 2])
+    load(files[i_file])    
+    cor <- ranges[i_file, ]
+    cor <- cor[1]:cor[2]
+    
+    for(iSample in sampleRange[1]:sampleRange[2]) {
+        m <- match(iSample, cor)
+        if (is.na(m) == FALSE) {
+            sampleReads <- bundledSampleReads[[m]]
+        } else {
+            i_file <- which(iSample >= ranges[, 1] & iSample <= ranges[, 2])
+            load(files[i_file])
+            cor <- ranges[i_file, ]
+            cor <- cor[1]:cor[2]
+            m <- match(iSample, cor)
+            if (is.na(m)) {
+                stop("There is faulty logic in rebundle_input is wrong. Please submit bug report")
+            }
+            sampleReads <- bundledSampleReads[[m]]
+        }
+        save(
+            sampleReads,
+            file = file_sampleReads(inputdir, iSample, regionName),
+            compress = FALSE
+        )
+        last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
+        if (last_in_bundle == 1) {
+            bundle_inputs_after_generation(
+                bundling_info = bundling_info,
+                iBam = iSample,
+                dir = inputdir,
+                regionName = regionName
+            )
+        }
+    }
+    return(NULL)
+}
+
+
 
 
 load_all_sampleReads_into_memory <- function(

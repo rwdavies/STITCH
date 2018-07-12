@@ -552,6 +552,10 @@ validate_inputBundleBlockSize <- function(inputBundleBlockSize, readAware) {
         if (round(inputBundleBlockSize) != inputBundleBlockSize)
             stop("inputBundleBlockSize must be an integer")
     }
+    ##    if ((keepSampleReadsInRAM == TRUE) & (is.na(inputBundleBlockSize) == FALSE)) {
+    ##        stop("You cannot set both keepSampleReadsInRAM = TRUE and inputBundleBlockSize to be a non-zero entry")
+    ##    }
+    return(NULL)
 }
 
 

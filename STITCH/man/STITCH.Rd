@@ -17,16 +17,15 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   splitReadIterations = 25, nCores = 1, expRate = 0.5, maxRate = 100,
   minRate = 0.1, Jmax = 1000, regenerateInput = TRUE,
   originalRegionName = NA, keepInterimFiles = FALSE, keepTempDir = FALSE,
-  environment = "server", outputHaplotypeProbabilities = FALSE,
-  switchModelIteration = NA, generateInputOnly = FALSE,
-  restartIterations = NA, refillIterations = c(6, 10, 14, 18),
-  downsampleSamples = 1, downsampleSamplesKeepList = NA,
-  subsetSNPsfile = NA, useSoftClippedBases = FALSE,
-  outputBlockSize = 1000, outputSNPBlockSize = 1000,
-  inputBundleBlockSize = NA, reference_haplotype_file = "",
-  reference_legend_file = "", reference_sample_file = "",
-  reference_populations = NA, reference_phred = 20,
-  reference_iterations = 10, output_filename = NULL,
+  outputHaplotypeProbabilities = FALSE, switchModelIteration = NA,
+  generateInputOnly = FALSE, restartIterations = NA,
+  refillIterations = c(6, 10, 14, 18), downsampleSamples = 1,
+  downsampleSamplesKeepList = NA, subsetSNPsfile = NA,
+  useSoftClippedBases = FALSE, outputBlockSize = 1000,
+  outputSNPBlockSize = 10000, inputBundleBlockSize = NA,
+  reference_haplotype_file = "", reference_legend_file = "",
+  reference_sample_file = "", reference_populations = NA,
+  reference_phred = 20, reference_iterations = 10, output_filename = NULL,
   initial_min_hapProb = 0.4, initial_max_hapProb = 0.6,
   regenerateInputWithDefaultValues = FALSE,
   plotHapSumDuringIterations = FALSE,
@@ -117,8 +116,6 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{keepInterimFiles}{Whether to keep interim parameter estimates}
 
 \item{keepTempDir}{Whether to keep files in temporary directory}
-
-\item{environment}{Whether to use server or cluster multicore options}
 
 \item{switchModelIteration}{Whether to switch from pseudoHaploid to diploid and at what iteration (NA for no switching)}
 

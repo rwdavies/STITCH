@@ -41,7 +41,6 @@
 #' @param originalRegionName If regenerateInput is FALSE (i.e. using existing data), this is the name of the original region name (chr.regionStart.regionEnd). This is necessary to load past variables
 #' @param keepInterimFiles Whether to keep interim parameter estimates
 #' @param keepTempDir Whether to keep files in temporary directory
-#' @param environment Whether to use server or cluster multicore options
 #' @param switchModelIteration Whether to switch from pseudoHaploid to diploid and at what iteration (NA for no switching)
 #' @param generateInputOnly Whether to just generate input data then quit
 #' @param restartIterations In pseudoHaploid method, which iterations to look for collapsed haplotype prnobabilities to resolve
@@ -116,7 +115,6 @@ STITCH <- function(
     originalRegionName = NA,
     keepInterimFiles = FALSE,
     keepTempDir = FALSE,
-    environment = "server",
     outputHaplotypeProbabilities = FALSE,
     switchModelIteration = NA,
     generateInputOnly = FALSE,
@@ -127,7 +125,7 @@ STITCH <- function(
     subsetSNPsfile = NA,
     useSoftClippedBases = FALSE,
     outputBlockSize = 1000,
-    outputSNPBlockSize = 1000,
+    outputSNPBlockSize = 10000,
     inputBundleBlockSize = NA,
     reference_haplotype_file = "",
     reference_legend_file = "",
@@ -160,6 +158,7 @@ STITCH <- function(
 
     ## #' @param pseudoHaploidModel How to model read probabilities in pseudo diploid model (shouldn't be changed)    
     pseudoHaploidModel <- 9 ## remove this from being settable
+    environment <- "server" ## I'm assuming this is true anyway. more or less deprecated
     
     ##    K_subset = NA,
     ##    K_random = NA
@@ -2193,8 +2192,7 @@ generate_or_refactor_input <- function(
                 bundling_info = bundling_info,
                 N = N,
                 tempdir = tempdir,
-                nCores = nCores,
-                environment = environment
+                nCores = nCores
             )
         }
     }
@@ -2204,20 +2202,6 @@ generate_or_refactor_input <- function(
 
 
 
-get_rebundled_files <- function(inputdir, regionName) {
-  files <- system(paste0("ls ", file_bundledSampleReads(inputdir, "*", "*", regionName)), intern = TRUE)
-  # get start and end of bundledSampleReads
-  a <- unlist(strsplit(files, paste0(".", regionName, ".RData")))
-  x <- strsplit(a, paste0( "bundledSamples."))
-  if (length(grep("bundledSamples", outputdir)) > 0)
-    stop ("Please choose an outputdir name that does not include the term bundledSamples")
-  ranges <-  sapply(x, function(x) x[2])
-  ranges <- t(sapply(strsplit(ranges, "-"), function(x) as.integer(x)))
-  files <- files[order(ranges[, 1])]
-  ranges <- ranges[order(ranges[, 1]), ]
-  # also check - range is exact and fully spans
-  return(list(files = files, ranges = ranges))
-}
 
 
 
