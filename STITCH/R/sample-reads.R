@@ -42,8 +42,17 @@ get_sampleReads_from_dir_for_sample <- function(
     iSample,
     bundling_info,
     bundledSampleReads = NULL,
-    what = "sampleReads"
+    what = "sampleReads",
+    allSampleReads = NULL
 ) {
+    if (is.null(allSampleReads) == FALSE) {
+        return(
+            list(
+                sampleReads = allSampleReads[[iSample]],
+                bundledSampleReads = NULL
+            )
+        )
+    }
     if (what == "referenceSampleReads") {
         file_loader <- file_referenceSampleReads
         file_bundled_loader <- file_bundledReferenceSampleReads
@@ -248,12 +257,178 @@ rebundle_input <- function(
         out2 = parLapply(cl, sampleRanges, fun=f, ranges = ranges, files  = files, tempdir = tempdir, regionName = regionName, bundling_info = bundling_info)
         stopCluster(cl)
     }
-    error_check <- sapply(out2, class) == "try-error"
-    if (sum(error_check) > 0) {
-        print_message(out2[[which(error_check)[1]]])
-        stop("There has been an error rebundling the input. Please see error message above")
-    }
+    check_mclapply_OK(out2)
     
     print_message("Done rebundling inputs")
     return(NULL)
 }
+
+
+load_all_sampleReads_into_memory <- function(
+    N,
+    nCores,
+    tempdir,
+    regionName,
+    bundling_info
+) {
+    ##
+    sampleRanges <- getSampleRange(N = N, nCores = nCores)
+    out <- mclapply(
+        sampleRanges,
+        mc.cores = nCores,
+        FUN = function(sampleRange) {
+        allSampleReads <- as.list(1:N)        
+        bundledSampleReads <- NULL
+        for(iSample in sampleRange[1]:sampleRange[2]) {
+            out <- get_sampleReads_from_dir_for_sample(
+                dir = tempdir,
+                regionName = regionName,
+                iSample = iSample,
+                bundling_info = bundling_info,
+                bundledSampleReads = bundledSampleReads
+            )
+            sampleReads <- out$sampleReads
+            allSampleReads[[iSample]] <- sampleReads
+            bundledSampleReads <- out$bundledSampleReads
+        }
+        return(allSampleReads)
+    })
+    check_mclapply_OK(out)
+    ##
+    allSampleReads <- as.list(1:N)
+    for(i_core in 1:length(out)) {
+        sampleRange <- sampleRanges[[i_core]]
+        x <- out[[i_core]]        
+        for(iSample in sampleRange[1]:sampleRange[2]) {        
+            allSampleReads[[iSample]] <- x[[iSample]]
+        }
+    }
+    return(allSampleReads)
+
+}
+
+
+
+split_reads_completely <- function(
+    N,
+    nCores,
+    tempdir,
+    regionName,
+    bundling_info,
+    allSampleReads
+) {
+
+    print_message("Split reads")    
+    sampleRanges <- getSampleRange(N = N, nCores = nCores)
+    out <- mclapply(
+        sampleRanges,
+        mc.cores = nCores,
+        FUN = split_read_subfunc,
+        tempdir = tempdir,
+        regionName = regionName,
+        bundling_info = bundling_info,
+        allSampleReads = allSampleReads,
+        N = N
+    )
+    check_mclapply_OK(out)
+
+    if (is.null(allSampleReads) == FALSE) {
+        allSampleReads <- as.list(1:N)
+        for(i_core in 1:length(out)) {
+            sampleRange <- sampleRanges[[i_core]]
+            x <- out[[i_core]]        
+            for(iSample in sampleRange[1]:sampleRange[2]) {        
+                allSampleReads[[iSample]] <- x[[iSample]]
+            }
+        }
+    }
+
+    print_message("Done splitting reads")
+
+    return(allSampleReads)
+}
+
+
+
+split_read_subfunc <- function(
+    sampleRange,
+    tempdir,
+    regionName,
+    bundling_info,
+    allSampleReads,
+    N
+) {
+
+    bundledSampleReads <- NULL
+
+    who_to_run <- sampleRange[1]:sampleRange[2]
+    allSampleReadsOutput <- as.list(1:N)
+    
+    for (iiSample in 1:(length(who_to_run))) {
+        ##
+        iSample <- who_to_run[iiSample]
+        ## get these from list?
+        out <- get_sampleReads_from_dir_for_sample(
+            dir = tempdir,
+            regionName = regionName,
+            iSample = iSample,
+            bundling_info = bundling_info,
+            bundledSampleReads = bundledSampleReads,
+            allSampleReads = allSampleReads
+        )
+        sampleReads <- out$sampleReads
+        bundledSampleReads <- out$bundledSampleReads
+
+        x3 <- unlist(sapply(sampleReads,function(x) x[[3]]))
+        x4 <- unlist(sapply(sampleReads,function(x) x[[4]]))
+        sr <- lapply(1:length(x3),function(i) {
+            list(0, x4[i], x3[i], x4[i])
+        })
+        sampleReads <- sr[order(x4)]
+
+        if (is.null(allSampleReads) == FALSE) {
+            allSampleReadsOutput[[iSample]] <- sampleReads
+        } else {
+            save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName))
+            if (length(bundling_info) > 0) {
+                last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
+                if (last_in_bundle == 1) {
+                    bundle_inputs_after_generation(
+                        bundling_info = bundling_info,
+                        iBam = iSample,
+                        dir = tempdir,
+                        regionName = regionName,
+                        what = "sampleReads"
+                    )
+                }
+            }
+        }
+
+    }
+    return(allSampleReadsOutput)
+}
+
+
+
+
+get_sampleRead_from_SNP_i_to_SNP_j <- function(
+    sampleRead,
+    i,
+    j,
+    L,
+    grid
+) {
+    bq <- sampleRead[[3]][i:j]
+    u <- sampleRead[[4]][i:j]
+    ## central SNP in read
+    cr <- grid[u[getCentral(L[u + 1])] + 1]
+    return(
+        list(
+            j - i,
+            cr,
+            matrix(bq, ncol = 1),
+            matrix(u, ncol = 1)
+        )
+    )
+}
+

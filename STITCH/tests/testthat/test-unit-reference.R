@@ -126,7 +126,6 @@ test_that("reference data can be loaded for chromosome X", {
         reference_populations = c("CEU", "GBR", "CHB"),
         chr = "X"
     )
-    sink("/dev/null")
     reference_haps <- get_haplotypes_from_reference(
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
@@ -136,8 +135,6 @@ test_that("reference data can be loaded for chromosome X", {
         tempdir = tempdir(),
         regionName = "test"
     )
-
-    sink()
 
     sex <- refpack$reference_samples[, "SEX"]
     keep <- array(TRUE, length(sex) * 2)

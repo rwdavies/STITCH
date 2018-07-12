@@ -21,10 +21,10 @@ test_that("can refill simple", {
     hapSum <- hapSum / rowSums(hapSum) * N    
     
     gammaSum_new <- refillSimple(
-        hapSum = hapSum,
+        hapSum_t = t(hapSum),
         nGrids = nGrids,
         K = K,
-        gammaSum = gammaSum,
+        gammaSum_t = t(gammaSum),
         N = N,
         distance_between_check = distance_between_check,
         L_grid = L_grid,
@@ -58,16 +58,17 @@ test_that("can refill simple", {
     hapSum[8:9, 1] <- 0    
     hapSum <- hapSum / rowSums(hapSum) * N    
     
-    gammaSum_new <- refillSimple(
-        hapSum = hapSum,
+    gammaSum_new_t <- refillSimple(
+        hapSum_t = t(hapSum),
         nGrids = nGrids,
         K = K,
-        gammaSum = gammaSum,
+        gammaSum_t = t(gammaSum),
         N = N,
         distance_between_check = distance_between_check,
         L_grid = L_grid,        
         grid = grid
-    )$gammaSum
+    )$gammaSum_t
+    gammaSum_new <- t(gammaSum_new_t)
 
     expect_equal(sum(gammaSum_new[1:3, 1] == gammaSum[1:3, 1]), 0)
     expect_equal(sum(gammaSum_new[4:7, 1] != gammaSum[4:7, 1]), 0)        
@@ -99,10 +100,10 @@ test_that("can refill simple with grid", {
     hapSum <- hapSum / rowSums(hapSum) * N    
     
     gammaSum_new <- refillSimple(
-        hapSum = hapSum,
+        hapSum_t = t(hapSum),
         nGrids = nGrids,
         K = K,
-        gammaSum = gammaSum,
+        gammaSum_t = t(gammaSum),
         N = N,
         distance_between_check = distance_between_check,
         L_grid = L_grid,                
@@ -139,16 +140,17 @@ test_that("can refill simple with grid for only part of hapSum", {
     hapSum[4, 1] <- 0    
     hapSum <- hapSum / rowSums(hapSum) * N    
     
-    gammaSum_new <- refillSimple(
-        hapSum = hapSum,
+    gammaSum_new_t <- refillSimple(
+        hapSum_t = t(hapSum),
         nGrids = nGrids,
         K = K,
-        gammaSum = gammaSum,
+        gammaSum_t = t(gammaSum),
         N = N,
         distance_between_check = distance_between_check,
         L_grid = L_grid,                        
         grid = grid
-    )$gammaSum
+    )$gammaSum_t
+    gammaSum_new <- t(gammaSum_new_t)
 
     expect_equal(sum(gammaSum_new[grid == 0, 1] == gammaSum[grid == 0, 1]), 0)
     expect_equal(sum(gammaSum_new[grid == 1, 1] != gammaSum[grid == 1, 1]), 0)

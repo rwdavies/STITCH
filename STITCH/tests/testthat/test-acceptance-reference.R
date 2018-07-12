@@ -23,7 +23,8 @@ refpack <- make_reference_package(
     n_snps = n_snps,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
-    chr = chr
+    chr = chr,
+    phasemaster = phasemaster
 )
 
 
@@ -46,7 +47,8 @@ refpackX <- make_reference_package(
     n_snps = n_snps,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
-    chr = data_packageX$chr
+    chr = data_packageX$chr,
+    phasemaster = phasemasterX
 )
 
 
@@ -140,7 +142,6 @@ test_that("STITCH can initialize with reference data for certain populations", {
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()    
-        sink("/dev/null")
 
         set.seed(578)
     
@@ -158,8 +159,6 @@ test_that("STITCH can initialize with reference data for certain populations", {
             nCores = 1,
             output_format = output_format
         )
-
-        sink()
 
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
@@ -179,7 +178,6 @@ test_that("STITCH can initialize with reference data for certain populations for
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()    
-        sink("/dev/null")
 
         set.seed(621)
         
@@ -206,8 +204,6 @@ test_that("STITCH can initialize with reference data for certain populations for
             output_format = output_format
         )
 
-        sink()
-        
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", regionName, extension[output_format])),
             data_package,
@@ -228,7 +224,6 @@ test_that("STITCH can initialize on chromosome X with reference data", {
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()    
-        sink("/dev/null")
 
         set.seed(621)
         
@@ -244,8 +239,6 @@ test_that("STITCH can initialize on chromosome X with reference data", {
             nCores = 1,
             output_format = output_format
         )
-
-        sink()
 
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_packageX$chr, extension[output_format])),
@@ -265,7 +258,6 @@ test_that("STITCH can initialize on chromosome X with reference data with define
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()    
-        sink("/dev/null")
 
         set.seed(621)
 
@@ -289,8 +281,6 @@ test_that("STITCH can initialize on chromosome X with reference data with define
             output_format = output_format
         )
 
-        sink()
-
         regionName <- paste0(data_packageX$chr, ".", regionStart, ".", regionEnd)
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", regionName, extension[output_format])),
@@ -311,10 +301,7 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()    
-        sink("/dev/null")
 
-        set.seed(753)
-        
         STITCH(
             chr = data_packageX$chr,
             bamlist = data_packageX$bamlist,
@@ -329,8 +316,6 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
             nCores = 1,
             output_format = output_format
         )
-
-        sink()
 
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_packageX$chr, extension[output_format])),
@@ -357,8 +342,6 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
         regionEnd <- 4
         buffer <- 1
         
-        sink("/dev/null")
-
         STITCH(
             chr = data_packageX$chr,
             bamlist = data_packageX$bamlist,
@@ -376,8 +359,6 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
             buffer = buffer,
             output_format = output_format
         )
-
-        sink()
 
         regionName <- paste0(data_packageX$chr, ".", regionStart, ".", regionEnd)        
         check_output_against_phase(
@@ -451,10 +432,9 @@ test_that("STITCH can impute with reference panels with only 1 iteration if the 
 test_that("STITCH errors if niterations=1 with reference panel and posfile is not the same as reference legend", {
 
     outputdir <- make_unique_tempdir()
-    sink("/dev/null")
 
     n_snps <- 5
-    chr <- 10
+    chr <- 700
     set.seed(10)
     refpack <- make_reference_package(
         n_snps = n_snps,
@@ -491,7 +471,6 @@ test_that("STITCH errors if niterations=1 with reference panel and posfile is no
         ),
         "You have selected to use reference haplotypes with niterations=1, which requires exact matching of reference legend SNPs and posfile SNPs. However, posfile SNP with pos-ref-alt 6-A-G was not found in reference legend"
     )
-    sink()
 
 })
 
@@ -500,10 +479,8 @@ test_that("STITCH can initialize with reference data with snap to grid", {
 
     for(output_format in c("bgvcf", "bgen")) {
 
+        set.seed(1098)        
         outputdir <- make_unique_tempdir()
-    
-        sink("/dev/null")
-        set.seed(1098)
         STITCH(
             chr = data_package$chr,
             bamlist = data_package$bamlist,
@@ -514,10 +491,11 @@ test_that("STITCH can initialize with reference data with snap to grid", {
             K = 2,
             nGen = 100,
             nCores = 1,
-            gridWindowSize = 2,
-            output_format = output_format
+            output_format = output_format,
+            keepInterimFiles = TRUE,
+            gridWindowSize = 2
         )
-
+        
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,

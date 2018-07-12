@@ -1,16 +1,16 @@
 ## in a simple refill, look every 100 SNP. in each one with an average below a threshold, sample from other haplotypes to re-copy
 ## across all haplotypes, when this happen, inject noise
 refillSimple <- function(
-    hapSum,
+    hapSum_t,
     nGrids,
     K,
-    gammaSum,
+    gammaSum_t,
     N,
     L_grid,
     grid,
     distance_between_check = 5000 ## check every 5000 bp
 ) {
-    nSNPs <- nrow(gammaSum)
+    nSNPs <- ncol(gammaSum_t)
     a <- floor(L_grid / distance_between_check)
     a <- c(match(unique(a), a))
     if (length(a) == 1) {
@@ -22,7 +22,7 @@ refillSimple <- function(
     }
     avHapSumInBlock <- array(0, c(length(region_starts), K))
     for(i in 1:length(region_starts)) {
-        avHapSumInBlock[i, ] <- colSums(hapSum[region_starts[i]:region_ends[i], , drop = FALSE]) 
+        avHapSumInBlock[i, ] <- rowSums(hapSum_t[, region_starts[i]:region_ends[i], drop = FALSE])         
     }
     hapFreqMin <- N / K ## less than average - aggressive!
     replaceBlock <- avHapSumInBlock < (hapFreqMin)
@@ -31,7 +31,7 @@ refillSimple <- function(
     ## within each continuous region, fill in with respect to frequencies of all other haplotypes
     ##
     k_to_replace <- which(colSums(replaceBlock) > 0)
-    ever_changed <- array(FALSE, nrow(gammaSum))
+    ever_changed <- array(FALSE, ncol(gammaSum_t))
     for (k in k_to_replace) {
         ## change into intervals
         z1 <- replaceBlock[, k]
@@ -53,7 +53,7 @@ refillSimple <- function(
                 r2 <- region_ends[end[iR]]
                 snps_to_replace <- ((r1 - 1) <= grid) & (grid <= (r2 - 1))
                 ## now need to get grid as well
-                gammaSum[snps_to_replace, k] <- gammaSum[snps_to_replace, replacement]
+                gammaSum_t[k, snps_to_replace] <- gammaSum_t[replacement, snps_to_replace]
                 ever_changed[snps_to_replace] <- TRUE
             }
         }
@@ -64,7 +64,12 @@ refillSimple <- function(
             round(100 * sum(replaceBlock == TRUE )/ prod(dim(replaceBlock)), 1),
             "% of regions replaced"
     ))
-    return(list(gammaSum = gammaSum, ever_changed = ever_changed))
+    return(
+        list(
+            gammaSum_t = gammaSum_t,
+            ever_changed = ever_changed
+        )
+    )
 }
 
 
@@ -156,8 +161,8 @@ getBetterSwitchesSimple <- function(
     nbreaks,
     break_results,    
     K,
-    eHapsFuture,
-    alphaMatFuture,
+    eHapsFuture_t,
+    alphaMatFuture_t,
     iteration = 1
 ) {
     ## greedy version
@@ -190,16 +195,16 @@ getBetterSwitchesSimple <- function(
     ))
     switchCur <- 1:K
     rStart <- c(1, break_results[, "left_focal"])
-    rEnd <- c(break_results[, "right_focal"], nrow(eHapsFuture))
+    rEnd <- c(break_results[, "right_focal"], ncol(eHapsFuture_t))
     ## add in 
     for(iBreak in 1:(nbreaks + 1)) {
         w <- rStart[iBreak]:rEnd[iBreak]
         permL <- tempMat[iBreak, ]
-        eHapsFuture[w, ] <- eHapsFuture[w, permL]
+        eHapsFuture_t[, w] <- eHapsFuture_t[permL, w]
         if (iBreak == (nbreaks + 1)) {
             w <- rStart[iBreak]:(rEnd[iBreak] - 1)
         }
-        alphaMatFuture[w, ] <- alphaMatFuture[w, permL]
+        alphaMatFuture_t[, w] <- alphaMatFuture_t[permL, w]
     }
     ## add in noise around the breaks
     for(iBreak in 1:nbreaks) {
@@ -213,18 +218,18 @@ getBetterSwitchesSimple <- function(
             ## fill in with more noise closer to the break
             for(ii in 1:length(w)) {
                 i <- (w)[ii]
-                eHapsFuture[i, ] <-
-                    norm_component[ii] * eHapsFuture[i, ] +
+                eHapsFuture_t[, i] <-
+                    norm_component[ii] * eHapsFuture_t[, i] +
                     (1 - norm_component[ii]) * runif(K)
             }
             ## just reset these, can be re-determined pretty quickly
-            alphaMatFuture[w, ] <- matrix(1 / K, ncol = K, nrow = length(w))
+            alphaMatFuture_t[, w] <- matrix(1 / K, nrow = K, ncol = length(w))
         }
     }
     return(
         list(
-            eHapsFuture = eHapsFuture,
-            alphaMatFuture = alphaMatFuture
+            eHapsFuture_t = eHapsFuture_t,
+            alphaMatFuture_t = alphaMatFuture_t
         )
     )
 }

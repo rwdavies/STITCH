@@ -82,8 +82,8 @@ cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, re
 }
 
 #' @export
-rcpp_get_update_pieces <- function(gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t) {
-    .Call('_STITCH_rcpp_get_update_pieces', PACKAGE = 'STITCH', gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t)
+rcpp_get_update_pieces <- function(gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t, only_update_hapSum) {
+    .Call('_STITCH_rcpp_get_update_pieces', PACKAGE = 'STITCH', gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t, only_update_hapSum)
 }
 
 #' @export

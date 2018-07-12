@@ -32,7 +32,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   plotHapSumDuringIterations = FALSE,
   plot_shuffle_haplotype_attempts = FALSE, plotAfterImputation = TRUE,
   save_sampleReadsInfo = FALSE, gridWindowSize = NA,
-  shuffle_bin_nSNPs = NULL, shuffle_bin_radius = 5000)
+  shuffle_bin_nSNPs = NULL, shuffle_bin_radius = 5000,
+  keepSampleReadsInRAM = TRUE)
 }
 \arguments{
 \item{chr}{What chromosome to run. Should match BAM headers}
@@ -174,6 +175,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{shuffle_bin_nSNPs}{Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then break per-SNP (or per-grid) every this many SNPs / grids, and compare each to detect whether haplotypes either 1) are more likely to stay where they are or 2) switch from one haplotype to another. Note that only one of shuffle_bin_nSNPs or shuffle_bin_radius should be non-NULL}
 
 \item{shuffle_bin_radius}{Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then recombination rate is calculated around pairs of SNPs in window of twice this value, and those that exceed what should be the maximum (defined by nGen and maxRate) are checked for whether they are shuffled}
+
+\item{keepSampleReadsInRAM}{Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM}
 }
 \value{
 Results in properly formatted version

@@ -8,23 +8,20 @@ test_that("simple diploid method can work", {
     extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
     phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
     phasemaster[2, ] <- c(1, 0)
-    phasemaster[3, ] <- c(0, 0)    
+    phasemaster[3, ] <- c(0, 0)
     phasemaster[7, ] <- c(1, 0)    
     data_package <- make_acceptance_test_data_package(
         n_samples = 10,
         n_snps = n_snps,
         n_reads = n_reads,
-        seed = 3,
+        seed = 77,
         chr = "chr5",
         K = 2,
         reads_span_n_snps = reads_span_n_snps,
         phasemaster = phasemaster
     )
-
-    outputdir <- make_unique_tempdir()
-     
-    sink("/dev/null")
-
+    
+    outputdir <- make_unique_tempdir()    
     STITCH(
         chr = data_package$chr,
         bamlist = data_package$bamlist,
@@ -33,11 +30,8 @@ test_that("simple diploid method can work", {
         outputdir = outputdir,
         K = 2,
         nGen = 100,
-        nCores = 1,
-        outputBlockSize = 3
+        nCores = 2
     )
-
-    sink()
 
     vcf <- read.table(
         file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),

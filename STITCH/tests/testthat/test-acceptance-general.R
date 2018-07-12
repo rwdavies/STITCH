@@ -13,7 +13,7 @@ if (1 == 0) {
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     
-}
+ }
 
 
 n_snps <- 10
@@ -186,6 +186,37 @@ test_that("STITCH diploid works with multiple cores", {
 
 })
 
+
+test_that("STITCH diploid works with completely split reads", {
+
+    for(output_format in c("bgvcf", "bgen")) {
+
+        outputdir <- make_unique_tempdir()        
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            output_format = output_format,
+            nCores = 3,
+            readAware = FALSE
+        )
+
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 0.2
+        )
+        
+    }
+
+})
+
 test_that("STITCH diploid works under default parameters when outputdir has a space or a tilda in it", {
 
     ## not 100% sure I can write to this in all systems, so check it first
@@ -261,9 +292,6 @@ test_that("STITCH diploid works under default parameters with nCores = 40 and N 
 
         outputdir <- make_unique_tempdir()
     
-        sink("/dev/null")
-        set.seed(10)
-
         STITCH(
             chr = data_package25$chr,
             bamlist = data_package25$bamlist,
@@ -275,8 +303,6 @@ test_that("STITCH diploid works under default parameters with nCores = 40 and N 
             nCores = 40,
             output_format = output_format
         )
-
-        sink()
         
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package25$chr, extension[output_format])),

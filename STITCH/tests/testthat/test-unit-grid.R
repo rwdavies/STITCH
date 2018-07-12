@@ -69,7 +69,7 @@ test_that("removal of buffer from grid makes sense", {
             gridWindowSize = gridWindowSize
         )
     
-        alphaMatCurrent <- array(0, c(out$nGrids, K))
+        alphaMatCurrent_t <- array(0, c(K, out$nGrids))
         
         out <- remove_buffer_from_variables(
             L = L,
@@ -77,7 +77,7 @@ test_that("removal of buffer from grid makes sense", {
             regionEnd = regionEnd,
             grid = out$grid,
             grid_distances = out$grid_distances,
-            alphaMatCurrent = alphaMatCurrent,
+            alphaMatCurrent_t = alphaMatCurrent_t,
             L_grid = out$L_grid,
             nGrids = out$nGrids,
             gridWindowSize = gridWindowSize,
@@ -91,7 +91,7 @@ test_that("removal of buffer from grid makes sense", {
                 expect_equal(out$nGrids, 5)
                 expect_equal(out$grid_distances, rep(gridWindowSize, 4)) ## no spacing
                 expect_equal(out$L_grid, 4.5 + 3 * 0:4)
-                expect_equal(nrow(out$alphaMatCurrent), 4)
+                expect_equal(ncol(out$alphaMatCurrent_t), 4)
             }
         }
         

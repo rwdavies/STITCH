@@ -25,7 +25,8 @@ make_and_write_output_file <- function(
     pos,
     K,
     highCovInLow,
-    start_and_end_minus_buffer
+    start_and_end_minus_buffer,
+    allSampleReads
 ) {
 
     print_message("Begin making and writing output file")
@@ -48,7 +49,8 @@ make_and_write_output_file <- function(
         tempdir = tempdir,
         regionName = regionName,
         bundling_info = bundling_info,
-        nGrids = nGrids
+        nGrids = nGrids,
+        allSampleReads = allSampleReads
     )     
 
     print_message("Initialize output file")
@@ -146,6 +148,7 @@ make_and_write_output_file <- function(
             method = method,
             grid = grid,
             highCovInLow = highCovInLow,
+            allSampleReads = allSampleReads,
             FUN = per_core_get_results
         )
         
@@ -312,7 +315,8 @@ per_core_get_results <- function(
     output_format,
     method,
     grid,
-    highCovInLow
+    highCovInLow,
+    allSampleReads
 ) {
 
     bundledSampleReads <- NULL
@@ -353,7 +357,8 @@ per_core_get_results <- function(
             regionName = regionName,
             iSample = iSample,
             bundling_info = bundling_info,
-            bundledSampleReads = bundledSampleReads
+            bundledSampleReads = bundledSampleReads,
+            allSampleReads = allSampleReads
         )
         sampleReads <- out$sampleReads
         bundledSampleReads <- out$bundledSampleReads
@@ -550,7 +555,8 @@ outputInputInVCFFunction <- function(
     bundling_info,
     output_filename,
     vcf.piece_unique,
-    output_format
+    output_format,
+    allSampleReads
 ) {
     ##
     ##
@@ -577,8 +583,9 @@ outputInputInVCFFunction <- function(
                 regionName = regionName,
                 iSample = iSample,
                 bundling_info = bundling_info,
-                bundledSampleReads = bundledSampleReads
-            )
+                bundledSampleReads = bundledSampleReads,
+                allSampleReads = allSampleReads
+            ) ## not yet loaded into RAM
             sampleReads <- out$sampleReads
             bundledSampleReads <- out$bundledSampleReads
             ##
@@ -1005,7 +1012,8 @@ determine_reads_in_output_blocks <- function(
     tempdir,
     regionName,
     bundling_info,
-    nGrids
+    nGrids,
+    allSampleReads
 ) {
     print_message("Determine reads in output blocks")
     ##
@@ -1024,6 +1032,7 @@ determine_reads_in_output_blocks <- function(
         bundling_info = bundling_info,
         blocks_for_output = blocks_for_output,
         blocks_in_vector_form = blocks_in_vector_form,
+        allSampleReads = allSampleReads,
         FUN = determine_reads_in_output_blocks_subfunction
     )
     check_mclapply_OK(out)
@@ -1047,7 +1056,8 @@ determine_reads_in_output_blocks_subfunction <- function(
     regionName,
     bundling_info,
     blocks_in_vector_form,
-    blocks_for_output
+    blocks_for_output,
+    allSampleReads
 ) {
     ## 
     bundledSampleReads <- NULL
@@ -1065,7 +1075,8 @@ determine_reads_in_output_blocks_subfunction <- function(
             regionName = regionName,
             iSample = iSample,
             bundling_info = bundling_info,
-            bundledSampleReads = bundledSampleReads
+            bundledSampleReads = bundledSampleReads,
+            allSampleReads = allSampleReads
         )
         sampleReads <- out$sampleReads
         bundledSampleReads <- out$bundledSampleReads

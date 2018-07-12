@@ -1219,7 +1219,8 @@ Rcpp::List rcpp_get_update_pieces(
     arma::mat& hapSum_t,    
     const arma::mat& gammaK_t,
     const arma::cube& gammaUpdate_t,
-    const arma::mat& jUpdate_t
+    const arma::mat& jUpdate_t,
+    const bool only_update_hapSum
 ) {
     //
     // note - I'm not pretending to support "diploid_subset" here
@@ -1230,15 +1231,18 @@ Rcpp::List rcpp_get_update_pieces(
     const int nSNPs = gammaSum_t.n_cols;
     const int K = hapSum_t.n_rows;
     int t, k, i;
-    for(k=0; k < K; k++) {
-        priorSum(k) = priorSum(k) + gammaK_t(k);
-    }
-    //
     for(t=0; t < nGrids; t++) {
         for(k=0; k < K; k++) {
             hapSum_t(k, t) = hapSum_t(k, t) + gammaK_t(k, t);
         }
     }
+    if (only_update_hapSum) {
+        return R_NilValue;
+    }
+    for(k=0; k < K; k++) {
+        priorSum(k) = priorSum(k) + gammaK_t(k);
+    }
+    //
     for(t=0; t < (nGrids - 1); t++) {
         for(k=0; k < K; k++) {
             alphaMatSum_t(k, t) = alphaMatSum_t(k, t) + \
