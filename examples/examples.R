@@ -43,7 +43,6 @@ if (Sys.info()["sysname"] == "Darwin") {
   stop("Unable to determine OS - please find this error and manually choose OS to properly download data")
 }
 tempdir <- tempdir() # try /dev/shm/ or put on local fast disk if possible
-server_environment <- "server"
 n_cores <- detectCores() # change as appropriate
 inputBundleBlockSize <- NA
 # Set directories for testing
@@ -173,12 +172,11 @@ if (file.exists("mm10_2016_10_02.fa") == FALSE | file.exists("mm10_2016_10_02.fa
 
 
 
-
 # Mouse example 1 - Run whole chromosome
 setwd(mouse_datadir)
 outputdir <- paste0(mouse_resultsdir, "whole_region/")
 system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
-STITCH(method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+STITCH(method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -190,7 +188,7 @@ STITCH(
   regionStart = 10000000,
   regionEnd = 10800000,
   buffer = 50000,
-  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -204,7 +202,7 @@ STITCH(
   buffer = 50000,
   inputBundleBlockSize = 100,
   method = "diploid",
-  outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
+  outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen)
 
 
 
@@ -218,7 +216,7 @@ STITCH(
   buffer = 50000,
   inputBundleBlockSize = 100,
   method = "pseudoHaploid",
-  outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
+  outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen)
 
 
 
@@ -232,7 +230,7 @@ STITCH(
   regionEnd = 10800000,
   buffer = 50000,
   generateInputOnly = TRUE,
-  outputdir = outputdir, method = "diploid", chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+  outputdir = outputdir, method = "diploid", chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -250,7 +248,7 @@ STITCH(
   regionStart = 10000000,
   regionEnd = 10800000,
   buffer = 50000,
-  chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+  chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -268,7 +266,7 @@ STITCH(
   regionStart = 10300000,
   regionEnd = 10700000,
   buffer = 50000,
-  chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+  chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -282,7 +280,7 @@ STITCH(
   regionEnd = 10800000,
   buffer = 50000,
   outputInputInVCFFormat = TRUE,
-  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 
 
@@ -295,7 +293,7 @@ STITCH(
   regionEnd = 10800000,
   buffer = 50000,
   downsampleSamples = 0.25,
-  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
+  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen)
 
 
 
@@ -308,7 +306,7 @@ STITCH(
   regionEnd = 10800000,
   buffer = 50000,
   downsampleFraction = 0.5,
-  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
+  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen)
 
 
 
@@ -346,13 +344,13 @@ STITCH(
   bamlist = "",
   reference = "mm10_2016_10_02.fa",
   chr = mouse_chr,
-  K = mouse_K, outputdir = outputdir, posfile = mouse_posfile, genfile = mouse_genfile, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+  K = mouse_K, outputdir = outputdir, posfile = mouse_posfile, genfile = mouse_genfile, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 # Mouse example 12 - Change VCF output name
 setwd(mouse_datadir)
 outputdir <- paste0(mouse_resultsdir, "change_name/")
 system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
-STITCH(output_filename = "test.vcf.gz", method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
+STITCH(output_filename = "test.vcf.gz", method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize)
 
 # Mouse example 13 - Use gridWindowSize to speed up analysis
 setwd(mouse_datadir)
@@ -364,14 +362,15 @@ STITCH(
   buffer = 50000,
   gridWindowSize = 10000,
   inputBundleBlockSize = 100,  
-  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen)
+  method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen)
 
 # Mouse example 14 - Write to bgen
 setwd(mouse_datadir)
 outputdir <- paste0(mouse_resultsdir, "bgen/")
 system(paste0("rm -r ", outputdir), ignore.stderr = TRUE)
-STITCH(method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize, output_format = "bgen")
+STITCH(method = "diploid", outputdir = outputdir, chr = mouse_chr, posfile = mouse_posfile, genfile = mouse_genfile, bamlist = mouse_bamlist, K = mouse_K, tempdir = tempdir, nCores = n_cores, nGen = mouse_nGen, inputBundleBlockSize = inputBundleBlockSize, output_format = "bgen")
 
+    
 
 
 
@@ -399,7 +398,8 @@ STITCH(
   shuffleHaplotypeIterations = NA,
   refillIterations = NA,
   inputBundleBlockSize = 100,
-  genfile = human_genfile, posfile = human_posfile, K = human_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = human_nGen)
+  genfile = human_genfile, posfile = human_posfile, K = human_K, tempdir = tempdir, nCores = n_cores, nGen = human_nGen)
+
 
 
 # Human example 2 - Run with reference panel
@@ -425,7 +425,8 @@ STITCH(
   reference_legend_file = human_reference_legend_file,
   shuffleHaplotypeIterations = NA,
   refillIterations = NA,
-  genfile = human_genfile, posfile = human_posfile, K = human_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = human_nGen)
+  keepInterimFiles = TRUE,
+  genfile = human_genfile, posfile = human_posfile, K = human_K, tempdir = tempdir, nCores = n_cores, nGen = human_nGen)
 
 
 # Human example 3 - Run with reference panel with no updating
@@ -453,4 +454,4 @@ STITCH(
   reference_legend_file = human_matched_to_reference_reference_legend_file,
   shuffleHaplotypeIterations = NA,
   refillIterations = NA,
-  genfile = human_matched_to_reference_genfile, posfile = human_matched_to_reference_posfile, K = human_K, tempdir = tempdir, environment = server_environment, nCores = n_cores, nGen = human_nGen)
+  genfile = human_matched_to_reference_genfile, posfile = human_matched_to_reference_posfile, K = human_K, tempdir = tempdir, nCores = n_cores, nGen = human_nGen)
