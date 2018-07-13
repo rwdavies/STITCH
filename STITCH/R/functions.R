@@ -4370,7 +4370,6 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         shuffle_bin_nSNPs = shuffle_bin_nSNPs,
         shuffle_bin_radius = shuffle_bin_radius
     )
-    print(out)
     nbreaks <- out$nbreaks
     break_results <- out$break_results
     
