@@ -690,7 +690,7 @@ STITCH <- function(
             pos, gen, L,
             nCores, N, nSNPs, chr, K, niterations, nGen,
             gen_imp,
-            grid, grid_distances, L_grid, nGrids,
+            grid, grid_distances, L_grid, nGrids, snps_in_grid_1_based,
             inRegionL, start_and_end_minus_buffer,
             reference_panel_SNPs,
             info, hwe, passQC, hweCount,
@@ -718,6 +718,7 @@ STITCH <- function(
         grid_distances <- out$grid_distances
         L_grid <- out$L_grid
         nGrids <- out$nGrids
+        snps_in_grid_1_based <- out$snps_in_grid_1_based        
         reference_panel_SNPs <- out$reference_panel_SNPs
         hwe <- out$hwe
         hweCount <- out$hweCount
@@ -741,7 +742,7 @@ STITCH <- function(
         pos, gen, L,
         nCores, N, nSNPs, chr, K, niterations, nGen,
         gen_imp,
-        grid, grid_distances, L_grid, nGrids,
+        grid, grid_distances, L_grid, nGrids, snps_in_grid_1_based,
         inRegionL, start_and_end_minus_buffer,
         reference_panel_SNPs,
         info, hwe, passQC, hweCount,
@@ -984,6 +985,7 @@ remove_buffer_from_variables <- function(
     grid_distances <- out$grid_distances
     L_grid <- out$L_grid
     nGrids <- out$nGrids
+    snps_in_grid_1_based <- out$snps_in_grid_1_based
     return(
         list(
             inRegion2 = inRegion2,
@@ -1012,6 +1014,7 @@ remove_buffer_from_variables <- function(
             grid_distances = grid_distances,
             L_grid = L_grid,
             nGrids = nGrids,
+            snps_in_grid_1_based = snps_in_grid_1_based,
             reference_panel_SNPs = reference_panel_SNPs
         )
     )
