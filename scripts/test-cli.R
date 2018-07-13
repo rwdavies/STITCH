@@ -251,6 +251,14 @@ out <- system2(
     ),
     stdout = stdout_file, stderr = stderr_file
 )
+if (out > 0) {
+    stderr <- system(paste0("cat ", stderr_file), intern = TRUE)
+    stdout <- system(paste0("cat ", stdout_file), intern = TRUE)
+    message("---stderr---")
+    print(stderr)
+    message("---stdout---")
+    print(stdout)
+}
 expect_equal(0, out)
 ## check this occured
 if (error_check == 1) {
