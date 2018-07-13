@@ -72,7 +72,7 @@ opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
 if (1 == 0) {
 
     opt <- list(
-        "test-file" = "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/whole_chr_CFW_1.5.0_bgen/stitch.chr19.bgen",
+        "test-file" = "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results//whole_chr_CFW_1.5.2_bgen//stitch.chr19.bgen",
         chr = "chr19",
         compare_against = "megamuga",
         verbose = TRUE,
@@ -108,12 +108,10 @@ if (compare_against == "affy") {
     message("--- Compare Affymetrix to Input VCF ---")
     affy_calls <- get_affymetrix_calls_for_chr(chr)
     affy_calls <- filter_calls_for_chr(affy_calls)
+    
     subjects <- colnames(affy_calls)[grep("Q_", colnames(affy_calls))]
-    out <- get_dosages_for_vcf(test_file, chr, subjects, affy_calls)
-    dosages <- out$dosages
-    dosages_meta <- out$dosages_meta
-    compare_array_calls_and_dosages(affy_calls, dosages, dosages_meta)
-
+    truth_calls <- affy_calls
+    
 } else if (compare_against == "megamuga") {
 
     message("--- Compare MegaMUGA to Input VCF ---")
@@ -136,22 +134,11 @@ if (compare_against == "affy") {
             save(mega_calls, subjects, file = mega_save_file)
         }
     }
-
-    if (output_format == "bgvcf") {
-        out <- get_dosages_for_vcf(test_file, chr, subjects, mega_calls)
-        ## out$dosages with row = SNP, col = sample, content is 0-2 dosage
-        ## rows labelled with chr-snp-ref-alt
-        ## out$dosages_meta = 3 cols with hwe, eaf, info
-    } else {
-        out <- get_dosages_for_bgen(test_file, subjects, mega_calls)
-    }
-    dosages <- out$dosages
-    dosages_meta <- out$dosages_meta
-    
-    compare_array_calls_and_dosages(mega_calls, dosages, dosages_meta)
+    truth_calls <- mega_calls
 
 } else if (compare_against == "truth_vcf") {
 
+    stop("This is not written or tested")
     message("--- Compare Truth VCF to Input VCF ---")
     out <- get_dosages_for_vcf(truth_vcf_file, chr, subjects = NULL, calls = NULL, use_fread = FALSE, tabix = FALSE)
     truth_dosages <- out$dosages
@@ -159,8 +146,23 @@ if (compare_against == "affy") {
     dosages <- out$dosages
 
 } else {
-
+    
     stop("incorrect choice of comparison")
 
 }
+
+
+if (output_format == "bgvcf") {
+    out <- get_dosages_for_vcf(test_file, chr, subjects, mega_calls)
+    ## out$dosages with row = SNP, col = sample, content is 0-2 dosage
+    ## rows labelled with chr-snp-ref-alt
+    ## out$dosages_meta = 3 cols with hwe, eaf, info
+} else {
+    out <- get_dosages_for_bgen(test_file, subjects, mega_calls)
+}
+
+dosages <- out$dosages
+dosages_meta <- out$dosages_meta
+
+compare_array_calls_and_dosages(truth_calls, dosages, dosages_meta)
 

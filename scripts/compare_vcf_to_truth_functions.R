@@ -355,8 +355,8 @@ get_col_from_info <- function(y, col = "EAF=") {
 ## possibly filter on subjects and SNPs
 get_dosages_for_bgen <- function(
     test_file,
-    subjects = NULL,
-    vars_to_get = NULL
+    subjects,
+    calls
 ) {
 
     if (verbose)
@@ -365,10 +365,19 @@ get_dosages_for_bgen <- function(
     ## pre-intersect
     var_info <- rrbgen_load_variant_info(test_file)
     var_info[, "varid"] <- gsub("-", ":", var_info[, "varid"])
-    snps1 <- gsub("-", ":", rownames(mega_calls))
+    snps1 <- gsub("-", ":", rownames(calls))
     x <- t(sapply(strsplit(snps1, ":"), I))
     snps2 <- paste0(x[, 1], ":", x[, 2], ":", x[, 4], ":", x[, 3])
     vars_to_get <- intersect(var_info[, "varid"], c(snps1, snps2))
+
+    ## if only at positions
+    ## var_info <- rrbgen_load_variant_info(test_file)
+    ## var12 <- paste(var_info[, "chr"], var_info[, "position"], sep = ":")
+    ## m <- t(sapply(strsplit(rownames(mega_calls), "-"), I))
+    ## calls12 <- paste(m[, 1], m[, 2], sep = ":")
+    ## ##
+    ## to_get <- intersect(var12, calls12)
+    ## vars_to_get <- var_info[match(to_get, var12), "varid"]
     
     outX <- rrbgen_load(
         bgen_file = test_file,
@@ -415,14 +424,25 @@ get_col_from_info <- function(y, col = "EAF=") {
 
 
 compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
-    if (verbose)
+    
+    if (verbose) {
         message("Compare array calls and dosages")
+    }
 
+    remove_cols <- c("chr", "pos", "probeset_id", "rsid", "allele_A", "allele_B")
+    t <- match(remove_cols, colnames(calls))
+    to_remove <- t[is.na(t) == FALSE]
+    if (length(to_remove) > 0) {
+        calls <- calls[, -to_remove]
+    }
+    if (ncol(calls) != ncol(dosages)) {
+        stop("Bad removal of unnecessary columns")
+    }
+                     
     ## match on both alleles
     ## if match on flip, then flip dosages
     ## actually, only merge on first two items
     ## then reject if alleles mismatch
-    
     c1A <- t(sapply(strsplit(rownames(calls), "-"), I))
     c1B <- c1A[, c(1, 2, 4, 3)]
     c1A <- apply(c1A, 1, paste, collapse = "-")
@@ -432,8 +452,11 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
     ## I think I was just matching on position before?
     t1 <- match(c1B, rownames(dosages))
     to_flip_from_calls <- which(is.na(t1) == FALSE)
-    calls[to_flip_from_calls, -c(1:2)] <- 2 - calls[to_flip_from_calls, -c(1:2)]
-    rownames(calls)[to_flip_from_calls] <- c1B[to_flip_from_calls]
+    if (length(to_flip_from_calls) > 0) {
+        ## crap, different number of things in them?
+        calls[to_flip_from_calls, ] <- 2 - calls[to_flip_from_calls, ]
+        rownames(calls)[to_flip_from_calls] <- c1B[to_flip_from_calls]
+    }
 
     joint <- intersect(rownames(calls), rownames(dosages))
     callsS <- calls[match(joint, rownames(calls)), ]
@@ -450,7 +473,7 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
     r2 <- sapply(1:nrow(callsS), function(i_row) {
         cor(unlist(callsS[i_row, ]), dosagesS[i_row, ], use = "complete.obs") ** 2
     })
-    pass_qc <- dosages_metaS[, "info"] > 0.4
+    pass_qc <- dosages_metaS[, "info"] > 0.4 & dosages_metaS[, "hwe"] > 1e-6
 
     message(paste0(sum(pass_qc), " / ", length(pass_qc), " SNPs pass QC"))
     message(
