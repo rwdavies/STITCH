@@ -5667,7 +5667,19 @@ assign_positions_to_grid <- function(
 
 
 
-snap_reads_to_grid <- function(N, nCores, regionName, tempdir, bundling_info, grid, downsampleToCov, sampleNames, allSampleReads = NULL, whatKindOfReads = "sampleReads", verbose = TRUE) {
+snap_reads_to_grid <- function(
+    N,
+    nCores,
+    regionName,
+    tempdir,
+    bundling_info,
+    grid,
+    downsampleToCov,
+    sampleNames,
+    allSampleReads = NULL,
+    whatKindOfReads = "sampleReads",
+    verbose = TRUE
+) {
 
     print_message("Snap reads to grid")    
     sampleRanges <- getSampleRange(N = N, nCores = nCores)
@@ -5720,7 +5732,7 @@ snap_reads_to_grid_subfunction <- function(
     whatKindOfReads = "sampleReads",
     verbose = TRUE
 ) {
-
+    
     bundledSampleReads <- NULL
     allSampleReadsOutput <- as.list(1:N)
     
@@ -5748,6 +5760,7 @@ snap_reads_to_grid_subfunction <- function(
             ## basically like the old one
             ## downsample again once on the grid
             ## no point imputing with 100 reads in a grid window
+            
             sampleReads <- downsample_snapped_sampleReads(
                 sampleReads = sampleReads,
                 iBam = iSample,
@@ -5755,14 +5768,17 @@ snap_reads_to_grid_subfunction <- function(
                 sampleNames = sampleNames,
                 verbose = verbose
             )
+            
         }
 
         ## then, either add to allSampleReads
         ## or, save and possibly bundle
         if (is.null(allSampleReads) == FALSE) {
-            allSampleReadsOutput[[iSample]] <- sampleReads
+            if (whatKindOfReads == "sampleReads") {
+                allSampleReadsOutput[[iSample]] <- sampleReads
+            }
         } else {
-            if (whatKindOfReads == "sampleReads") {        
+            if (whatKindOfReads == "sampleReads") {
                 save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName))
             } else if (whatKindOfReads == "referenceSampleReads") {
                 save(sampleReads, file = file_referenceSampleReads(tempdir, iSample, regionName))
@@ -5802,7 +5818,7 @@ downsample_snapped_sampleReads <- function(
     ## get every position found in the reads
     readSNPs_pos <- unlist(lapply(sampleReads, function(x) x[[2]])) ## 0-based
     readSNPs_per_grid <- table(readSNPs_pos)
-    offending_grids <- as.integer(which(readSNPs_per_grid > downsampleToCov)) - 1 ## 0-based
+    offending_grids <- as.integer(names(which(readSNPs_per_grid > downsampleToCov)))
     if (length(offending_grids) > 0) {
         toRemove <- array(FALSE, length(sampleReads))
         which_reads <- is.na(match(readSNPs_pos, offending_grids)) == FALSE
