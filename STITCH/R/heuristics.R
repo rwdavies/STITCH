@@ -159,10 +159,12 @@ determine_switch_order <- function(fromMat, nbreaks, K) {
 getBetterSwitchesSimple <- function(
     fromMat,
     nbreaks,
-    break_results,    
+    break_results,
     K,
     eHapsFuture_t,
     alphaMatFuture_t,
+    grid,
+    snps_in_grid_1_based,
     iteration = 1
 ) {
     ## greedy version
@@ -193,37 +195,44 @@ getBetterSwitchesSimple <- function(
     print_message(paste0(
         "Shuffle haplotypes - Iteration ", iteration, " - change ", sum(whichIsBest!=1), " intervals out of ", nbreaks, " considered"
     ))
-    switchCur <- 1:K
-    rStart <- c(1, break_results[, "left_focal"])
-    rEnd <- c(break_results[, "right_focal"], ncol(eHapsFuture_t))
-    ## add in 
+    ## 0-based start and end of the grids with the switches
+    grid_starts <- c(0, break_results[, "left_grid_focal_0_based"] + 1)
+    grid_ends <- c(break_results[, "left_grid_focal_0_based"], ncol(alphaMatFuture_t) - 1)
+    ## do switches around focal points
     for(iBreak in 1:(nbreaks + 1)) {
-        w <- rStart[iBreak]:rEnd[iBreak]
+        ## grids, 0-based, can just be a number
+        which_grids <- grid_starts[iBreak]:grid_ends[iBreak] 
+        ## snps, 1-based
+        which_snps <- c(
+            snps_in_grid_1_based[grid_starts[iBreak] + 1, "snps_start"]:
+            snps_in_grid_1_based[grid_ends[iBreak] + 1, "snps_end"]
+        )
+        ## 
         permL <- tempMat[iBreak, ]
-        eHapsFuture_t[, w] <- eHapsFuture_t[permL, w]
-        if (iBreak == (nbreaks + 1)) {
-            w <- rStart[iBreak]:(rEnd[iBreak] - 1)
-        }
-        alphaMatFuture_t[, w] <- alphaMatFuture_t[permL, w]
+        eHapsFuture_t[, which_snps] <- eHapsFuture_t[permL, which_snps]
+        alphaMatFuture_t[, which_grids] <- alphaMatFuture_t[permL, which_grids]
     }
     ## add in noise around the breaks
     for(iBreak in 1:nbreaks) {
-        if(whichIsBest[iBreak]==0) {
-            ## add in some noise around break            
-            ## progressively more in the middle
-            s <- break_results[iBreak, "left_break"]
-            e <- break_results[iBreak, "right_break"]
-            norm_component <- abs(1 - seq(0, 2, length = (e - s) + 1))
-            w <- s:e
+        if (whichIsBest[iBreak] == 0) {
+            s <- break_results[iBreak, "left_grid_break_0_based"]
+            e <- (break_results[iBreak, "right_grid_break_0_based"] - 1) ## do not actually include this one
+            which_grids <- s:e
+            ## snps, 1-based
+            which_snps <- c(
+                snps_in_grid_1_based[s + 1, "snps_start"]:
+                snps_in_grid_1_based[e + 1, "snps_end"]
+            )
+            ##
+            norm_component <- abs(1 - seq(0, 2, length = length(which_snps)))
             ## fill in with more noise closer to the break
-            for(ii in 1:length(w)) {
-                i <- (w)[ii]
-                eHapsFuture_t[, i] <-
-                    norm_component[ii] * eHapsFuture_t[, i] +
+            for(ii in 1:length(which_snps)) {
+                eHapsFuture_t[, which_snps[ii]] <-
+                    norm_component[ii] * eHapsFuture_t[, which_snps[ii]] +
                     (1 - norm_component[ii]) * runif(K)
             }
             ## just reset these, can be re-determined pretty quickly
-            alphaMatFuture_t[, w] <- matrix(1 / K, nrow = K, ncol = length(w))
+            alphaMatFuture_t[, which_grids + 1] <- matrix(1 / K, nrow = K, ncol = length(which_grids))
         }
     }
     return(
@@ -247,7 +256,7 @@ getBetterSwitchesSimple <- function(
 ##       central SNP = first in pair of SNPs to central
 ##       to_snp = end of block
 ## so if shuffle_bin_radius is 2000, and looking between SNPs at positions a and b
-## then smooth rate over those SNPs is betwene round((a + b) / 2) minus 2000 and plus 2000
+## then smooth rate over those SNPs is between round((a + b) / 2) minus 2000 and plus 2000
 define_and_save_breaks_to_consider <- function(
     tempdir,
     regionName,
@@ -263,7 +272,7 @@ define_and_save_breaks_to_consider <- function(
 ) {
     ## if too few SNPs, do not bother
     ## EM algorithm should be fine, won't get stuck this way
-    if ((nGrids < 100)) {
+    if ((nGrids < 5)) {
         break_results <- NULL
         save(break_results, file = file_break_results(tempdir, regionName))
     } else {
@@ -291,11 +300,11 @@ define_and_save_breaks_to_consider <- function(
             save(break_results, file = file_break_results(tempdir, regionName))
         } else {
             ## add in useful things for plot on subsequent iteration
-            binSize <- 10000
-            rate <- array(0, 5000000)
-            for(i in 1:(nSNPs - 1)) {
-                rate[L[i]:L[i + 1]] <- (-log(sigmaSum_unnormalized[i]) / grid_distances[i])
-            }
+            ##binSize <- 10000
+            ##rate <- array(0, max(L)) ## this could be huge?
+            ##for(i in 1:(nSNPs - 1)) {
+            ##    rate[L[i]:L[i + 1]] <- (-log(sigmaSum_unnormalized[i]) / grid_distances[i])
+            ## }
             x1 <- exp(-nGen * minRate * grid_distances/100/1000000) # lower
             x2 <- exp(-nGen * maxRate * grid_distances/100/1000000) # upper
             ## make matrix with useful things
@@ -327,8 +336,8 @@ make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_d
     for(iSNP in 1:(nGrids - 1)) {
         focal_point <- floor((L_grid[iSNP] + L_grid[iSNP + 1]) / 2)        
         if (
-            min_L_grid < (focal_point - shuffle_bin_radius) &
-            (focal_point + shuffle_bin_radius) < max_L_grid
+            min_L_grid <= (focal_point - shuffle_bin_radius) &
+            (focal_point + shuffle_bin_radius) <= max_L_grid
         ) {
             ## left
             ## so re-call
@@ -412,15 +421,17 @@ choose_points_to_break <- function(
     iBest <- 1 ## ordered on "best" ordered vector
     while(iBest < nGrids) {
         ## now find start, end for this
+        ## this is between grids "snp_best" and grid "snp_best" + 1
         snp_best <- best[iBest]
         ## only consider if have >1 SNP either side
         if (sum(available[snp_best + -1:1]) == 3) {
-            ##
+            ## no matter what, one further away
+            ## return 1-based as well
             snp_left <- determine_where_to_stop(
                 smoothed_rate,
                 available,
                 snp_best,
-                thresh,
+                thresh = 100,
                 nGrids,
                 side = "left"
             )
@@ -434,9 +445,20 @@ choose_points_to_break <- function(
                 side = "right"
             )
             ## store
+            ## everything here 1_based coordinates
+            ## left_break_1_based is left grid before elevated rate switching
+            ## left_focal_1_based is left grid point around highest local rate
+            ## right_focal_1_based is right grid point around highest local rate
+            ## right_break_1_based is right grid after elevated rate switching
+            colnames <- c(
+                "left_grid_break_0_based",
+                "left_grid_focal_0_based",
+                "right_grid_focal_0_based",
+                "right_grid_break_0_based"
+            )
             results <- rbind(
                 results,
-                c(snp_left, snp_best, snp_best + 1, snp_right)
+                c(snp_left - 1, snp_best - 1, snp_best, snp_right - 1)
             )
             ## nuke out (do not consider) at least
             ##   those SNPs under consideration
@@ -467,8 +489,8 @@ choose_points_to_break <- function(
         }
     }
     if ((length(results) / 4) > 0) {
-        colnames(results) <- c("left_break", "left_focal", "right_focal", "right_break")
-        results <- results[order(results[, "left_focal"]), ]        
+        colnames(results) <- colnames
+        results <- results[order(results[, "left_grid_focal_0_based"]), ]        
     }
     return(
         list(
@@ -528,7 +550,6 @@ determine_where_to_stop <- function(
         if ((val_cur < thresh) & (val_prev < val_cur)) {
             done <- 1
         }
-        ## stop if not decreasing over 10 SNPs
     }
     return(snp_consider)
 }
