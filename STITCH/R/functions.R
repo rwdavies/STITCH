@@ -501,7 +501,7 @@ STITCH <- function(
     grid_distances <- out$grid_distances
     L_grid <- out$L_grid
     nGrids <- out$nGrids
-
+    snps_in_grid_1_based <- out$snps_in_grid_1_based
 
     ## determine output regions
     blocks_for_output <- determine_snp_and_grid_blocks_for_output(
@@ -3899,10 +3899,10 @@ within_EM_per_sample_heuristics <- function(
         ## for each sample, get the changes between every 100
         for(iNor in 1:nor) {
             for(iBreak in 1:nbreaks) {
-                from <- break_results[iBreak, "left_break"]
-                to <- break_results[iBreak, "right_break"]
-                hp1 <- fbsoL[[iNor]]$gammaK_t[, from]
-                hp2 <- fbsoL[[iNor]]$gammaK_t[, to]
+                from <- break_results[iBreak, "left_grid_break_0_based"]
+                to <- break_results[iBreak, "right_grid_focal_0_based"]
+                hp1 <- fbsoL[[iNor]]$gammaK_t[, from + 1]
+                hp2 <- fbsoL[[iNor]]$gammaK_t[, to + 1]
                 fromMat[iBreak, , ] <-
                     fromMat[iBreak, , ] + hp1 %*% t(hp2)
             }
