@@ -1894,7 +1894,7 @@ get_haplotypes_from_reference <- function(
     legend_position <- out$legend_position
     position_in_haps_file <- out$position_in_haps_file
 
-    validate_reference_legend(legend, reference_legend_file)
+    validate_reference_legend(legend)
 
     haps <- extract_validate_and_load_haplotypes(
         legend,
@@ -1917,8 +1917,7 @@ get_haplotypes_from_reference <- function(
 
 
 validate_reference_legend <- function(
-    legend,
-    reference_legend_file
+    legend
 ) {
     if (nrow(legend) == 0) {
         stop(paste0("After extraction, the legend file had no rows. Please check the intersection between the regionStart, regionEnd, buffer and the reference_legend_file:", reference_legend_file))
@@ -1927,10 +1926,6 @@ validate_reference_legend <- function(
         legend[, "position"], legend[,"a0"], legend[, "a1"],
         sep = "-"
     )
-    x <- as.numeric(as.character(legend[, "position"])) <= 0
-    if (sum(x) > 0) {
-        stop(paste0("There are variants with position <= 0 in the reference legend file ", reference_legend_file, ". One such example is ", legend[which.max(x), "position"], " which occurs at entry ", which.max(x)))
-    }
     t <- table(legend_snps)
     if (sum(t > 1) > 0) {
         ## argh R - get character not factor
