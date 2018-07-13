@@ -102,10 +102,10 @@ get_nbreaks <- function(
                 left_break <- seq(start, nGrids - shuffle_bin_nSNPs, by = shuffle_bin_nSNPs)
                 nbreaks <- length(left_breaks) - 1
                 break_results <- cbind(
-                    left_break = left_break,
-                    left_focal_SNP = left_break + (shuffle_bin_nSNPs - start),
-                    right_focal_SNP = left_break + (shuffle_bin_nSNPs - start + 1),
-                    right_break = left_break + shuffle_bin_nSNPs - 1
+                    left_grid_break_0_based = left_break - 1,
+                    left_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start),
+                    right_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start + 1),
+                    right_grid_break_0_based = left_break + shuffle_bin_nSNPs - 1
                 )
             }
         }
@@ -490,7 +490,7 @@ choose_points_to_break <- function(
     }
     if ((length(results) / 4) > 0) {
         colnames(results) <- colnames
-        results <- results[order(results[, "left_grid_focal_0_based"]), ]        
+        results <- results[order(results[, "left_grid_focal_0_based"]), , drop = FALSE]        
     }
     return(
         list(
@@ -558,16 +558,16 @@ determine_where_to_stop <- function(
 
 plot_attempt_to_find_shuffles <- function(
     grid_distances,
-    L,
+    L_grid,
     fbd_store,
     tempdir,
     outputdir,
     regionName,
     iteration
 ) {
-    add_grey_background <- function(L) {
-        from <- floor(min(L) / 1e6)
-        to <- ceiling(max(L) / 1e6)
+    add_grey_background <- function(L_grid) {
+        from <- floor(min(L_grid) / 1e6)
+        to <- ceiling(max(L_grid) / 1e6)
         for(f in from:to) {
             abline(v = 1e6 * f, col = "grey")
         }
@@ -589,30 +589,30 @@ plot_attempt_to_find_shuffles <- function(
         print_message("Insufficient SNPs to try to find shuffled haplotypes")
         return(NULL)
     }
-    xlim <- c(head(L)[1], tail(L)[1])    
+    xlim <- c(head(L_grid)[1], tail(L_grid)[1])    
     ## do plot here
     outname <- file.path(outputdir, "plots", paste0("shuffleHaplotypes.", iteration, ".",regionName,".png"))
     ## make a 5 Mbp segment 60 wide. then bound up and down at 20 and 200
-    width <- min(max(20, (L[length(L)] - L[1]) / 1e6 * 12), 200)
+    width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 30, width = width, res = 100, units = "in")
     par(mfrow = c(3, 1))    
-    x <- L[-1] - grid_distances ## useful
-    xleft <- L[-length(L)]
-    xright <- L[-1]
+    x <- L_grid[-1] - grid_distances ## what is this
+    xleft <- L_grid[-length(L_grid)]
+    xright <- L_grid[-1]
     ##
     ## 0) find peaks to check
     ##
     ylim <- c(0, max(break_thresh, max(smoothed_rate, na.rm = TRUE)))
     plot(x = 0, y = 0, xlab = "Physical position", ylab = "Rate", main = "Location of shuffles to check", ylim = ylim, xlim = xlim)
-    add_grey_background(L)
+    add_grey_background(L_grid)
     lines(x = x, y = smoothed_rate, lwd = 2)
     for(iBreak in 1:nrow(break_results)) {
-        abline(v = L[break_results[iBreak, "left_break"]], col = "red")
-        abline(v = L[break_results[iBreak, "left_focal"]], col = "purple")
-        abline(v = L[break_results[iBreak, "right_break"]], col = "red")
+        abline(v = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+        abline(v = L_grid[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+        abline(v = L_grid[break_results[iBreak, "right_grid_focal_0_based"] + 1], col = "red")
         rect(
-            xleft = L[break_results[iBreak, "left_break"]],
-            xright = L[break_results[iBreak, "right_break"]],
+            xleft = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1],
+            xright = L_grid[break_results[iBreak, "right_grid_break_0_based"]],
             ybottom = -1, ytop = 0,
             col = "green"
         )
@@ -631,7 +631,7 @@ plot_attempt_to_find_shuffles <- function(
     z <- z * (1 / max(z)) ## 0-1 scaled
     cumu_rate_scaled <- ylim[2] + z * (ylim[1] - ylim[2])
     plot(x = 0, y = 0, col = "white", ylim = ylim, xlim = xlim, main = "Various recombination rates. Blue is expected min, red is expected max, green is unnormalized desired. Values above max suggest shuffling.\nOrange is cumultative decreasing arbitrarily scaled from 0-1 on same axis")
-    add_grey_background(L)
+    add_grey_background(L_grid)
     lines(x = x, y = log10(recomb_usage[, "min_rate"]), ylim = ylim, col = "blue")
     lines(x = x, y = log10(recomb_usage[, "realized_rate"]), ylim = ylim, col = "green")
     ## lines(x = seq(binSize / 2 + 1, 5000000, binSize), y = log10(rate_binned), ylim = ylim, col = "purple")
@@ -664,7 +664,7 @@ plot_attempt_to_find_shuffles <- function(
             ybottom <- ytop
         }
     }
-    add_grey_background(L)
+    add_grey_background(L_grid)
     legend("topright", paste0("anc_hap=", 1:nrow(R)), col = cbPalette[1:nrow(R)], lwd = 2)
     dev.off()
 }
