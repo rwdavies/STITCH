@@ -144,7 +144,7 @@ STITCH <- function(
     gridWindowSize = NA,
     shuffle_bin_nSNPs = NULL,
     shuffle_bin_radius = 5000,
-    keepSampleReadsInRAM = TRUE
+    keepSampleReadsInRAM = FALSE
 ) {
 
     ## capture command line
@@ -574,7 +574,7 @@ STITCH <- function(
 
     eHapsCurrent_t <- t(eHapsCurrent) ## do this once, eventually remove entirely
     alphaMatCurrent_t <- t(alphaMatCurrent)
-
+    
     
     for(iteration in 1:niterations) {
         ##

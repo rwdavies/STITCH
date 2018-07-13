@@ -306,6 +306,7 @@ load_all_sampleReads_into_memory <- function(
     bundling_info
 ) {
     ##
+    print_message("Begin loading all sample reads into memory")
     sampleRanges <- getSampleRange(N = N, nCores = nCores)
     out <- mclapply(
         sampleRanges,
@@ -337,6 +338,7 @@ load_all_sampleReads_into_memory <- function(
             allSampleReads[[iSample]] <- x[[iSample]]
         }
     }
+    print_message("Done loading all sample reads into memory")    
     return(allSampleReads)
 
 }

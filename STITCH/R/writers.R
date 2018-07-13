@@ -233,7 +233,8 @@ make_and_write_output_file <- function(
                 col.names = FALSE,
                 sep = "\t",
                 quote = FALSE,
-                append = TRUE
+                append = TRUE,
+                nThread = nCores
             )
             
         } else if (output_format == "bgen") {
@@ -247,7 +248,8 @@ make_and_write_output_file <- function(
                 list_of_gp_raw_t = list_of_gp_raw_t,
                 sample_names = sampleNames,
                 var_info = var_info,
-                B_bit_prob = B_bit_prob
+                B_bit_prob = B_bit_prob,
+                nCores = nCores
             )
             bgen_file_connection <- out$bgen_file_connection
             previous_offset <- out$final_binary_length
@@ -260,7 +262,7 @@ make_and_write_output_file <- function(
     ## 
     if (output_format == "bgvcf") {
         print_message("bgzip output file and move to final location")
-        system(paste0("bgzip -f ", shQuote(output_unbgzipped)))
+        system(paste0("bgzip --threads ", nCores, " -f ", shQuote(output_unbgzipped)))
         system(paste0("mv ", shQuote(paste0(output_unbgzipped, ".gz")), " ", shQuote(to_use_output_filename)))
     } else {
         close(bgen_file_connection)
@@ -698,7 +700,7 @@ outputInputInVCFFunction <- function(
         'paste -d ',shQuote("\t"),' ',
         '<(gunzip -c ', shQuote(output_vcf_left), ' | cat ) ',
         unlisted_files_to_paste, ' | ',
-        ' cat ', shQuote(output_vcf_header) ,' - | bgzip -c > ',
+        ' cat ', shQuote(output_vcf_header) ,' - | bgzip --threads ', nCores, '-c > ',
         shQuote(output_vcf)
        ,'"'
     )

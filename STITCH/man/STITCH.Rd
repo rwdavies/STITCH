@@ -32,7 +32,7 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   plot_shuffle_haplotype_attempts = FALSE, plotAfterImputation = TRUE,
   save_sampleReadsInfo = FALSE, gridWindowSize = NA,
   shuffle_bin_nSNPs = NULL, shuffle_bin_radius = 5000,
-  keepSampleReadsInRAM = TRUE)
+  keepSampleReadsInRAM = FALSE)
 }
 \arguments{
 \item{chr}{What chromosome to run. Should match BAM headers}
