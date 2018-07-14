@@ -149,6 +149,7 @@ make_and_write_output_file <- function(
             grid = grid,
             highCovInLow = highCovInLow,
             allSampleReads = allSampleReads,
+            outputdir = outputdir,
             FUN = per_core_get_results
         )
         
@@ -189,7 +190,7 @@ make_and_write_output_file <- function(
             for(j in 1:length(highCovInLow)) {
                 ## get gp_t
                 load(file = file_dosages(tempdir, highCovInLow[j], regionName, "piece.gp_t"))
-                gen_imp[snps_in_output_block, j] <- 0.5 * gp_t[2, ] + gp_t[3, ]
+                gen_imp[snps_in_output_block, j] <- gp_t[2, ] + 2 * gp_t[3, ]
             }
         }
         
@@ -253,7 +254,7 @@ make_and_write_output_file <- function(
             )
             bgen_file_connection <- out$bgen_file_connection
             previous_offset <- out$final_binary_length
-
+            
         }
 
     }
@@ -318,7 +319,8 @@ per_core_get_results <- function(
     method,
     grid,
     highCovInLow,
-    allSampleReads
+    allSampleReads,
+    outputdir
 ) {
 
     bundledSampleReads <- NULL
@@ -331,7 +333,7 @@ per_core_get_results <- function(
     hweCount <- array(0, c(nSNPsInOutputBlock, 3))
     infoCount <- array(0, c(nSNPsInOutputBlock, 2))
     afCount <- array(0, nSNPsInOutputBlock)
-    
+
     if (output_format == "bgvcf") {
         vcf_matrix_to_out <- data.frame(matrix(
             data = NA,
@@ -456,9 +458,8 @@ per_core_get_results <- function(
                 nSNPs = ncol(gp_t), ## ncol(gp_t) = nSNPsInRegion here
                 B_bit_prob
             )
-            ##
         }
-        
+
     }
     
     return(
@@ -1083,25 +1084,32 @@ determine_reads_in_output_blocks_subfunction <- function(
         sampleReads <- out$sampleReads
         bundledSampleReads <- out$bundledSampleReads
         ##
-        central_snp_in_read <- sapply(sampleReads, function(x) x[[2]]) + 1
-        ## if not sorted, throw error
-        if (sum(diff(central_snp_in_read) < 0) > 0) {
-            x <- which.max(diff(central_snp_in_read) < 0)            
-            stop(paste0("In an internal format used by STITCH, the reads are not sorted by the central SNP in the read. For example, sample number ", iSample, " has read number ", x, " with central SNP ", sampleReads[[x]][[2]] + 1, " and read number ", x + 1, " with central SNP ", sampleReads[[x + 1]][[2]] + 1, ". This is probably caused by using previously generated input data from an older version of STITCH. Please regenerate input and try again. Otherwise, one can manually convert by ordering the sampleReads by the 2nd entry of each list member and saving again. If this does not seem correct please get in touch"))
-        }
-        what_output_block_read_is_in <- blocks_in_vector_form[central_snp_in_read]
-        s <- diff(what_output_block_read_is_in) != 0 ## where they switch
-        ## start and end of regions
-        not_NA <- which(is.na(what_output_block_read_is_in) == FALSE)
-        starts <- c(head(not_NA, 1), which(s) + 1)
-        ends <- c(which(s), tail(not_NA, 1))
-        whats <- what_output_block_read_is_in[starts]
+        out <- determine_starts_ends_whats_for_sampleReads(
+            sampleReads = sampleReads,
+            blocks_in_vector_form = blocks_in_vector_form
+        )
         ## put into matrix?
-        read_starts_and_ends[iiSample, whats, 1] <- starts
-        read_starts_and_ends[iiSample, whats, 2] <- ends
+        read_starts_and_ends[iiSample, out$whats, 1] <- out$starts
+        read_starts_and_ends[iiSample, out$whats, 2] <- out$ends
     }
     return(read_starts_and_ends)
 }
 
 
-    
+determine_starts_ends_whats_for_sampleReads <- function(sampleReads, blocks_in_vector_form) {
+    central_snp_in_read <- sapply(sampleReads, function(x) x[[2]]) + 1
+    ## if not sorted, throw error
+    if (sum(diff(central_snp_in_read) < 0) > 0) {
+        x <- which.max(diff(central_snp_in_read) < 0)            
+        stop(paste0("In an internal format used by STITCH, the reads are not sorted by the central SNP in the read. For example, sample number ", iSample, " has read number ", x, " with central SNP ", sampleReads[[x]][[2]] + 1, " and read number ", x + 1, " with central SNP ", sampleReads[[x + 1]][[2]] + 1, ". This is probably caused by using previously generated input data from an older version of STITCH. Please regenerate input and try again. Otherwise, one can manually convert by ordering the sampleReads by the 2nd entry of each list member and saving again. If this does not seem correct please get in touch"))
+    }
+    what_output_block_read_is_in <- blocks_in_vector_form[central_snp_in_read]
+    s <- diff(what_output_block_read_is_in) != 0 ## where they switch
+    ## start and end of regions
+    not_NA <- which(is.na(what_output_block_read_is_in) == FALSE)
+    starts <- c(head(not_NA, 1), which(s) + 1)
+    ends <- c(which(s), tail(not_NA, 1))
+    whats <- what_output_block_read_is_in[starts]
+    return(list(starts = starts, ends = ends, whats = whats))
+}
+
