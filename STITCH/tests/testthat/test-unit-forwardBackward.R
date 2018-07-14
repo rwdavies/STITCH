@@ -145,21 +145,18 @@ test_that("can determine how assign SNPs to blocks for output", {
 
 test_that("can run forwardBackward, then re-run using list of forward and backward probabilities", {
 
-    n_snps <- 20
+    n_snps <- 100
     L <- 1:n_snps
-    gridWindowSize <- 3
     K <- 2
     regionStart <- 4
-    regionEnd <- 12
+    regionEnd <- 48
     buffer <- 2
-    out <- assign_positions_to_grid(
-        L = L,
-        gridWindowSize = gridWindowSize
-    )
-    grid <- out$grid
-    nGrids <- out$nGrids ## 1-based
+    inRegion <- L >= (regionStart) & L <= (regionEnd)
+    w <- which(inRegion)
+    start_and_end_minus_buffer <- c(head(w, 1), tail(w, 1)) ## first SNP
+    outputSNPBlockSize <- 4    
     
-    sampleRead <- function(x) {
+    sampleRead <- function(x, grid) {
         y <- x + c(0, 1, 2, 3)
         y <- y[y < (n_snps -1)]
         return(list(
@@ -168,83 +165,129 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
             matrix(y, ncol = 1)
         ))
     }
-    
-    sampleReads <- lapply(1:17, sampleRead)
-    outputSNPBlockSize <- 4
-    
-    eHapsCurrent_t <- array(runif(n_snps * K), c(K, n_snps))
-    sigmaCurrent <- rep(0.999, nGrids - 1)
-    alphaMatCurrent_t <- array(1 / K, c(K, nGrids - 1))
-    priorCurrent <- runif(K) / K
 
-    ## run with, without grids
-    for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {
+    for(gridWindowSize in c(NA, 3)) {
 
-        if (method == "pseudoHaploid") {
-            pRgivenH1 <- runif(length(sampleReads))
-            pRgivenH2 <- runif(length(sampleReads))
-        }
-        transMatRate_t <- get_transMatRate(
-            method = method,
-            sigmaCurrent
+        out <- assign_positions_to_grid(
+            L = L,
+            gridWindowSize = gridWindowSize
         )
+        grid <- out$grid
+        nGrids <- out$nGrids ## 1-based
 
-        out1 <- run_forward_backwards(
-            sampleReads = sampleReads,
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2,            
-            method = method,
-            K = K,
-            priorCurrent = priorCurrent,
-            alphaMatCurrent_t = alphaMatCurrent_t,
-            eHapsCurrent_t = eHapsCurrent_t,
-            transMatRate_t = transMatRate_t,
-            whatToReturnOriginal = 0
+        blocks_for_output <- determine_snp_and_grid_blocks_for_output(
+            grid = grid,
+            start_and_end_minus_buffer = start_and_end_minus_buffer,
+            outputSNPBlockSize = outputSNPBlockSize
         )
-
-        grid_starts <- c(1, 2)
-        grid_ends <- c(3, 5)
-        alphaBetaBlock <- lapply(out1$fbsoL, function(fbso) {
-            return(
-                list(
-                    alphaHatBlocks_t = fbso$alphaHat_t[, grid_starts + 1, drop = FALSE],
-                    betaHatBlocks_t = fbso$betaHat_t[, grid_ends + 1, drop = FALSE]
-                )
-            )
-        })
         
-        ## do between 0-based grids 2 and 4 inclusive
-        for(i_snp_block_for_alpha_beta in 1:2) {
-            grid_start <- grid_starts[i_snp_block_for_alpha_beta]
-            grid_end <- grid_ends[i_snp_block_for_alpha_beta]            
-            x <- sapply(sampleReads, function(x) x[[2]])
-            whichReads <- which((grid_start <= x) & (x <= grid_end))
+        ## depends on grid
+        sampleReads <- lapply(1:(n_snps - 3), sampleRead, grid = grid)
+        eHapsCurrent_t <- array(runif(n_snps * K), c(K, n_snps))
+        sigmaCurrent <- rep(0.999, nGrids - 1)
+        alphaMatCurrent_t <- array(1 / K, c(K, nGrids - 1))
+        priorCurrent <- runif(K) / K
+        
 
-            out2 <- run_forward_backwards(
-                sampleReads = sampleReads[whichReads],
-                pRgivenH1 = pRgivenH1[whichReads],
-                pRgivenH2 = pRgivenH2[whichReads],            
+        for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {
+
+            if (method == "pseudoHaploid") {
+                pRgivenH1 <- runif(length(sampleReads))
+                pRgivenH2 <- runif(length(sampleReads))
+            }
+            transMatRate_t <- get_transMatRate(
+                method = method,
+                sigmaCurrent
+            )
+            
+            out1 <- run_forward_backwards(
+                sampleReads = sampleReads,
+                pRgivenH1 = pRgivenH1,
+                pRgivenH2 = pRgivenH2,            
                 method = method,
                 K = K,
                 priorCurrent = priorCurrent,
-                alphaMatCurrent_t = alphaMatCurrent_t[, 1 + grid_start:(grid_end - 1), drop = FALSE],
+                alphaMatCurrent_t = alphaMatCurrent_t,
                 eHapsCurrent_t = eHapsCurrent_t,
-                transMatRate_t = transMatRate_t[, 1 + grid_start:(grid_end - 1), drop = FALSE],
-                run_fb_subset = TRUE,
-                alphaBetaBlock = alphaBetaBlock,
-                run_fb_grid_offset = grid_start,
-                suppressOutput = 1,
-                i_snp_block_for_alpha_beta = i_snp_block_for_alpha_beta
+                transMatRate_t = transMatRate_t,
+                whatToReturnOriginal = 0,
+                blocks_for_output = blocks_for_output,
+                generate_fb_snp_offsets = TRUE
+            )$fbsoL
+            gp_t_all <- calculate_gp_t_from_fbsoL(
+                eHapsCurrent_t = eHapsCurrent_t,
+                grid = grid,
+                method = method,
+                fbsoL = out1
+            )
+            alphaBetaBlock <- lapply(out1, function(x) x$alphaBetaBlocks)
+            
+            blocks_in_vector_form <- array(NA, nGrids) ## want 0, 1, 2, etc, depending on which output block
+            for(i in 1:nrow(blocks_for_output)) {
+                s2 <- blocks_for_output[i, "grid_start_0_based"]
+                e2 <- blocks_for_output[i, "grid_end_0_based"]
+                blocks_in_vector_form[1 + s2:e2] <- i
+            }
+            rse <- determine_starts_ends_whats_for_sampleReads(
+                sampleReads = sampleReads,
+                blocks_in_vector_form = blocks_in_vector_form
             )
             
-            for(iNor in 1:length(out1[[1]])) {
-                expect_equal(
-                    out1$fbsoL[[1]]$gamma_t[, grid_start:grid_end + 1],
-                    out2$fbsoL[[1]]$gamma_t
+            for(i_output_block in 1:nrow(blocks_for_output)) {
+                
+                first_snp_in_region <- blocks_for_output[i_output_block, "snp_start_1_based"]
+                last_snp_in_region <- blocks_for_output[i_output_block, "snp_end_1_based"]
+                snps_in_output_block <- first_snp_in_region:last_snp_in_region
+                first_grid_in_region <- blocks_for_output[i_output_block, "grid_start_0_based"]
+                last_grid_in_region <- blocks_for_output[i_output_block, "grid_end_0_based"]
+                if (first_grid_in_region < last_grid_in_region) {
+                    grids_to_use <- first_grid_in_region:(last_grid_in_region - 1)
+                    alphaMatCurrentLocal_t <- alphaMatCurrent_t[, 1 + grids_to_use, drop = FALSE]
+                    transMatRateLocal_t <- transMatRate_t[, 1 + grids_to_use, drop = FALSE]
+                }
+                whichReads <- rse$starts[i_output_block]:rse$ends[i_output_block]
+
+                out2 <- run_forward_backwards(
+                    sampleReads = sampleReads[whichReads],
+                    pRgivenH1 = pRgivenH1[whichReads],
+                    pRgivenH2 = pRgivenH2[whichReads],            
+                    method = method,
+                    K = K,
+                    priorCurrent = priorCurrent,
+                    alphaMatCurrent_t = alphaMatCurrentLocal_t,
+                    eHapsCurrent_t = eHapsCurrent_t,
+                    transMatRate_t = transMatRateLocal_t,
+                    run_fb_subset = TRUE,
+                    alphaBetaBlock = alphaBetaBlock,
+                    run_fb_grid_offset = first_grid_in_region,
+                    suppressOutput = 1,
+                    i_snp_block_for_alpha_beta = i_output_block
+                )$fbsoL
+                
+                gp_t_local <- calculate_gp_t_from_fbsoL(
+                    eHapsCurrent_t = eHapsCurrent_t,
+                    grid = grid,
+                    method = method,
+                    fbsoL = out2,
+                    snp_start_1_based = first_snp_in_region,
+                    snp_end_1_based = last_snp_in_region,
+                    grid_offset_0_based = first_grid_in_region
                 )
+            
+                for(iNor in 1:length(out1[[1]])) {
+                    expect_equal(
+                        out1[[1]]$gamma_t[, 1 + first_grid_in_region:last_grid_in_region, drop = FALSE],
+                        out2[[1]]$gamma_t
+                    )
+                    expect_equivalent(
+                        gp_t_all[, first_snp_in_region:last_snp_in_region], 
+                        gp_t_local
+                    )
+                }
             }
         }
         
     }
 
 })
+
