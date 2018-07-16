@@ -1,3 +1,7 @@
+* v1.5.2
+	* Capability to substantially decrease RAM usage when running with a large number of samples
+	* Better error message when imputing few / no SNPs
+	* Able to impute when only 2 SNPs, including 1 SNP in central region
 * v1.5.1
 	* Add method diploid-inbred
 	* Improve capabilities of heuristic looking for shuffled haplotypes

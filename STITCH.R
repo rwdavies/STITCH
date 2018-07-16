@@ -416,8 +416,8 @@ option_list <- list(
     make_option(
         "--keepSampleReadsInRAM",
         type = "logical",
-        help = "Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM [default TRUE] ",
-        default = TRUE
+        help = "Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM [default FALSE] ",
+        default = FALSE
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))

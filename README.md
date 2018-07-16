@@ -1,16 +1,15 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.1__**
-Release date: June 21, 2018
+**__Current Version: 1.5.2__**
+Release date: July 16, 2018
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Add method diploid-inbred
-2. Improve capabilities of heuristic looking for shuffled haplotypes
-3. Fix C++ bug with HWE
-4. Internal improvements with testing flexibility and packaging efficiency
+1. Capability to substantially decrease RAM usage when running with a large number of samples 
+2. Better error message when imputing few / no SNPs
+3. Able to impute when only 2 SNPs, including 1 SNP in central region
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -27,7 +26,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.5.1.tar.gz
+R CMD INSTALL ./releases/STITCH_1.5.2.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
@@ -86,6 +85,13 @@ STITCH supports writing to both bgzipped vcfs and bgen, see output_format variab
 ## What method to run
 
 STITCH can run using one of three "methods" reflecting different underlying statistical and biological models: "diploid", which is the best general method and has the best statistical properties, but has run time proportional to the square of K and so may be slow for large, diverse populations; "pseudoHaploid", which uses statistical approximations that make it less accurate than the diploid method but has run time proportional to K, and so may be suitable for large, diverse populations; and "diploid-inbred", which assumes all samples are completely inbred and as such uses an underlying haplotype based imputation model with run time proportional to K. Note that each of these assumes subjects are diploid, and as such, all methods output diploid genotypes and probabilities.
+
+## Notes on the relationship between run time, RAM and performance
+
+STITCH can be run on hundreds of thousands of samples, SNPs, or both. Default parameters are set to give good performance for situations somewhere in the middle. Depending on your application, you may want to tweak default parameters to change how STITCH is run and the relationship between run time, RAM and performance. Here is a brief summary of relevant parameters. See section below for note about K.
+* outputSNPBlockSize: STITCH writes out results approximately this many SNPs at a time. Setting this to a larger value will speed up STITCH but use more RAM.
+* keepSampleReadsInRAM, inputBundleBlockSize: STITCH converts reads from BAM files into an internal format. These variables control whether all of those are kept in RAM (keepSampleReadsInRAM = TRUE) or not (keepSampleReadsInRAM=FALSE, default) at once. Setting to TRUE decreases runtime but increases RAM usage. inputBundleBlockSize controls whether sampleReads are bundled together to use fewer temporary files on disk. These options have no impact on performance.
+* gridWindowSize: The default gridWindowSize=NA makes imputation run per-SNP, as is standard. Setting this to an integer greater than 0 (e.g. 10000 (base pairs)) bins the genome into physical windows of this size, and runs imputation between those grids. This can considerably speed up imputation of dense regions but will reduce imputation performance.
 
 ## Note on the selection of K and nGen
 
