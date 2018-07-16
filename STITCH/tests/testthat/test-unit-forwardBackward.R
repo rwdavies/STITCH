@@ -291,3 +291,61 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
 
 })
 
+
+test_that("can properly assign reads to those blocks in which they are needed", {
+
+
+    L <- 1:300
+    regionStart <- 50
+    regionEnd <- 224
+    buffer <- 14
+    gridWindowSize <- NA
+    outputSNPBlockSize <- 27
+
+    f <- function(grid) {
+        lapply(grid, function(i) {
+            return(list(0, i, matrix(10, ncol = 1), matrix(i, ncol = 1)))
+        })
+    }
+    
+    for(gridWindowSize in c(NA, 15)) {
+
+        out <- assign_positions_to_grid(
+            L = L,
+            gridWindowSize = gridWindowSize
+        )
+        grid <- out$grid
+        nGrids <- out$nGrids ## 1-based
+
+        inRegion <- L >= (regionStart) & L <= (regionEnd)
+        w <- which(inRegion)
+        start_and_end_minus_buffer <- c(head(w, 1), tail(w, 1)) ## first SNP
+        blocks_for_output <- determine_snp_and_grid_blocks_for_output(
+            grid = grid,
+            start_and_end_minus_buffer = start_and_end_minus_buffer,
+            outputSNPBlockSize = outputSNPBlockSize
+        )
+        
+        blocks_in_vector_form <- get_blocks_in_vector_form(blocks_for_output, nGrids)
+
+        ## make fake sampleReads with reads everywhere!
+        sampleReads <- f(grid)
+        out <- determine_starts_ends_whats_for_sampleReads(sampleReads, blocks_in_vector_form)
+        central_snp_in_read <- sapply(sampleReads, function(x) x[[2]]) + 1 ## 1-based
+
+        ## check that all reads in each output block are represented
+        for(i_output_block in 1:nrow(blocks_for_output)) {
+            s <- out$starts[i_output_block]
+            e <- out$ends[i_output_block]
+            w <- out$whats[i_output_block]
+            s2 <- blocks_for_output[i_output_block, "grid_start_0_based"] + 1
+            e2 <- blocks_for_output[i_output_block, "grid_end_0_based"] + 1
+            expect_equal(
+                which((s2 <= central_snp_in_read) & (central_snp_in_read <= e2)),
+                s:e
+            )
+        }
+
+    }
+
+})

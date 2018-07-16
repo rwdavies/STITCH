@@ -26,7 +26,11 @@ make_and_write_output_file <- function(
     K,
     highCovInLow,
     start_and_end_minus_buffer,
-    allSampleReads
+    allSampleReads,
+    niterations,
+    maxEmissionMatrixDifference,
+    maxDifferenceBetweenReads,
+    Jmax
 ) {
 
     print_message("Begin making and writing output file")
@@ -150,6 +154,10 @@ make_and_write_output_file <- function(
             highCovInLow = highCovInLow,
             allSampleReads = allSampleReads,
             outputdir = outputdir,
+            niterations = niterations,
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+            Jmax = Jmax,
             FUN = per_core_get_results
         )
         
@@ -320,7 +328,11 @@ per_core_get_results <- function(
     grid,
     highCovInLow,
     allSampleReads,
-    outputdir
+    outputdir,
+    niterations,
+    maxEmissionMatrixDifference,
+    maxDifferenceBetweenReads,
+    Jmax
 ) {
 
     bundledSampleReads <- NULL
@@ -417,7 +429,12 @@ per_core_get_results <- function(
                 alphaBetaBlock = alphaBetaBlockList[[iSample]],
                 i_snp_block_for_alpha_beta = i_output_block,
                 run_fb_grid_offset = first_grid_in_region,
-                run_fb_subset = TRUE
+                run_fb_subset = TRUE,
+                Jmax = Jmax,
+                maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+                maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+                niterations = niterations,
+                iteration = niterations
             )$fbsoL
             
         }
@@ -447,6 +464,7 @@ per_core_get_results <- function(
         ## hweCount is NOT transposed!
         hweCount[max_gen] <- hweCount[max_gen] + 1 ## hmmmmm not ideal
         afCount <- afCount + (eij) / 2
+
         ##
         if (output_format == "bgvcf") {
             vcf_matrix_to_out[, iiSample] <- rcpp_make_column_of_vcf(gp_t, 0, matrix())
@@ -1004,7 +1022,15 @@ make_and_write_bgen_per_snp_annot_file <- function(
 }
     
 
-
+get_blocks_in_vector_form <- function(blocks_for_output, nGrids) {
+    blocks_in_vector_form <- array(NA, nGrids) ## want 0, 1, 2, etc, depending on which output block
+    for(i in 1:nrow(blocks_for_output)) {
+        s2 <- blocks_for_output[i, "grid_start_0_based"]
+        e2 <- blocks_for_output[i, "grid_end_0_based"]
+        blocks_in_vector_form[1 + s2:e2] <- i
+    }
+    return(blocks_in_vector_form)
+}
 
 ## this assumes reads are sorted but that need not be the case for old STITCH
 ## 
@@ -1020,12 +1046,8 @@ determine_reads_in_output_blocks <- function(
 ) {
     print_message("Determine reads in output blocks")
     ##
-    blocks_in_vector_form <- array(NA, nGrids) ## want 0, 1, 2, etc, depending on which output block
-    for(i in 1:nrow(blocks_for_output)) {
-        s2 <- blocks_for_output[i, "grid_start_0_based"]
-        e2 <- blocks_for_output[i, "grid_end_0_based"]
-        blocks_in_vector_form[1 + s2:e2] <- i
-    }
+    blocks_in_vector_form <- get_blocks_in_vector_form(blocks_for_output, nGrids) 
+    ##
     sampleRanges <- getSampleRange(N = N, nCores = nCores)    
     out <- mclapply(
         sampleRanges,
