@@ -153,12 +153,12 @@ if (compare_against == "affy") {
 
 
 if (output_format == "bgvcf") {
-    out <- get_dosages_for_vcf(test_file, chr, subjects, mega_calls)
+    out <- get_dosages_for_vcf(test_file, chr, subjects, truth_calls)
     ## out$dosages with row = SNP, col = sample, content is 0-2 dosage
     ## rows labelled with chr-snp-ref-alt
     ## out$dosages_meta = 3 cols with hwe, eaf, info
 } else {
-    out <- get_dosages_for_bgen(test_file, subjects, mega_calls)
+    out <- get_dosages_for_bgen(test_file, subjects, truth_calls)
 }
 
 dosages <- out$dosages

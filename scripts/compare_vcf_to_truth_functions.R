@@ -244,7 +244,8 @@ get_dosages_for_vcf <- function(
     calls = NULL,
     use_fread = TRUE,
     use_chr = TRUE,
-    tabix = TRUE
+    tabix = TRUE,
+    nCores = 1
 ) {
 
     if (verbose)
@@ -311,16 +312,18 @@ get_dosages_for_vcf <- function(
             x2 <- gp_spot[[i_snp]]
             x3 <- gt_spot[[i_snp]]
             if (length(x1) == 1) {
-                dosages[i_snp, samp] <- as.numeric(b[x1])
+                d <- as.numeric(b[x1])
             } else if (length(x2) == 1) {
                 c <- as.numeric(strsplit(b[x2], ",")[[1]])
-                dosages[i_snp, samp] <- sum(c[2] + c[3] * 2)
+                d <- sum(c[2] + c[3] * 2)
             } else if (length(x3) == 1) {
-                dosages[i_snp, samp] <- c(NA, 0, 1, 2)[
+                d <- c(NA, 0, 1, 2)[
                     match(b[x3], c("./.", "0/0", "0/1", "1/1"))
                 ]
             }
+            dosages[i_snp, i_samp] <- d            
         }
+
     }
 
     if (verbose)
@@ -423,7 +426,7 @@ get_col_from_info <- function(y, col = "EAF=") {
 }
 
 
-compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
+compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta, return_things = FALSE) {
     
     if (verbose) {
         message("Compare array calls and dosages")
@@ -467,11 +470,15 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
     c2 <- colnames(dosagesS)
     subjects <- intersect(c1[grep("Q", c1)], c2[grep("Q", c2)])
     callsS <- callsS[, match(subjects, c1)]
-    dosagesS <- dosagesS[, match(subjects, c2)]
+    dosagesS <- round(dosagesS[, match(subjects, c2)], 1)
     callsS[callsS == -1] <- NA
 
     r2 <- sapply(1:nrow(callsS), function(i_row) {
-        cor(unlist(callsS[i_row, ]), dosagesS[i_row, ], use = "complete.obs") ** 2
+        cor(
+            unlist(callsS[i_row, ]),
+            dosagesS[i_row, ],
+            use = "complete.obs"
+        ) ** 2
     })
     pass_qc <- dosages_metaS[, "info"] > 0.4 & dosages_metaS[, "hwe"] > 1e-6
 
@@ -494,6 +501,12 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta) {
 
     message("r2 for various MAF ranges for SNPs that pass QC")
     print(tapply(r2[pass_qc], cut(maf[pass_qc], c(0, 0.01, 0.05, 0.1, 0.2, 0.5)), mean, na.rm=TRUE))
+
+    if (return_things) {
+        return(list(callsS = callsS, dosagesS = dosagesS, maf = maf, pass_qc = pass_qc, dosages_metaS = dosages_metaS))
+    } else {
+        return(NULL)
+    }
 
 }
 
