@@ -261,7 +261,7 @@ test_that("STITCH diploid works under default parameters when outputdir has a sp
             )
 
         }
-        unlink(outputdir)        
+        unlink(outputdir, recursive = TRUE)
     }
 
 })
