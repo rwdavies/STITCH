@@ -23,16 +23,19 @@ mkdir -p benchmark-results
 
 source "${script_dir}/what_to_benchmark.sh"
 
-##for i_version in $(seq 0 $((${#version_list[@]} - 1)))
-for i_version in 3 3
+for i_version in $(seq 0 $((${#version_list[@]} - 1)))
 do
     version=${version_list[$i_version]}
     extra=${extra_list[$i_version]}
     name=${name_list[$i_version]}
     interface=${interface_list[$i_version]}
-    echo version-${version}
-    echo interface-${interface}
-
+    extension=${extension_list[$i_version]}
+    echo =====================================
+    echo name:${name}
+    echo version:${version}
+    echo interface:${interface}
+    echo extra:${extra}
+    echo extension:${extension}
     ## ugh, need to rebuild CLI...
     LOCAL_R_LIB=${STITCH_HOME}/test-results/whole-chr-${name}/
     mkdir -p ${LOCAL_R_LIB}
@@ -43,7 +46,6 @@ do
     export SEQLIB_ROOT=${STITCH_HOME}/SeqLib/
     echo Installing ${STITCH_HOME}/releases/STITCH_${version}.tar.gz    
     R CMD INSTALL ${STITCH_HOME}/releases/STITCH_${version}.tar.gz
-    
     d="/data/smew1/rdavies/stitch_development/outbredmice_chr19/"
     CFW_DATA_DIR="/data/smew1/rdavies/stitch_development/truth/cfw/"
     TEST_RESULTS_DIR=${STITCH_HOME}/test-results/
@@ -115,13 +117,13 @@ bgzip ${OUTPUTDIR}/stitch.chr19.vcf
 tabix ${OUTPUTDIR}/stitch.chr19.vcf.gz
 " >> ${SUBMIT_SCRIPT}
     fi
-    
+
    echo -e "    
     ## 1.1.1 require manually fixing typo in header
     ## 1.1.1, 1.2.5 require bgzipping
-    ./scripts/compare_vcf_to_truth.R --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=megamuga --cfw-data-dir=${CFW_DATA_DIR} 2>&1 | \
+    ./scripts/compare_vcf_to_truth.R --test-file=${OUTPUTDIR}/stitch.chr19.${extension} --chr=chr19 --compare-against=megamuga --cfw-data-dir=${CFW_DATA_DIR} 2>&1 | \
 	tee ${STITCH_HOME}/benchmark-results/${description}.megamuga.txt
-    ./scripts/compare_vcf_to_truth.R --vcf=${OUTPUTDIR}/stitch.chr19.vcf.gz --chr=chr19 --compare-against=affy --cfw-data-dir=${CFW_DATA_DIR} 2>&1 | \
+    ./scripts/compare_vcf_to_truth.R --test-file=${OUTPUTDIR}/stitch.chr19.${extension} --chr=chr19 --compare-against=affy --cfw-data-dir=${CFW_DATA_DIR} 2>&1 | \
 	tee ${STITCH_HOME}/benchmark-results/${description}.affy.txt
 " >> ${SUBMIT_SCRIPT}
     

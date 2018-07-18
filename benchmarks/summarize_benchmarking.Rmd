@@ -37,46 +37,63 @@ get_elapsed_time_from_log <- function(log_file) {
     }
 }
 
-profile_whole_chr <- function() {
+
+get_accuracy_from_bench_file <- function(bench_file) {
+    s <- "Average r2 of SNPs that pass QC:"    
+    if (file.exists(bench_file)) {
+        command <- paste0("grep '", s, "'  ", bench_file)
+        acc <- system(command, intern = TRUE)
+        if (length(attr(acc, "status")) == 0) {
+            acc <- as.numeric(strsplit(acc, s)[[1]][2])
+        }    else {
+            acc <- NA
+        } 
+    } else {
+        acc <- NA
+    }
+    return(acc)
+}
+
+
+profile_whole_chr <- function(small = TRUE) {
     whole_chr <- t(sapply(1:n, function(i) {
         version <- version_list[i]
         name <- name_list[i]
         option <- options_list[i]
         time_min <- get_elapsed_time_from_log(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".txt"))
-        s <- "Average r2 of SNPs that pass QC:"
-	bench_file <- paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt")
-	if (file.exists(bench_file)) {
-	    command <- paste0("grep '", s, "'  ", bench_file)
-            acc <- system(command, intern = TRUE)
-	    if (length(attr(acc, "status")) == 0) {
-                acc <- as.numeric(strsplit(acc, s)[[1]][2])
-	    }    else {
-		acc <- NA
-	    } 
-	} else {
-	    acc <- NA
-	} 
-        return(c(version, option, round(time_min, 1), acc))
+        acc_mega <- get_accuracy_from_bench_file(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt"))
+	mega_ctime <- file.info(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt"))$ctime
+        acc_affy <- get_accuracy_from_bench_file(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".affy.txt"))        
+        return(c(version, option, round(time_min, 1), round(acc_mega, 3), round(acc_affy, 3), as.character(mega_ctime)))
     }))
-    colnames(whole_chr) <- c("Version", "Options", "Time (min)", "Accuracy")
+    colnames(whole_chr) <- c("Version", "Options", "Time (min)", "Accuracy (Mega)", "accuracy (Affy)", "Mega ctime")
+    if (small) {
+        whole_chr <- whole_chr[, 1:4]
+        colnames(whole_chr)[4] <- "Accuracy"
+    }
     return(whole_chr)
 }
 
-profile_smaller_chunk <- function(K, input) {
+
+profile_smaller_chunk <- function(K, input, small = TRUE) {
     profile <- t(sapply(1:n, function(i) {
         version <- version_list[i]
     	name <- name_list[i]
-            option 		      <- options_list[i]
+            option <- options_list[i]
             c <- 0
             o <- as.list(1:4)
 	    log <- paste0(STITCH_home, "benchmark-results/benchmark_", input, "_", K, "_", name, ".txt")
+	    log_ctime <- file.info(log)$ctime
             time_min <- get_elapsed_time_from_log(log)
             if (version == "1.1.1" & input == "CRAMS")
                 time_min <- NA
             ## change name
-            return(c(version, option, input, K, round(time_min, 1)))
+            return(c(version, option, input, K, round(time_min, 1), as.character(log_ctime)))
     }))
-    colnames(profile) <- c("Version", "Options", "Input", "K", "Time (min)")
+    colnames(profile) <- c("Version", "Options", "Input", "K", "Time (min)", "Log ctime")
+    if (small) {
+       profile <- profile[, 1:5]
+    }  
     return(profile)
 }
 
@@ -95,7 +112,7 @@ The major take aways are
 
 ## Whole chromosome CFW mice test
 
-This analysis uses 2,073 mice at approximately 0.015X coverage at X SNPs using K=4. Performance is assessed using X mice on X array
+This analysis uses 2,073 mice at approximately 0.015X coverage at 152K SNPs using K=4 and 16cores (Intel E5-2690). Performance is assessed using 48 mice on the Illumina MegaMUGA array
 
 ```{r whole_chr, echo=FALSE}
 kable(profile_whole_chr())
@@ -105,7 +122,7 @@ kable(profile_whole_chr())
 
 ## Smaller profiling
 
-These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs. These tests are primary for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
+These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs, on 1 Mbp (1516 SNPs) of chr19 for 2073 CFW mice at 0.015X. These tests are primarily for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
 
 ### K=4, BAMs
 ```{r profile_4_BAMS, echo=FALSE}
