@@ -52,7 +52,7 @@ For a full list of options, in R, query ```?STITCH```, or from the command line,
 
 ## Benchmarks 
 
-One can see some speed benchmarks in benchmarks/benchmark.Md
+One can see some speed benchmarks in [benchmarks/summarize_benchmarking.md](benchmarks/summarize_benchmarking.md)
 
 ## Examples
 
@@ -72,7 +72,7 @@ Davies, R. W., Flint J, Myers S., Mott R. Rapid genotype imputation from sequenc
 
 ## Contact and bug reports
 
-The best way to get help is to consult the forum and mailing list
+The best way to get help is to either submit a bug report on GitHub or to consult the forum and mailing list
 
 https://groups.google.com/forum/#!forum/stitch-imputation
 
