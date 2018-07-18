@@ -11,7 +11,7 @@ The major take aways are
 
 ## Whole chromosome CFW mice test
 
-This analysis uses 2,073 mice at approximately 0.015X coverage at X SNPs using K=4. Performance is assessed using X mice on X array
+This analysis uses 2,073 mice at approximately 0.015X coverage at 152K SNPs using K=4 and 16cores (Intel E5-2690). Performance is assessed using 48 mice on the Illumina MegaMUGA array
 
 
 |Version |Options                |Time (min) |Accuracy |
@@ -38,7 +38,7 @@ This analysis uses 2,073 mice at approximately 0.015X coverage at X SNPs using K
 
 ## Smaller profiling
 
-These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs. These tests are primary for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
+These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs, on 1 Mbp (1516 SNPs) of chr19 for 2073 CFW mice at 0.015X. These tests are primarily for speed, given accuracy on the large whole chromosome has been performed above, and showcase speed for a more reasonable choice for outbred samples (K=20), and show that performance on CRAM samples caught up to BAM samples with version >1.3.0.
 
 ### K=4, BAMs
 
