@@ -38,6 +38,21 @@ get_elapsed_time_from_log <- function(log_file) {
 }
 
 
+get_ram_from_log <- function(log_file) {
+    if (file.exists(log_file) == FALSE) {
+        return(NA)
+    } else {
+        a <- as.character(read.table(log_file, sep = "\t")[, 1])
+        b <- a[grep("Maximum resident set size", a)]
+        if (length(b) == 0)
+            return(NA)
+        c <- strsplit(b, "Maximum resident set size (kbytes): ", fixed = TRUE)[[1]][2]
+	d <- as.numeric(c) / 1024 / 1024 ## gigabytes
+	return(d)
+    }
+}
+
+
 get_accuracy_from_bench_file <- function(bench_file) {
     s <- "Average r2 of SNPs that pass QC:"    
     if (file.exists(bench_file)) {
@@ -85,12 +100,13 @@ profile_smaller_chunk <- function(K, input, small = TRUE) {
 	    log <- paste0(STITCH_home, "benchmark-results/benchmark_", input, "_", K, "_", name, ".txt")
 	    log_ctime <- file.info(log)$ctime
             time_min <- get_elapsed_time_from_log(log)
+	    ram <- round(get_ram_from_log(log), 1)
             if (version == "1.1.1" & input == "CRAMS")
                 time_min <- NA
             ## change name
-            return(c(version, option, input, K, round(time_min, 1), as.character(log_ctime)))
+            return(c(version, option, input, K, round(time_min, 1), as.character(log_ctime), ram))
     }))
-    colnames(profile) <- c("Version", "Options", "Input", "K", "Time (min)", "Log ctime")
+    colnames(profile) <- c("Version", "Options", "Input", "K", "Time (min)", "Log ctime", "RAM (Gbyte)")
     if (small) {
        profile <- profile[, 1:5]
     }  
