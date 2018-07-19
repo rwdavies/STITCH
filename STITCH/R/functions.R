@@ -2769,128 +2769,6 @@ add_central_SNP_to_sampleReads <- function(
 
 
 
-## centralize the writing of the sampleRead filename
-file_sampleReads <- function(
-  dir,
-  iBam,
-  regionName
-) {
-    return(file.path(
-        dir,
-        paste0("sample.",iBam,".input.",regionName,".RData")
-    ))
-}
-
-file_sampleReadsInfo <- function(
-  dir,
-  iBam,
-  regionName
-) {
-    return(file.path(
-        dir,
-        paste0("sampleReadsInfo.",iBam,".input.",regionName,".RData")
-    ))
-}
-
-file_referenceSampleReads <- function(
-  dir,
-  iBam,
-  regionName
-) {
-    return(file.path(
-        dir,
-        paste0("referenceSampleReads.",iBam,".input.",regionName,".RData")
-    ))
-}
-
-
-file_sampleProbs <- function(
-  dir,
-  iBam,
-  regionName
-) {
-    return(file.path(
-        dir,
-        paste0("sampleProbs.",iBam,".input.",regionName,".RData")
-    ))
-}
-
-
-
-file_bundledSampleReads <- function(
-  dir,
-  start,
-  end,
-  regionName
-) {
-    return(
-        file.path(
-            dir,
-            paste0("bundledSamples.", start, "-", end, ".", regionName, ".RData")
-        )
-    )
-}
-
-
-file_bundledReferenceSampleReads <- function(
-  dir,
-  start,
-  end,
-  regionName
-) {
-  return(file.path(
-      dir,
-      paste0("bundledReferenceSampleReads.", start, "-", end, ".", regionName, ".RData")
-  ))
-}
-
-
-file_bundledSampleProbs <- function(
-  dir,
-  start,
-  end,
-  regionName
-) {
-    return(file.path(
-        dir,
-        paste0("bundledSampleProbs.", start, "-", end, ".", regionName, ".RData")
-    ))
-}
-
-
-file_besthaps <- function(tempdir, iSample, regionName) {
-    return(file.path(tempdir, paste0("sample.",iSample,".haps.",regionName,".RData")))
-}
-
-file_dosages <- function(
-  dir,
-  iBam,
-  regionName,
-  what = "dosage"
-) {
-    return(file.path(
-        dir,
-        paste0("sample.", iBam, ".input.", regionName, ".", what, ".RData")
-    ))
-}
-
-file_haplotypes <- function(
-  dir,
-  iBam,
-  regionName
-) {
-    return(file.path(
-        dir,
-        paste0("sample.", iBam, ".input.",regionName,".haplotypes.RData")
-    ))
-}
-
-file_break_results <- function(tempdir, regionName) {
-    return(file.path(
-        tempdir,
-        paste0("nbreaks.",regionName,".RData")
-    ))
-}
 
 
 
@@ -3903,7 +3781,8 @@ within_EM_per_sample_heuristics <- function(
     i_core,
     sampleRange,
     fbd_store,
-    plot_shuffle_haplotype_attempts
+    plot_shuffle_haplotype_attempts,
+    grid_distances
 ) {
     ## 
     ##
@@ -3912,7 +3791,7 @@ within_EM_per_sample_heuristics <- function(
         for(iNor in 1:nor) {
             for(iBreak in 1:nbreaks) {
                 from <- break_results[iBreak, "left_grid_break_0_based"]
-                to <- break_results[iBreak, "right_grid_focal_0_based"]
+                to <- break_results[iBreak, "right_grid_break_0_based"]
                 hp1 <- fbsoL[[iNor]]$gammaK_t[, from + 1]
                 hp2 <- fbsoL[[iNor]]$gammaK_t[, to + 1]
                 fromMat[iBreak, , ] <-
@@ -3931,15 +3810,8 @@ within_EM_per_sample_heuristics <- function(
                     fbd_store[[iSample]] <- fbsoL[[1]]
                 }
                 if (iSample == M) {
-                    plot_attempt_to_find_shuffles(
-                        grid_distances = grid_distances,
-                        L_grid = L_grid,
-                        fbd_store = fbd_store,
-                        tempdir = tempdir,
-                        outputdir = outputdir,
-                        regionName = regionName,
-                        iteration = iteration
-                    )
+                    save(fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
+                    fbd_store <- NULL
                 }
             }
         }
@@ -4120,7 +3992,7 @@ calculate_gp_t_from_fbsoL <- function(
 
 
 
-subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize, bundling_info, transMatRate_t, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, grid_eHaps_distance, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, L_grid) {
+subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize, bundling_info, transMatRate_t, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, grid_eHaps_distance, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, L_grid, grid_distances) {
 
     ## know what core we are in for writing
     i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
@@ -4306,7 +4178,8 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             i_core = i_core,
             sampleRange = sampleRange,
             fbd_store = fbd_store,
-            plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts
+            plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
+            grid_distances = grid_distances
         )
         readsTotal <- out$readsTotal
         readsSplit <- out$readsSplit
@@ -4374,6 +4247,7 @@ get_Jmax_wrt_iteration <- function(Jmax, iteration, niterations) {
     return(Jmax)
 }
 
+
 completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, B_bit_prob, nSNPsInRegion, start_and_end_minus_buffer, shuffle_bin_nSNPs, shuffle_bin_radius, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, snps_in_grid_1_based
 ) {
 
@@ -4437,7 +4311,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         sampleRanges,
         mc.cores=nCores,
         FUN = subset_of_complete_iteration,
-        tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, L_grid = L_grid
+        tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, L_grid = L_grid, grid_distances = grid_distances
     )
 
     check_mclapply_OK(single_iteration_results)
@@ -4536,9 +4410,25 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         )
         gammaSum_t <- out$eHapsFuture_t
         alphaMatSum_t <- out$alphaMatFuture_t
+        whichIsBest <- out$whichIsBest
         rm(out)
+        if (plot_shuffle_haplotype_attempts) {
+            load(file = file_fbdStore(tempdir, regionName, iteration)) ## to load fbdStore
+            plot_attempt_to_find_shuffles(
+                grid_distances = grid_distances,
+                L_grid = L_grid,
+                fbd_store = fbd_store,
+                tempdir = tempdir,
+                outputdir = outputdir,
+                regionName = regionName,
+                iteration = iteration,
+                whichIsBest = whichIsBest
+            )
+            ## for now, re-save everything to replot, etc
+            ## print("REMOVE ME")
+            ## save(fromMat, nbreaks, break_results, K, gammaSum_t, alphaMatSum_t, grid, snps_in_grid_1_based, grid_distances, L_grid, fbd_store, tempdir, outputdir, regionName, iteration, file = file_fbdStore(tempdir, regionName, iteration))
+        }
     }
-    
     ##
     ## look at refilling - round 1
     ##

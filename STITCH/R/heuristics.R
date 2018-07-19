@@ -100,7 +100,7 @@ get_nbreaks <- function(
             if (nGrids >= (start + shuffle_bin_nSNPs)) {
                 ##
                 left_break <- seq(start, nGrids - shuffle_bin_nSNPs, by = shuffle_bin_nSNPs)
-                nbreaks <- length(left_breaks) - 1
+                nbreaks <- length(left_break) - 1
                 break_results <- cbind(
                     left_grid_break_0_based = left_break - 1,
                     left_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start),
@@ -238,7 +238,8 @@ getBetterSwitchesSimple <- function(
     return(
         list(
             eHapsFuture_t = eHapsFuture_t,
-            alphaMatFuture_t = alphaMatFuture_t
+            alphaMatFuture_t = alphaMatFuture_t,
+            whichIsBest = whichIsBest
         )
     )
 }
@@ -563,7 +564,8 @@ plot_attempt_to_find_shuffles <- function(
     tempdir,
     outputdir,
     regionName,
-    iteration
+    iteration,
+    whichIsBest
 ) {
     add_grey_background <- function(L_grid) {
         from <- floor(min(L_grid) / 1e6)
@@ -600,26 +602,7 @@ plot_attempt_to_find_shuffles <- function(
     xleft <- L_grid[-length(L_grid)]
     xright <- L_grid[-1]
     ##
-    ## 0) find peaks to check
-    ##
-    ylim <- c(0, max(break_thresh, max(smoothed_rate, na.rm = TRUE)))
-    plot(x = 0, y = 0, xlab = "Physical position", ylab = "Rate", main = "Location of shuffles to check", ylim = ylim, xlim = xlim)
-    add_grey_background(L_grid)
-    lines(x = x, y = smoothed_rate, lwd = 2)
-    for(iBreak in 1:nrow(break_results)) {
-        abline(v = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
-        abline(v = L_grid[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
-        abline(v = L_grid[break_results[iBreak, "right_grid_focal_0_based"] + 1], col = "red")
-        rect(
-            xleft = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1],
-            xright = L_grid[break_results[iBreak, "right_grid_break_0_based"]],
-            ybottom = -1, ytop = 0,
-            col = "green"
-        )
-    }
-    abline(h = break_thresh, col = "black", lwd = 2)
-    ##
-    ## 1) plot fine and "coarse" scale recombination
+    ## 0) plot fine and "coarse" scale recombination
     ##
     r <- c(
         range(recomb_usage[, "min_rate"]),        
@@ -639,11 +622,55 @@ plot_attempt_to_find_shuffles <- function(
     lines(x = x, y = cumu_rate_scaled, ylim = ylim, col = "orange")
     ## then add all the switches?
     ##
+    ## 1) find peaks to check
+    ##
+    ylim <- c(0, max(break_thresh, max(smoothed_rate, na.rm = TRUE)))
+    plot(x = 0, y = 0, xlab = "Physical position", ylab = "Rate", main = "Location of shuffles to check", ylim = ylim, xlim = xlim)
+    add_grey_background(L_grid)
+    lines(x = x, y = smoothed_rate, lwd = 2)
+    for(iBreak in 1:nrow(break_results)) {
+        abline(v = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+        abline(v = L_grid[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+        abline(v = L_grid[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+        col <- c("green", "red")[as.integer(whichIsBest[iBreak]) + 1] ## switch: red = no, green = yes
+        rect(
+            xleft = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1],
+            xright = L_grid[break_results[iBreak, "right_grid_break_0_based"]],
+            ybottom = -1, ytop = 0,
+            col = col
+        ) ##whichIsBest 0 = no switch
+    }
+    abline(h = break_thresh, col = "black", lwd = 2)
+    ##
     ## 2) plot individuals with their switches
     ##
+    plot_fbd_store(fbd_store = fbd_store, xleft = xleft, xright = xright, xlim = xlim)
+    ##
+    for(iBreak in 1:nrow(break_results)) {
+        abline(v = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+        abline(v = L_grid[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+        abline(v = L_grid[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+    }
+    add_grey_background(L_grid)
+    legend("topright", paste0("anc_hap=", 1:nrow(R)), col = cbPalette[1:nrow(R)], lwd = 2)
+    dev.off()
+}
+
+
+plot_fbd_store <- function(fbd_store, xleft, xright, xlim, main = "Haplotype usage per-sample", mbp_xlab = FALSE) {
+    if (mbp_xlab) {
+        xlab <- "Physical position (Mbp)"
+        xleft <- xleft / 1e6
+        xright <- xright / 1e6        
+        xlim <- xlim / 1e6
+        d <- 1e2 / 1e6
+    } else {
+        xlab <- "Physical position"
+        d <- 0
+    }
     NN <- length(fbd_store)
     ylim <- c(1, NN + 1)
-    plot(x = 0, y = 0, ylim = ylim, xlim = xlim, xlab = "Physical position", ylab = "Sample", main = "Haplotype usage per-sample", col = "white")
+    plot(x = 0, y = 0, ylim = ylim, xlim = xlim, xlab = xlab, ylab = "Sample", main = main, col = "white")
     cbPalette <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)
     for(iSample in 1:NN) {
         ## plot each of them, as rectangle?
@@ -654,8 +681,8 @@ plot_attempt_to_find_shuffles <- function(
         for(k in 1:nrow(R)) {
             ytop <- ytop + R[k, -ncol(R)]
             rect(
-                xleft = xleft,
-                xright = xright,
+                xleft = xleft - d,
+                xright = xright + d, ## should not be necessary, R artefact I think
                 ybottom = ybottom,
                 ytop = ytop,
                 col = cbPalette[k],
@@ -664,12 +691,7 @@ plot_attempt_to_find_shuffles <- function(
             ybottom <- ytop
         }
     }
-    add_grey_background(L_grid)
-    legend("topright", paste0("anc_hap=", 1:nrow(R)), col = cbPalette[1:nrow(R)], lwd = 2)
-    dev.off()
 }
-
-
 
 
 alpha_col <- function(col, alpha) {
