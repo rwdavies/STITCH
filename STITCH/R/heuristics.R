@@ -432,7 +432,7 @@ choose_points_to_break <- function(
                 smoothed_rate,
                 available,
                 snp_best,
-                thresh = 100,
+                thresh,
                 nGrids,
                 side = "left"
             )
@@ -652,7 +652,9 @@ plot_attempt_to_find_shuffles <- function(
         abline(v = L_grid[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
     }
     add_grey_background(L_grid)
-    legend("topright", paste0("anc_hap=", 1:nrow(R)), col = cbPalette[1:nrow(R)], lwd = 2)
+    K <- nrow(fbd_store[[1]]$gammaK_t)
+    cbPalette <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)    
+    legend("topright", paste0("anc_hap=", 1:K), col = cbPalette[1:K], lwd = 2)
     dev.off()
 }
 
