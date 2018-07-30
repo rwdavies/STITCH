@@ -254,14 +254,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_read_reassign
-List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleReadsRaw, int verbose, arma::ivec readStart_ord, arma::ivec readEnd_ord, int iSizeUpperLimit);
+List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, Rcpp::List sampleReadsRaw, int verbose, arma::ivec readStart_ord, arma::ivec readEnd_ord, int iSizeUpperLimit);
 RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP sampleReadsRawSEXP, SEXP verboseSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP iSizeUpperLimitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::ivec >::type ord(ordSEXP);
     Rcpp::traits::input_parameter< arma::ivec >::type qnameInteger_ord(qnameInteger_ordSEXP);
-    Rcpp::traits::input_parameter< List >::type sampleReadsRaw(sampleReadsRawSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type sampleReadsRaw(sampleReadsRawSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< arma::ivec >::type readStart_ord(readStart_ordSEXP);
     Rcpp::traits::input_parameter< arma::ivec >::type readEnd_ord(readEnd_ordSEXP);

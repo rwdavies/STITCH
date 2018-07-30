@@ -1131,3 +1131,73 @@ test_that("can handle a cigar string of *", {
 })
 
 
+test_that("can properly save qname in light of iSizeUpperLimit", {
+
+    chr <- 10
+    pos <- cbind(
+        CHR = c(chr, chr, chr),
+        POS = c(9, 11, 13, 15, 17, 19),
+        REF = rep("A", 6),
+        ALT = rep("C", 6)
+    )
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            list(
+                c("r00A", "0", chr, "10", "60",
+                  "2M", "*", "0", "0",
+                  "AA", "::"),
+                c("r001", "0", chr, "10", "60",
+                  "2M", "*", "0", "0",
+                  "AA", "::"),
+                c("r002", "0", chr, "10", "60",
+                  "2M", "*", "0", "0",
+                  "CC", "::"),
+                c("r002", "0", chr, "14", "60",
+                  "2M", "*", "0", "0",
+                  "AA", "::"),
+                c("r001", "0", chr, "18", "60",
+                  "2M", "*", "0", "0",
+                  "CC", "::")
+            ),
+            chr
+        )
+    )
+
+    regionName <- "region-name"
+    for(iSizeUpperLimit in c(100000, 5)) {
+
+        output <- loadBamAndConvert(
+            iBam = 1,
+            L = as.integer(pos[, 2]),
+            pos = pos,
+            nSNPs = as.integer(nrow(pos)),
+            bam_files = bam_file,
+            N = 1,
+            sampleNames = "test-name-no-informative-reads",
+            inputdir = tempdir(),
+            regionName = regionName,
+            tempdir = tempdir(),
+            chr = chr,
+            chrStart = 1,
+            chrEnd = 100,
+            save_sampleReadsInfo = TRUE,
+            iSizeUpperLimit = iSizeUpperLimit
+        )
+
+        load(file_sampleReads(tempdir(), 1, regionName))
+        load(file_sampleReadsInfo(tempdir(), 1, regionName))
+        
+        expect_equal(
+            sampleReads[sampleReadsInfo[, "qname"] == "r002"][[1]][[1]],
+            1 ## 0-based, means 2 reads
+        )
+        if (iSizeUpperLimit == 100000) {
+            expect_equal(
+                sampleReads[sampleReadsInfo[, "qname"] == "r001"][[1]][[1]],
+                1 ## 0-based, means 2 reads
+            )
+        }
+
+    }
+})

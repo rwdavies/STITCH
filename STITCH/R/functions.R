@@ -2511,7 +2511,7 @@ merge_reads_from_sampleReadsRaw <- function(
     ## qnameInteger is integer version of that
     ## ord is 0-based ordered version of qnameInteger
     ## qnameInteger_ord is the ordered version of qnameInteger
-    sampleReads <- cpp_read_reassign(
+    out <- cpp_read_reassign(
         ord,
         qnameInteger_ord,
         sampleReadsRaw,
@@ -2520,9 +2520,12 @@ merge_reads_from_sampleReadsRaw <- function(
         readEnd_ord,
         iSizeUpperLimit
     )
+    sampleReads <- out$sampleReads
+    ## which reads are saved (i.e. do not violate iSizeUpperLimit)    
+    save_read <-  head(out$save_read, length(qnameUnique)) 
     sampleReadsInfo <- data.frame(
-        qname = qnameUnique,
-        strand = strand[match(qnameUnique, qname)] ## problem if varies
+        qname = qnameUnique[save_read],
+        strand = strand[match(qnameUnique, qname)][save_read] ## problem if varies
     )
     return(
         list(

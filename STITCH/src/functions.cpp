@@ -1136,7 +1136,15 @@ Rcpp::List forwardBackwardHaploid(
 
 //' @export
 // [[Rcpp::export]]
-List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleReadsRaw, int verbose, arma::ivec readStart_ord, arma::ivec readEnd_ord, int iSizeUpperLimit) {
+List cpp_read_reassign(
+    arma::ivec ord,
+    arma::ivec qnameInteger_ord,
+    Rcpp::List sampleReadsRaw,
+    int verbose,
+    arma::ivec readStart_ord,
+    arma::ivec readEnd_ord,
+    int iSizeUpperLimit
+) {
   // ord is 0-based original ordering
   // qnameInteger_ord is (ordered) integer representing reads
   
@@ -1147,9 +1155,12 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
   int nRawReads = sampleReadsRaw.size();
   arma::ivec base_bq(10000);
   arma::ivec base_pos(10000); // there shouldnt be this many SNPs
+  Rcpp::IntegerVector save_read(nRawReads); // over-sized
+  int count = 0;
   if(verbose == 1) {
     std::cout << "curRead=" << curRead << "\n";
   }
+
   for (int iRead = 0; iRead < nRawReads; iRead++ ) {
     
     if(verbose == 1) {
@@ -1161,7 +1172,7 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
     if (qnameInteger_ord[iRead + 1] != curRead) {
       
       int nSNPsInRead = -1;
-      bool save_read = true;
+      bool save_this_read = true;      
       for(int j = iReadStart; j <= iRead; j++) {
 
           // check distance is OK
@@ -1170,7 +1181,7 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
                   if(verbose == 1) {
                       std::cout << "violate iSizeUpperLimit, reset curRead=" << curRead << "\n";
                   }
-                  save_read = false;
+                  save_this_read = false;
               }
           }
           int r = ord[j];
@@ -1195,8 +1206,11 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
 
       arma::ivec bqL = base_bq.subvec(0, nSNPsInRead);
       arma::ivec posL = base_pos.subvec(0, nSNPsInRead);
-      if (save_read)
+      if (save_this_read) {
           sampleReads.push_back(Rcpp::List::create(nSNPsInRead, 0, bqL, posL));
+          save_read(count) = curRead;
+          count++;
+      }
       iReadStart = iRead + 1;
       curRead = qnameInteger_ord[iRead + 1]; // + 1
       if(verbose == 1) {
@@ -1206,7 +1220,12 @@ List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, List sampleR
     }
     
   }
-  return sampleReads;
+  Rcpp::List to_return = Rcpp::List::create(
+      Rcpp::Named("sampleReads") = sampleReads,
+      Rcpp::Named("save_read") = save_read
+  );
+  
+  return to_return;
 }
 
 
