@@ -35,6 +35,20 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
 # if this works the file stitch.chr19.vcf.gz will be created
 ```
+
+If you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
+```
+./scripts/install-package-dependencies.sh
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`/install/lib/
+```
+
+If you see an error similar to ```configure: error: liblzma not found, please install lzma```, then either ask your system administrator to install lzma or xz for you, or try running the following before R CMD INSTALL
+```
+./scripts/install-xz.sh
+echo "CPPFLAGS += -I`pwd`/install/include" >> ~/.R/Makevars
+echo "LDFLAGS += -I`pwd`/install/lib" >> ~/.R/Makevars
+```
+
 If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience other compilation issues, please raise an issue. To experiment with configuration options during compilation, you can edit ```STITCH/src/Makevars``` then build a package and install using ```./scripts/build-and-install.sh``` or test using ```./scripts/test-unit.sh```.
 
 
