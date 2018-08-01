@@ -9,9 +9,11 @@ all : $(SHLIB)
 $(SHLIB) : SeqLib
 
 CXX=$(shell "R CMD config CXX")
+CPPFLAGS=$(shell "R CMD config CPPFLAGS")
+LDFLAGS=$(shell "R CMD config LDFLAGS")
 
 SeqLib:
 	(cd SeqLib && \
-	./configure && \
-	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CPPFLAGS="-fPIC " && cd ../ && \
-	cd htslib && $(MAKE) libhts.a CXX="$(CXX)" CPPFLAGS="-fPIC " && cd ../)
+	./configure CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
+	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
+	cd htslib && $(MAKE) libhts.a CXX="$(CXX)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
