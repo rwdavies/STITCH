@@ -2200,7 +2200,8 @@ generate_or_refactor_input <- function(
                 bundling_info = bundling_info,
                 N = N,
                 tempdir = tempdir,
-                nCores = nCores
+                nCores = nCores,
+                outputdir = outputdir
             )
         }
     }
