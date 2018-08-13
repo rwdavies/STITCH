@@ -12,6 +12,9 @@ set -e
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 
+## remove directories, specified in the below file
+rm -r -f test-results/human_tests
+rm -r -f test-results/mouse_tests
 ./examples/examples.R
 
 exit 0

@@ -5629,7 +5629,9 @@ snap_reads_to_grid <- function(
     verbose = TRUE
 ) {
 
-    print_message("Snap reads to grid")    
+    if (verbose) {
+        print_message("Snap reads to grid")
+    }
     sampleRanges <- getSampleRange(N = N, nCores = nCores)
 
     out <- mclapply(
@@ -5649,18 +5651,46 @@ snap_reads_to_grid <- function(
     )
     check_mclapply_OK(out, "There has been an error snapping reads to grid. Please see above")
 
+    ## 
+    allSampleReadsStats <- array(NA, c(N, 2))
     if (is.null(allSampleReads) == FALSE) {
         allSampleReads <- as.list(1:N)
-        for(i_core in 1:length(out)) {
-            sampleRange <- sampleRanges[[i_core]]
-            x <- out[[i_core]]
+    }
+    
+    for(i_core in 1:length(out)) {
+        sampleRange <- sampleRanges[[i_core]]
+        ## only get these stats for sampleReads, not the reference ones
+        if (whatKindOfReads == "sampleReads") {
+            y <- out[[i_core]]$allSampleReadsStats            
+            for(iSample in sampleRange[1]:sampleRange[2]) {        
+                allSampleReadsStats[iSample, ] <- y[[iSample]]
+            }
+        }
+        ## re-capture
+        if (is.null(allSampleReads) == FALSE) {
+            x <- out[[i_core]]$allSampleReadsOutput
             for(iSample in sampleRange[1]:sampleRange[2]) {        
                 allSampleReads[[iSample]] <- x[[iSample]]
             }
         }
     }
 
-    print_message("Done snap reads to grid")
+    if (verbose & (whatKindOfReads == "sampleReads")) {
+        x1 <- mean(allSampleReadsStats[, 1])
+        x2 <- mean(allSampleReadsStats[, 2])        
+        y <- nrow(allSampleReadsStats)
+        print_message(paste0(
+            "Warning - When assigning reads to grids, ",
+            sum(allSampleReadsStats[, 1] > 0), " out of ", y, " ",
+            "samples had reads removed, with on average (across all samples) ",
+            round(x1, 3), " / ", round(x2, 3), " ",
+            "(", round(x1 / x2 * 100, 3), " %) of reads removed"
+        ))
+    }
+
+    if (verbose) {
+        print_message("Done snap reads to grid")
+    }
     
     return(allSampleReads)
 
@@ -5683,6 +5713,7 @@ snap_reads_to_grid_subfunction <- function(
     
     bundledSampleReads <- NULL
     allSampleReadsOutput <- as.list(1:N)
+    allSampleReadsStats <- as.list(1:N)
     
     for(iSample in sampleRange[1]:sampleRange[2]) {
         
@@ -5709,14 +5740,15 @@ snap_reads_to_grid_subfunction <- function(
             ## downsample again once on the grid
             ## no point imputing with 100 reads in a grid window
             
-            sampleReads <- downsample_snapped_sampleReads(
+            out <- downsample_snapped_sampleReads(
                 sampleReads = sampleReads,
                 iBam = iSample,
                 downsampleToCov = downsampleToCov,
                 sampleNames = sampleNames,
                 verbose = verbose
             )
-            
+            sampleReads <- out$sampleReads
+            allSampleReadsStats[[iSample]] <- out$remove_stats
         }
 
         ## then, either add to allSampleReads
@@ -5745,7 +5777,12 @@ snap_reads_to_grid_subfunction <- function(
             }
         }
     }
-    return(allSampleReadsOutput)    
+    return(
+        list(
+            allSampleReadsOutput = allSampleReadsOutput,
+            allSampleReadsStats = allSampleReadsStats
+        )
+    )
 }
 
 
@@ -5761,12 +5798,14 @@ downsample_snapped_sampleReads <- function(
     iBam,
     downsampleToCov,
     sampleNames,
-    verbose = TRUE
+    verbose = TRUE,
+    print_warning_to_screen = FALSE
 ) {
     ## get every position found in the reads
     readSNPs_pos <- unlist(lapply(sampleReads, function(x) x[[2]])) ## 0-based
     readSNPs_per_grid <- table(readSNPs_pos)
     offending_grids <- as.integer(names(which(readSNPs_per_grid > downsampleToCov)))
+    remove_stats <- c(0, length(sampleReads))
     if (length(offending_grids) > 0) {
         toRemove <- array(FALSE, length(sampleReads))
         which_reads <- is.na(match(readSNPs_pos, offending_grids)) == FALSE
@@ -5779,7 +5818,7 @@ downsample_snapped_sampleReads <- function(
             toRemove[remove] <- TRUE
         }
         ## done!
-        if (verbose) {
+        if (verbose & print_warning_to_screen) {
             print_message(paste0(
                 "Warning - In gridding procedure ", 
                 "downsample sample ", sampleNames[iBam], ": ",
@@ -5787,9 +5826,15 @@ downsample_snapped_sampleReads <- function(
                 " reads removed "
             ))
         }
+        remove_stats <- c(sum(toRemove), length(sampleReads))
         sampleReads <- sampleReads[toRemove == FALSE]
     }
-    return(sampleReads)
+    return(
+        list(
+            sampleReads = sampleReads,
+            remove_stats = remove_stats
+        )
+    )
 }
 
 

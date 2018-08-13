@@ -282,9 +282,14 @@ test_that("can downsample for gridding appropriately", {
         )
         
         expect_equal(
-            length(out),
+            length(out$sampleReads),
             c(3, 4)[downsampleToCov]
         )
+        expect_equal(
+            out$remove_stats,
+            c(c(1, 0)[downsampleToCov], 4)
+        )
+        
     }
 
     ## check this works through high level function
