@@ -110,7 +110,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
     out <- run_forward_backwards(
         sampleReads = sampleReads,
         priorCurrent = pi,
-        transMatRate_t = t(transMatRate),
+        transMatRate_t_D = t(transMatRate),
         alphaMatCurrent_t = t(alphaMat),
         eHapsCurrent_t = t(eHaps),
         method = "diploid"
@@ -129,7 +129,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         out <- run_forward_backwards(
             sampleReads = sampleReads,
             priorCurrent = pi,
-            transMatRate_t = t(transMatRate),
+            transMatRate_t_H = t(transMatRate),
             alphaMatCurrent_t = t(alphaMat),
             eHapsCurrent_t = t(eHaps),
             pRgivenH1 = pRgivenH1L,
@@ -299,7 +299,7 @@ test_that("can calculate eMatHapSNP and sample a path", {
         maxDifferenceBetweenReads = 1000,
         Jmax = 10,
         pi = pi,
-        transMatRate_t = t(transMatRate),
+        transMatRate_t_H = t(transMatRate),
         alphaMat_t = t(alphaMat)
     )
 

@@ -84,10 +84,8 @@ make_and_write_output_file <- function(
 
     sampleRanges <- getSampleRange(N, nCores)    
     ## write blocks
-    transMatRate_t <- get_transMatRate(
-        method = method,
-        sigmaCurrent = sigmaCurrent
-    )
+    transMatRate_t_H <- get_transMatRate(method = "diploid-inbred", sigmaCurrent = sigmaCurrent)
+    transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent = sigmaCurrent)    
     info <- array(NA, nSNPs)
     hwe <- array(NA, nSNPs)
     hweCount_total <- array(NA, c(nSNPs, 3))    
@@ -125,7 +123,8 @@ make_and_write_output_file <- function(
             grids_to_use <- first_grid_in_region:(last_grid_in_region - 1)
             ## what? is this right?
             alphaMatCurrentLocal_t <- alphaMatCurrent_t[, 1 + grids_to_use, drop = FALSE]
-            transMatRateLocal_t <- transMatRate_t[, 1 + grids_to_use, drop = FALSE]
+            transMatRateLocal_t_H <- transMatRate_t_H[, 1 + grids_to_use, drop = FALSE]
+            transMatRateLocal_t_D <- transMatRate_t_D[, 1 + grids_to_use, drop = FALSE]            
         }
         
         ##
@@ -140,7 +139,8 @@ make_and_write_output_file <- function(
             alphaBetaBlockList = alphaBetaBlockList,
             alphaMatCurrentLocal_t = alphaMatCurrentLocal_t,
             eHapsCurrent_t = eHapsCurrent_t,
-            transMatRateLocal_t = transMatRateLocal_t,
+            transMatRateLocal_t_H = transMatRateLocal_t_H,
+            transMatRateLocal_t_D = transMatRateLocal_t_D,
             first_grid_in_region = first_grid_in_region,
             last_grid_in_region = last_grid_in_region,
             i_output_block = i_output_block,
@@ -160,7 +160,7 @@ make_and_write_output_file <- function(
             Jmax = Jmax,
             FUN = per_core_get_results
         )
-        
+
         check_mclapply_OK(out)
         ## rebuild / re-assemble
         hweCount <- array(0, c(nSNPsInOutputBlock, 3))
@@ -315,7 +315,8 @@ per_core_get_results <- function(
     alphaBetaBlockList,
     alphaMatCurrentLocal_t,
     eHapsCurrent_t,
-    transMatRateLocal_t,
+    transMatRateLocal_t_H,
+    transMatRateLocal_t_D,    
     first_grid_in_region,
     last_grid_in_region,    
     i_output_block,
@@ -425,7 +426,8 @@ per_core_get_results <- function(
                 priorCurrent = array(-1, K), ## irrelevant here
                 alphaMatCurrent_t = alphaMatCurrentLocal_t,
                 eHapsCurrent_t = eHapsCurrent_t,
-                transMatRate_t = transMatRateLocal_t,
+                transMatRate_t_H = transMatRateLocal_t_H,
+                transMatRate_t_D = transMatRateLocal_t_D, 
                 alphaBetaBlock = alphaBetaBlockList[[iSample]],
                 i_snp_block_for_alpha_beta = i_output_block,
                 run_fb_grid_offset = first_grid_in_region,

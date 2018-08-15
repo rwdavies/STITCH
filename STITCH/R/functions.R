@@ -1542,10 +1542,7 @@ single_reference_iteration <- function(
 ) {
 
     sampleRanges <- getSampleRange(N_haps, nCores)
-    transMatRate_t <- get_transMatRate(
-        method = "pseudoHaploid",
-        sigmaCurrent
-    )
+    transMatRate_t_H <- get_transMatRate(method = "pseudoHaploid", sigmaCurrent)
     eHapsCurrent_t <- t(eHapsCurrent)
     alphaMatCurrent_t <- t(alphaMatCurrent)
 
@@ -1582,7 +1579,7 @@ single_reference_iteration <- function(
                 pRgivenH2 = as.double(0),
                 eHaps_t = eHapsCurrent_t,
                 alphaMat_t = alphaMatCurrent_t,
-                transMatRate_t = transMatRate_t,
+                transMatRate_t_H = transMatRate_t_H,
                 maxDifferenceBetweenReads = 1 / (10 **(-(reference_phred / 10))),
                 maxEmissionMatrixDifference = 1 / (10 **(-(reference_phred / 10))),
                 whatToReturn = as.integer(0),
@@ -3536,7 +3533,8 @@ run_forward_backwards <- function(
     priorCurrent,
     alphaMatCurrent_t,
     eHapsCurrent_t,
-    transMatRate_t,
+    transMatRate_t_H,
+    transMatRate_t_D,    
     iteration = NA,
     niterations = NA,
     K_random = NA,
@@ -3616,7 +3614,7 @@ run_forward_backwards <- function(
             pi = out$piSubset,
             eHaps_t = out$eHapsSubset_t,
             alphaMat_t = out$alphaMatSubset_t,
-            transMatRate_t = transMatRate_t,
+            transMatRate_t_D = transMatRate_t_D,
             Jmax = Jmax_local,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
@@ -3660,7 +3658,7 @@ run_forward_backwards <- function(
                 sampleReads = sampleReads,
                 nReads = as.integer(length(sampleReads)),
                 pi = priorCurrent,
-                transMatRate_t = transMatRate_t,
+                transMatRate_t_H = transMatRate_t_H,
                 alphaMat_t = alphaMatCurrent_t,
                 eHaps_t = eHapsCurrent_t,
                 maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
@@ -3694,7 +3692,7 @@ run_forward_backwards <- function(
             pRgivenH2 = as.double(0),
             eHaps_t = eHapsCurrent_t,
             alphaMat_t = alphaMatCurrent_t,
-            transMatRate_t = transMatRate_t,
+            transMatRate_t_H= transMatRate_t_H,
             maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
             maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
             whatToReturn = whatToReturn,
@@ -3719,7 +3717,7 @@ run_forward_backwards <- function(
             pi = priorCurrent,
             eHaps_t = eHapsCurrent_t,
             alphaMat_t = alphaMatCurrent_t,
-            transMatRate_t = transMatRate_t,
+            transMatRate_t_D = transMatRate_t_D,
             Jmax = Jmax_local,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
@@ -3996,7 +3994,7 @@ calculate_gp_t_from_fbsoL <- function(
 
 
 
-subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize, bundling_info, transMatRate_t, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, grid_eHaps_distance, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, L_grid, grid_distances) {
+subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, whatToReturn,Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize, bundling_info, transMatRate_t_H, transMatRate_t_D, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, grid_eHaps_distance, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, L_grid, grid_distances) {
 
     ## know what core we are in for writing
     i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
@@ -4102,7 +4100,8 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             priorCurrent = priorCurrent,
             alphaMatCurrent_t = alphaMatCurrent_t,
             eHapsCurrent_t = eHapsCurrent_t,
-            transMatRate_t = transMatRate_t,
+            transMatRate_t_H = transMatRate_t_H,
+            transMatRate_t_D = transMatRate_t_D,            
             iteration = iteration,
             niterations = niterations,
             K_random = K_random,
@@ -4292,10 +4291,8 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
     ##
     ## transition matrix amount
     ##
-    transMatRate_t <- get_transMatRate(
-        method = method,
-        sigmaCurrent = sigmaCurrent
-    )
+    transMatRate_t_H <- get_transMatRate(method = "diploid-inbred", sigmaCurrent = sigmaCurrent)    
+    transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent = sigmaCurrent)
 
     if (method == "diploid_subset") {
         grid_eHaps_distance <- NULL
@@ -4315,7 +4312,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         sampleRanges,
         mc.cores=nCores,
         FUN = subset_of_complete_iteration,
-        tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t = transMatRate_t, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, L_grid = L_grid, grid_distances = grid_distances
+        tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,whatToReturn=whatToReturn,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t_H = transMatRate_t_H, transMatRate_t_D = transMatRate_t_D, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_eHaps_distance = grid_eHaps_distance, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, L_grid = L_grid, grid_distances = grid_distances
     )
 
     check_mclapply_OK(single_iteration_results)
@@ -4730,7 +4727,7 @@ restartSample <- function(sampleReads, srp, pRgivenH1, pRgivenH2,fbsoL, nSNPs,eH
         ##
         ## forward backward diploid here
         ##
-        transMatRate_t <- get_transMatRate(
+        transMatRate_t_D <- get_transMatRate(
             "diploid",
             sigmaCurrent[TR[1]:(TR[2]-1)]
         )
@@ -4740,7 +4737,7 @@ restartSample <- function(sampleReads, srp, pRgivenH1, pRgivenH2,fbsoL, nSNPs,eH
             pi = priorCurrent,
             eHaps_t = eHapsCurrent_t[, TR[1]:TR[2]],
             alphaMat_t = alphaMatCurrent_t[, TR[1]:(TR[2]-1)],
-            transMatRate_t = transMatRate_t,
+            transMatRate_t_D = transMatRate_t_D,
             Jmax = Jmax,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,            

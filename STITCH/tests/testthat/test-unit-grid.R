@@ -159,7 +159,7 @@ test_that("can use grid", {
     ## also, update?
     sampleReads <- snap_sampleReads_to_grid(sampleReads, grid)
 
-    transMatRate_t <- get_transMatRate(
+    transMatRate_t_D <- get_transMatRate(
         method = "diploid",
         sigmaCurrent = sigma
     )
@@ -167,7 +167,7 @@ test_that("can use grid", {
     out <- run_forward_backwards(
         sampleReads = sampleReads,
         priorCurrent = pi,
-        transMatRate_t = transMatRate_t,
+        transMatRate_t_D = transMatRate_t_D,
         alphaMatCurrent_t = t(alphaMat),
         eHapsCurrent_t = t(eHaps),
         method = "diploid"
@@ -180,7 +180,7 @@ test_that("can use grid", {
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
 
-    transMatRate_t <- get_transMatRate(
+    transMatRate_t_H <- get_transMatRate(
         method = "pseudoHaploid",
         sigmaCurrent = sigma
     )
@@ -189,7 +189,7 @@ test_that("can use grid", {
         out <- run_forward_backwards(
             sampleReads = sampleReads,
             priorCurrent = pi,
-            transMatRate_t = t(transMatRate),
+            transMatRate_t_H = transMatRate_t_H,
             alphaMatCurrent_t = t(alphaMat),
             eHapsCurrent_t = t(eHaps),
             pRgivenH1 = pRgivenH1L,

@@ -138,7 +138,7 @@ double print_times (double prev, int suppressOutput, std::string past_text, std:
 
 //' @export
 // [[Rcpp::export]]
-arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & transMatRate_t, const arma::mat & eMat_t, const arma::mat & alphaMat_t, const int T, const int K, const arma::rowvec & c) {
+arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & transMatRate_t_D, const arma::mat & eMat_t, const arma::mat & alphaMat_t, const int T, const int K, const arma::rowvec & c) {
     //
     arma::imat sampled_path_diploid(T, 3);
     int sampled_state;
@@ -193,14 +193,14 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
         prev_first_k = sampled_path_diploid(t + 1, 0); // 0-based
         prev_second_k = sampled_path_diploid(t + 1, 1); // 0 based
         prev_state = sampled_path_diploid(t + 1, 2); // 0 based
-        samp_vector.fill(transMatRate_t(2, t) * alphaMat_t(prev_first_k, t) * alphaMat_t(prev_second_k, t));
+        samp_vector.fill(transMatRate_t_D(2, t) * alphaMat_t(prev_first_k, t) * alphaMat_t(prev_second_k, t));
         for(k1=0; k1<=K-1; k1++) {
             // switch on first, keep second
-            samp_vector(k1 + K * prev_second_k) = samp_vector(k1 + K * prev_second_k) + transMatRate_t(1, t) * alphaMat_t(prev_first_k, t);
+            samp_vector(k1 + K * prev_second_k) = samp_vector(k1 + K * prev_second_k) + transMatRate_t_D(1, t) * alphaMat_t(prev_first_k, t);
             // keep first, switch on second
-            samp_vector(prev_first_k + K * k1) = samp_vector(prev_first_k + K * k1) + transMatRate_t(1, t) * alphaMat_t(prev_second_k, t);
+            samp_vector(prev_first_k + K * k1) = samp_vector(prev_first_k + K * k1) + transMatRate_t_D(1, t) * alphaMat_t(prev_second_k, t);
         }
-        samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_t(0, t);
+        samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_t_D(0, t);
         //
         samp_vector_sum = 0;
         for(kk=0; kk<=KK-1; kk++) {
@@ -244,7 +244,7 @@ void run_forward_diploid(
     arma::rowvec& c,
     const arma::mat& eMat_t,
     const arma::mat& alphaMat_t,    
-    const arma::mat& transMatRate_t,
+    const arma::mat& transMatRate_t_D,
     const int& T,
     const int& K
 ) {
@@ -269,17 +269,17 @@ void run_forward_diploid(
         alphaConst=0;
         for(kk=0; kk<=KK-1; kk++)
             alphaConst = alphaConst + alphaHat_t(kk,t-1);
-        alphaConst = alphaConst * transMatRate_t(2,t-1);
+        alphaConst = alphaConst * transMatRate_t_D(2,t-1);
         for(k=0; k<=K-1; k++) {
-            alphaTemp1(k)=alphaTemp1(k) * transMatRate_t(1, t-1);
-            alphaTemp2(k)=alphaTemp2(k) * transMatRate_t(1, t-1);
+            alphaTemp1(k)=alphaTemp1(k) * transMatRate_t_D(1, t-1);
+            alphaTemp2(k)=alphaTemp2(k) * transMatRate_t_D(1, t-1);
         }
         // 
         for(k1=0; k1<=K-1; k1++) {
             for(k2=0; k2<=K-1; k2++) {
                 kk=k1+K*k2;
                 alphaHat_t(kk,t) = eMat_t(kk,t) *                       \
-                    (alphaHat_t(kk,t-1) * transMatRate_t(0,t-1) +       \
+                    (alphaHat_t(kk,t-1) * transMatRate_t_D(0,t-1) +       \
                      (alphaMat_t(k1,t-1) * alphaTemp1(k2) +             \
                       alphaMat_t(k2,t-1) * alphaTemp2(k1)) +            \
                      alphaMat_t(k1,t-1) * alphaMat_t(k2,t-1) * alphaConst);
@@ -299,7 +299,7 @@ void run_backward_diploid(
     arma::rowvec& c,
     const arma::mat& eMat_t,
     const arma::mat& alphaMat_t,    
-    const arma::mat& transMatRate_t,
+    const arma::mat& transMatRate_t_D,
     const int& T,
     const int& K
 ) {
@@ -324,18 +324,18 @@ void run_backward_diploid(
             }
         }
         // add transMatRate to constants
-        d=transMatRate_t(1,t);
+        d=transMatRate_t_D(1,t);
         for(k=0; k<=K-1; k++) {
             betaTemp1(k) = betaTemp1(k) * d;
             betaTemp2(k) = betaTemp2(k) * d;
         }
-        betaConst = betaConst * transMatRate_t(2,t);
+        betaConst = betaConst * transMatRate_t_D(2,t);
         // final calculation
         for(k1=0; k1<=K-1; k1++) {
             for(k2=0; k2<=K-1; k2++) {
                 kk=k1+K*k2;
                 betaHat_t(kk,t) = eMat_t(kk,t+1) * betaHat_t(kk,t+1) *  \
-                    transMatRate_t(0,t) +                               \
+                    transMatRate_t_D(0,t) +                               \
                     betaTemp1(k1) + betaTemp2(k2) +                     \
                     betaConst;
             }
@@ -353,7 +353,7 @@ void run_forward_haploid(
     arma::rowvec& c,
     const arma::mat& eMatHapSNP_t,
     const arma::mat& alphaMat_t,    
-    const arma::mat& transMatRate_t,
+    const arma::mat& transMatRate_t_H,
     const int& T,
     const int& K
 ) {
@@ -365,13 +365,13 @@ void run_forward_haploid(
         alphaConst=0;
         for(k=0; k<=K-1; k++)
             alphaConst = alphaConst + alphaHat_t(k,t-1);
-        alphaConst = alphaConst * transMatRate_t(1, t-1);
+        alphaConst = alphaConst * transMatRate_t_H(1, t-1);
         //
         // each entry is emission * (no change * that value + constant)
         //
         for(k=0; k<=K-1; k++)
             alphaHat_t(k,t) = eMatHapSNP_t(k,t) *                  \
-                ( transMatRate_t(0, t-1) * alphaHat_t(k,t-1) +     \
+                ( transMatRate_t_H(0, t-1) * alphaHat_t(k,t-1) +     \
                   alphaConst * alphaMat_t(k,t-1));
         //
         c(t) = 1 / sum(alphaHat_t.col(t));
@@ -385,7 +385,7 @@ void run_backward_haploid(
     arma::rowvec& c,
     const arma::mat& eMatHapSNP_t,
     const arma::mat& alphaMat_t,    
-    const arma::mat& transMatRate_t,
+    const arma::mat& transMatRate_t_H,
     const int& T,
     const int& K
 ) {
@@ -395,10 +395,10 @@ void run_backward_haploid(
       x = 0;
       for(k=0; k<=K-1; k++)
           x = x + alphaMat_t(k,t) * eMatHapSNP_t(k,t+1) * betaHat_t(k,t+1);
-      x = x * transMatRate_t(1, t);
+      x = x * transMatRate_t_H(1, t);
       for(k=0; k<=K-1; k++)
           betaHat_t(k,t) = x + \
-              transMatRate_t(0, t) * eMatHapSNP_t(k,t+1) * betaHat_t(k,t+1);
+              transMatRate_t_H(0, t) * eMatHapSNP_t(k,t+1) * betaHat_t(k,t+1);
       // 
       betaHat_t.col(t) = betaHat_t.col(t) * c(t);
   }
@@ -487,7 +487,7 @@ Rcpp::List forwardBackwardDiploid(
     const Rcpp::List& sampleReads,
     const int nReads,
     const arma::vec& pi,
-    const arma::mat& transMatRate_t,
+    const arma::mat& transMatRate_t_D,
     const arma::mat& alphaMat_t,
     const arma::mat& eHaps_t,
     const double maxDifferenceBetweenReads,
@@ -579,7 +579,7 @@ Rcpp::List forwardBackwardDiploid(
   }
   c(0) = 1 / sum(alphaHat_t.col(0));
   alphaHat_t.col(0) = alphaHat_t.col(0) * c(0);
-  run_forward_diploid(alphaHat_t, c, eMat_t, alphaMat_t, transMatRate_t, T, K);
+  run_forward_diploid(alphaHat_t, c, eMat_t, alphaMat_t, transMatRate_t_D, T, K);
   //
   //
   //
@@ -597,7 +597,7 @@ Rcpp::List forwardBackwardDiploid(
           betaHat_t(kk, T-1) = betaEnd(kk);
       }
   }
-  run_backward_diploid(betaHat_t, c, eMat_t, alphaMat_t, transMatRate_t, T, K);
+  run_backward_diploid(betaHat_t, c, eMat_t, alphaMat_t, transMatRate_t_D, T, K);
   //
   //
   // make gamma
@@ -722,8 +722,8 @@ Rcpp::List forwardBackwardDiploid(
           for(k2=0; k2<=K-1; k2++) {
               kk=k1+K*k2;
               jUpdate_t(k1,t) = jUpdate_t(k1,t) +           \
-                  (transMatRate_t(1,t) * alphaTemp1(k2) +  \
-                   transMatRate_t(2,t) * alphaMat_t(k2,t)) * \
+                  (transMatRate_t_D(1,t) * alphaTemp1(k2) +  \
+                   transMatRate_t_D(2,t) * alphaMat_t(k2,t)) * \
                   betaHat_t(kk,t+1) * eMat_t(kk,t+1);
           }
           jUpdate_t(k1,t) = jUpdate_t(k1,t) * 2 * alphaMat_t(k1,t);
@@ -734,7 +734,7 @@ Rcpp::List forwardBackwardDiploid(
   //
   arma::imat sampled_path_diploid;
   if (return_a_sampled_path == 1) {
-      sampled_path_diploid = sample_diploid_path(alphaHat_t, transMatRate_t, eMat_t, alphaMat_t, T, K, c);
+      sampled_path_diploid = sample_diploid_path(alphaHat_t, transMatRate_t_D, eMat_t, alphaMat_t, T, K, c);
   }
   //
   //
@@ -822,7 +822,7 @@ Rcpp::List forwardBackwardHaploid(
     const Rcpp::List& sampleReads,
     const int nReads,
     const arma::vec pi,
-    const arma::mat& transMatRate_t,
+    const arma::mat& transMatRate_t_H,
     const arma::mat& alphaMat_t,
     const arma::mat& eHaps_t,
     const double maxDifferenceBetweenReads,
@@ -969,7 +969,7 @@ Rcpp::List forwardBackwardHaploid(
       c,
       eMatHapSNP_t,
       alphaMat_t,
-      transMatRate_t,
+      transMatRate_t_H,
       T,
       K
   );
@@ -993,7 +993,7 @@ Rcpp::List forwardBackwardHaploid(
       c,
       eMatHapSNP_t,
       alphaMat_t,
-      transMatRate_t,
+      transMatRate_t_H,
       T,
       K
   );
@@ -1096,7 +1096,7 @@ Rcpp::List forwardBackwardHaploid(
   //
   for(t=0; t<=T-2; t++) {
       for(k=0; k<=K-1; k++) {
-          jUpdate_t(k,t) = transMatRate_t(1, t) * alphaMat_t(k,t) * betaHat_t(k,t+1) * eMatHapSNP_t(k,t+1);
+          jUpdate_t(k,t) = transMatRate_t_H(1, t) * alphaMat_t(k,t) * betaHat_t(k,t+1) * eMatHapSNP_t(k,t+1);
       }
   }
   //
@@ -1224,7 +1224,6 @@ List cpp_read_reassign(
       Rcpp::Named("sampleReads") = sampleReads,
       Rcpp::Named("save_read") = save_read
   );
-  
   return to_return;
 }
 

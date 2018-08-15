@@ -188,17 +188,15 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
         alphaMatCurrent_t <- array(1 / K, c(K, nGrids - 1))
         priorCurrent <- runif(K) / K
         
-
+        transMatRate_t_H <- get_transMatRate(method = "diploid-inbred", sigmaCurrent)
+        transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent)        
         for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {
 
             if (method == "pseudoHaploid") {
                 pRgivenH1 <- runif(length(sampleReads))
                 pRgivenH2 <- runif(length(sampleReads))
             }
-            transMatRate_t <- get_transMatRate(
-                method = method,
-                sigmaCurrent
-            )
+            transMatRate_t <- get_transMatRate(method = method, sigmaCurrent)
             
             out1 <- run_forward_backwards(
                 sampleReads = sampleReads,
@@ -209,7 +207,8 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                 priorCurrent = priorCurrent,
                 alphaMatCurrent_t = alphaMatCurrent_t,
                 eHapsCurrent_t = eHapsCurrent_t,
-                transMatRate_t = transMatRate_t,
+                transMatRate_t_H = transMatRate_t_H,
+                transMatRate_t_D = transMatRate_t_D,
                 whatToReturnOriginal = 0,
                 blocks_for_output = blocks_for_output,
                 generate_fb_snp_offsets = TRUE
@@ -256,7 +255,8 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     priorCurrent = priorCurrent,
                     alphaMatCurrent_t = alphaMatCurrentLocal_t,
                     eHapsCurrent_t = eHapsCurrent_t,
-                    transMatRate_t = transMatRateLocal_t,
+                    transMatRate_t_H = transMatRateLocal_t, ## ugh it will decide what to do
+                    transMatRate_t_D = transMatRateLocal_t, ## ugh                    
                     run_fb_subset = TRUE,
                     alphaBetaBlock = alphaBetaBlock,
                     run_fb_grid_offset = first_grid_in_region,

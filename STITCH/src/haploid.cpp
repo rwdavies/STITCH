@@ -180,7 +180,7 @@ arma::ivec sample_path_from_alphaHat_t(const arma::mat & alphaHat_t, const arma:
 
 //' @export
 // [[Rcpp::export]]
-arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat & transMatRate_t, const arma::mat& alphaMat_t) {
+arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat & transMatRate_t_H, const arma::mat& alphaMat_t) {
   //
   // constants
   //
@@ -224,12 +224,12 @@ arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMat
       alphaConst=0;
       for(k=0; k<=K-1; k++)
           alphaConst = alphaConst + alphaHat_t(k,t-1);
-      alphaConst = alphaConst * transMatRate_t(1, t-1);
+      alphaConst = alphaConst * transMatRate_t_H(1, t-1);
       //
       // each entry is emission * (no change * that value + constant)
       for(k=0; k<=K-1; k++)
           alphaHat_t(k,t) =  eMatHapSNP_t(k,t) *  \
-              ( transMatRate_t(0, t-1) * alphaHat_t(k,t-1) +   \
+              ( transMatRate_t_H(0, t-1) * alphaHat_t(k,t-1) +   \
                 alphaConst * alphaMat_t(k,t-1));
       //
       c(t) = 1 / sum(alphaHat_t.col(t));
@@ -240,7 +240,7 @@ arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMat
   // sample a path
   //
   //
-  arma::ivec to_out = sample_path_from_alphaHat_t(alphaHat_t, transMatRate_t, eMatHapSNP_t, alphaMat_t, T, K, c);
+  arma::ivec to_out = sample_path_from_alphaHat_t(alphaHat_t, transMatRate_t_H, eMatHapSNP_t, alphaMat_t, T, K, c);
   return(to_out);
 }
 
