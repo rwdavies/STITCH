@@ -78,7 +78,7 @@ STITCH and the code in this repo is available under a GPL3 license. For more inf
 
 ## Testing
 
-Tests in STITCH are split into unit or acceptance run using ```./scripts/test-unit.sh``` and ```./scripts/test-acceptance.sh```. To run all tests use ```./scripts/all-tests.sh```, which also builds and installs a release version of STITCH.
+Tests in STITCH are split into unit or acceptance run using ```./scripts/test-unit.sh``` and ```./scripts/test-acceptance.sh```. To run all tests use ```./scripts/all-tests.sh```, which also builds and installs a release version of STITCH. To make compilation go faster do something like ```export MAKE="make -j 8"```.
 
 ## Citation
 
