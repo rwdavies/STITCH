@@ -409,7 +409,7 @@ void run_backward_haploid(
 
 //' @export
 // [[Rcpp::export]]
-arma::mat make_and_bound_eMat_t(
+arma::mat rcpp_make_and_bound_eMat_t(
     const arma::mat& eMatHap_t,
     const Rcpp::List& sampleReads,
     const int& nReads,
@@ -605,7 +605,7 @@ Rcpp::List forwardBackwardDiploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  arma::mat eMat_t=make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset);
+  arma::mat eMat_t = rcpp_make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset);
   //
   // forward recursion
   //

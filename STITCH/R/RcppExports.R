@@ -57,8 +57,8 @@ sample_diploid_path <- function(alphaHat_t, transMatRate_t_D, eMat_t, alphaMat_t
 }
 
 #' @export
-make_and_bound_eMat_t <- function(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset = 0L) {
-    .Call('_STITCH_make_and_bound_eMat_t', PACKAGE = 'STITCH', eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset)
+rcpp_make_and_bound_eMat_t <- function(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset = 0L) {
+    .Call('_STITCH_rcpp_make_and_bound_eMat_t', PACKAGE = 'STITCH', eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset)
 }
 
 #' @export
