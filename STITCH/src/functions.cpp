@@ -251,7 +251,7 @@ void run_forward_diploid(
     double alphaConst;
     int k;
     int kk, k1, k2;        
-    const int KK = K*K; // KK is number of states / traditional K for HMMs            
+    const int KK = K*K; // KK is number of states / traditional K for HMMs
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
     for(int t=1; t<=T-1; t++) {
@@ -460,7 +460,9 @@ arma::mat make_and_bound_eMat_t(
 }
 
 
-Rcpp::List make_fb_snp_offsets(
+//' @export
+// [[Rcpp::export]]
+Rcpp::List rcpp_make_fb_snp_offsets(
     const arma::mat& alphaHat_t,
     const arma::mat& betaHat_t,
     const arma::mat& blocks_for_output
@@ -479,6 +481,48 @@ Rcpp::List make_fb_snp_offsets(
                                    Rcpp::Named("betaHatBlocks_t") = betaHatBlocks_t
                                    )));
 }
+
+
+//' @export
+// [[Rcpp::export]]
+arma::mat rcpp_make_diploid_jUpdate(
+    const int K,
+    const int T,
+    const arma::mat& alphaHat_t,
+    const arma::mat& betaHat_t,    
+    const arma::mat& transMatRate_t_D,
+    const arma::mat& alphaMat_t,
+    const arma::mat& eMat_t
+) {
+    int t, k1, k2, kk;
+    arma::vec alphaTemp1 = arma::zeros(K);
+    arma::vec alphaTemp2 = arma::zeros(K);
+    arma::mat jUpdate_t = arma::zeros(K,T - 1);
+    //
+    for(t=0; t<=T-2; t++) {
+        alphaTemp1.fill(0);
+        for(k1=0; k1<=K-1; k1++) {
+            for(k2=0; k2<=K-1; k2++) {
+                alphaTemp1(k2) = alphaTemp1(k2) + alphaHat_t(k1+K*k2,t);
+            }
+        }
+        //
+        // now do proper calculation
+        //
+        for(k1=0; k1<=K-1; k1++) {
+            for(k2=0; k2<=K-1; k2++) {
+                kk = k1 + K * k2;
+                jUpdate_t(k1,t) = jUpdate_t(k1,t) +          \
+                    (transMatRate_t_D(1,t) * alphaTemp1(k2) +  \
+                     transMatRate_t_D(2,t) * alphaMat_t(k2,t)) *        \
+                    betaHat_t(kk,t+1) * eMat_t(kk,t+1);
+            }
+            jUpdate_t(k1,t) = jUpdate_t(k1,t) * 2 * alphaMat_t(k1,t);
+        }   // end of loop on k
+    } // end of loop on t
+    return(jUpdate_t);
+};
+
 
 
 //' @export
@@ -633,7 +677,7 @@ Rcpp::List forwardBackwardDiploid(
   }
   // make outputs here
   if (generate_fb_snp_offsets == true) {
-      alphaBetaBlocks = make_fb_snp_offsets(
+      alphaBetaBlocks = rcpp_make_fb_snp_offsets(
           alphaHat_t,
           betaHat_t,
           blocks_for_output
@@ -704,31 +748,18 @@ Rcpp::List forwardBackwardDiploid(
   // make jUpdate
   //
   //
-  arma::mat jUpdate_t = arma::zeros(K,T-1);    
   next_section="Make xi-like calculations";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  for(t=0; t<=T-2; t++) {
-      alphaTemp1.fill(0);    
-      for(k1=0; k1<=K-1; k1++) {
-          for(k2=0; k2<=K-1; k2++) {
-              alphaTemp1(k2) = alphaTemp1(k2) + alphaHat_t(k1+K*k2,t);
-          }
-      }
-      //
-      // now do proper calculation
-      //
-      for(k1=0; k1<=K-1; k1++) {
-          for(k2=0; k2<=K-1; k2++) {
-              kk=k1+K*k2;
-              jUpdate_t(k1,t) = jUpdate_t(k1,t) +           \
-                  (transMatRate_t_D(1,t) * alphaTemp1(k2) +  \
-                   transMatRate_t_D(2,t) * alphaMat_t(k2,t)) * \
-                  betaHat_t(kk,t+1) * eMat_t(kk,t+1);
-          }
-          jUpdate_t(k1,t) = jUpdate_t(k1,t) * 2 * alphaMat_t(k1,t);
-      }   // end of loop on k
-  } // end of loop on t
+  arma::mat jUpdate_t = rcpp_make_diploid_jUpdate(
+      K,
+      T,
+      alphaHat_t,
+      betaHat_t,      
+      transMatRate_t_D,
+      alphaMat_t,
+      eMat_t
+  );
   //
   // optional, sample a path
   //
@@ -1021,7 +1052,7 @@ Rcpp::List forwardBackwardHaploid(
   }
   // make outputs here
   if (generate_fb_snp_offsets == true) {
-      alphaBetaBlocks = make_fb_snp_offsets(
+      alphaBetaBlocks = rcpp_make_fb_snp_offsets(
           alphaHat_t,
           betaHat_t,
           blocks_for_output

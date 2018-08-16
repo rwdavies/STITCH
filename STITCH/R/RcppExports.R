@@ -62,6 +62,16 @@ make_and_bound_eMat_t <- function(eMatHap_t, sampleReads, nReads, K, T, maxEmiss
 }
 
 #' @export
+rcpp_make_fb_snp_offsets <- function(alphaHat_t, betaHat_t, blocks_for_output) {
+    .Call('_STITCH_rcpp_make_fb_snp_offsets', PACKAGE = 'STITCH', alphaHat_t, betaHat_t, blocks_for_output)
+}
+
+#' @export
+rcpp_make_diploid_jUpdate <- function(K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t) {
+    .Call('_STITCH_rcpp_make_diploid_jUpdate', PACKAGE = 'STITCH', K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t)
+}
+
+#' @export
 forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, whatToReturn, Jmax, suppressOutput, blocks_for_output, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, return_a_sampled_path = 0L, run_fb_subset = FALSE, run_fb_grid_offset = 0L) {
     .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, whatToReturn, Jmax, suppressOutput, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset)
 }
