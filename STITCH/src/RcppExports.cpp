@@ -192,8 +192,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_diploid_jUpdate
-arma::mat rcpp_make_diploid_jUpdate(const int K, const int T, const arma::mat& alphaHat_t, const arma::mat& betaHat_t, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eMat_t, const arma::rowvec& c);
-RcppExport SEXP _STITCH_rcpp_make_diploid_jUpdate(SEXP KSEXP, SEXP TSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eMat_tSEXP, SEXP cSEXP) {
+arma::mat rcpp_make_diploid_jUpdate(const int K, const int T, const arma::mat& alphaHat_t, const arma::mat& betaHat_t, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eMat_t);
+RcppExport SEXP _STITCH_rcpp_make_diploid_jUpdate(SEXP KSEXP, SEXP TSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eMat_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -204,8 +204,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_D(transMatRate_t_DSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type eMat_t(eMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::rowvec& >::type c(cSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_diploid_jUpdate(K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t, c));
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_diploid_jUpdate(K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -457,7 +456,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
     {"_STITCH_rcpp_make_and_bound_eMat_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMat_t, 7},
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
-    {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 8},
+    {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 7},
     {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 18},
     {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 21},
