@@ -67,8 +67,8 @@ rcpp_make_fb_snp_offsets <- function(alphaHat_t, betaHat_t, blocks_for_output) {
 }
 
 #' @export
-rcpp_make_diploid_jUpdate <- function(K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t) {
-    .Call('_STITCH_rcpp_make_diploid_jUpdate', PACKAGE = 'STITCH', K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t)
+rcpp_make_diploid_jUpdate <- function(K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t, c) {
+    .Call('_STITCH_rcpp_make_diploid_jUpdate', PACKAGE = 'STITCH', K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t, c)
 }
 
 #' @export

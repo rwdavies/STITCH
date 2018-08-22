@@ -492,7 +492,8 @@ arma::mat rcpp_make_diploid_jUpdate(
     const arma::mat& betaHat_t,    
     const arma::mat& transMatRate_t_D,
     const arma::mat& alphaMat_t,
-    const arma::mat& eMat_t
+    const arma::mat& eMat_t,
+    const arma::rowvec& c
 ) {
     int t, k1, k2, kk;
     arma::vec alphaTemp1 = arma::zeros(K);
@@ -517,7 +518,7 @@ arma::mat rcpp_make_diploid_jUpdate(
                      transMatRate_t_D(2,t) * alphaMat_t(k2,t)) *        \
                     betaHat_t(kk,t+1) * eMat_t(kk,t+1);
             }
-            jUpdate_t(k1,t) = jUpdate_t(k1,t) * 2 * alphaMat_t(k1,t);
+            jUpdate_t(k1,t) = jUpdate_t(k1,t) * 2 * alphaMat_t(k1,t) / c(t);
         }   // end of loop on k
     } // end of loop on t
     return(jUpdate_t);
@@ -758,7 +759,8 @@ Rcpp::List forwardBackwardDiploid(
       betaHat_t,      
       transMatRate_t_D,
       alphaMat_t,
-      eMat_t
+      eMat_t,
+      c
   );
   //
   // optional, sample a path
@@ -1127,7 +1129,7 @@ Rcpp::List forwardBackwardHaploid(
   //
   for(t=0; t<=T-2; t++) {
       for(k=0; k<=K-1; k++) {
-          jUpdate_t(k,t) = transMatRate_t_H(1, t) * alphaMat_t(k,t) * betaHat_t(k,t+1) * eMatHapSNP_t(k,t+1);
+          jUpdate_t(k,t) = transMatRate_t_H(1, t) * alphaMat_t(k,t) * betaHat_t(k,t+1) * eMatHapSNP_t(k,t+1) / c(t+1);
       }
   }
   //
