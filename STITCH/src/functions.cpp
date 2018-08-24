@@ -693,6 +693,8 @@ Rcpp::List forwardBackwardDiploid(
   prev_section=next_section;
   //
   arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
+  arma::colvec eMatHap_t_col;
+  int k3;
   //
   // only, mathematically correct version
   //
@@ -727,18 +729,22 @@ Rcpp::List forwardBackwardDiploid(
         // RECAL  eMat(readSNP,k1+K*k2) = eMat(readSNP,k1+K*k2) * (0.5 * eMatHap(iRead,k1) + 0.5 * eMatHap(iRead,k2));
         //
         //
+        eMatHap_t_col = eMatHap_t.col(iRead);
         for(k=0; k<=K-1;k++) {
             d1 = pA * eHaps_t(k,t);
             d2 = pR * (1-eHaps_t(k,t));
             d3 = d1 / (d1 + d2); // this is all I need
-            a = eMatHap_t(k,iRead);
+            a = eMatHap_t_col(k);
+            k3 = K * k;
             for(k1=0; k1<=K-1; k1++) {
-                kl1 = k+K*k1;
-                kl2 = k1+K*k;            
-                b = eMatHap_t(k1, iRead);
-                e = (gamma_t(kl1,cr) + gamma_t(kl2,cr)) * ( a / (a + b));
-                gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + e * d3;
-                gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + e;
+                //kl1 = k+K*k1;
+                //kl2 = k1+K*k;
+                kl2 = k1 + k3;
+                b = eMatHap_t_col(k1);
+                //e = (2 * gamma_t(kl1,cr) + gamma_t(kl2,cr)) * ( a / (a + b));
+                e = 2 * gamma_t(kl2,cr) * ( a / (a + b));
+                gammaUpdate_t(k,t,0) += e * d3;
+                gammaUpdate_t(k,t,1) += e;
             } // loop on other haplotype
         } // end of loop onk
       } // end of loop on SNP within read

@@ -150,7 +150,7 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
 test_that("can sample one path from forwardBackwardDiploid", {
 
     set.seed(10)
-    n_snps <- 10 ## set to 10000 to check times better
+    n_snps <- 10 ## to check times better set to 10000
     K <- 20
 
     phasemaster <- matrix(
@@ -168,9 +168,13 @@ test_that("can sample one path from forwardBackwardDiploid", {
         reads_span_n_snps = 3,
         n_cores = 1
     )
-    ##tmpdir = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/"
-    ##save(data_package, file = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
-    ##load("/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
+    tmpdir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/"
+    file <- file.path(tmpdir, "package.RData")
+    ##save(data_package, file = file)
+    if (file.exists(file)) {
+        load(file)
+    }
+    n_snps <- data_package$nSNPs
 
     regionName <- "region-name"
     loadBamAndConvert(
