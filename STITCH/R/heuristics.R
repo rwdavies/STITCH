@@ -268,6 +268,7 @@ define_and_save_breaks_to_consider <- function(
     nGen,
     minRate,
     maxRate,
+    iteration = NULL,
     shuffle_bin_radius = 2000,
     plot_shuffle_haplotype_attempts = FALSE
 ) {
@@ -292,7 +293,10 @@ define_and_save_breaks_to_consider <- function(
         ##
         out <- choose_points_to_break(
             smoothed_rate = smoothed_rate,
-            nGrids = nGrids
+            nGrids = nGrids,
+            L_grid = L_grid,
+            shuffle_bin_radius = shuffle_bin_radius,
+            grid_distances = grid_distances
         )
         break_results <- out$results
         break_thresh <- out$thresh
@@ -324,12 +328,26 @@ define_and_save_breaks_to_consider <- function(
                 cumu_rate = cumu_rate
             )
             save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName))
+            ## save extra copy - useful for debugging etc
+            save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName, iteration))
         }
     }
     return(NULL)
 }
 
-make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius = 5000) {
+
+##
+## returns one entry of average rate between pairs of SNPs
+## value is average for middle point +/- shuffle_bin_radius
+## 
+make_smoothed_rate <- function(
+    sigmaSum_unnormalized,
+    sigma_rate,
+    L_grid,
+    grid_distances,
+    nGrids,
+    shuffle_bin_radius = 5000
+) {
     smoothed_rate <- array(0, nGrids - 1) ## between SNPs
     ##
     min_L_grid <- min(L_grid)
@@ -394,18 +412,25 @@ make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_d
 choose_points_to_break <- function(
     smoothed_rate,
     nGrids,
+    L_grid,
+    shuffle_bin_radius,
+    grid_distances,
     min_breaks = 10,
-    max_breaks = Inf
+    max_breaks = NULL
 ) {
+    if (is.null(max_breaks)) {
+        ## not ideal
+        max_breaks <- max(1000, round(nGrids / 100))
+    }
     smoothed_rate[1] <- NA
     smoothed_rate[length(smoothed_rate)] <- NA    
     ## now, those > 1 are great candidates
     ## alternatively, if nGen not quite right (or rates not changed!)
     ## anything really "peaky"
     ## remember, nothing forces it to make the change later, so can be really liberal here
+    ## only downside is later calculation is slow-ish
     ## so choose as threshold lower of 1, or 50th percentile
-    ## boundaries where < thresh or start rising 5+ SNPs
-    thresh <-  min(1, quantile(smoothed_rate[smoothed_rate != 0], probs = 0.95, na.rm = TRUE))
+    thresh <-  min(1, quantile(smoothed_rate[smoothed_rate != 0], probs = 0.50, na.rm = TRUE))
     ideal <- smoothed_rate > thresh
     ideal[is.na(ideal)] <- FALSE
     available <- array(TRUE, length(smoothed_rate))
@@ -424,7 +449,7 @@ choose_points_to_break <- function(
         ## now find start, end for this
         ## this is between grids "snp_best" and grid "snp_best" + 1
         snp_best <- best[iBest]
-        ## only consider if have >1 SNP either side
+        ## only consider if have >1 Grid either side
         if (sum(available[snp_best + -1:1]) == 3) {
             ## no matter what, one further away
             ## return 1-based as well
@@ -461,13 +486,14 @@ choose_points_to_break <- function(
                 results,
                 c(snp_left - 1, snp_best - 1, snp_best, snp_right - 1)
             )
-            ## nuke out (do not consider) at least
-            ##   those SNPs under consideration
-            ##   50 SNPs either way
-            nuke_left <- max(1, min(snp_left, snp_best - 50))
-            nuke_right <- min(nGrids - 2, max(snp_right, snp_best + 50))
-            available[nuke_left:nuke_right] <- FALSE
-            ideal[nuke_left:nuke_right] <- FALSE
+            ## nuke out (do not consider for future) at least
+            ## anything within 2 * shuffle_bin_radius of focal SNP or within decreasing region
+            to_nuke <- get_snps_to_nuke(
+                grid_distances, nGrids, shuffle_bin_radius, snp_best, snp_left, snp_right
+            )
+            ## for available - remove the outside SNPs. so can be outside for another?
+            available[min(to_nuke[1] + 1, snp_best):max(snp_best, to_nuke[2] - 1)] <- FALSE
+            ideal[to_nuke[1]:to_nuke[2]] <- FALSE
         } else {
             ## otherwise, either SNP upstream or downstream cannot be considered
             ## remove consideration
@@ -499,6 +525,37 @@ choose_points_to_break <- function(
             thresh = thresh
         )
     )
+}
+
+
+get_snps_to_nuke <- function(grid_distances, nGrids, shuffle_bin_radius, snp_best, snp_left, snp_right) {
+    ## nuke those within 2 * shuffle_bin_radius of central SNP
+    ## or those within snp_left, snp_right
+    dist_left <- grid_distances[snp_best] / 2
+    ## 
+    snp_nuke_left <- snp_best
+    while((1 < snp_nuke_left) & (dist_left < (2 * shuffle_bin_radius))) {
+        snp_nuke_left <- snp_nuke_left - 1
+        dist_left <- dist_left + grid_distances[snp_nuke_left]
+    }
+    if ((2 * shuffle_bin_radius) <= dist_left) {
+        snp_nuke_left <- snp_nuke_left + 1
+    }
+    ##
+    snp_nuke_right <- snp_best
+    dist_right <- grid_distances[snp_best] / 2
+    while((snp_nuke_right < (nGrids - 1)) & (dist_right < (2 * shuffle_bin_radius))) {
+        snp_nuke_right <- snp_nuke_right + 1
+        dist_right <- dist_right + grid_distances[snp_nuke_right]
+    }
+    if ((2 * shuffle_bin_radius) <= dist_right) {
+        snp_nuke_right <- snp_nuke_right - 1
+    }
+    ##
+    return(c(
+        nuke_left = min(snp_left, snp_nuke_left),
+        nuke_right = max(snp_right, snp_nuke_right)
+    ))
 }
 
 
@@ -537,7 +594,7 @@ determine_where_to_stop <- function(
         if ((snp_consider <= 2) | ((nGrids - 3) <= snp_consider)) {
             done <- 1
         }
-        ## do not continue if not avaialble i.e. in previous region        
+        ## do not continue if not available i.e. in previous region        
         if (available[snp_consider + (-1) * mult] == FALSE) {
             done <- 1
         }
@@ -545,14 +602,13 @@ determine_where_to_stop <- function(
         ## also, re-set to minimum value
         if ((3 * val_min) < val_cur) {
             done <- 1
-            snp_consider <- snp_min
         }
         ## stop if below threshold AND not still decreasing over 5 SNP
         if ((val_cur < thresh) & (val_prev < val_cur)) {
             done <- 1
         }
     }
-    return(snp_consider)
+    return(snp_min)
 }
 
 
@@ -565,7 +621,7 @@ plot_attempt_to_find_shuffles <- function(
     outputdir,
     regionName,
     iteration,
-    whichIsBest
+    whichIsBest = NULL
 ) {
     add_grey_background <- function(L_grid) {
         from <- floor(min(L_grid) / 1e6)
@@ -597,10 +653,14 @@ plot_attempt_to_find_shuffles <- function(
     ## make a 5 Mbp segment 60 wide. then bound up and down at 20 and 200
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 30, width = width, res = 100, units = "in")
-    par(mfrow = c(3, 1))    
-    x <- L_grid[-1] - grid_distances ## what is this
+    par(mfrow = c(3, 1))
+    x <- L_grid[-1] - grid_distances    
     xleft <- L_grid[-length(L_grid)]
     xright <- L_grid[-1]
+    ## for fbdstore
+    midpoints <- L_grid[-1] - grid_distances / 2    
+    xleft2 <- c(L_grid[1], midpoints)
+    xright2 <- c(midpoints, L_grid[length(L_grid)])
     ##
     ## 0) plot fine and "coarse" scale recombination
     ##
@@ -629,13 +689,17 @@ plot_attempt_to_find_shuffles <- function(
     add_grey_background(L_grid)
     lines(x = x, y = smoothed_rate, lwd = 2)
     for(iBreak in 1:nrow(break_results)) {
-        abline(v = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
-        abline(v = L_grid[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
-        abline(v = L_grid[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
-        col <- c("green", "red")[as.integer(whichIsBest[iBreak]) + 1] ## switch: red = no, green = yes
+        abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+        abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+        abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+        if (is.null(whichIsBest) == FALSE) {
+            col <- c("green", "red")[as.integer(whichIsBest[iBreak]) + 1] ## switch: red = no, green = yes
+        } else {
+            col <- "orange"
+        }
         rect(
-            xleft = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1],
-            xright = L_grid[break_results[iBreak, "right_grid_break_0_based"]],
+            xleft = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1],
+            xright = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1],
             ybottom = -1, ytop = 0,
             col = col
         ) ##whichIsBest 0 = no switch
@@ -644,12 +708,12 @@ plot_attempt_to_find_shuffles <- function(
     ##
     ## 2) plot individuals with their switches
     ##
-    plot_fbd_store(fbd_store = fbd_store, xleft = xleft, xright = xright, xlim = xlim)
+    plot_fbd_store(fbd_store = fbd_store, xleft2 = xleft2, xright2 = xright2, xlim = xlim)
     ##
     for(iBreak in 1:nrow(break_results)) {
-        abline(v = L_grid[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
-        abline(v = L_grid[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
-        abline(v = L_grid[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+        abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+        abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+        abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
     }
     add_grey_background(L_grid)
     K <- nrow(fbd_store[[1]]$gammaK_t)
@@ -659,13 +723,17 @@ plot_attempt_to_find_shuffles <- function(
 }
 
 
-plot_fbd_store <- function(fbd_store, xleft, xright, xlim, main = "Haplotype usage per-sample", mbp_xlab = FALSE) {
+plot_fbd_store <- function(fbd_store, xleft, xright, xlim, main = "Haplotype usage per-sample", mbp_xlab = FALSE, xleft2 = NULL, xright2 = NULL) {
+    if (is.null(xleft2) == FALSE) {
+        xleft <- xleft2
+        xright <- xright2
+    }
     if (mbp_xlab) {
         xlab <- "Physical position (Mbp)"
         xleft <- xleft / 1e6
-        xright <- xright / 1e6        
+        xright <- xright / 1e6
         xlim <- xlim / 1e6
-        d <- 1e2 / 1e6
+        d <- 1e1 / 1e6
     } else {
         xlab <- "Physical position"
         d <- 0
@@ -674,14 +742,19 @@ plot_fbd_store <- function(fbd_store, xleft, xright, xlim, main = "Haplotype usa
     ylim <- c(1, NN + 1)
     plot(x = 0, y = 0, ylim = ylim, xlim = xlim, xlab = xlab, ylab = "Sample", main = main, col = "white")
     cbPalette <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)
+    nr <- length(xleft)
     for(iSample in 1:NN) {
         ## plot each of them, as rectangle?
         R <- fbd_store[[iSample]]$gammaK_t
         ## should sum to 1, plot rectangles of each
-        ybottom <- iSample + array(0, ncol(R) - 1)
-        ytop <- iSample + array(0, ncol(R) - 1)
+        ybottom <- iSample + array(0, nr)
+        ytop <- iSample + array(0, nr)
         for(k in 1:nrow(R)) {
-            ytop <- ytop + R[k, -ncol(R)]
+            if (ncol(R) != nr) {
+                ytop <- ytop + R[k, -ncol(R)]
+            } else {
+                ytop <- ytop + R[k, ]
+            }
             rect(
                 xleft = xleft - d,
                 xright = xright + d, ## should not be necessary, R artefact I think

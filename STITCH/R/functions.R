@@ -4387,6 +4387,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
                 nGen = nGen,
                 minRate = minRate,
                 maxRate = maxRate,
+                iteration = iteration,                
                 shuffle_bin_radius = shuffle_bin_radius,
                 plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts
             )
