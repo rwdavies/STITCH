@@ -168,12 +168,6 @@ test_that("can sample one path from forwardBackwardDiploid", {
         reads_span_n_snps = 3,
         n_cores = 1
     )
-    tmpdir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results/"
-    file <- file.path(tmpdir, "package.RData")
-    ##save(data_package, file = file)
-    if (file.exists(file)) {
-        load(file)
-    }
     n_snps <- data_package$nSNPs
 
     regionName <- "region-name"
@@ -216,7 +210,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         whatToReturn = as.integer(0),
         Jmax = as.integer(10),
         suppressOutput = as.integer(1),
-        return_a_sampled_path = as.integer(1),
+        return_a_sampled_path = TRUE,
         blocks_for_output = array(NA, c(1, 1))
     )
 
@@ -225,7 +219,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     marginally_most_likely_path <- apply(out$gamma_t, 2, which.max) ## 1-based
 
 
-    sampled_path <- out$sampled_path_diploid[, 3]
+    sampled_path <- out$sampled_path_diploid_t[3, ]
     ## 0-based,
     ## should be 1, 0 -> 1
     ## or 0, 1 -> 20
@@ -234,7 +228,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
 })
 
 
-test_that("can calculate eMatHapSNP and sample a path", {
+test_that("can calculate eMatHapSNP and sample a haploid path", {
 
     n_snps <- 10 ## set to 10000 to check times better
     K <- 4
@@ -311,5 +305,3 @@ test_that("can calculate eMatHapSNP and sample a path", {
     
 
 })
-
-

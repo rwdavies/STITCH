@@ -140,7 +140,7 @@ double print_times (double prev, int suppressOutput, std::string past_text, std:
 // [[Rcpp::export]]
 arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & transMatRate_t_D, const arma::mat & eMat_t, const arma::mat & alphaMat_t, const int T, const int K, const arma::rowvec & c) {
     //
-    arma::imat sampled_path_diploid(T, 3);
+    arma::imat sampled_path_diploid_t(3, T);
     int sampled_state;
     int t;
     int first_k;
@@ -165,7 +165,7 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
         check = check + alphaHat_t(kk, T - 1);
     if ((pow(check - 1, 2)) > 1e-4) {
         std::cout << "BAD input assumption" << std::endl;
-        return(sampled_path_diploid);
+        return(sampled_path_diploid_t);
     }
     //
     //
@@ -178,9 +178,9 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
             sampled_state = kk;
             first_k = (sampled_state) % K;
             second_k = (sampled_state - first_k) / K;
-            sampled_path_diploid(T - 1, 0) = first_k; // 0 based
-            sampled_path_diploid(T - 1, 1) = second_k; // 0 based
-            sampled_path_diploid(T - 1, 2) = sampled_state; // 0 based
+            sampled_path_diploid_t(0, T - 1) = first_k; // 0 based
+            sampled_path_diploid_t(1, T - 1) = second_k; // 0 based
+            sampled_path_diploid_t(2, T - 1) = sampled_state; // 0 based
             kk = KK;
         }
         kk = kk + 1;    
@@ -190,9 +190,9 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
     //
     //for(t = T - 2; t >= 0; t--) {
     for(t = T - 2; t >= 0; t--) {
-        prev_first_k = sampled_path_diploid(t + 1, 0); // 0-based
-        prev_second_k = sampled_path_diploid(t + 1, 1); // 0 based
-        prev_state = sampled_path_diploid(t + 1, 2); // 0 based
+        prev_first_k = sampled_path_diploid_t(0, t + 1); // 0-based
+        prev_second_k = sampled_path_diploid_t(1, t + 1); // 0 based
+        prev_state = sampled_path_diploid_t(2, t + 1); // 0 based
         samp_vector.fill(transMatRate_t_D(2, t) * alphaMat_t(prev_first_k, t) * alphaMat_t(prev_second_k, t));
         for(k1=0; k1<=K-1; k1++) {
             // switch on first, keep second
@@ -212,7 +212,7 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
              std::cout << "BAD COUNT on t=" << t << std::endl;
              std::cout << "samp_vector_sum=" << samp_vector_sum << std::endl;
              std::cout << "norm=" << norm << std::endl;
-             return(sampled_path_diploid);
+             return(sampled_path_diploid_t);
         }
         // sample state using crazy C++
         kk = 0;  
@@ -229,11 +229,11 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
         // convert back here
         first_k = (sampled_state) % K;
         second_k = (sampled_state - first_k) / K;
-        sampled_path_diploid(t, 0) = first_k;
-        sampled_path_diploid(t, 1) = second_k;
-        sampled_path_diploid(t, 2) = sampled_state;
+        sampled_path_diploid_t(0, t) = first_k;
+        sampled_path_diploid_t(1, t) = second_k;
+        sampled_path_diploid_t(2, t) = sampled_state;
     }
-    return(sampled_path_diploid);
+    return(sampled_path_diploid_t);
 }
 
 
@@ -543,7 +543,7 @@ Rcpp::List forwardBackwardDiploid(
     const bool generate_fb_snp_offsets = false,
     const Rcpp::NumericVector alphaStart = 0,
     const Rcpp::NumericVector betaEnd = 0,
-    const int return_a_sampled_path = 0,
+    const bool return_a_sampled_path = false,
     const bool run_fb_subset = false,
     const int run_fb_grid_offset = 0 // this is 0-based
 ) {
@@ -769,9 +769,9 @@ Rcpp::List forwardBackwardDiploid(
   //
   // optional, sample a path
   //
-  arma::imat sampled_path_diploid;
-  if (return_a_sampled_path == 1) {
-      sampled_path_diploid = sample_diploid_path(alphaHat_t, transMatRate_t_D, eMat_t, alphaMat_t, T, K, c);
+  arma::imat sampled_path_diploid_t;
+  if (return_a_sampled_path) {
+      sampled_path_diploid_t = sample_diploid_path(alphaHat_t, transMatRate_t_D, eMat_t, alphaMat_t, T, K, c);
   }
   //
   //
@@ -793,8 +793,8 @@ Rcpp::List forwardBackwardDiploid(
       to_return.push_back(eMat_t, "eMat_t");
       to_return.push_back(eMatHap_t, "eMatHap_t");            
   }
-  if (return_a_sampled_path == 1) {
-      to_return.push_back(sampled_path_diploid, "sampled_path_diploid");
+  if (return_a_sampled_path) {
+      to_return.push_back(sampled_path_diploid_t, "sampled_path_diploid_t");
   }
   if (generate_fb_snp_offsets == true) {
       to_return.push_back(alphaBetaBlocks, "alphaBetaBlocks");
