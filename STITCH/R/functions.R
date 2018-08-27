@@ -613,12 +613,16 @@ STITCH <- function(
                     file = file.path(outputdir, "RData", paste0("interim.",regionName,".iteration",iteration,".RData"))
                 )
             }
-            ## if plotting hapSum, see what that iteration looked like
+            ## plot interim plots to understand performance better
             if (plotHapSumDuringIterations == TRUE) {
-                plotHapSumCurrent_t(
-                    outname = file.path(outputdir, "plots", paste0("hapSum.",regionName,".iteration.",iteration,".jpeg")),
-                    L_grid = L_grid, K = K, hapSumCurrent_t = hapSumCurrent_t, nGrids = nGrids, N = N
-                )
+                interim_plotter(
+                    outputdir = outputdir,
+                    regionName = regionName,
+                    iteration = iteration,
+                    L_grid = L_grid,
+                    hapSumCurrent_t = hapSumCurrent_t,
+                    alphaMatCurrent_t = alphaMatCurrent_t
+                )                 
             }
             ## perform switchover here
             eHapsCurrent_t <- eHapsFuture_t
@@ -5173,36 +5177,6 @@ plotMetricsForPostImputationQC <- function(
     dev.off()
 }
 
-
-### plot hapSumCurrent along genome
-plotHapSumCurrent_t <- function(
-    outname,
-    L_grid,
-    K,
-    hapSumCurrent_t,
-    nGrids,
-    N
-) {
-    jpeg(outname, height = 2000, width = 10000, qual = 100)
-    colStore <- rep(c("black","red","green","blue"), ceiling(K / 4))
-    sum <- array(0, nGrids)
-    xlim <- range(L_grid)
-    ylim <- c(0, 1)
-    ## OK so if there are grids, use the grid points
-    plot(x = L_grid[1], y = 0, xlim = xlim, ylim = ylim, axes = FALSE)
-    x <- c(L_grid[1], L_grid, L_grid[length(L_grid):1])
-    m <- array(0, c(nGrids, K + 1))
-    for(i in 1:K) {
-        m[, i + 1] <- m[, i] + hapSumCurrent_t[i, ] / N
-    }
-    for(i in K:1) {
-        polygon(
-            x = x, y = c(m[1, i], m[, i + 1], m[nGrids:1, i]),
-            xlim = xlim, ylim = ylim, col = colStore[i]
-        )
-    }
-    dev.off()
-}
 
 
 

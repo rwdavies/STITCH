@@ -1,4 +1,7 @@
-## in a simple refill, look every 100 SNP. in each one with an average below a threshold, sample from other haplotypes to re-copy
+## in a simple refill, look every 100 SNP.
+## in each one with an average below a threshold,
+## see who was in that haplotype before. then extend out their choice 
+## sample from other haplotypes to re-copy
 ## across all haplotypes, when this happen, inject noise
 refillSimple <- function(
     hapSum_t,
@@ -772,4 +775,97 @@ plot_fbd_store <- function(fbd_store, xleft, xright, xlim, main = "Haplotype usa
 alpha_col <- function(col, alpha) {
     x <- col2rgb(col) / 255
     return(rgb(x["red", 1], x["green", 1], x["blue", 1], alpha = alpha)    )
+}
+
+
+## make interim plots of things that might be useful to understand performance
+## hapSumCurrent_t
+## alphaMatCurrent_t
+interim_plotter <- function(outputdir, regionName, iteration, L_grid, hapSumCurrent_t, alphaMatCurrent_t) {
+    nGrids <- ncol(alphaMatCurrent_t)
+    K <- nrow(alphaMatCurrent_t)
+    plotHapSumCurrent_t(
+        outname = file.path(outputdir, "plots", paste0("hapSum.",regionName,".iteration.",iteration,".jpeg")),
+        L_grid = L_grid,
+        K = K,
+        hapSumCurrent_t = hapSumCurrent_t,
+        nGrids = nGrids,
+        N = N
+    )
+    plot_alphaMatCurrent_t(
+        L_grid = L_grid,
+        alphaMatCurrent_t = alphaMatCurrent_t,
+        sigmaCurrent = sigmaCurrent,
+        outputdir = outputdir,
+        iteration = iteration,
+        regionName = regionName
+    )
+    return(NULL)
+}
+
+## plot hapSumCurrent along genome
+plotHapSumCurrent_t <- function(
+    outname,
+    L_grid,
+    K,
+    hapSumCurrent_t,
+    nGrids,
+    N
+) {
+    jpeg(outname, height = 2000, width = 10000, qual = 100)
+    colStore <- rep(c("black","red","green","blue"), ceiling(K / 4))
+    sum <- array(0, nGrids)
+    xlim <- range(L_grid)
+    ylim <- c(0, 1)
+    ## OK so if there are grids, use the grid points
+    plot(x = L_grid[1], y = 0, xlim = xlim, ylim = ylim, axes = FALSE)
+    x <- c(L_grid[1], L_grid, L_grid[length(L_grid):1])
+    m <- array(0, c(nGrids, K + 1))
+    for(i in 1:K) {
+        m[, i + 1] <- m[, i] + hapSumCurrent_t[i, ] / N
+    }
+    for(i in K:1) {
+        polygon(
+            x = x, y = c(m[1, i], m[, i + 1], m[nGrids:1, i]),
+            xlim = xlim, ylim = ylim, col = colStore[i]
+        )
+    }
+    dev.off()
+}
+
+
+
+plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outputdir, iteration, regionName) {
+    nGrids <- ncol(alphaMatCurrent_t)
+    K <- nrow(alphaMatCurrent_t)
+    ## two views - proportional, total?
+    xleft <- (L_grid)[-length(L_grid)]
+    xright <- (L_grid)[-1]
+    xlim <- range(L_grid)
+    ##
+    for(i_what in 1:2) {
+        ## make barplot type thing
+        if (i_what == 2) {
+            ## normalize by sigmaCurrent
+            main <- "alphaMatCurrent_t P(q_t = k, I_t = 1)"
+            x <- alphaMatCurrent_t
+            for(k in 1:K) {
+                x[k, ] <- alphaMatCurrent_t[k, ] * (1 - sigmaCurrent)
+            }
+            fbd_store <- list(list(gammaK_t = x))
+            what <- "normalized"
+        } else {
+            main <- "alphaMatCurrent_t P(q_t | I_t = 1)"
+            fbd_store <- list(list(gammaK_t = alphaMatCurrent_t))
+            what <- "all"
+        }
+        outname <- file.path(
+            outputdir, "plots",
+            paste0("alphaMatCurrent.", iteration, ".", regionName, ".", what, ".png")
+        )
+        width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)        
+        png(outname, height = 10, width = width, res = 100, units = "in")
+        plot_fbd_store(fbd_store, xleft, xright, xlim, main = main)
+        dev.off()
+    }
 }
