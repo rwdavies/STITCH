@@ -150,45 +150,62 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
 test_that("can sample one path from forwardBackwardDiploid", {
 
     set.seed(10)
-    n_snps <- 10 ## to check times better set to 10000
-    K <- 20
 
+    speed_test <- FALSE
+    if (speed_test) {
+        n_snps <- 5000 ## to check times better set to 10000
+        tmpdir <- "./"
+        dir.create(tmpdir, showWarnings = FALSE)
+    } else {
+        n_snps <- 10
+        tmpdir <- tempdir()
+    }
+
+    K <- 20    
     phasemaster <- matrix(
         c(rep(0, n_snps), rep(1, n_snps)),
         ncol = K
     )
-    data_package <- make_acceptance_test_data_package(
-        n_samples = 1,
-        n_snps = n_snps,
-        n_reads = n_snps * 2,
-        seed = 2,
-        chr = 10,
-        K = K,
-        phasemaster = phasemaster,
-        reads_span_n_snps = 3,
-        n_cores = 1
-    )
-    n_snps <- data_package$nSNPs
-
-    regionName <- "region-name"
-    loadBamAndConvert(
-        iBam = 1,
-        L = data_package$L,
-        pos = data_package$pos,
-        nSNPs = data_package$nSNPs,
-        bam_files = data_package$bam_files,
-        N = 1,
-        sampleNames = data_package$sample_names,
-        inputdir = tempdir(),
-        regionName = regionName,
-        tempdir = tempdir(),
-        chr = data_package$chr,
-        chrStart = 1,
-        chrEnd = max(data_package$pos[, 2]) + 100
-    )
+    file <- file.path(tmpdir, "package.RData")    
+    if (speed_test & file.exists(file)) {
+        print("loading file!")
+        load(file)
+    } else {
+        data_package <- make_acceptance_test_data_package(
+            n_samples = 1,
+            n_snps = n_snps,
+            n_reads = n_snps * 2,
+            seed = 2,
+            chr = 10,
+            K = K,
+            phasemaster = phasemaster,
+            reads_span_n_snps = 2,
+            n_cores = 16,
+            tmpdir = tmpdir
+        )
+        regionName <- "region-name"
+        loadBamAndConvert(
+            iBam = 1,
+            L = data_package$L,
+            pos = data_package$pos,
+            nSNPs = data_package$nSNPs,
+            bam_files = data_package$bam_files,
+            N = 1,
+            sampleNames = data_package$sample_names,
+            inputdir = tempdir(),
+            regionName = regionName,
+            tempdir = tempdir(),
+            chr = data_package$chr,
+            chrStart = 1,
+            chrEnd = max(data_package$pos[, 2]) + 100
+        )
+        load(file_sampleReads(tempdir(), 1, regionName))
+        if (speed_test) {
+            save(sampleReads, data_package, file = file)
+        }
+    }
 
     set.seed(40)
-    load(file_sampleReads(tempdir(), 1, regionName))
     eHaps <- array(runif(n_snps * K), c(n_snps, K))
     sigma <- rep(0.999, n_snps - 1)
     alphaMat <- array(1 / K / K, c(n_snps - 1, K))

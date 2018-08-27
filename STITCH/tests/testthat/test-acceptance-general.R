@@ -155,6 +155,8 @@ test_that("STITCH diploid can write to bgen", {
 
 
 
+
+
 ## afterwards, everything should test both bgen and bgvcf
 
 test_that("STITCH diploid works with multiple cores", {
@@ -1146,7 +1148,8 @@ test_that("STITCH can generate interim plots", {
             nCores = 1,
             niterations = niterations,
             plotHapSumDuringIterations = TRUE,
-            shuffleHaplotypeIterations = NA
+            shuffleHaplotypeIterations = NA,
+	    refillIterations = NA
         )
 
         ## only care about plumbing and making plots
