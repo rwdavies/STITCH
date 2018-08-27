@@ -13,7 +13,7 @@ if (1 == 0) {
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     
- }
+}
 
 
 n_snps <- 10
@@ -1123,6 +1123,37 @@ test_that("STITCH works in a situation with grid, buffer, outputBlockSize, etc",
             who = who
         )
         
+    }
+
+})
+
+test_that("STITCH can generate interim plots", {
+
+    for(method in get_available_methods()) {
+
+        outputdir <- make_unique_tempdir()
+        chr <- data_package$chr
+        niterations <- 5
+        STITCH(
+            chr = chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            method = method,
+            nCores = 1,
+            niterations = niterations,
+            plotHapSumDuringIterations = TRUE,
+            shuffleHaplotypeIterations = NA
+        )
+
+        ## only care about plumbing and making plots
+        d <- dir(file.path(outputdir, "plots"))
+        expect_equal(length(grep(paste0("hapSum.", chr, ".iteration."), d)), niterations - 1)
+        expect_equal(length(grep(paste0("alphaMatCurrent.", chr, ".iteration."), d)), 2 * (niterations - 1))
+
     }
 
 })

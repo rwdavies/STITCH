@@ -781,8 +781,8 @@ alpha_col <- function(col, alpha) {
 ## make interim plots of things that might be useful to understand performance
 ## hapSumCurrent_t
 ## alphaMatCurrent_t
-interim_plotter <- function(outputdir, regionName, iteration, L_grid, hapSumCurrent_t, alphaMatCurrent_t) {
-    nGrids <- ncol(alphaMatCurrent_t)
+interim_plotter <- function(outputdir, regionName, iteration, L_grid, hapSumCurrent_t, alphaMatCurrent_t, sigmaCurrent, N) {
+    nGrids <- ncol(alphaMatCurrent_t) + 1
     K <- nrow(alphaMatCurrent_t)
     plotHapSumCurrent_t(
         outname = file.path(outputdir, "plots", paste0("hapSum.",regionName,".iteration.",iteration,".jpeg")),
@@ -813,7 +813,7 @@ plotHapSumCurrent_t <- function(
     N
 ) {
     jpeg(outname, height = 2000, width = 10000, qual = 100)
-    colStore <- rep(c("black","red","green","blue"), ceiling(K / 4))
+    colStore <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)
     sum <- array(0, nGrids)
     xlim <- range(L_grid)
     ylim <- c(0, 1)
@@ -861,11 +861,38 @@ plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outp
         }
         outname <- file.path(
             outputdir, "plots",
-            paste0("alphaMatCurrent.", iteration, ".", regionName, ".", what, ".png")
+            paste0("alphaMatCurrent.", regionName, ".iteration.", iteration, ".", what, ".png")
         )
         width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)        
         png(outname, height = 10, width = width, res = 100, units = "in")
         plot_fbd_store(fbd_store, xleft, xright, xlim, main = main)
         dev.off()
     }
+}
+
+
+## plot 
+plot_movement_of_haps <- function() {
+    ## plot one at a time?
+    
+    nGrids <- ncol(alphaMatCurrent_t)
+    K <- nrow(alphaMatCurrent_t)
+    png()
+    x <- L_grid
+    xlim <- range(L_grid)
+    ylim <- c(0, K + 1)
+    plot(x = 0, y = 0, xlim = xlim, ylim = ylim, axes = FALSE)
+    nCores <- length(single_iteration_results)
+    for(i_core in 1:nCores) {
+        sampledPathList <- single_iteration_results[[i_core]]$sampledPathList
+        nSamplesL <- length(sampledPathList)
+        for(iiSample in 1:nSamplesL) {
+
+        }
+
+    }
+
+    dev.off()
+    
+
 }

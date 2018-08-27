@@ -1,13 +1,15 @@
+get_available_methods <- function() {
+    return(c("diploid", "pseudoHaploid", "diploid-inbred"))
+}
+
 validate_method <- function(method) {
     if (class(method) != "character") {
         stop(paste0("method must have class character but you have selected:", class(method)))
     }
-    if (
-    (method != "diploid") &
-    (method != "pseudoHaploid") &
-    (method != "diploid-inbred")
-    ) {
-        stop(paste0("method must be either diploid, pseudoHaploid or diploid-inbred"))
+    available_methods <- get_available_methods()
+    if (!(method %in% available_methods)) {
+        n <- length(available_methods)
+        stop(paste0("method must one of either ", paste0(available_methods[1:(n - 1)], collapse = ", "), " or ", available_methods[n]))
     }
     return(NULL)
 }

@@ -110,5 +110,4 @@ test_that("can validate method", {
     expect_equal(validate_method("pseudoHaploid"), NULL)
     expect_equal(validate_method("diploid-inbred"), NULL)
     expect_error(validate_method("haploid"))
-    
 })
