@@ -34,7 +34,6 @@ refillSimple <- function(
     ## within each continuous region, fill in with respect to frequencies of all other haplotypes
     ##
     k_to_replace <- which(colSums(replaceBlock) > 0)
-    ever_changed <- array(FALSE, ncol(gammaSum_t))
     for (k in k_to_replace) {
         ## change into intervals
         z1 <- replaceBlock[, k]
@@ -57,7 +56,6 @@ refillSimple <- function(
                 snps_to_replace <- ((r1 - 1) <= grid) & (grid <= (r2 - 1))
                 ## now need to get grid as well
                 gammaSum_t[k, snps_to_replace] <- gammaSum_t[replacement, snps_to_replace]
-                ever_changed[snps_to_replace] <- TRUE
             }
         }
     }
@@ -779,7 +777,7 @@ alpha_col <- function(col, alpha) {
 
 
 ## make interim plots of things that might be useful to understand performance
-## hapSumCurrent_t
+## hapSumCurrent_t, regular and log10
 ## alphaMatCurrent_t
 interim_plotter <- function(outputdir, regionName, iteration, L_grid, hapSumCurrent_t, alphaMatCurrent_t, sigmaCurrent, N) {
     nGrids <- ncol(alphaMatCurrent_t) + 1
@@ -852,7 +850,10 @@ plotHapSumCurrent_t_log <- function(
     K,
     hapSumCurrent_t,
     nGrids,
-    N
+    N,
+    outputdir,
+    regionName,
+    iteration
 ) {
     outname <- file.path(
         outputdir, "plots",
