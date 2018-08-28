@@ -25,7 +25,8 @@ refillSimple <- function(
     }
     avHapSumInBlock <- array(0, c(length(region_starts), K))
     for(i in 1:length(region_starts)) {
-        avHapSumInBlock[i, ] <- rowSums(hapSum_t[, region_starts[i]:region_ends[i], drop = FALSE])         
+        n <- region_ends[i] - region_starts[i] + 1
+        avHapSumInBlock[i, ] <- rowSums(hapSum_t[, region_starts[i]:region_ends[i], drop = FALSE]) / n
     }
     hapFreqMin <- N / K ## less than average - aggressive!
     replaceBlock <- avHapSumInBlock < (hapFreqMin)
@@ -34,6 +35,7 @@ refillSimple <- function(
     ## within each continuous region, fill in with respect to frequencies of all other haplotypes
     ##
     k_to_replace <- which(colSums(replaceBlock) > 0)
+    ever_changed <- array(FALSE, ncol(gammaSum_t))
     for (k in k_to_replace) {
         ## change into intervals
         z1 <- replaceBlock[, k]
@@ -56,6 +58,7 @@ refillSimple <- function(
                 snps_to_replace <- ((r1 - 1) <= grid) & (grid <= (r2 - 1))
                 ## now need to get grid as well
                 gammaSum_t[k, snps_to_replace] <- gammaSum_t[replacement, snps_to_replace]
+                ever_changed[snps_to_replace] <- TRUE
             }
         }
     }
