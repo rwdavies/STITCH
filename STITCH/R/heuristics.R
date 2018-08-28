@@ -786,11 +786,21 @@ interim_plotter <- function(outputdir, regionName, iteration, L_grid, hapSumCurr
     K <- nrow(alphaMatCurrent_t)
     plotHapSumCurrent_t(
         outname = file.path(outputdir, "plots", paste0("hapSum.",regionName,".iteration.",iteration,".jpeg")),
-        L_grid = L_grid,
+        L_grid = L_grid,        
         K = K,
         hapSumCurrent_t = hapSumCurrent_t,
         nGrids = nGrids,
         N = N
+    )
+    plotHapSumCurrent_t_log(
+        L_grid = L_grid,
+        K = K,
+        hapSumCurrent_t = hapSumCurrent_t,
+        nGrids = nGrids,
+        N = N,
+        outputdir = outputdir,
+        regionName = regionName,
+        iteration = iteration
     )
     plot_alphaMatCurrent_t(
         L_grid = L_grid,
@@ -813,7 +823,8 @@ plotHapSumCurrent_t <- function(
     N
 ) {
     jpeg(outname, height = 2000, width = 10000, qual = 100)
-    colStore <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)
+    colStore <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    nCols <- length(colStore)
     sum <- array(0, nGrids)
     xlim <- range(L_grid)
     ylim <- c(0, 1)
@@ -827,10 +838,47 @@ plotHapSumCurrent_t <- function(
     for(i in K:1) {
         polygon(
             x = x, y = c(m[1, i], m[, i + 1], m[nGrids:1, i]),
-            xlim = xlim, ylim = ylim, col = colStore[i]
+            xlim = xlim, ylim = ylim, col = colStore[(i %% nCols) + 1]
         )
     }
     dev.off()
+}
+
+
+
+## plot hapSumCurrent along genome
+plotHapSumCurrent_t_log <- function(
+    L_grid,
+    K,
+    hapSumCurrent_t,
+    nGrids,
+    N
+) {
+    outname <- file.path(
+        outputdir, "plots",
+        paste0("hapSumCurrent.", regionName, ".iteration.", iteration, ".png")
+    )
+    width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
+    png(outname, height = 10, width = width, res = 100, units = "in")
+    main <- "log10 of average haplotype usage vs physical position"
+    colStore <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    nCols <- length(colStore)
+    sum <- array(0, nGrids)
+    ylim <- c(log10(min(hapSumCurrent_t)), log10(max(hapSumCurrent_t)))
+    plot(x = 0, y = 0, xlim = xlim, ylim = ylim, axes = FALSE, main = main, xlab = "Physical position (Mbp)", ylab = "log10 Haplotype usage")
+    xlim <- range(L_grid) / 1e6
+    axis(1)
+    axis(2)
+    x <- L_grid / 1e6
+    for(k in 1:K) {
+        points(x = x, y = log10(hapSumCurrent_t[k, ]), col = colStore[(k %% nCols) + 1], type = "l")
+    }
+    for(i in floor(ylim[1]):ceiling(ylim[2])) {
+        abline(h = i, col = "grey")
+    }
+    abline(h = log10(N / K), col = "red")
+    dev.off()
+    ##    system(paste0("rsync -av '", outname, "' florence:~/"))
 }
 
 
@@ -863,36 +911,9 @@ plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outp
             outputdir, "plots",
             paste0("alphaMatCurrent.", regionName, ".iteration.", iteration, ".", what, ".png")
         )
-        width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)        
+        width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
         png(outname, height = 10, width = width, res = 100, units = "in")
         plot_fbd_store(fbd_store, xleft, xright, xlim, main = main)
         dev.off()
     }
-}
-
-
-## plot 
-plot_movement_of_haps <- function() {
-    ## plot one at a time?
-    
-    nGrids <- ncol(alphaMatCurrent_t)
-    K <- nrow(alphaMatCurrent_t)
-    png()
-    x <- L_grid
-    xlim <- range(L_grid)
-    ylim <- c(0, K + 1)
-    plot(x = 0, y = 0, xlim = xlim, ylim = ylim, axes = FALSE)
-    nCores <- length(single_iteration_results)
-    for(i_core in 1:nCores) {
-        sampledPathList <- single_iteration_results[[i_core]]$sampledPathList
-        nSamplesL <- length(sampledPathList)
-        for(iiSample in 1:nSamplesL) {
-
-        }
-
-    }
-
-    dev.off()
-    
-
 }
