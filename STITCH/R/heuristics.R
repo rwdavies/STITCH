@@ -868,9 +868,9 @@ plotHapSumCurrent_t_log <- function(
     colStore <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
     nCols <- length(colStore)
     sum <- array(0, nGrids)
+    xlim <- range(L_grid) / 1e6    
     ylim <- c(log10(min(hapSumCurrent_t)), log10(max(hapSumCurrent_t)))
     plot(x = 0, y = 0, xlim = xlim, ylim = ylim, axes = FALSE, main = main, xlab = "Physical position (Mbp)", ylab = "log10 Haplotype usage")
-    xlim <- range(L_grid) / 1e6
     axis(1)
     axis(2)
     x <- L_grid / 1e6
