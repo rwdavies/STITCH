@@ -869,7 +869,7 @@ plotHapSumCurrent_t_log <- function(
     nCols <- length(colStore)
     sum <- array(0, nGrids)
     xlim <- range(L_grid) / 1e6    
-    ylim <- c(log10(min(hapSumCurrent_t)), log10(max(hapSumCurrent_t)))
+    ylim <- c(log10(max(1, min(hapSumCurrent_t))), log10(max(hapSumCurrent_t)))
     plot(x = 0, y = 0, xlim = xlim, ylim = ylim, axes = FALSE, main = main, xlab = "Physical position (Mbp)", ylab = "log10 Haplotype usage")
     axis(1)
     axis(2)
