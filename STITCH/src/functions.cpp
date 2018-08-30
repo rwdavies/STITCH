@@ -862,6 +862,8 @@ Rcpp::List rcpp_calculate_fbd_dosage(
 }
 
 
+//' @export
+// [[Rcpp::export]]
 arma::cube make_haploid_gammaUpdate_t(
     const Rcpp::List& sampleReads,
     const int nReads,
