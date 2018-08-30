@@ -114,8 +114,7 @@ test_that("STITCH diploid can write to bgen", {
 
     outputdir <- make_unique_tempdir()
     
-    sink("/dev/null")
-
+    set.seed(10)
     STITCH(
         chr = data_package$chr,
         bamlist = data_package$bamlist,
@@ -127,8 +126,6 @@ test_that("STITCH diploid can write to bgen", {
         nCores = 1,
         output_format = "bgen"
     )
-
-    sink()
 
     out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
 
@@ -147,7 +144,7 @@ test_that("STITCH diploid can write to bgen", {
         header = TRUE
     )
     expect_equal(nrow(var_info), 10)
-    expect_equal((var_info[, "INFO_SCORE"] > 0.98), rep(TRUE, nrow(var_info)))    
+    expect_equal((var_info[, "INFO_SCORE"] > 0.98), rep(TRUE, nrow(var_info)))
     
 })
 
