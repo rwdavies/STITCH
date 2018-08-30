@@ -28,8 +28,8 @@ refillSimple <- function(
         n <- region_ends[i] - region_starts[i] + 1
         avHapSumInBlock[i, ] <- rowSums(hapSum_t[, region_starts[i]:region_ends[i], drop = FALSE]) / n
     }
-    hapFreqMin <- N / K ## less than average - aggressive!
-    replaceBlock <- avHapSumInBlock < (hapFreqMin)
+    hapFreqMin <- N / K ## less than half of average - aggressive!
+    replaceBlock <- avHapSumInBlock < (hapFreqMin / 2)
     ## 
     ## for each k, for each region, fill in
     ## within each continuous region, fill in with respect to frequencies of all other haplotypes
