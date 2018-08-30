@@ -22,7 +22,6 @@ script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 export PATH=`pwd`/:${PATH}
 
-logfile="temp.txt"
 # suppressPackageStartupMessages
 # --slave
 R -e 'devtools::document("STITCH"); devtools::test("STITCH", filter = "'${what_to_test}'", reporter = "summary")' 2>&1 | tee ${logfile}
@@ -34,11 +33,12 @@ then
     exit 1
 fi
 
-failure=`cat ${logfile} | grep ^Failed | wc -l`
-warnings=`cat ${logfile} | grep ^Warnings | wc -l `
+failure=`cat ${logfile} | grep "^══ Failed" | wc -l`
+warnings=`cat ${logfile} | grep "^══ Warning" | wc -l `
 errors=`cat ${logfile} | grep Error: | wc -l `
 
 rm ${logfile}
+
 
 if [ "$failure" -gt "0" ]
 then
