@@ -498,6 +498,7 @@ arma::mat rcpp_make_diploid_jUpdate(
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
     arma::mat jUpdate_t = arma::zeros(K,T - 1);
+    double tmr1, tmr2;
     //
     for(t=0; t<=T-2; t++) {
         alphaTemp1.fill(0);
@@ -509,15 +510,17 @@ arma::mat rcpp_make_diploid_jUpdate(
         //
         // now do proper calculation
         //
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
+        tmr1 = transMatRate_t_D(1,t);
+        tmr2 = transMatRate_t_D(2,t);
+        for(k1 = 0; k1 < K; k1++) {
+            for(k2 = 0; k2 < K; k2++) {
                 kk = k1 + K * k2;
-                jUpdate_t(k1,t) = jUpdate_t(k1,t) +          \
-                    (transMatRate_t_D(1,t) * alphaTemp1(k2) +  \
-                     transMatRate_t_D(2,t) * alphaMat_t(k2,t)) *        \
+                jUpdate_t(k1,t) += \
+                    (tmr1 * alphaTemp1(k2) +  \
+                     tmr2 * alphaMat_t(k2,t)) *        \
                     betaHat_t(kk,t+1) * eMat_t(kk,t+1);
             }
-            jUpdate_t(k1,t) = jUpdate_t(k1,t) * 2 * alphaMat_t(k1,t);
+            jUpdate_t(k1,t) *= 2 * alphaMat_t(k1, t);
         }   // end of loop on k
     } // end of loop on t
     return(jUpdate_t);
@@ -652,16 +655,20 @@ Rcpp::List forwardBackwardDiploid(
   prev_section=next_section;
   //
   arma::mat gamma_t = alphaHat_t % betaHat_t;
-  for(t=0; t<= T-1; t++)
-      gamma_t.col(t) = gamma_t.col(t) / c(t);
+  double g_temp = 0;
+  for(t = 0; t < T; t++) {
+      // make change - divide, then multiply?
+      g_temp = 1 / c(t);
+      gamma_t.col(t) *= g_temp;
+  }
   //
   // do collapsed gamma here
   //
   arma::mat gammaK_t = arma::zeros(K,T);    
-  for(t=0; t<= T-1; t++) {
-    for(k1=0; k1<=K-1; k1++) {
+  for(t = 0; t < T; t++) {
+    for(k1 = 0; k1 < K; k1++) {
         d = 0;
-        for(k2=0; k2<=K-1; k2++) {
+        for(k2 = 0; k2 < K; k2++) {
             d = d + gamma_t(k1+K*k2, t);
         }
         gammaK_t(k1, t) = d;
@@ -693,8 +700,9 @@ Rcpp::List forwardBackwardDiploid(
   prev_section=next_section;
   //
   arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
-  arma::colvec eMatHap_t_col;
-  int k3;
+  arma::colvec eMatHap_t_col, eHaps_t_col;
+  int k3, J, cr;
+  arma::ivec bqU, pRU;
   //
   // only, mathematically correct version
   //
@@ -702,12 +710,12 @@ Rcpp::List forwardBackwardDiploid(
       // recal that below is what is used to set each element of sampleRead
       // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
       Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-      int J = as<int>(readData[0]); // number of SNPs on read
-      int cr = as<int>(readData[1]); // central SNP or grid point
-      arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
-      arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-      for(j=0; j<=J; j++) // for each SNP in the read
-      {
+      J = readData[0]; // number of SNPs on read
+      cr = readData[1]; // central SNP or grid point
+      bqU = as<arma::ivec>(readData[2]); // bq for each SNP
+      pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
+      // loop over every SNP in the read
+      for(j = 0; j <= J; j++) {
         t=pRU(j); // position of this SNP in full T sized matrix
         //
         // first haplotype (ie (k,k1))
@@ -730,13 +738,16 @@ Rcpp::List forwardBackwardDiploid(
         //
         //
         eMatHap_t_col = eMatHap_t.col(iRead);
-        for(k=0; k<=K-1;k++) {
-            d1 = pA * eHaps_t(k,t);
-            d2 = pR * (1-eHaps_t(k,t));
+        eHaps_t_col = eHaps_t.col(t);
+        for(k = 0; k < K; k++) {
+            //d1 = pA * eHaps_t(k,t);
+            //d2 = pR * (1-eHaps_t(k,t));
+            d1 = pA * eHaps_t_col(k);
+            d2 = pR * eHaps_t_col(k);
             d3 = d1 / (d1 + d2); // this is all I need
             a = eMatHap_t_col(k);
             k3 = K * k;
-            for(k1=0; k1<=K-1; k1++) {
+            for(k1 = 0; k1 < K; k1++) {
                 //kl1 = k+K*k1;
                 //kl2 = k1+K*k;
                 kl2 = k1 + k3;
@@ -851,6 +862,75 @@ Rcpp::List rcpp_calculate_fbd_dosage(
 }
 
 
+arma::cube make_haploid_gammaUpdate_t(
+    const Rcpp::List& sampleReads,
+    const int nReads,
+    const arma::mat& gamma_t,
+    const arma::mat& eHapsCurrent_t,
+    const arma::mat& eMatHap_t,    
+    const arma::mat& eMatHapOri_t,
+    const arma::vec& pRgivenH1,
+    const arma::vec& pRgivenH2,
+    const bool run_pseudo_haploid = false
+) {
+    //
+    const int nSNPs = eHapsCurrent_t.n_cols;
+    const int K = eHapsCurrent_t.n_rows;
+    //
+    arma::cube gammaUpdate_t = arma::zeros(K, nSNPs, 2);
+    int iRead, J, cr, t, j, k;
+    Rcpp::List readData;
+    arma::ivec bqU, pRU;
+    double d3, eps, pR, pA, a1, a2, y, d, d1, d2, b;
+    //
+    for(iRead=0; iRead<=nReads-1; iRead++) {
+        readData = as<Rcpp::List>(sampleReads[iRead]);
+        J = as<int>(readData[0]); // number of SNPs on read
+        cr = as<int>(readData[1]); // central SNP in read
+        bqU = as<arma::ivec>(readData[2]); // bq for each SNP
+        pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
+        if (run_pseudo_haploid == true) {      
+          d3 = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
+        }
+        for(j=0; j<=J; j++) {
+            t=pRU(j);
+            if(bqU(j)<0) {
+                eps = pow(10,(double(bqU(j))/10));
+                pR=1-eps;
+                pA=eps/3;
+            }
+            if(bqU(j)>0) {
+                eps = pow(10,(-double(bqU(j))/10));
+                pR=eps/3;
+                pA=1-eps;
+            }
+            //
+            if (run_pseudo_haploid == true) {
+                for(k=0; k<=K-1;k++) {
+                    a1 = pA * eHapsCurrent_t(k,t);
+                    a2 = pR * (1-eHapsCurrent_t(k,t)); 
+                    y = a1 + a2;
+                    b = eMatHapOri_t(k,iRead) * d3 / y;
+                    d1 = a1 * b;
+                    d2 = a2 * b;
+                    d = gamma_t(k,cr) / eMatHap_t(k,iRead);
+                    gammaUpdate_t(k, t, 0) += d * d1;
+                    gammaUpdate_t(k, t, 1) += d * (d1 + d2);
+                }
+            } else {
+                for(k = 0; k < K; k++) {
+                    a1 = pA * eHapsCurrent_t(k, t);
+                    a2 = pR * (1- eHapsCurrent_t(k, t));
+                    y = a1 + a2;
+                    d = gamma_t(k, cr) / y;
+                    gammaUpdate_t(k, t, 0) += a1 * d;
+                    gammaUpdate_t(k, t, 1) += y * d;
+                }
+            }
+        } // end of SNP in read 
+    } // end of read
+    return gammaUpdate_t;
+}
 
 
 //' @export
@@ -887,7 +967,6 @@ Rcpp::List forwardBackwardHaploid(
   // constants
   //
   //
-  const int T_total = eHaps_t.n_cols; // total number of SNPs
   const int T = alphaMat_t.n_cols + 1;  // what we iterate over / grid
   const int K = eHaps_t.n_rows; // traditional K for haplotypes
   //
@@ -902,17 +981,11 @@ Rcpp::List forwardBackwardHaploid(
   arma::mat eMatHapSNP_t = arma::ones(K,T);
   // variables working on full space
   arma::mat jUpdate_t = arma::zeros(K,T-1);
-  arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
   // variables for transition matrix and initialization
   // int variables and such
-  int j, k, t, k1, iRead;
-  int readSNP;
-  double x, b, d1, d2, d3, a1, a2, y;
+  int j, t, k1, iRead, readSNP, k;
   double d = 1;
-  double eps;
-  double pR = 0;
-  double pA = 0;
-  double rescale;
+  double rescale, x;
   Rcpp::List alphaBetaBlocks;  
   //
   //
@@ -1074,54 +1147,17 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  for(iRead=0; iRead<=nReads-1; iRead++) {
-      // recal that below is what is used to set each element of sampleRead
-      // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
-      Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-      int J = as<int>(readData[0]); // number of SNPs on read
-      int cr = as<int>(readData[1]); // central SNP in read
-      arma::ivec bqU = as<arma::ivec>(readData[2]); // bq for each SNP
-      arma::ivec pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-      if (run_pseudo_haploid == true) {      
-          d3 = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
-      }
-      for(j=0; j<=J; j++) {
-          t=pRU(j);
-          if(bqU(j)<0) {
-              eps = pow(10,(double(bqU(j))/10));
-              pR=1-eps;
-              pA=eps/3;
-          }
-          if(bqU(j)>0) {
-              eps = pow(10,(-double(bqU(j))/10));
-              pR=eps/3;
-              pA=1-eps;
-          }
-          //
-          if (run_pseudo_haploid == true) {
-              for(k=0; k<=K-1;k++) {
-                  a1 = pA * eHaps_t(k,t);
-                  a2 = pR * (1-eHaps_t(k,t)); 
-                  y = a1 + a2;
-                  b = eMatHapOri_t(k,iRead) * d3 / y;
-                  d1 = a1 * b;
-                  d2 = a2 * b;
-                  d = gamma_t(k,cr) / eMatHap_t(k,iRead);
-                  gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + d * d1;
-                  gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + d * (d1 + d2);
-              }
-          } else {
-              for(k=0; k<=K-1;k++) {
-                  a1 = pA * eHaps_t(k,t);
-                  a2 = pR * (1-eHaps_t(k,t));
-                  y = a1 + a2;
-                  d = gamma_t(k,cr) / y;
-                  gammaUpdate_t(k,t,0) = gammaUpdate_t(k,t,0) + a1 * d;
-                  gammaUpdate_t(k,t,1) = gammaUpdate_t(k,t,1) + y * d;
-              }
-          }
-      } // end of SNP in read 
-    } // end of read
+  arma::cube gammaUpdate_t = make_haploid_gammaUpdate_t(
+      sampleReads,
+      nReads,
+      gamma_t,
+      eHaps_t,
+      eMatHap_t,      
+      eMatHapOri_t,
+      pRgivenH1,
+      pRgivenH2,
+      run_pseudo_haploid
+  );
   //
   //
   // make jUpdate
