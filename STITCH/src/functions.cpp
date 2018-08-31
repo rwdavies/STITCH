@@ -700,9 +700,10 @@ Rcpp::List forwardBackwardDiploid(
   prev_section=next_section;
   //
   arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
-  arma::colvec eMatHap_t_col, eHaps_t_col;
+  arma::colvec eMatHap_t_col, eHaps_t_col, gamma_t_col;
   int k3, J, cr;
   arma::ivec bqU, pRU;
+  int cr_prev = -1;
   //
   // only, mathematically correct version
   //
@@ -715,6 +716,9 @@ Rcpp::List forwardBackwardDiploid(
       bqU = as<arma::ivec>(readData[2]); // bq for each SNP
       pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
       // loop over every SNP in the read
+      if (cr > cr_prev) {
+          gamma_t_col = gamma_t.col(cr);
+      }
       for(j = 0; j <= J; j++) {
         t=pRU(j); // position of this SNP in full T sized matrix
         //
@@ -753,7 +757,7 @@ Rcpp::List forwardBackwardDiploid(
                 kl2 = k1 + k3;
                 b = eMatHap_t_col(k1);
                 //e = (2 * gamma_t(kl1,cr) + gamma_t(kl2,cr)) * ( a / (a + b));
-                e = 2 * gamma_t(kl2,cr) * ( a / (a + b));
+                e = 2 * gamma_t_col(kl2) * ( a / (a + b));
                 gammaUpdate_t(k,t,0) += e * d3;
                 gammaUpdate_t(k,t,1) += e;
             } // loop on other haplotype
@@ -886,8 +890,9 @@ void make_haploid_gammaUpdate_t(
     arma::ivec bqU, pRU;
     arma::colvec gamma_t_col;
     double d3, eps, pR, pA, a1, a2, y, d, d1, d2, b;
+    int cr_prev = -1;
     //
-    for(iRead=0; iRead<=nReads-1; iRead++) {
+    for(iRead = 0; iRead < nReads; iRead++) {
         readData = as<Rcpp::List>(sampleReads[iRead]);
         J = as<int>(readData[0]); // number of SNPs on read
         cr = as<int>(readData[1]); // central SNP in read
@@ -896,7 +901,10 @@ void make_haploid_gammaUpdate_t(
         if (run_pseudo_haploid == true) {      
           d3 = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
         }
-        gamma_t_col = gamma_t.col(cr);
+        if (cr > cr_prev) {
+            // do not always need to update
+            gamma_t_col = gamma_t.col(cr);
+        }
         for(j=0; j<=J; j++) {
             t=pRU(j);
             if(bqU(j)<0) {
