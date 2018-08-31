@@ -374,7 +374,8 @@ check_output_against_phase <- function(
     output_format,
     which_snps = NULL,
     tol = 0.2,
-    who = NULL
+    who = NULL,
+    min_info = 0.98
 ) {
     if (is.null(which_snps)) {
         which_snps <- 1:length(data_package$L)
@@ -397,6 +398,9 @@ check_output_against_phase <- function(
             tol = tol,
             who = who
         )
+        var_info <- read.table(paste0(file, ".per_snp_stats.txt.gz"), header = TRUE)
+        expect_equal(nrow(var_info), nrow(out$gp))
+        expect_equal((var_info[, "INFO_SCORE"] >= min_info), rep(TRUE, nrow(var_info)))
     } else {
         ## 
         vcf <- read.table(
@@ -412,8 +416,23 @@ check_output_against_phase <- function(
             tol = tol,
             who = who
         )
+        check_vcf_info_scores(
+            vcf = vcf,
+            min_info = min_info
+        )
     }
     return(NULL)
+}
+
+check_vcf_info_scores <- function(vcf, min_info = 0.98) {
+    info_scores <- sapply(1:nrow(vcf), function(i_snp) {
+        x <- strsplit(vcf[i_snp, 8], ";")[[1]]
+        y <- grep("INFO_SCORE", x)
+        expect_true(length(y) == 1)
+        info_score <- as.numeric(strsplit(x[y], "INFO_SCORE=")[[1]][2])
+        return(info_score)
+    })
+    expect_equal(info_scores >= min_info, rep(TRUE, length(info_scores)))
 }
 
 check_vcf_against_phase <- function(

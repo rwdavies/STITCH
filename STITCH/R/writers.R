@@ -206,7 +206,11 @@ make_and_write_output_file <- function(
         thetaHat <- infoCount[, 1] / 2 / N
         denom <- 2 * N * thetaHat * (1-thetaHat)
         info[snps_in_output_block] <- 1 - infoCount[, 2] / denom
-        info[snps_in_output_block][(thetaHat == 0) | (thetaHat == 1)] <- 1
+        ## block out those where thetaHat is really close to 0 or 1
+        ## when very rare
+        info[snps_in_output_block][(round(thetaHat, 2) == 0) | (round(thetaHat, 2) == 1)] <- 1
+        info[info < 0] <- 0
+        ## not 100% sure this is OK, might fail if higher bq average, but anyway, entirely ref/alt SNPs not interesting
         estimatedAlleleFrequency[snps_in_output_block] <- afCount / N
         hwe[snps_in_output_block] <- generate_hwe_on_counts(hweCount, nSNPsInOutputBlock, nCores)
         hweCount_total[snps_in_output_block, ] <- hweCount

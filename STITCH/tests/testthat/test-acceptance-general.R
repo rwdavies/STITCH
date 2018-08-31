@@ -2,6 +2,7 @@ if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    
     ## dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
@@ -13,6 +14,7 @@ if (1 == 0) {
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     
+
 }
 
 
@@ -24,7 +26,8 @@ extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
 
 phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
 phasemaster[2, ] <- c(1, 0)
-phasemaster[3, ] <- c(0, 0)    
+phasemaster[3, ] <- c(0, 0)
+phasemaster[4, ] <- c(1, 1)
 phasemaster[7, ] <- c(1, 0)    
 data_package <- make_acceptance_test_data_package(
     n_samples = 10,
@@ -79,8 +82,6 @@ test_that("STITCH diploid works under default parameters", {
 
     outputdir <- make_unique_tempdir()
     
-    sink("/dev/null")
-
     STITCH(
         chr = data_package$chr,
         bamlist = data_package$bamlist,
@@ -92,8 +93,6 @@ test_that("STITCH diploid works under default parameters", {
         nCores = 1,
         outputBlockSize = 3
     )
-
-    sink()
 
     vcf <- read.table(
         file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
@@ -128,7 +127,6 @@ test_that("STITCH diploid can write to bgen", {
     )
 
     out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
-
     expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[, "CHR"]))
     expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[, "POS"]))
     expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[, "REF"]))
@@ -138,20 +136,8 @@ test_that("STITCH diploid can write to bgen", {
         phase = data_package$phase,
         tol = 0.2
     )
-
-    var_info <- read.table(
-        file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen.per_snp_stats.txt.gz")),
-        header = TRUE
-    )
-    expect_equal(nrow(var_info), 10)
-    expect_equal((var_info[, "INFO_SCORE"] > 0.98), rep(TRUE, nrow(var_info)))
     
 })
-
-
-
-
-
 
 
 ## afterwards, everything should test both bgen and bgvcf
@@ -209,7 +195,8 @@ test_that("STITCH diploid works with completely split reads", {
             data_package,
             output_format,
             which_snps = NULL,
-            tol = 0.2
+            tol = 0.2,
+            min_info = 0.94
         )
         
     }
@@ -234,8 +221,6 @@ test_that("STITCH diploid works under default parameters when outputdir has a sp
 
         for(output_format in c("bgvcf", "bgen")) {
         
-            sink("/dev/null")
-
             STITCH(
                 chr = data_package$chr,
                 bamlist = data_package$bamlist,
@@ -248,8 +233,6 @@ test_that("STITCH diploid works under default parameters when outputdir has a sp
                 outputBlockSize = 3,
                 output_format = output_format            
             )
-            
-            sink()
             
             check_output_against_phase(
                 file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
@@ -308,7 +291,8 @@ test_that("STITCH diploid works under default parameters with nCores = 40 and N 
             data_package25,
             output_format,
             which_snps = NULL,
-            tol = 0.2
+            tol = 0.2,
+            min_info = 0.85
         )
 
     }
@@ -331,7 +315,6 @@ test_that("STITCH diploid works under default parameters with N = 25 and nCores 
     for(output_format in c("bgvcf", "bgen")) {
         
         outputdir <- make_unique_tempdir()    
-        sink("/dev/null")
 
         set.seed(319)
         STITCH(
@@ -346,14 +329,13 @@ test_that("STITCH diploid works under default parameters with N = 25 and nCores 
             output_format = output_format
         )
 
-        sink()
-        
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package25$chr, extension[output_format])),
             data_package25,
             output_format,
             which_snps = NULL,
-            tol = 0.2
+            tol = 0.2,
+            min_info = 0.85
         )
 
     }
@@ -369,7 +351,6 @@ test_that("STITCH diploid works with regionStart, regionEnd and buffer", {
 
     for(output_format in c("bgvcf", "bgen")) {
 
-        sink("/dev/null")
         set.seed(10)
         
         STITCH(
@@ -387,8 +368,6 @@ test_that("STITCH diploid works with regionStart, regionEnd and buffer", {
             output_format = output_format
         )
 
-        sink()
-
         regionName <- paste0(data_package$chr, ".", 3, ".", 7)
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", regionName, extension[output_format])),
@@ -405,10 +384,9 @@ test_that("STITCH diploid works with regionStart, regionEnd and buffer", {
 
 test_that("STITCH pseudoHaploid works under default parameters", {
     
-
     for(output_format in c("bgvcf", "bgen")) {
         
-        outputdir <- file.path(make_unique_tempdir(), "wer wer2")    
+        outputdir <- make_unique_tempdir()
         set.seed(357)
 
         STITCH(
@@ -429,7 +407,8 @@ test_that("STITCH pseudoHaploid works under default parameters", {
             data_package,
             output_format,
             which_snps = NULL,
-            tol = 0.5
+            tol = 0.5,
+            min_info = 0.6
         )
 
     }
@@ -441,7 +420,7 @@ test_that("STITCH pseudoHaploid works with outputSNPBlockSize", {
     
     for(output_format in c("bgvcf", "bgen")) {
         
-        outputdir <- file.path(make_unique_tempdir(), "wer wer2")    
+        outputdir <- make_unique_tempdir()
 
         STITCH(
             chr = data_package$chr,
@@ -463,7 +442,8 @@ test_that("STITCH pseudoHaploid works with outputSNPBlockSize", {
             data_package,
             output_format,
             which_snps = NULL,
-            tol = 0.5
+            tol = 0.5,
+            min_info = 0.60
         )
 
     }
@@ -745,7 +725,6 @@ test_that("STITCH diploid works with snap to grid", {
 
     for(output_format in c("bgvcf", "bgen")) {
 
-        sink("/dev/null")
         set.seed(10)
         
         STITCH(
@@ -761,8 +740,6 @@ test_that("STITCH diploid works with snap to grid", {
             gridWindowSize = 2,
             output_format = output_format
         )
-
-        sink()
 
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
@@ -827,8 +804,6 @@ test_that("STITCH pseudoHaploid works with grid", {
 
     for(output_format in c("bgvcf", "bgen")) {
 
-        sink("/dev/null")
-
         set.seed(1301)
 
         STITCH(
@@ -845,13 +820,13 @@ test_that("STITCH pseudoHaploid works with grid", {
             output_format = output_format
         )
 
-        sink()
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,
             output_format,
             which_snps = NULL,
-            tol = 0.5 ## not good!
+            tol = 0.5, ## not good!
+            min_info = 0.6
         )
 
     }
@@ -880,7 +855,6 @@ test_that("STITCH diploid works with snap to grid with downsampleToCov", {
     
     for(output_format in c("bgvcf", "bgen")) {
 
-        sink("/dev/null")
         set.seed(10)
         
         STITCH(
@@ -898,15 +872,33 @@ test_that("STITCH diploid works with snap to grid with downsampleToCov", {
             downsampleToCov = 2 ## insanely low!
         )
 
-        sink()
-
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
             data_package,
             output_format,
             which_snps = NULL,
-            tol = 2 ## basically, disable. only care about whether it worked with this toy example
+            tol = 2, ## basically, disable. only care about whether it worked with this toy example
+            min_info = 0
         )
+
+        ## here additional testing is performed
+        if (output_format == "bgvcf") {
+            vcf <- read.table(file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])))
+            ## want eaf and info-score
+            results <- t(sapply(1:nrow(vcf), function(i_snp) {
+                x <- strsplit(as.character(vcf[i_snp, 8]), ";")[[1]]
+                sapply(c("EAF", "INFO_SCORE"), function(z) {
+                    y <- grep(z, x)
+                    expect_true(length(y) == 1)
+                    z2 <- as.numeric(strsplit(x[y], paste0(z, "="))[[1]][2])
+                    return(z2)
+                })
+            }))
+            no_freq <- (results[, "EAF"] <= 0.001) | (results[, "EAF"] >= (1-0.001))
+            ## check that only those with no frequency get an INFO score of 1
+            expect_equal(sum(results[no_freq, "INFO_SCORE"] != 1), 0)
+            expect_equal(sum(results[!no_freq, "INFO_SCORE"] == 1), 0)            
+        }
         
     }
 
@@ -1114,12 +1106,13 @@ test_that("STITCH works in a situation with grid, buffer, outputBlockSize, etc",
         which_snps <- which((regionStart <= L) & (L <= regionEnd))
         who <- which(n_reads >= 10 )
         check_output_against_phase(
-            file =  file.path(outputdir, output_filename),
+            file = file.path(outputdir, output_filename),
             data_package = data_package,
             output_format = output_format,
             which_snps = which_snps,
             tol = 0.2,
-            who = who
+            who = who,
+            min_info = 0.95
         )
         
     }
