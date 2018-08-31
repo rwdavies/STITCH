@@ -883,6 +883,7 @@ arma::cube make_haploid_gammaUpdate_t(
     int iRead, J, cr, t, j, k;
     Rcpp::List readData;
     arma::ivec bqU, pRU;
+    arma::colvec gamma_t_col;
     double d3, eps, pR, pA, a1, a2, y, d, d1, d2, b;
     //
     for(iRead=0; iRead<=nReads-1; iRead++) {
@@ -894,6 +895,7 @@ arma::cube make_haploid_gammaUpdate_t(
         if (run_pseudo_haploid == true) {      
           d3 = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
         }
+        gamma_t_col = gamma_t.col(cr);
         for(j=0; j<=J; j++) {
             t=pRU(j);
             if(bqU(j)<0) {
@@ -915,7 +917,7 @@ arma::cube make_haploid_gammaUpdate_t(
                     b = eMatHapOri_t(k,iRead) * d3 / y;
                     d1 = a1 * b;
                     d2 = a2 * b;
-                    d = gamma_t(k,cr) / eMatHap_t(k,iRead);
+                    d = gamma_t_col(k) / eMatHap_t(k,iRead);
                     gammaUpdate_t(k, t, 0) += d * d1;
                     gammaUpdate_t(k, t, 1) += d * (d1 + d2);
                 }
@@ -924,7 +926,7 @@ arma::cube make_haploid_gammaUpdate_t(
                     a1 = pA * eHapsCurrent_t(k, t);
                     a2 = pR * (1- eHapsCurrent_t(k, t));
                     y = a1 + a2;
-                    d = gamma_t(k, cr) / y;
+                    d = gamma_t_col(k) / y;
                     gammaUpdate_t(k, t, 0) += a1 * d;
                     gammaUpdate_t(k, t, 1) += y * d;
                 }
