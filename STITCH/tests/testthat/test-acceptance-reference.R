@@ -366,7 +366,8 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
             data_packageX,
             output_format,
             which_snps = regionStart:regionEnd,
-            tol = 0.2
+            tol = 0.2,
+            min_info = 0.90
         )
 
     }
@@ -422,7 +423,8 @@ test_that("STITCH can impute with reference panels with only 1 iteration if the 
             data_package,
             output_format,
             which_snps = NULL,
-            tol = 0.3
+            tol = 0.3,
+            min_info = 0.90
         )
 
     }
