@@ -82,8 +82,8 @@ rcpp_calculate_fbd_dosage <- function(eHapsCurrent_t, gamma_t, grid, snp_start_1
 }
 
 #' @export
-make_haploid_gammaUpdate_t <- function(sampleReads, nReads, gamma_t, eHapsCurrent_t, eMatHap_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid = FALSE) {
-    .Call('_STITCH_make_haploid_gammaUpdate_t', PACKAGE = 'STITCH', sampleReads, nReads, gamma_t, eHapsCurrent_t, eMatHap_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid)
+make_haploid_gammaUpdate_t <- function(gammaUpdate_t, sampleReads, nReads, gamma_t, eHapsCurrent_t, eMatHap_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid = FALSE) {
+    invisible(.Call('_STITCH_make_haploid_gammaUpdate_t', PACKAGE = 'STITCH', gammaUpdate_t, sampleReads, nReads, gamma_t, eHapsCurrent_t, eMatHap_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid))
 }
 
 #' @export

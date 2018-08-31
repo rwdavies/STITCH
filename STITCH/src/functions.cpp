@@ -574,7 +574,7 @@ Rcpp::List forwardBackwardDiploid(
   arma::vec alphaTemp2 = arma::zeros(K);
   // variables working on full space
   int j, k, kk, t, k1, k2, iRead;
-  double kl1, kl2;        
+  double kl2;        
   double a, b, d, e, d1, d2, d3, eps;
   double pR = 0;
   double pA = 0;
@@ -864,7 +864,8 @@ Rcpp::List rcpp_calculate_fbd_dosage(
 
 //' @export
 // [[Rcpp::export]]
-arma::cube make_haploid_gammaUpdate_t(
+void make_haploid_gammaUpdate_t(
+    arma::cube& gammaUpdate_t,
     const Rcpp::List& sampleReads,
     const int nReads,
     const arma::mat& gamma_t,
@@ -876,10 +877,10 @@ arma::cube make_haploid_gammaUpdate_t(
     const bool run_pseudo_haploid = false
 ) {
     //
-    const int nSNPs = eHapsCurrent_t.n_cols;
+    //const int nSNPs = eHapsCurrent_t.n_cols;
     const int K = eHapsCurrent_t.n_rows;
     //
-    arma::cube gammaUpdate_t = arma::zeros(K, nSNPs, 2);
+    //arma::cube gammaUpdate_t = arma::zeros(K, nSNPs, 2);
     int iRead, J, cr, t, j, k;
     Rcpp::List readData;
     arma::ivec bqU, pRU;
@@ -933,7 +934,7 @@ arma::cube make_haploid_gammaUpdate_t(
             }
         } // end of SNP in read 
     } // end of read
-    return gammaUpdate_t;
+    return;
 }
 
 
@@ -1151,7 +1152,10 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  arma::cube gammaUpdate_t = make_haploid_gammaUpdate_t(
+  const int nSNPs = eHaps_t.n_cols;  
+  arma::cube gammaUpdate_t = arma::zeros(K, nSNPs, 2);
+  make_haploid_gammaUpdate_t(  
+      gammaUpdate_t,
       sampleReads,
       nReads,
       gamma_t,
