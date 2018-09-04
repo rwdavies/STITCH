@@ -103,7 +103,7 @@ test_that("removal of buffer from grid makes sense", {
 
 
 
-test_that("can use grid", {
+test_that("can use grid, and calculate gp_t", {
 
     n_snps <- 10 ## set to 10000 to check times better
     K <- 20
@@ -170,12 +170,15 @@ test_that("can use grid", {
         transMatRate_t_D = transMatRate_t_D,
         alphaMatCurrent_t = t(alphaMat),
         eHapsCurrent_t = t(eHaps),
-        method = "diploid"
+        method = "diploid",
+        return_genProbs = TRUE,
+        grid = grid
     )$fbsoL[[1]]
-    
-    expect_equal(ncol(out$gamma_t), nGrids)
-    expect_equal(min(out$gamma_t) >= 0, TRUE)
-    expect_equal(max(out$gamma_t) <= 1, TRUE)    
+
+    gammaK_t <- out[["gammaK_t"]]
+    expect_equal(ncol(gammaK_t), nGrids)
+    expect_equal(min(gammaK_t) >= 0, TRUE)
+    expect_equal(max(gammaK_t) <= 1, TRUE)    
 
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
@@ -207,6 +210,8 @@ test_that("can use grid", {
 
 test_that("can calculate fbd dosage", {
 
+    skip("deprecated")
+    
     nSNPs <- 10
     K <- 3
     KK <- K * K
@@ -235,6 +240,8 @@ test_that("can calculate fbd dosage", {
 
 test_that("can calculate fbd dosage using grid", {
 
+    skip("deprecated")
+    
     nSNPs <- 10
     nGrids <- 3
     K <- 3

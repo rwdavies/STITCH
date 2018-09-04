@@ -117,9 +117,10 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
     )
 
     ## basic checks
-    expect_equal(ncol(out$fbsoL[[1]]$gamma_t), n_snps)
-    expect_equal(min(out$fbsoL[[1]]$gamma_t) >= 0, TRUE)
-    expect_equal(max(out$fbsoL[[1]]$gamma_t) <= 1, TRUE)    
+    gammaK_t <- out$fbsoL[[1]][["gammaK_t"]]
+    expect_equal(ncol(gammaK_t), n_snps)
+    expect_equal(min(gammaK_t) >= 0, TRUE)
+    expect_equal(max(gammaK_t) <= 1, TRUE)    
 
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
@@ -153,12 +154,14 @@ test_that("can sample one path from forwardBackwardDiploid", {
 
     speed_test <- FALSE
     if (speed_test) {
-        n_snps <- 5000 ## to check times better set to 10000
+        n_snps <- 25000 ## to check times better set to 10000
         tmpdir <- "./"
         dir.create(tmpdir, showWarnings = FALSE)
+        suppressOutput <- as.integer(0)
     } else {
         n_snps <- 10
         tmpdir <- tempdir()
+        suppressOutput <- as.integer(1)
     }
 
     K <- 20    
@@ -224,13 +227,14 @@ test_that("can sample one path from forwardBackwardDiploid", {
         eHaps = t(eHaps),
         maxDifferenceBetweenReads = as.double(1000),
         maxEmissionMatrixDifference = as.double(1000),
-        whatToReturn = as.integer(0),
         Jmax = as.integer(10),
-        suppressOutput = as.integer(1),
+        suppressOutput = suppressOutput,
         return_a_sampled_path = TRUE,
-        blocks_for_output = array(NA, c(1, 1))
+        blocks_for_output = array(NA, c(1, 1)),
+        return_gamma = TRUE,
+        return_genProbs = TRUE ## time this as well
     )
-
+    
     ## basically, these should be the same
     ## given the seed and the ridiculous good fit
     marginally_most_likely_path <- apply(out$gamma_t, 2, which.max) ## 1-based

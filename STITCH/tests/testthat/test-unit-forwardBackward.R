@@ -189,7 +189,8 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
         priorCurrent <- runif(K) / K
         
         transMatRate_t_H <- get_transMatRate(method = "diploid-inbred", sigmaCurrent)
-        transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent)        
+        transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent)
+        
         for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {
 
             if (method == "pseudoHaploid") {
@@ -209,9 +210,10 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                 eHapsCurrent_t = eHapsCurrent_t,
                 transMatRate_t_H = transMatRate_t_H,
                 transMatRate_t_D = transMatRate_t_D,
-                whatToReturnOriginal = 0,
                 blocks_for_output = blocks_for_output,
-                generate_fb_snp_offsets = TRUE
+                generate_fb_snp_offsets = TRUE,
+                return_genProbs = TRUE, ## might not be for all methods
+                grid = grid                
             )$fbsoL
             gp_t_all <- calculate_gp_t_from_fbsoL(
                 eHapsCurrent_t = eHapsCurrent_t,
@@ -261,7 +263,11 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     alphaBetaBlock = alphaBetaBlock,
                     run_fb_grid_offset = first_grid_in_region,
                     suppressOutput = 1,
-                    i_snp_block_for_alpha_beta = i_output_block
+                    i_snp_block_for_alpha_beta = i_output_block,
+                    return_genProbs = TRUE, ## might not be for all methods
+                    grid = grid,
+                    snp_start_1_based = first_snp_in_region,
+                    snp_end_1_based = last_snp_in_region
                 )$fbsoL
                 
                 gp_t_local <- calculate_gp_t_from_fbsoL(

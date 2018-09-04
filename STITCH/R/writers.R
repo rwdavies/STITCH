@@ -411,14 +411,28 @@ per_core_get_results <- function(
             ## only 1 grid being imputed (rare!)
             ## also, imputation more or less meaningless
             ## but anyway, make valid output
-            abSmall <- alphaBetaBlockList[[iSample]]
+            abSmall <- alphaBetaBlockList[[iSample]] ## how long is this?
             fbsoL <- lapply(1:length(abSmall), function(i) {
                 a <- abSmall[[i]]$alphaHatBlocks_t
                 b <- abSmall[[i]]$betaHatBlocks_t
                 gamma_t <- a[, i_output_block, drop = FALSE] * b[, i_output_block, drop = FALSE]
                 gamma_t <- gamma_t / sum(gamma_t) ## don't have c here
-                return(list(gamma_t = gamma_t))
+                if (method == "diploid") {
+                    ## argh - wait, how is this working?
+                    genProbs_t <- rcpp_calculate_fbd_dosage(
+                        eHapsCurrent_t = eHapsCurrent_t,
+                        gamma_t = gamma_t,
+                        grid = grid,
+                        snp_start_1_based = first_snp_in_region,
+                        snp_end_1_based = last_snp_in_region,
+                        grid_offset = first_grid_in_region
+                    )
+                } else {
+                    genProbs_t <- NA
+                }
+                return(list(gamma_t = gamma_t, genProbs_t = genProbs_t))
             })
+            
         } else {    
 
             fbsoL <- run_forward_backwards(
@@ -440,7 +454,11 @@ per_core_get_results <- function(
                 maxDifferenceBetweenReads = maxDifferenceBetweenReads,
                 maxEmissionMatrixDifference = maxEmissionMatrixDifference,
                 niterations = niterations,
-                iteration = niterations
+                iteration = niterations,
+                return_genProbs = TRUE,
+                grid = grid,
+                snp_start_1_based = first_snp_in_region,
+                snp_end_1_based = last_snp_in_region
             )$fbsoL
             
         }
