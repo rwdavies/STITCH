@@ -254,40 +254,42 @@ void run_forward_diploid(
     const int KK = K*K; // KK is number of states / traditional K for HMMs
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
-    for(int t=1; t<=T-1; t++) {
+    arma::colvec alphaHat_t_col, alphaMat_t_col;
+    double d0, d1, d2;
+    for(int t = 1; t < T; t++) {
         // calculate necessary things
+        alphaHat_t_col = alphaHat_t.col(t - 1);
+        alphaMat_t_col = alphaMat_t.col(t - 1);        
+        d0 = transMatRate_t_D(0, t-1);
+        d1 = transMatRate_t_D(1, t-1);
+        d2 = transMatRate_t_D(2, t-1);
         alphaTemp1.fill(0);
         alphaTemp2.fill(0);
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
-                kk=k1+K*k2;
-                alphaTemp1(k2) = alphaTemp1(k2) + alphaHat_t(kk,t-1);
-                alphaTemp2(k1) = alphaTemp2(k1) + alphaHat_t(kk,t-1);
+        for(k1 = 0; k1 < K; k1++) {
+            for(k2 = 0; k2 < K; k2++) {
+                kk = k1 + K * k2;
+                alphaTemp1(k2) += alphaHat_t_col(kk);
+                alphaTemp2(k1) += alphaHat_t_col(kk);
             }
         }
         // now make constant over whole thing
-        alphaConst=0;
-        for(kk=0; kk<=KK-1; kk++)
-            alphaConst = alphaConst + alphaHat_t(kk,t-1);
-        alphaConst = alphaConst * transMatRate_t_D(2,t-1);
-        for(k=0; k<=K-1; k++) {
-            alphaTemp1(k)=alphaTemp1(k) * transMatRate_t_D(1, t-1);
-            alphaTemp2(k)=alphaTemp2(k) * transMatRate_t_D(1, t-1);
-        }
-        // 
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
+        alphaConst = arma::sum(alphaHat_t_col) * d2;
+        alphaTemp1 *= d1;
+        alphaTemp2 *= d1;        
+        //
+        for(k1 = 0; k1 < K; k1++) {
+            for(k2 = 0; k2 < K; k2++) {
                 kk=k1+K*k2;
                 alphaHat_t(kk,t) = eMat_t(kk,t) *                       \
-                    (alphaHat_t(kk,t-1) * transMatRate_t_D(0,t-1) +       \
-                     (alphaMat_t(k1,t-1) * alphaTemp1(k2) +             \
-                      alphaMat_t(k2,t-1) * alphaTemp2(k1)) +            \
-                     alphaMat_t(k1,t-1) * alphaMat_t(k2,t-1) * alphaConst);
+                    (alphaHat_t_col(kk) * d0 +       \
+                     (alphaMat_t_col(k1) * alphaTemp1(k2) +             \
+                      alphaMat_t_col(k2) * alphaTemp2(k1)) +            \
+                     alphaMat_t_col(k1) * alphaMat_t_col(k2) * alphaConst);
             }
         }
         // do scaling now
         c(t) = 1 / sum(alphaHat_t.col(t));
-        alphaHat_t.col(t) = alphaHat_t.col(t) * c(t);
+        alphaHat_t.col(t) *= c(t);
     }
     return;
 }
@@ -418,43 +420,41 @@ arma::mat rcpp_make_and_bound_eMat_t(
     const double& maxEmissionMatrixDifference,
     const int run_fb_grid_offset = 0
 ) {
-    int k, k1, k2, iRead, prev_readSNP, readSNP;
+    int readSNP;
     double x, rescale;
     const int KK = K * K;
     arma::mat eMat_t = arma::ones(KK, T);
-    for(int iRead=0; iRead<=nReads-1; iRead++) {
+    arma::colvec eMatHap_t_col;
+    int iGrid, k3, k, k1, k2;
+    for(int iRead=0; iRead < nReads; iRead++) {
         Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
         readSNP = as<int>(readData[1]) - run_fb_grid_offset; // leading SNP from read
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
-                // work in log space?
-                eMat_t(k1+K*k2,readSNP) = eMat_t(k1+K*k2,readSNP) * (0.5 * eMatHap_t(k1,iRead) + 0.5 * eMatHap_t(k2,iRead));
+        eMatHap_t_col = 0.5 * eMatHap_t.col(iRead);
+        for(k1 = 0; k1 < K; k1++) {
+            x = eMatHap_t_col(k1);
+            k3 = K * k1;
+            for(k2 = 0; k2 < K; k2++) {
+                eMat_t(k3 + k2, readSNP) *= (x + eMatHap_t_col(k2));                
             }
         }  // end of SNP in read
     }
     //
     // cap eMat, ie P(reads | k1,k2) to be within maxDifferenceBetweenReads^2
     //
-    prev_readSNP = -1;
-    for(iRead=0; iRead<=nReads-1; iRead++) {
-        Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-        readSNP = as<int>(readData[1]) - run_fb_grid_offset; // leading SNP from read
-        // do not bother if already been done
-        if (readSNP != prev_readSNP) {
+    double one_over_maxEmissionMatrixDifference = 1 / maxEmissionMatrixDifference;
+    // loop over eMat_t
+    for(iGrid = 0; iGrid < T; iGrid++) {
+        if (eMat_t(0, iGrid) < 1) {
             // first, get maximum
-            x=0;
-            for(k=0; k<=KK-1; k++)
-                if(eMat_t(k,readSNP)>x)
-                    x=eMat_t(k,readSNP);
+            x = eMat_t.col(iGrid).max();
             // x is the maximum now. re-scale to x
             rescale = 1 / x;        
-            for(k=0; k<=KK-1; k++) {
-                eMat_t(k,readSNP) = eMat_t(k,readSNP) * rescale;
-                if(eMat_t(k,readSNP)<(1 / maxEmissionMatrixDifference))
-                    eMat_t(k,readSNP)=1 / maxEmissionMatrixDifference;
+            for(k=0; k < KK; k++) {
+                eMat_t(k, iGrid) *= rescale;
+                if(eMat_t(k, iGrid)<(one_over_maxEmissionMatrixDifference))
+                    eMat_t(k, iGrid) = one_over_maxEmissionMatrixDifference;
             }
         }
-        prev_readSNP = readSNP;
     } // end of loop on t
     return eMat_t;
 }
@@ -499,25 +499,27 @@ arma::mat rcpp_make_diploid_jUpdate(
     arma::vec alphaTemp2 = arma::zeros(K);
     arma::mat jUpdate_t = arma::zeros(K,T - 1);
     double tmr1, tmr2;
+    arma::colvec alphaMat_t_col;
     //
     for(t=0; t<=T-2; t++) {
         alphaTemp1.fill(0);
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
-                alphaTemp1(k2) = alphaTemp1(k2) + alphaHat_t(k1+K*k2,t);
+        for(k1 = 0; k1 < K; k1++) {
+            for(k2 = 0; k2 < K; k2++) {
+                alphaTemp1(k2) += alphaHat_t(k1 + K * k2, t);
             }
         }
         //
         // now do proper calculation
         //
-        tmr1 = transMatRate_t_D(1,t);
-        tmr2 = transMatRate_t_D(2,t);
+        tmr1 = transMatRate_t_D(1, t);
+        tmr2 = transMatRate_t_D(2, t);
+        alphaMat_t_col = alphaMat_t.col(t);
         for(k1 = 0; k1 < K; k1++) {
             for(k2 = 0; k2 < K; k2++) {
                 kk = k1 + K * k2;
                 jUpdate_t(k1,t) += \
                     (tmr1 * alphaTemp1(k2) +  \
-                     tmr2 * alphaMat_t(k2,t)) *        \
+                     tmr2 * alphaMat_t_col(k2) ) *       \
                     betaHat_t(kk,t+1) * eMat_t(kk,t+1);
             }
             jUpdate_t(k1,t) *= 2 * alphaMat_t(k1, t);
@@ -770,8 +772,10 @@ Rcpp::List forwardBackwardDiploid(
   prev_section=next_section;
   //
   arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
-  arma::colvec eMatHap_t_col, eHaps_t_col, gamma_t_col;
-  int k3, J, cr;
+  int k3;
+  arma::colvec eMatHap_t_col;
+  arma::colvec eHaps_t_col, gamma_t_col;
+  int J, cr;
   arma::ivec bqU, pRU;
   int cr_prev = -1;
   //
