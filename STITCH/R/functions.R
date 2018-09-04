@@ -2076,7 +2076,8 @@ downsample_the_samples <- function(
             
             save(
                 sampleReads,
-                file = file_sampleReads(tempdir, newSample, regionNameLocal)
+                file = file_sampleReads(tempdir, newSample, regionNameLocal),
+                compress = FALSE
             )
             
             if (length(new_bundling_info) > 0) {
@@ -2878,7 +2879,8 @@ shrinkReads_on_range <- function(
         sampleReads <- shrinkReads_on_sample_reads(sampleReads = sampleReads, inRegionL = inRegionL)
         save(
             sampleReads,
-            file = file_sampleReads(tempdir, iSample, regionName)
+            file = file_sampleReads(tempdir, iSample, regionName),
+            compress = FALSE
         )
         if (length(bundling_info) > 0) {
             last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
@@ -3269,7 +3271,7 @@ downsampleToFraction_a_range <- function(
         }
         sampleReads=sampleReads[keep]
         ## save result back to disk
-        save(sampleReads,file=file_sampleReads(tempdir, iSample, regionName))
+        save(sampleReads,file=file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
 
         ## bundle back together
         if (length(bundling_info) > 0) {
@@ -3886,7 +3888,7 @@ within_EM_per_sample_heuristics <- function(
             fbsoL = fbsoL
         )
         dosage <- gp_t[2, ] + 2 * gp_t[3, ]
-        save(dosage, file=file_dosages(tempdir, iSample, regionName))
+        save(dosage, file=file_dosages(tempdir, iSample, regionName), compress = FALSE)
     } # end of check on high coverage sample
     ##
     ## check phasing samples if applicable
@@ -5380,7 +5382,7 @@ findRecombinedReadsPerSample <- function(
             count <- count + as.integer(out$did_split)
         } # end of loop on reads
         sampleReads <- sampleReads[order(unlist(lapply(sampleReads,function(x) x[[2]])))]
-        save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName))
+        save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
         if (verbose==TRUE)
             print_message(paste0(
                 "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
@@ -5761,9 +5763,9 @@ snap_reads_to_grid_subfunction <- function(
             }
         } else {
             if (whatKindOfReads == "sampleReads") {
-                save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName))
+                save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
             } else if (whatKindOfReads == "referenceSampleReads") {
-                save(sampleReads, file = file_referenceSampleReads(tempdir, iSample, regionName))
+                save(sampleReads, file = file_referenceSampleReads(tempdir, iSample, regionName), compress = FALSE)
             }
             if (length(bundling_info) > 0) {
                 last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]

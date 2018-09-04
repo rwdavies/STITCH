@@ -154,12 +154,14 @@ test_that("can sample one path from forwardBackwardDiploid", {
 
     speed_test <- FALSE
     if (speed_test) {
-        n_snps <- 25000 ## to check times better set to 10000
+        n_snps <- 25000 ## can set higher
         tmpdir <- "./"
         dir.create(tmpdir, showWarnings = FALSE)
         suppressOutput <- as.integer(0)
+        n_reads <- round(n_snps / 10)  ## set to vary coverage        
     } else {
         n_snps <- 10
+        n_reads <- n_snps * 2
         tmpdir <- tempdir()
         suppressOutput <- as.integer(1)
     }
@@ -174,11 +176,10 @@ test_that("can sample one path from forwardBackwardDiploid", {
         print("loading file!")
         load(file)
     } else {
-        ## so like 4X coverage. high!
         data_package <- make_acceptance_test_data_package(
             n_samples = 1,
             n_snps = n_snps,
-            n_reads = n_snps * 2,
+            n_reads = n_reads,
             seed = 2,
             chr = 10,
             K = K,

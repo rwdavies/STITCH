@@ -249,9 +249,7 @@ void run_forward_diploid(
     const int& K
 ) {
     double alphaConst;
-    int k;
     int kk, k1, k2;        
-    const int KK = K*K; // KK is number of states / traditional K for HMMs
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
     arma::colvec alphaHat_t_col, alphaMat_t_col;
@@ -279,11 +277,11 @@ void run_forward_diploid(
         //
         for(k1 = 0; k1 < K; k1++) {
             for(k2 = 0; k2 < K; k2++) {
-                kk=k1+K*k2;
-                alphaHat_t(kk,t) = eMat_t(kk,t) *                       \
+                kk=K * k1 + k2;
+                alphaHat_t(kk, t) = eMat_t(kk, t) *  \
                     (alphaHat_t_col(kk) * d0 +       \
-                     (alphaMat_t_col(k1) * alphaTemp1(k2) +             \
-                      alphaMat_t_col(k2) * alphaTemp2(k1)) +            \
+                     (alphaMat_t_col(k1) * alphaTemp1(k2) + \
+                      alphaMat_t_col(k2) * alphaTemp2(k1)) + \
                      alphaMat_t_col(k1) * alphaMat_t_col(k2) * alphaConst);
             }
         }
@@ -305,45 +303,43 @@ void run_backward_diploid(
     const int& T,
     const int& K
 ) {
-    int t, k1, k2, kk, k;
+    int t, k1, k2, kk;
     arma::vec betaTemp1 = arma::zeros(K);
     arma::vec betaTemp2 = arma::zeros(K);
-    double betaConst, d;
+    double betaConst, d, x, d0;
+    arma::colvec alphaMat_t_col, betaHat_mult_eMat_t_col;
     for(t = T-2; t>=0; --t) {
         betaTemp1.fill(0);
         betaTemp2.fill(0);
         betaConst=0;
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
-                kk=k1+K*k2;
-                d=betaHat_t(kk,t+1) * eMat_t(kk,t+1);
-                betaTemp1(k1) = betaTemp1(k1) + \
-                    d * alphaMat_t(k2,t);
-                betaTemp2(k2) = betaTemp2(k2) + \
-                    d * alphaMat_t(k1,t);
-                betaConst = betaConst +                         \
-                    d * alphaMat_t(k1,t) * alphaMat_t(k2,t);
+        alphaMat_t_col = alphaMat_t.col(t);
+        betaHat_mult_eMat_t_col = betaHat_t.col(t + 1) % eMat_t.col(t + 1); // element-wise multiplication
+        for(k1 = 0; k1 < K; k1++) {
+            for(k2 = 0; k2 < K; k2++) {
+                kk = K * k1 + k2;
+                d = betaHat_mult_eMat_t_col(kk);
+                betaTemp1(k1) += d * alphaMat_t_col(k2);
+                betaTemp2(k2) += d * alphaMat_t_col(k1);
+                betaConst += d * alphaMat_t_col(k1) * alphaMat_t_col(k2);
             }
         }
         // add transMatRate to constants
-        d=transMatRate_t_D(1,t);
-        for(k=0; k<=K-1; k++) {
-            betaTemp1(k) = betaTemp1(k) * d;
-            betaTemp2(k) = betaTemp2(k) * d;
-        }
-        betaConst = betaConst * transMatRate_t_D(2,t);
+        d = transMatRate_t_D(1,t);
+        betaTemp1 *= d;
+        betaTemp2 *= d;        
+        betaConst *= transMatRate_t_D(2, t);
+        d0 = transMatRate_t_D(0, t);
         // final calculation
-        for(k1=0; k1<=K-1; k1++) {
-            for(k2=0; k2<=K-1; k2++) {
-                kk=k1+K*k2;
-                betaHat_t(kk,t) = eMat_t(kk,t+1) * betaHat_t(kk,t+1) *  \
-                    transMatRate_t_D(0,t) +                               \
-                    betaTemp1(k1) + betaTemp2(k2) +                     \
-                    betaConst;
+        for(k1 = 0; k1 < K; k1++) {
+            x = betaTemp1(k1) + betaConst;
+            for(k2 = 0; k2 < K; k2++) {
+                kk = K * k1 + k2;
+                betaHat_t(kk, t) = betaHat_mult_eMat_t_col(kk) * d0 + \
+                    betaTemp2(k2) + x;
             }
         }
         // apply scaling
-        betaHat_t.col(t) = betaHat_t.col(t) * c(t);
+        betaHat_t.col(t) *= c(t);
     }
     return;
 }
@@ -577,6 +573,85 @@ arma::mat rcpp_calculate_fbd_dosage(
 }
 
 
+arma::cube calculate_diploid_gammaUpdate(
+    const Rcpp::List& sampleReads,
+    const int nReads,
+    const arma::mat& gamma_t,
+    const arma::mat& eHapsCurrent_t,
+    const arma::mat& eMatHap_t 
+) {
+    //
+    const int K = eHapsCurrent_t.n_rows;
+    const int nSNPs = eHapsCurrent_t.n_cols;
+    //
+    arma::cube gammaUpdate_t = arma::zeros(K, nSNPs,2);
+    arma::colvec eMatHap_t_col;
+    arma::colvec eHapsCurrent_t_col, gamma_t_col;
+    arma::ivec bqU, pRU;    
+    int J, cr, j, iRead, k, k1, k3, t;
+    int cr_prev = -1;
+    double eps, pA, pR, d1, d2, d3, a, b, e, kl2;
+    //
+    for(iRead = 0; iRead < nReads; iRead++) {
+        // recal that below is what is used to set each element of sampleRead
+        // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
+        Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
+        J = readData[0]; // number of SNPs on read
+        cr = readData[1]; // central SNP or grid point
+        bqU = as<arma::ivec>(readData[2]); // bq for each SNP
+        pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
+        // loop over every SNP in the read
+        if (cr > cr_prev) {
+            gamma_t_col = gamma_t.col(cr);
+        }
+        for(j = 0; j <= J; j++) {
+            t=pRU(j); // position of this SNP in full T sized matrix
+            //
+            // first haplotype (ie (k,k1))
+            //
+            // less than 0 - reference base more likely
+            if(bqU(j)<0) {
+                eps = pow(10,(double(bqU(j))/10));
+                pR=1-eps;
+                pA=eps/3;
+            }
+            if(bqU(j)>0) {
+                eps = pow(10,(-double(bqU(j))/10));
+                pR=eps/3;
+                pA=1-eps;
+            }
+            //
+            // RECAL  eMatHap(iRead,k) = eMatHap(iRead,k) * ( eHaps(pRU(j),k) * pA + (1-eHaps(pRU(j),k)) * pR);
+            // RECAL  eMat(readSNP,k1+K*k2) = eMat(readSNP,k1+K*k2) * (0.5 * eMatHap(iRead,k1) + 0.5 * eMatHap(iRead,k2));
+            //
+            eMatHap_t_col = eMatHap_t.col(iRead);
+            eHapsCurrent_t_col = eHapsCurrent_t.col(t);
+            for(k = 0; k < K; k++) {
+                //d1 = pA * eHapsCurrent_t(k,t);
+                //d2 = pR * (1-eHapsCurrent_t(k,t));
+                d1 = pA * eHapsCurrent_t_col(k);
+                d2 = pR * eHapsCurrent_t_col(k);
+                d3 = d1 / (d1 + d2); // this is all I need
+                a = eMatHap_t_col(k);
+                k3 = K * k;
+                for(k1 = 0; k1 < K; k1++) {
+                    //kl1 = k+K*k1;
+                    //kl2 = k1+K*k;
+                    kl2 = k1 + k3;
+                    b = eMatHap_t_col(k1);
+                    //e = (2 * gamma_t(kl1,cr) + gamma_t(kl2,cr)) * ( a / (a + b));
+                    e = 2 * gamma_t_col(kl2) * ( a / (a + b));
+                    gammaUpdate_t(k,t,0) += e * d3;
+                    gammaUpdate_t(k,t,1) += e;
+                } // loop on other haplotype
+            } // end of loop onk
+        } // end of loop on SNP within read
+    }
+    return(gammaUpdate_t);
+}
+
+
+
 //' @export
 // [[Rcpp::export]]
 Rcpp::List forwardBackwardDiploid(
@@ -612,7 +687,6 @@ Rcpp::List forwardBackwardDiploid(
   //
   // constants
   //
-  const int T_total = eHaps_t.n_cols; // total number of SNPs
   const int T = alphaMat_t.n_cols + 1;  // what we iterate over / grid
   const int K = eHaps_t.n_rows; // traditional K for haplotypes
   const int KK = K*K; // KK is number of states / traditional K for HMMs
@@ -620,18 +694,15 @@ Rcpp::List forwardBackwardDiploid(
   // new variables
   //
   // variables working on nReads
-  arma::mat alphaHat_t = arma::zeros(KK,T);  
-  arma::mat betaHat_t = arma::zeros(KK,T);
-  arma::rowvec c = arma::zeros(1,T);
+  arma::mat alphaHat_t = arma::zeros(KK, T);  
+  arma::mat betaHat_t = arma::zeros(KK, T);
+  arma::rowvec c = arma::zeros(1, T);
   // variables for faster forward backward calculation  double alphaConst, betaConst;
   arma::vec alphaTemp1 = arma::zeros(K);
   arma::vec alphaTemp2 = arma::zeros(K);
   // variables working on full space
-  int j, k, kk, t, k1, k2, iRead;
-  double kl2;        
-  double a, b, d, e, d1, d2, d3, eps;
-  double pR = 0;
-  double pA = 0;
+  int kk, t, k1, k2;
+  double d;
   Rcpp::List alphaBetaBlocks;
   Rcpp::List to_return;
   arma::mat genProbs_t;  
@@ -718,19 +789,6 @@ Rcpp::List forwardBackwardDiploid(
       gamma_t.col(t) *= g_temp;
   }
   //
-  // do collapsed gamma here
-  //
-  arma::mat gammaK_t = arma::zeros(K,T);    
-  for(t = 0; t < T; t++) {
-    for(k1 = 0; k1 < K; k1++) {
-        d = 0;
-        for(k2 = 0; k2 < K; k2++) {
-            d = d + gamma_t(k1+K*k2, t);
-        }
-        gammaK_t(k1, t) = d;
-    }
-  }
-  //
   // (optional) calculate genProbs and dosage
   //
   if (return_genProbs) {
@@ -763,6 +821,22 @@ Rcpp::List forwardBackwardDiploid(
       );
   }
   //
+  // make collapsed gamma here
+  //
+  next_section="Make collapsed gamma";
+  prev=print_times(prev, suppressOutput, prev_section, next_section);
+  prev_section=next_section;
+  arma::mat gammaK_t = arma::zeros(K,T);    
+  for(t = 0; t < T; t++) {
+    for(k1 = 0; k1 < K; k1++) {
+        d = 0;
+        for(k2 = 0; k2 < K; k2++) {
+            d = d + gamma_t(k1+K*k2, t);
+        }
+        gammaK_t(k1, t) = d;
+    }
+  }
+  //
   //
   // do gamma update here - save large matrix, just put in necessary values
   //
@@ -770,74 +844,13 @@ Rcpp::List forwardBackwardDiploid(
   next_section="Gamma update";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  //
-  arma::cube gammaUpdate_t = arma::zeros(K,T_total,2);
-  int k3;
-  arma::colvec eMatHap_t_col;
-  arma::colvec eHaps_t_col, gamma_t_col;
-  int J, cr;
-  arma::ivec bqU, pRU;
-  int cr_prev = -1;
-  //
-  // only, mathematically correct version
-  //
-  for(iRead=0; iRead<=nReads-1; iRead++) {
-      // recal that below is what is used to set each element of sampleRead
-      // sampleReads.push_back(Rcpp::List::create(nU,d,phiU,pRU));
-      Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-      J = readData[0]; // number of SNPs on read
-      cr = readData[1]; // central SNP or grid point
-      bqU = as<arma::ivec>(readData[2]); // bq for each SNP
-      pRU = as<arma::ivec>(readData[3]); // position of each SNP from 0 to T-1
-      // loop over every SNP in the read
-      if (cr > cr_prev) {
-          gamma_t_col = gamma_t.col(cr);
-      }
-      for(j = 0; j <= J; j++) {
-        t=pRU(j); // position of this SNP in full T sized matrix
-        //
-        // first haplotype (ie (k,k1))
-        //
-        // less than 0 - reference base more likely
-        if(bqU(j)<0) {
-          eps = pow(10,(double(bqU(j))/10));
-          pR=1-eps;
-          pA=eps/3;
-        }
-        if(bqU(j)>0) {
-          eps = pow(10,(-double(bqU(j))/10));
-          pR=eps/3;
-          pA=1-eps;
-        }
-        //
-        //
-        // RECAL  eMatHap(iRead,k) = eMatHap(iRead,k) * ( eHaps(pRU(j),k) * pA + (1-eHaps(pRU(j),k)) * pR);
-        // RECAL  eMat(readSNP,k1+K*k2) = eMat(readSNP,k1+K*k2) * (0.5 * eMatHap(iRead,k1) + 0.5 * eMatHap(iRead,k2));
-        //
-        //
-        eMatHap_t_col = eMatHap_t.col(iRead);
-        eHaps_t_col = eHaps_t.col(t);
-        for(k = 0; k < K; k++) {
-            //d1 = pA * eHaps_t(k,t);
-            //d2 = pR * (1-eHaps_t(k,t));
-            d1 = pA * eHaps_t_col(k);
-            d2 = pR * eHaps_t_col(k);
-            d3 = d1 / (d1 + d2); // this is all I need
-            a = eMatHap_t_col(k);
-            k3 = K * k;
-            for(k1 = 0; k1 < K; k1++) {
-                //kl1 = k+K*k1;
-                //kl2 = k1+K*k;
-                kl2 = k1 + k3;
-                b = eMatHap_t_col(k1);
-                //e = (2 * gamma_t(kl1,cr) + gamma_t(kl2,cr)) * ( a / (a + b));
-                e = 2 * gamma_t_col(kl2) * ( a / (a + b));
-                gammaUpdate_t(k,t,0) += e * d3;
-                gammaUpdate_t(k,t,1) += e;
-            } // loop on other haplotype
-        } // end of loop onk
-      } // end of loop on SNP within read
-  }
+  arma::cube gammaUpdate_t = calculate_diploid_gammaUpdate(
+      sampleReads,
+      nReads,
+      gamma_t,
+      eHaps_t,
+      eMatHap_t 
+  );
   //
   //
   // make jUpdate
