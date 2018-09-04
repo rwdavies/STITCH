@@ -174,6 +174,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         print("loading file!")
         load(file)
     } else {
+        ## so like 4X coverage. high!
         data_package <- make_acceptance_test_data_package(
             n_samples = 1,
             n_snps = n_snps,
@@ -217,6 +218,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     pi <- runif(K) / K
     eHaps[, 1] <- 0.01
     eHaps[, 2] <- 0.99
+    grid <- 0:(n_snps - 1)
 
     out <- forwardBackwardDiploid(
         sampleReads = sampleReads,
@@ -232,7 +234,10 @@ test_that("can sample one path from forwardBackwardDiploid", {
         return_a_sampled_path = TRUE,
         blocks_for_output = array(NA, c(1, 1)),
         return_gamma = TRUE,
-        return_genProbs = TRUE ## time this as well
+        return_genProbs = TRUE, ## time this as well
+        grid = grid,
+        snp_start_1_based = 1,
+        snp_end_1_based = n_snps
     )
     
     ## basically, these should be the same
