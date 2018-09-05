@@ -249,7 +249,7 @@ void run_forward_diploid(
     const int& K
 ) {
     double alphaConst;
-    int kk, k1, k2;        
+    int kk, k1, k2, K_times_k1;
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
     arma::colvec alphaHat_t_col, alphaMat_t_col;
@@ -264,8 +264,9 @@ void run_forward_diploid(
         alphaTemp1.fill(0);
         alphaTemp2.fill(0);
         for(k1 = 0; k1 < K; k1++) {
+            K_times_k1 = K * k1;
             for(k2 = 0; k2 < K; k2++) {
-                kk = k1 + K * k2;
+                kk = K_times_k1 + k2;
                 alphaTemp1(k2) += alphaHat_t_col(kk);
                 alphaTemp2(k1) += alphaHat_t_col(kk);
             }
@@ -276,8 +277,9 @@ void run_forward_diploid(
         alphaTemp2 *= d1;        
         //
         for(k1 = 0; k1 < K; k1++) {
+            K_times_k1 = K * k1;            
             for(k2 = 0; k2 < K; k2++) {
-                kk=K * k1 + k2;
+                kk = K_times_k1 + k2;
                 alphaHat_t(kk, t) = eMat_t(kk, t) *  \
                     (alphaHat_t_col(kk) * d0 +       \
                      (alphaMat_t_col(k1) * alphaTemp1(k2) + \
@@ -303,7 +305,7 @@ void run_backward_diploid(
     const int& T,
     const int& K
 ) {
-    int t, k1, k2, kk;
+    int t, k1, k2, kk, K_times_k1;
     arma::vec betaTemp1 = arma::zeros(K);
     arma::vec betaTemp2 = arma::zeros(K);
     double betaConst, d, x, d0;
@@ -315,8 +317,9 @@ void run_backward_diploid(
         alphaMat_t_col = alphaMat_t.col(t);
         betaHat_mult_eMat_t_col = betaHat_t.col(t + 1) % eMat_t.col(t + 1); // element-wise multiplication
         for(k1 = 0; k1 < K; k1++) {
+            K_times_k1 = K * k1;
             for(k2 = 0; k2 < K; k2++) {
-                kk = K * k1 + k2;
+                kk = K_times_k1 + k2;
                 d = betaHat_mult_eMat_t_col(kk);
                 betaTemp1(k1) += d * alphaMat_t_col(k2);
                 betaTemp2(k2) += d * alphaMat_t_col(k1);
@@ -326,16 +329,16 @@ void run_backward_diploid(
         // add transMatRate to constants
         d = transMatRate_t_D(1,t);
         betaTemp1 *= d;
-        betaTemp2 *= d;        
+        betaTemp2 *= d;
         betaConst *= transMatRate_t_D(2, t);
         d0 = transMatRate_t_D(0, t);
         // final calculation
         for(k1 = 0; k1 < K; k1++) {
             x = betaTemp1(k1) + betaConst;
+            K_times_k1 = K * k1;            
             for(k2 = 0; k2 < K; k2++) {
-                kk = K * k1 + k2;
-                betaHat_t(kk, t) = betaHat_mult_eMat_t_col(kk) * d0 + \
-                    betaTemp2(k2) + x;
+                kk = K_times_k1 + k2;                
+                betaHat_t(kk, t) = betaHat_mult_eMat_t_col(kk) * d0 + betaTemp2(k2) + x;
             }
         }
         // apply scaling
@@ -490,18 +493,19 @@ arma::mat rcpp_make_diploid_jUpdate(
     const arma::mat& alphaMat_t,
     const arma::mat& eMat_t
 ) {
-    int t, k1, k2, kk;
+    int t, k1, k2, kk, K_times_k1;
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
     arma::mat jUpdate_t = arma::zeros(K,T - 1);
     double tmr1, tmr2;
-    arma::colvec alphaMat_t_col;
+    arma::colvec alphaMat_t_col_times_tmr2, betaHat_times_eMat;
     //
     for(t=0; t<=T-2; t++) {
         alphaTemp1.fill(0);
         for(k1 = 0; k1 < K; k1++) {
+            K_times_k1 = K * k1;
             for(k2 = 0; k2 < K; k2++) {
-                alphaTemp1(k2) += alphaHat_t(k1 + K * k2, t);
+                alphaTemp1(k2) += alphaHat_t(K_times_k1 + k2, t);
             }
         }
         //
@@ -509,16 +513,18 @@ arma::mat rcpp_make_diploid_jUpdate(
         //
         tmr1 = transMatRate_t_D(1, t);
         tmr2 = transMatRate_t_D(2, t);
-        alphaMat_t_col = alphaMat_t.col(t);
+        alphaMat_t_col_times_tmr2 = alphaMat_t.col(t) * tmr2;
+        alphaTemp1 *= tmr1;
+        alphaTemp1 += alphaMat_t_col_times_tmr2;
+        betaHat_times_eMat = betaHat_t.col(t + 1) % eMat_t.col(t + 1);
         for(k1 = 0; k1 < K; k1++) {
+            K_times_k1 = K * k1;            
             for(k2 = 0; k2 < K; k2++) {
-                kk = k1 + K * k2;
-                jUpdate_t(k1,t) += \
-                    (tmr1 * alphaTemp1(k2) +  \
-                     tmr2 * alphaMat_t_col(k2) ) *       \
-                    betaHat_t(kk,t+1) * eMat_t(kk,t+1);
+                kk = K_times_k1 + k2;
+                jUpdate_t(k1, t) += alphaTemp1(k2) * betaHat_times_eMat(kk);
+                // jUpdate_t(k1, t) += alphaTemp1(k2) * betaHat_t(kk, t + 1) * eMat_t(kk, t + 1);
             }
-            jUpdate_t(k1,t) *= 2 * alphaMat_t(k1, t);
+            jUpdate_t(k1, t) *= 2 * alphaMat_t(k1, t);
         }   // end of loop on k
     } // end of loop on t
     return(jUpdate_t);
@@ -531,7 +537,7 @@ arma::mat rcpp_make_diploid_jUpdate(
 arma::mat rcpp_calculate_fbd_dosage(
     const arma::mat& eHapsCurrent_t,
     const arma::mat& gamma_t,
-    const Rcpp::IntegerVector grid,
+    const Rcpp::IntegerVector& grid,
     const int snp_start_1_based,
     const int snp_end_1_based,
     const int grid_offset = 0
@@ -542,29 +548,43 @@ arma::mat rcpp_calculate_fbd_dosage(
     arma::mat genProbs_t = arma::zeros(3, nSNPs);
     //arma::vec dosage = arma::zeros(nSNPs);
     // new
-    int i_t, t, k1, k2, kk, tt, k3;
-    double a, b;
-    arma::colvec eHapsCurrent_t_col, gamma_t_col;
+    int iSNP, t, k1, k2, kk, K_times_k1, cur_grid;
+    double a, b, one_minus_b, g, one_minus_a, g0, g1, g2;
+    arma::colvec eHapsCurrent_t_col, gamma_t_col, one_minus_eHapsCurrent_t_col;
+    int prev_grid = -1;
     // i_t is index from 0 to nSNPs + 1, controls where things go
     // t is the index in the whole set of SNPs
     // tt is the index in the grid
     /// grid_offset refers to in what grids we are running
-    for(i_t = 0; i_t < nSNPs; i_t++) {
-        t = i_t + snp_start_1_based - 1;
-        tt = grid(t) - grid_offset;
+    for(iSNP = 0; iSNP < nSNPs; iSNP++) {
+        g0 = 0;
+        g1 = 0;
+        g2 = 0;
+        t = iSNP + snp_start_1_based - 1;
+        cur_grid = grid(t) - grid_offset;
+        if (cur_grid > prev_grid) {
+            gamma_t_col = gamma_t.col(cur_grid);
+            prev_grid = cur_grid;
+        }
         eHapsCurrent_t_col = eHapsCurrent_t.col(t);
-        gamma_t_col = gamma_t.col(tt);
+        one_minus_eHapsCurrent_t_col = 1 - eHapsCurrent_t_col;
         for(k1 = 0; k1 <K; k1++) {
             a = eHapsCurrent_t_col(k1);
-            k3 = K * k1;
+            one_minus_a = one_minus_eHapsCurrent_t_col(k1);
+            K_times_k1 = K * k1;
             for(k2 = 0; k2 < K; k2++) {
-                kk = k3 + k2; // does not matter which way I do this
+                kk = K_times_k1 + k2; // does not matter which way I do this
+                g = gamma_t_col(kk);
                 b = eHapsCurrent_t_col(k2);
-                genProbs_t(0, i_t) += gamma_t_col(kk) * (1 - a) * (1 - b);
-                genProbs_t(1, i_t) += gamma_t_col(kk) * (a * (1 - b) + (1 - a) * b);
-                genProbs_t(2, i_t) += gamma_t_col(kk) * a * b;
+                one_minus_b = one_minus_eHapsCurrent_t_col(k2);
+                g0 += g * one_minus_a * one_minus_b;
+                g1 += g * (a * one_minus_b + one_minus_a * b);
+                g2 += g * a * b;
             }
         }
+        genProbs_t(0, iSNP) = g0;
+        genProbs_t(1, iSNP) = g1;
+        genProbs_t(2, iSNP) = g2;        
         //for(j=1;j<=2;j++) {
         //    dosage(i_t) = dosage(i_t) + j * genProbs_t(j, i_t);
         //}
@@ -588,9 +608,9 @@ arma::cube calculate_diploid_gammaUpdate(
     arma::colvec eMatHap_t_col;
     arma::colvec eHapsCurrent_t_col, gamma_t_col;
     arma::ivec bqU, pRU;    
-    int J, cr, j, iRead, k, k1, k3, t;
+    int J, cr, j, iRead, k1, k2, t, K_times_k1, kk;
     int cr_prev = -1;
-    double eps, pA, pR, d1, d2, d3, a, b, e, kl2;
+    double eps, pA, pR, d1, d2, d3, a, b, e, val1, val2;
     //
     for(iRead = 0; iRead < nReads; iRead++) {
         // recal that below is what is used to set each element of sampleRead
@@ -603,6 +623,7 @@ arma::cube calculate_diploid_gammaUpdate(
         // loop over every SNP in the read
         if (cr > cr_prev) {
             gamma_t_col = gamma_t.col(cr);
+            cr_prev = cr;
         }
         for(j = 0; j <= J; j++) {
             t=pRU(j); // position of this SNP in full T sized matrix
@@ -626,24 +647,23 @@ arma::cube calculate_diploid_gammaUpdate(
             //
             eMatHap_t_col = eMatHap_t.col(iRead);
             eHapsCurrent_t_col = eHapsCurrent_t.col(t);
-            for(k = 0; k < K; k++) {
-                //d1 = pA * eHapsCurrent_t(k,t);
-                //d2 = pR * (1-eHapsCurrent_t(k,t));
-                d1 = pA * eHapsCurrent_t_col(k);
-                d2 = pR * eHapsCurrent_t_col(k);
+            for(k1 = 0; k1 < K; k1++) {
+                d1 = pA * eHapsCurrent_t_col(k1);
+                d2 = pR * (1 - eHapsCurrent_t_col(k1));
                 d3 = d1 / (d1 + d2); // this is all I need
-                a = eMatHap_t_col(k);
-                k3 = K * k;
-                for(k1 = 0; k1 < K; k1++) {
-                    //kl1 = k+K*k1;
-                    //kl2 = k1+K*k;
-                    kl2 = k1 + k3;
-                    b = eMatHap_t_col(k1);
-                    //e = (2 * gamma_t(kl1,cr) + gamma_t(kl2,cr)) * ( a / (a + b));
-                    e = 2 * gamma_t_col(kl2) * ( a / (a + b));
-                    gammaUpdate_t(k,t,0) += e * d3;
-                    gammaUpdate_t(k,t,1) += e;
-                } // loop on other haplotype
+                a = eMatHap_t_col(k1);
+                K_times_k1 = K * k1;
+                val1 = 0;
+                val2 = 0;
+                for(k2 = 0; k2 < K; k2++) {
+                    b = eMatHap_t_col(k2);
+                    kk = K_times_k1 + k2;                    
+                    e = gamma_t_col(kk) * ( a / (a + b));
+                    val1 += e * d3;
+                    val2 += e;
+                }
+                gammaUpdate_t(k1, t, 0) += 2 * val1; // this way I save the *2 multiplication until the end
+                gammaUpdate_t(k1, t, 1) += 2 * val2;
             } // end of loop onk
         } // end of loop on SNP within read
     }
@@ -784,7 +804,6 @@ Rcpp::List forwardBackwardDiploid(
   arma::mat gamma_t = alphaHat_t % betaHat_t;
   double g_temp = 0;
   for(t = 0; t < T; t++) {
-      // make change - divide, then multiply?
       g_temp = 1 / c(t);
       gamma_t.col(t) *= g_temp;
   }
@@ -826,12 +845,14 @@ Rcpp::List forwardBackwardDiploid(
   next_section="Make collapsed gamma";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  arma::mat gammaK_t = arma::zeros(K,T);    
+  arma::mat gammaK_t = arma::zeros(K,T);
+  int K_times_k1;
   for(t = 0; t < T; t++) {
     for(k1 = 0; k1 < K; k1++) {
         d = 0;
+        K_times_k1 = K * k1;
         for(k2 = 0; k2 < K; k2++) {
-            d = d + gamma_t(k1+K*k2, t);
+            d += gamma_t(K_times_k1 + k2, t);
         }
         gammaK_t(k1, t) = d;
     }
@@ -934,7 +955,9 @@ void make_haploid_gammaUpdate_t(
     Rcpp::List readData;
     arma::ivec bqU, pRU;
     arma::colvec gamma_t_col;
-    double d3, eps, pR, pA, a1, a2, y, d, d1, d2, b;
+    double d3, eps, a1, a2, y, d, d1, d2, b;
+    double pR = -1;
+    double pA = -1;
     int cr_prev = -1;
     //
     for(iRead = 0; iRead < nReads; iRead++) {
@@ -1176,8 +1199,11 @@ Rcpp::List forwardBackwardHaploid(
   //
   gamma_t = alphaHat_t % betaHat_t;
   // normalize as well
-  for(t=0; t<= T-1; t++)
-      gamma_t.col(t) = gamma_t.col(t) / c(t);
+  double g_temp = 0;
+  for(t = 0; t < T; t++) {
+      g_temp = 1 / c(t);
+      gamma_t.col(t) *= g_temp;
+  }
   //
   // optional early return, for final iteration
   if (run_fb_subset == true) {

@@ -4054,6 +4054,9 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     priorSum <- array(0, K)
     alphaMatSum_t <- array(0, c(K, nGrids - 1))
     gammaSum_t <- array(0, c(K, nSNPs, 2))
+    ## lower RAM for this tricky bit
+    ## alphaMatSum_t <- array(0, c(2, 2))
+    ## gammaSum_t <- array(0, c(2, 2, 2))
     hapSum_t <- array(0,c(K, nGrids))
     ## define break points, from -> to
     fromMat <- array(0, c(nbreaks, K, K))

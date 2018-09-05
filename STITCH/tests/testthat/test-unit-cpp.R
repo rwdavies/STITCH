@@ -158,8 +158,10 @@ test_that("can sample one path from forwardBackwardDiploid", {
         tmpdir <- "./"
         dir.create(tmpdir, showWarnings = FALSE)
         suppressOutput <- as.integer(0)
-        n_reads <- round(n_snps / 10)  ## set to vary coverage        
+        n_reads <- round(n_snps / 10)  ## set to vary coverage
+        gridWindowSize <- NA  ## 10 SNPs / grid
     } else {
+        gridWindowSize <- NA        
         n_snps <- 10
         n_reads <- n_snps * 2
         tmpdir <- tempdir()
@@ -211,16 +213,46 @@ test_that("can sample one path from forwardBackwardDiploid", {
     }
 
     set.seed(40)
+    L <- 1:n_snps
+    out <- assign_positions_to_grid(
+        L = L,
+        gridWindowSize = gridWindowSize
+    )
+    grid <- out$grid
+    grid_distances <- out$grid_distances
+    L_grid <- out$L_grid
+    nGrids <- out$nGrids
+    
     eHaps <- array(runif(n_snps * K), c(n_snps, K))
-    sigma <- rep(0.999, n_snps - 1)
-    alphaMat <- array(1 / K / K, c(n_snps - 1, K))
+    sigma <- rep(0.999, nGrids - 1)
+    alphaMat <- array(1 / K / K, c(nGrids - 1, K))
     x <- sigma
     transMatRate <- cbind(x ** 2, x * (1 - x), (1 - x) ** 2)
     pi <- runif(K) / K
     eHaps[, 1] <- 0.01
     eHaps[, 2] <- 0.99
-    grid <- 0:(n_snps - 1)
-
+    if (!is.na(gridWindowSize)) {
+        sampleReads <- snap_sampleReads_to_grid(
+            sampleReads = sampleReads,
+            grid = grid
+        )
+    }
+    
+    ##out2 <- forwardBackwardDiploid_old(
+    ##    sampleReads = sampleReads,
+    ##    nReads = as.integer(length(sampleReads)),
+    ##    pi = pi,
+    ##    transMatRate = t(transMatRate),
+    ##    alphaMat = t(alphaMat),
+    ##    eHaps = t(eHaps),
+    ##    maxDifferenceBetweenReads = as.double(1000),
+    ##    maxEmissionMatrixDifference = as.double(1000),
+    ##    Jmax = as.integer(10),
+    ##    suppressOutput = suppressOutput,
+    ##    return_a_sampled_path = TRUE,
+    ##    blocks_for_output = array(NA, c(1, 1)),
+    ##    whatToReturn = as.integer(0)
+    ## )
     out <- forwardBackwardDiploid(
         sampleReads = sampleReads,
         nReads = as.integer(length(sampleReads)),
@@ -238,13 +270,21 @@ test_that("can sample one path from forwardBackwardDiploid", {
         return_genProbs = TRUE, ## time this as well
         grid = grid,
         snp_start_1_based = 1,
-        snp_end_1_based = n_snps
+        snp_end_1_based = n_snps,
+        return_extra = TRUE
     )
+    
+
+    ##expect_equal(out1$alphaHat_t, out2$alphaHat_t)
+    ##expect_equal(out1$betaHat_t, out2$betaHat_t)
+    ##expect_equal(out1$gammaK_t, out2$gammaK_t)
+    ##expect_equal(out1$jUpdate_t, out2$jUpdate_t)
+    ##expect_equal(out1$gammaUpdate_t, out2$gammaUpdate_t)
+    ##print(mean(out1$jUpdate_t - out2$jUpdate_t))
     
     ## basically, these should be the same
     ## given the seed and the ridiculous good fit
     marginally_most_likely_path <- apply(out$gamma_t, 2, which.max) ## 1-based
-
 
     sampled_path <- out$sampled_path_diploid_t[3, ]
     ## 0-based,

@@ -162,6 +162,7 @@ make_and_write_output_file <- function(
         )
 
         check_mclapply_OK(out)
+
         ## rebuild / re-assemble
         hweCount <- array(0, c(nSNPsInOutputBlock, 3))
         infoCount <- array(0, c(nSNPsInOutputBlock, 2))
@@ -172,6 +173,8 @@ make_and_write_output_file <- function(
             afCount <- afCount + out[[i]]$afCount
         }
         if (output_format == "bgen") {
+            ## should be fine if R is indeed just making copies as it normally does
+            ## indeed even if it does get removed below
             list_of_gp_raw_t <- lapply(1:length(out), function(i_core) {
                 gp_raw_t <- out[[i_core]]$gp_raw_t
                 return(gp_raw_t)
