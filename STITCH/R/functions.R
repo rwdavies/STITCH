@@ -4486,13 +4486,14 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         )
         gammaSum_t<- out$gammaSum_t
         ever_changed <- out$ever_changed
-        noise <- 0.2 # add in noise so things aren't exact
+        noise <- 0 ## consider adding in noise so things aren't exact
         sEC <- sum(ever_changed)
-        if (sEC > 2) {
+        if ((sEC > 2) & (noise > 0)) {
             gammaSum_t[, ever_changed] <-
                 (1 - noise) * gammaSum_t[, ever_changed] +
                 noise * array(runif(sEC * K), c(K, sEC))
             priorSum <- noise * rep(1 / K, K) + (1 - noise) * priorSum # restart these as well
+            ## this is arguably the worst one
             alphaMatSum_t <-
                 noise * matrix(1 / K, ncol = (nGrids - 1), nrow = K) +
                 (1 - noise) * alphaMatSum_t
