@@ -915,7 +915,8 @@ Rcpp::List forwardBackwardDiploid(
       to_return.push_back(alphaHat_t, "alphaHat_t");
       to_return.push_back(betaHat_t, "betaHat_t");
       to_return.push_back(eMat_t, "eMat_t");
-      to_return.push_back(eMatHap_t, "eMatHap_t");            
+      to_return.push_back(eMatHap_t, "eMatHap_t");
+      to_return.push_back(c, "c");
   }
   if (return_gamma) { 
       to_return.push_back(gamma_t, "gamma_t");
