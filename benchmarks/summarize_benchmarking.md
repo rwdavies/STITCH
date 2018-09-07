@@ -16,11 +16,12 @@ This analysis uses 2,073 mice at approximately 0.015X coverage at 152K SNPs usin
 
 |Version |Options                |Time (min) |Accuracy |
 |:-------|:----------------------|:----------|:--------|
-|1.5.2   |output_format=\'bgen\' |33.2       |0.97     |
-|1.5.2   |gridWindowSize=1000    |23.1       |0.97     |
-|1.5.2   |gridWindowSize=10000   |20.4       |0.966    |
-|1.5.2   |gridWindowSize=100000  |19.1       |0.955    |
-|1.5.2   |                       |33.9       |0.966    |
+|1.5.3   |output_format=\'bgen\' |29.7       |0.973    |
+|1.5.3   |gridWindowSize=1000    |20.8       |0.968    |
+|1.5.3   |gridWindowSize=10000   |18.5       |0.975    |
+|1.5.3   |gridWindowSize=100000  |17.5       |0.96     |
+|1.5.3   |                       |30.6       |0.977    |
+|1.5.2   |                       |35.1       |0.974    |
 |1.5.1   |                       |34.1       |0.977    |
 |1.5.0   |                       |34.1       |0.971    |
 |1.4.2   |                       |45.3       |0.976    |
@@ -44,11 +45,12 @@ These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs, o
 
 |Version |Options                |Input |K  |Time (min) |
 |:-------|:----------------------|:-----|:--|:----------|
-|1.5.2   |output_format=\'bgen\' |BAMS  |4  |3.2        |
-|1.5.2   |gridWindowSize=1000    |BAMS  |4  |2.5        |
-|1.5.2   |gridWindowSize=10000   |BAMS  |4  |2.1        |
-|1.5.2   |gridWindowSize=100000  |BAMS  |4  |2          |
-|1.5.2   |                       |BAMS  |4  |3.4        |
+|1.5.3   |output_format=\'bgen\' |BAMS  |4  |2.8        |
+|1.5.3   |gridWindowSize=1000    |BAMS  |4  |2.1        |
+|1.5.3   |gridWindowSize=10000   |BAMS  |4  |1.8        |
+|1.5.3   |gridWindowSize=100000  |BAMS  |4  |1.7        |
+|1.5.3   |                       |BAMS  |4  |2.9        |
+|1.5.2   |                       |BAMS  |4  |3.5        |
 |1.5.1   |                       |BAMS  |4  |3.3        |
 |1.5.0   |                       |BAMS  |4  |3.3        |
 |1.4.2   |                       |BAMS  |4  |4.1        |
@@ -66,11 +68,12 @@ These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs, o
 
 |Version |Options                |Input |K  |Time (min) |
 |:-------|:----------------------|:-----|:--|:----------|
-|1.5.2   |output_format=\'bgen\' |CRAMS |4  |3.5        |
-|1.5.2   |gridWindowSize=1000    |CRAMS |4  |2.7        |
-|1.5.2   |gridWindowSize=10000   |CRAMS |4  |2.3        |
-|1.5.2   |gridWindowSize=100000  |CRAMS |4  |2.2        |
-|1.5.2   |                       |CRAMS |4  |3.6        |
+|1.5.3   |output_format=\'bgen\' |CRAMS |4  |3          |
+|1.5.3   |gridWindowSize=1000    |CRAMS |4  |2.3        |
+|1.5.3   |gridWindowSize=10000   |CRAMS |4  |2          |
+|1.5.3   |gridWindowSize=100000  |CRAMS |4  |1.9        |
+|1.5.3   |                       |CRAMS |4  |3.1        |
+|1.5.2   |                       |CRAMS |4  |3.7        |
 |1.5.1   |                       |CRAMS |4  |3.5        |
 |1.5.0   |                       |CRAMS |4  |3.5        |
 |1.4.2   |                       |CRAMS |4  |4.3        |
@@ -88,11 +91,12 @@ These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs, o
 
 |Version |Options                |Input |K  |Time (min) |
 |:-------|:----------------------|:-----|:--|:----------|
-|1.5.2   |output_format=\'bgen\' |BAMS  |20 |54.2       |
-|1.5.2   |gridWindowSize=1000    |BAMS  |20 |16.2       |
-|1.5.2   |gridWindowSize=10000   |BAMS  |20 |5.7        |
-|1.5.2   |gridWindowSize=100000  |BAMS  |20 |3.8        |
-|1.5.2   |                       |BAMS  |20 |54         |
+|1.5.3   |output_format=\'bgen\' |BAMS  |20 |26.2       |
+|1.5.3   |gridWindowSize=1000    |BAMS  |20 |8.9        |
+|1.5.3   |gridWindowSize=10000   |BAMS  |20 |4.3        |
+|1.5.3   |gridWindowSize=100000  |BAMS  |20 |3.2        |
+|1.5.3   |                       |BAMS  |20 |26.5       |
+|1.5.2   |                       |BAMS  |20 |47.1       |
 |1.5.1   |                       |BAMS  |20 |54.5       |
 |1.5.0   |                       |BAMS  |20 |54         |
 |1.4.2   |                       |BAMS  |20 |60.9       |
@@ -110,11 +114,12 @@ These analyses test performance for K=4 or K=20, and for either BAMs or CRAMs, o
 
 |Version |Options                |Input |K  |Time (min) |
 |:-------|:----------------------|:-----|:--|:----------|
-|1.5.2   |output_format=\'bgen\' |CRAMS |20 |54.5       |
-|1.5.2   |gridWindowSize=1000    |CRAMS |20 |15.2       |
-|1.5.2   |gridWindowSize=10000   |CRAMS |20 |5.8        |
-|1.5.2   |gridWindowSize=100000  |CRAMS |20 |3.9        |
-|1.5.2   |                       |CRAMS |20 |54.4       |
+|1.5.3   |output_format=\'bgen\' |CRAMS |20 |27         |
+|1.5.3   |gridWindowSize=1000    |CRAMS |20 |9          |
+|1.5.3   |gridWindowSize=10000   |CRAMS |20 |4.4        |
+|1.5.3   |gridWindowSize=100000  |CRAMS |20 |3.3        |
+|1.5.3   |                       |CRAMS |20 |26.8       |
+|1.5.2   |                       |CRAMS |20 |46.3       |
 |1.5.1   |                       |CRAMS |20 |54.5       |
 |1.5.0   |                       |CRAMS |20 |54.7       |
 |1.4.2   |                       |CRAMS |20 |60.7       |

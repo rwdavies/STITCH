@@ -1,3 +1,6 @@
+* v1.5.3
+	* Significant speedups and some RAM improvements
+	* Minor changes to heuristics
 * v1.5.2
 	* Capability to substantially decrease RAM usage when running with a large number of samples
 	* Better error message when imputing few / no SNPs

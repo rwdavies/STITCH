@@ -1,15 +1,14 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.2__**
-Release date: July 16, 2018
+**__Current Version: 1.5.3__**
+Release date: September 7th, 2018
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Capability to substantially decrease RAM usage when running with a large number of samples 
-2. Better error message when imputing few / no SNPs
-3. Able to impute when only 2 SNPs, including 1 SNP in central region
+1. Significant speedups and some RAM improvements
+2. Minor changes to heuristics
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -26,7 +25,7 @@ Install R if not already installed. Then
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.5.2.tar.gz
+R CMD INSTALL ./releases/STITCH_1.5.3.tar.gz
 
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
