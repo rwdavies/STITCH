@@ -5,18 +5,20 @@
 \title{Sequencing To Imputation Through Constructing Haplotypes}
 \usage{
 STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
-  cramlist = "", sampleNames_file = "", reference = "", genfile = "",
-  method = "diploid", output_format = "bgvcf", B_bit_prob = 16,
-  outputInputInVCFFormat = FALSE, downsampleToCov = 50,
-  downsampleFraction = 1, readAware = TRUE, chrStart = NA, chrEnd = NA,
-  regionStart = NA, regionEnd = NA, buffer = NA,
-  maxDifferenceBetweenReads = 1000, maxEmissionMatrixDifference = 1e+10,
-  alphaMatThreshold = 1e-04, emissionThreshold = 1e-04,
-  iSizeUpperLimit = as.integer(600), bqFilter = as.integer(17),
-  niterations = 40, shuffleHaplotypeIterations = c(4, 8, 12, 16),
-  splitReadIterations = 25, nCores = 1, expRate = 0.5, maxRate = 100,
-  minRate = 0.1, Jmax = 1000, regenerateInput = TRUE,
-  originalRegionName = NA, keepInterimFiles = FALSE, keepTempDir = FALSE,
+  cramlist = "", sampleNames_file = "", reference = "",
+  genfile = "", method = "diploid", output_format = "bgvcf",
+  B_bit_prob = 16, outputInputInVCFFormat = FALSE,
+  downsampleToCov = 50, downsampleFraction = 1, readAware = TRUE,
+  chrStart = NA, chrEnd = NA, regionStart = NA, regionEnd = NA,
+  buffer = NA, maxDifferenceBetweenReads = 1000,
+  maxEmissionMatrixDifference = 1e+10, alphaMatThreshold = 1e-04,
+  emissionThreshold = 1e-04, iSizeUpperLimit = as.integer(600),
+  bqFilter = as.integer(17), niterations = 40,
+  shuffleHaplotypeIterations = c(4, 8, 12, 16),
+  splitReadIterations = 25, nCores = 1, expRate = 0.5,
+  maxRate = 100, minRate = 0.1, Jmax = 1000,
+  regenerateInput = TRUE, originalRegionName = NA,
+  keepInterimFiles = FALSE, keepTempDir = FALSE,
   outputHaplotypeProbabilities = FALSE, switchModelIteration = NA,
   generateInputOnly = FALSE, restartIterations = NA,
   refillIterations = c(6, 10, 14, 18), downsampleSamples = 1,
@@ -25,9 +27,9 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   outputSNPBlockSize = 10000, inputBundleBlockSize = NA,
   reference_haplotype_file = "", reference_legend_file = "",
   reference_sample_file = "", reference_populations = NA,
-  reference_phred = 20, reference_iterations = 10, output_filename = NULL,
-  initial_min_hapProb = 0.4, initial_max_hapProb = 0.6,
-  regenerateInputWithDefaultValues = FALSE,
+  reference_phred = 20, reference_iterations = 10,
+  output_filename = NULL, initial_min_hapProb = 0.4,
+  initial_max_hapProb = 0.6, regenerateInputWithDefaultValues = FALSE,
   plotHapSumDuringIterations = FALSE,
   plot_shuffle_haplotype_attempts = FALSE, plotAfterImputation = TRUE,
   save_sampleReadsInfo = FALSE, gridWindowSize = NA,
@@ -177,6 +179,9 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 }
 \value{
 Results in properly formatted version
+}
+\description{
+Sequencing To Imputation Through Constructing Haplotypes
 }
 \author{
 Robert Davies
