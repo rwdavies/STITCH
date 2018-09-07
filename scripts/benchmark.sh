@@ -35,11 +35,12 @@ do
     option=${options_list[$i_version]}    
     name=${name_list[$i_version]}
     extension=${extension_list[$i_version]}
-    echo version=${version}
-    echo extra=${extra}
-    echo name=${name}
-    echo option=${option}
-    echo extension=${extension}
+    echo =====================================    
+    echo name:${name}
+    echo version:${version}
+    echo extra:${extra}
+    echo extension:${extension}
+    echo option:${option}
     cd ${STITCH_HOME}
     # note - not sure I need this anymore if installing locally
     # I think below should work on other machines
