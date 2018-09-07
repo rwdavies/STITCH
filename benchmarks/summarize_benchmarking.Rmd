@@ -79,9 +79,9 @@ profile_whole_chr <- function(small = TRUE) {
         acc_mega <- get_accuracy_from_bench_file(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt"))
 	mega_ctime <- file.info(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".megamuga.txt"))$ctime
         acc_affy <- get_accuracy_from_bench_file(paste0(STITCH_home, "benchmark-results/whole_chr_CFW_", name, ".affy.txt"))        
-        return(c(version, option, round(time_min, 1), round(acc_mega, 3), round(acc_affy, 3), as.character(mega_ctime)))
+        return(c(version, option, round(time_min, 1), round(acc_mega, 3), round(acc_affy, 3), as.character(mega_ctime), name))
     }))
-    colnames(whole_chr) <- c("Version", "Options", "Time (min)", "Accuracy (Mega)", "accuracy (Affy)", "Mega ctime")
+    colnames(whole_chr) <- c("Version", "Options", "Time (min)", "Accuracy (Mega)", "accuracy (Affy)", "Mega ctime", "Name")
     if (small) {
         whole_chr <- whole_chr[, 1:4]
         colnames(whole_chr)[4] <- "Accuracy"
