@@ -63,6 +63,29 @@ Rcpp::NumericVector increment2N(int yT, int xT, Rcpp::NumericVector y, Rcpp::Num
 
 
 
+//' @export
+// [[Rcpp::export]]
+Rcpp::List ram_test(
+    const arma::mat& mat1,
+    const Rcpp::NumericMatrix& mat2,
+    arma::mat mat3,
+    Rcpp::NumericMatrix mat4
+) {
+    double d1 = arma::accu(mat1);
+    double d2 = Rcpp::sum(mat2);
+    mat3(0, 0) = 3;
+    mat4(0, 0) = 2;
+    double d3 = arma::accu(mat3);
+    double d4 = Rcpp::sum(mat4);
+    arma::cube jimmy = arma::zeros(100, 1000, 2);
+    return List::create(
+                        Rcpp::Named("d1") = d1,
+                        Rcpp::Named("d2") = d2,
+                        Rcpp::Named("d3") = d3,
+                        Rcpp::Named("d4") = d4
+                        );
+}
+
 
 
 //' @export
@@ -925,7 +948,7 @@ Rcpp::List forwardBackwardDiploid(
   if (return_a_sampled_path) {
       to_return.push_back(sampled_path_diploid_t, "sampled_path_diploid_t");
   }
-  return(wrap(to_return));
+  return(to_return);
 }
 
 
@@ -1401,10 +1424,6 @@ Rcpp::List rcpp_get_update_pieces(
     const arma::mat& jUpdate_t,
     const bool only_update_hapSum
 ) {
-    //
-    // note - I'm not pretending to support "diploid_subset" here
-    // if I re-tool that back in, need to add back in "best_K_for_subset"
-    // as appropriate for this
     //
     const int nGrids = hapSum_t.n_cols;
     const int nSNPs = gammaSum_t.n_cols;

@@ -165,8 +165,6 @@ STITCH <- function(
     
     ##    K_subset = NA,
     ##    K_random = NA
-    ## #' @param K_subset In diploid_subset mode, how many haplotypes to investigate per sample
-    ## #' @param K_random In diploid_subset mode, how many random haplotypes to use per-sample (taken from K_subset)
     
     phasefile <- "" ## do not export for now
     ##  #' @param phasefile Path to phase file with truth phasing results. Empty for no phasefile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = ref and 1 = alt, separated by a vertical bar |, e.g. 0|0 or 0|1. Note therefore this file has one more row than posfile which has no header
@@ -3617,64 +3615,6 @@ run_forward_backwards <- function(
 
     fbsoL <- as.list(1:nor)
 
-    ## experimental, probably not useful
-    if (method == "diploid_subset") {
-
-        ## deprecated!
-        
-        ## choose best haplotypes
-        out <- select_best_K_for_a_sample_diploid(
-            priorCurrent = priorCurrent,
-            alphaMatCurrent_t = alphaMatCurrent_t,
-            eHapsCurrent_t = eHapsCurrent_t,
-            tempdir = tempdir,
-            iSample = iSample,
-            regionName = regionName,
-            K_subset = K_subset,
-            nSNPs = nSNPs,
-            iteration = iteration,
-            K_random = K_random,
-            add_noise = TRUE,
-            grid_eHaps_distance = grid_eHaps_distance
-        )
-        best_K_for_sample <- out$best_K_for_sample
-        best_K_random <- out$best_K_random
-        
-        fbsoL[[iNor]] <- forwardBackwardDiploid(
-            sampleReads = sampleReads,
-            nReads = as.integer(length(sampleReads)),
-            pi = out$piSubset,
-            eHaps_t = out$eHapsSubset_t,
-            alphaMat_t = out$alphaMatSubset_t,
-            transMatRate_t_D = transMatRate_t_D,
-            Jmax = Jmax_local,
-            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-            suppressOutput = suppressOutput,
-            return_a_sampled_path = return_a_sampled_path
-        )
-        ## save haplotypes for next time
-        path <- fbsoL[[iNor]]$sampled_path_diploid ## on grid, want 1-based
-        ## BUG FIX - was selecting haplotypes incorrectly
-        hap1 <- out$eHapsSubset_t[cbind((path[, 1] + 1)[grid + 1], 1:nSNPs)]
-        hap2 <- out$eHapsSubset_t[cbind((path[, 2] + 1)[grid + 1], 1:nSNPs)]
-        if (sum(is.na(hap1)) > 0) {
-            file <- paste0(outputdir, "/debug/iSample", iSample, ".RData")
-            save(fbsoL, iNor, path, eHapsCurrent_t, grid, nSNPs, file = file)
-            stop(paste0("bad hap1 iSample = ", iSample, ", debug information in ", file))
-        }
-        save(best_K_random, path, hap1, hap2, best_K_for_sample, file = file_besthaps(tempdir, iSample, regionName))
-        ## make faster...
-        gamma_t <- array(0, c(K, nGrids))
-        y <- fbsoL[[1]]$gamma_t
-        for(ii in 1:K_subset)
-            gamma_t[best_K_for_sample, ] <-
-                gamma_t[best_K_for_sample, ] +
-                y[1:K_subset + (ii - 1) * K_subset, ]
-        fbsoL[[1]]$gammaK_t <- gamma_t
-    }
-
-    
     if(method=="pseudoHaploid") {
         for (iNor in 1:nor) {        
             if (iNor==1) {
@@ -4015,17 +3955,6 @@ calculate_gp_t_from_fbsoL <- function(
         gp_t[1, ] <- g10 * g20
         gp_t[2, ] <- g10 * (1 - g20) + (1 - g10) * g20
         gp_t[3, ] <- (1 - g10) * (1 - g20)
-    } else if (method == "diploid_subset") {
-        ## calculate dosage here
-        out <- rcpp_calculate_fbd_dosage(
-            eHapsCurrent_t = eHapsCurrent_t[best_K_for_sample, ],
-            gamma_t = fbsoL[[1]]$gamma_t,
-            grid = grid,
-            snp_start_1_based = snp_start_1_based,
-            snp_end_1_based = snp_end_1_based,
-            grid_offset = grid_offset_0_based
-        )
-        gp_t<- out$genProbs_t
     }
     r <- sum(gp_t[, 1])
     if ((r < 0.9) | (1.1 < r)) {
@@ -4273,7 +4202,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
 
 
 get_transMatRate <- function(method, sigmaCurrent) {
-    if (method == "diploid" | method == "diploid_subset") {
+    if (method == "diploid") {
         x <- sigmaCurrent
         transMatRate_t <- rbind(x ** 2, x * (1 - x), (1 - x) ** 2)
     } else if ((method == "pseudoHaploid") | (method == "diploid-inbred")) {
