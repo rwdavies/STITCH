@@ -1562,6 +1562,8 @@ single_reference_iteration <- function(
         alphaMatSum_t <- array(0, c(K, nGrids - 1))
         gammaSum_t <- array(0, c(K, nSNPs, 2))
         hapSum_t <- array(0,c(K, nGrids))
+        alphaHat_t <- array(0, c(K, nGrids))
+        betaHat_t <- array(0, c(K, nGrids))        
 
         bundledSampleReads <- NULL
         for(iSample in sampleRange[1]:sampleRange[2]) {
@@ -1592,16 +1594,24 @@ single_reference_iteration <- function(
                 suppressOutput = as.integer(1),
                 model = -1, ## irrelavent here
                 run_pseudo_haploid = as.integer(0), ## just run haploid
-                blocks_for_output = array(0, c(1, 1))                
+                blocks_for_output = array(0, c(1, 1)),
+                update_in_place = TRUE,
+                gammaUpdate_t = gammaSum_t,
+                jUpdate_t = alphaMatSum_t,
+                priorSum = priorSum,
+                hapSum_t = hapSum_t,
+                pass_in_alphaBeta = TRUE,        
+                alphaHat_t = alphaHat_t,
+                betaHat_t = betaHat_t
             )
 
-            which <- fbsoL$gammaUpdate_t[1, , 1] > 0
-            gammaSum_t[, which, ] <- gammaSum_t[, which , ] +
-                fbsoL$gammaUpdate_t[, which, ]
-            alphaMatSum_t <- alphaMatSum_t +
-                fbsoL$jUpdate_t
-            priorSum <- priorSum + fbsoL$gammaUpdate_t[, 1, 2]
-            hapSum_t <- hapSum_t + fbsoL$gamma_t
+            ## which <- fbsoL$gammaUpdate_t[1, , 1] > 0
+            ## gammaSum_t[, which, ] <- gammaSum_t[, which , ] +
+            ##    fbsoL$gammaUpdate_t[, which, ]
+            ## alphaMatSum_t <- alphaMatSum_t +
+            ##    fbsoL$jUpdate_t
+            ## priorSum <- priorSum + fbsoL$gammaUpdate_t[, 1, 2]
+            ## hapSum_t <- hapSum_t + fbsoL$gamma_t
 
         }
 
@@ -3530,6 +3540,8 @@ get_default_hapProbs <- function(
 
 
 
+
+
 run_forward_backwards <- function(
     tempdir = tempdir,
     regionName = "region",
@@ -3567,7 +3579,15 @@ run_forward_backwards <- function(
     snp_end_1_based = NA,
     grid = -1,
     return_genProbs = FALSE,
-    return_extra = FALSE
+    return_extra = FALSE,
+    update_in_place = FALSE,
+    gammaUpdate_t = array(0, c(1, 1, 1)),
+    jUpdate_t = array(0, c(1, 1)),
+    hapSum_t = array(0, c(1, 1)),
+    priorSum = array(0, 1),
+    pass_in_alphaBeta = FALSE,        
+    alphaHat_t = array(0, c(1, 1)),
+    betaHat_t = array(0, c(1, 1))
 ) {
 
     Jmax_local <- get_Jmax_wrt_iteration(Jmax, iteration, niterations)
@@ -3646,7 +3666,15 @@ run_forward_backwards <- function(
                 run_fb_grid_offset = run_fb_grid_offset,
                 blocks_for_output = blocks_for_output,
                 generate_fb_snp_offsets = generate_fb_snp_offsets,
-                return_extra = return_extra
+                return_extra = return_extra,
+                update_in_place = update_in_place,
+                gammaUpdate_t = gammaUpdate_t,
+                jUpdate_t = jUpdate_t,
+                hapSum_t = hapSum_t,
+                priorSum = priorSum,
+                pass_in_alphaBeta = pass_in_alphaBeta,
+                alphaHat_t = alphaHat_t,
+                betaHat_t = betaHat_t
             )
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
         }
@@ -3675,7 +3703,15 @@ run_forward_backwards <- function(
             run_fb_grid_offset = run_fb_grid_offset,
             blocks_for_output = blocks_for_output,
             generate_fb_snp_offsets = generate_fb_snp_offsets,
-            return_extra = return_extra
+            return_extra = return_extra,
+            update_in_place = update_in_place,
+            gammaUpdate_t = gammaUpdate_t,
+            jUpdate_t = jUpdate_t,
+            hapSum_t = hapSum_t,
+            priorSum = priorSum,
+            pass_in_alphaBeta = pass_in_alphaBeta,
+            alphaHat_t = alphaHat_t,
+            betaHat_t = betaHat_t
         )
         fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
     }
@@ -3704,7 +3740,15 @@ run_forward_backwards <- function(
             snp_start_1_based = snp_start_1_based,
             snp_end_1_based = snp_end_1_based,
             grid = grid,
-            return_extra = return_extra
+            return_extra = return_extra,
+            update_in_place = update_in_place,
+            gammaUpdate_t = gammaUpdate_t,
+            jUpdate_t = jUpdate_t,
+            hapSum_t = hapSum_t,
+            priorSum = priorSum,
+            pass_in_alphaBeta = pass_in_alphaBeta,
+            alphaHat_t = alphaHat_t,
+            betaHat_t = betaHat_t
         )
     }
 
@@ -3983,6 +4027,23 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
     gammaSum_t <- array(0, c(K, nSNPs, 2))
     hapSum_t <- array(0,c(K, nGrids))
 
+    ## decide if to re-generate
+    pass_in_alphaBeta <- TRUE
+    if (pass_in_alphaBeta) {
+        if (method == "diploid") {
+            alphaHat_t <- array(0, c(K * K, nGrids))
+            betaHat_t <- array(0, c(K * K, nGrids))
+        } else if ((method == "diploid-inbred") | (method == "pseudoHaploid")) {
+            alphaHat_t <- array(0, c(K, nGrids))
+            betaHat_t <- array(0, c(K, nGrids))
+        } else {
+            stop("bad method")
+        }
+    } else {
+        alphaHat_t <- array(0, c(1, 1))
+        betaHat_t <- array(0, c(1, 1))
+    }
+
     ##
     ## other things sometimes needed
     ##
@@ -4098,7 +4159,15 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             blocks_for_output = blocks_for_output,
             generate_fb_snp_offsets = generate_fb_snp_offsets,
             return_a_sampled_path = return_a_sampled_path,
-            grid = grid
+            grid = grid,
+            update_in_place = TRUE,
+            gammaUpdate_t = gammaSum_t, ## do switch here
+            jUpdate_t = alphaMatSum_t,
+            hapSum_t = hapSum_t,
+            priorSum = priorSum,
+            pass_in_alphaBeta = pass_in_alphaBeta,
+            alphaHat_t = alphaHat_t,
+            betaHat_t = betaHat_t
         )
         fbsoL <- out$fbsoL
 
@@ -4106,21 +4175,6 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         if (iteration == niterations) {
             ## right - there are potentially two of them!
             alphaBetaBlockList[[iiSample]] <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
-        }
-
-        ## pass by reference
-        ## note - hapSum_t divided by 2 later on for pseudoHaploid        
-        for(iNor in 1:nor) {
-            rcpp_get_update_pieces(
-                gammaSum_t = gammaSum_t,
-                alphaMatSum_t = alphaMatSum_t,
-                priorSum = priorSum,
-                hapSum_t = hapSum_t,
-                gammaK_t = fbsoL[[iNor]]$gammaK_t,
-                gammaUpdate_t = fbsoL[[iNor]]$gammaUpdate_t,
-                jUpdate_t = fbsoL[[iNor]]$jUpdate_t,
-                only_update_hapSum = (iteration == niterations) ## final iteration, only this!
-            )
         }
         
         out <- within_EM_per_sample_heuristics(
@@ -4732,7 +4786,15 @@ restartSample <- function(sampleReads, srp, pRgivenH1, pRgivenH2,fbsoL, nSNPs,eH
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,            
             suppressOutput = as.integer(1),
             blocks_for_output = array(0, c(1, 1)),
-            return_gamma = TRUE ## unsure
+            return_gamma = TRUE, ## unsure
+            update_in_place = FALSE,
+            gammaUpdate_t = array(0, c(1, 1, 1)),
+            jUpdate_t = array(0, c(1, 1)),
+            hapSum_t = array(0, c(1, 1)),
+            priorSum = array(0, 1),
+            pass_in_alphaBeta = FALSE,        
+            alphaHat_t = array(0, c(1, 1)),
+            betaHat_t = array(0, c(1, 1))
         )
         fbd$gamma <- t(fbd$gamma_t)
         fbd$jUpdate <- t(fbd$jUpdate_t)

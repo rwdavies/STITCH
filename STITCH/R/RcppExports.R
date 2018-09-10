@@ -42,6 +42,11 @@ increment2N <- function(yT, xT, y, z) {
 }
 
 #' @export
+ram_test <- function(mat1, mat2, mat3, mat4) {
+    .Call('_STITCH_ram_test', PACKAGE = 'STITCH', mat1, mat2, mat3, mat4)
+}
+
+#' @export
 pseudoHaploid_update_model_9 <- function(pRgivenH1, pRgivenH2, eMatHap_t1, eMatHap_t2, gamma_t1, gamma_t2, K, srp) {
     .Call('_STITCH_pseudoHaploid_update_model_9', PACKAGE = 'STITCH', pRgivenH1, pRgivenH2, eMatHap_t1, eMatHap_t2, gamma_t1, gamma_t2, K, srp)
 }
@@ -67,8 +72,8 @@ rcpp_make_fb_snp_offsets <- function(alphaHat_t, betaHat_t, blocks_for_output) {
 }
 
 #' @export
-rcpp_make_diploid_jUpdate <- function(K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t) {
-    .Call('_STITCH_rcpp_make_diploid_jUpdate', PACKAGE = 'STITCH', K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t)
+rcpp_make_diploid_jUpdate <- function(jUpdate_t, K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t) {
+    invisible(.Call('_STITCH_rcpp_make_diploid_jUpdate', PACKAGE = 'STITCH', jUpdate_t, K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t))
 }
 
 #' @export
@@ -77,8 +82,8 @@ rcpp_calculate_fbd_dosage <- function(eHapsCurrent_t, gamma_t, grid, snp_start_1
 }
 
 #' @export
-forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_extra = FALSE) {
-    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra)
+forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE) {
+    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta)
 }
 
 #' @export
@@ -87,18 +92,13 @@ make_haploid_gammaUpdate_t <- function(gammaUpdate_t, sampleReads, nReads, gamma
 }
 
 #' @export
-forwardBackwardHaploid <- function(sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_extra = FALSE) {
-    .Call('_STITCH_forwardBackwardHaploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, run_fb_subset, run_fb_grid_offset, return_extra)
+forwardBackwardHaploid <- function(sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE) {
+    .Call('_STITCH_forwardBackwardHaploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, run_fb_subset, run_fb_grid_offset, return_extra, update_in_place, pass_in_alphaBeta)
 }
 
 #' @export
 cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit) {
     .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit)
-}
-
-#' @export
-rcpp_get_update_pieces <- function(gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t, only_update_hapSum) {
-    .Call('_STITCH_rcpp_get_update_pieces', PACKAGE = 'STITCH', gammaSum_t, alphaMatSum_t, priorSum, hapSum_t, gammaK_t, gammaUpdate_t, jUpdate_t, only_update_hapSum)
 }
 
 #' @export

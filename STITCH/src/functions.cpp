@@ -507,7 +507,8 @@ Rcpp::List rcpp_make_fb_snp_offsets(
 
 //' @export
 // [[Rcpp::export]]
-arma::mat rcpp_make_diploid_jUpdate(
+void rcpp_make_diploid_jUpdate(
+    arma::mat& jUpdate_t,
     const int K,
     const int T,
     const arma::mat& alphaHat_t,
@@ -519,8 +520,7 @@ arma::mat rcpp_make_diploid_jUpdate(
     int t, k1, k2, kk, K_times_k1;
     arma::vec alphaTemp1 = arma::zeros(K);
     arma::vec alphaTemp2 = arma::zeros(K);
-    arma::mat jUpdate_t = arma::zeros(K,T - 1);
-    double tmr1, tmr2;
+    double tmr1, tmr2, d;
     arma::colvec alphaMat_t_col_times_tmr2, betaHat_times_eMat;
     //
     for(t=0; t<=T-2; t++) {
@@ -541,16 +541,18 @@ arma::mat rcpp_make_diploid_jUpdate(
         alphaTemp1 += alphaMat_t_col_times_tmr2;
         betaHat_times_eMat = betaHat_t.col(t + 1) % eMat_t.col(t + 1);
         for(k1 = 0; k1 < K; k1++) {
-            K_times_k1 = K * k1;            
+            K_times_k1 = K * k1;
+            d = 0;
             for(k2 = 0; k2 < K; k2++) {
                 kk = K_times_k1 + k2;
-                jUpdate_t(k1, t) += alphaTemp1(k2) * betaHat_times_eMat(kk);
+                d += alphaTemp1(k2) * betaHat_times_eMat(kk);
                 // jUpdate_t(k1, t) += alphaTemp1(k2) * betaHat_t(kk, t + 1) * eMat_t(kk, t + 1);
             }
-            jUpdate_t(k1, t) *= 2 * alphaMat_t(k1, t);
+            d *= 2 * alphaMat_t(k1, t);
+            jUpdate_t(k1, t) += d;
         }   // end of loop on k
     } // end of loop on t
-    return(jUpdate_t);
+    return;
 };
 
 
@@ -616,7 +618,8 @@ arma::mat rcpp_calculate_fbd_dosage(
 }
 
 
-arma::cube calculate_diploid_gammaUpdate(
+void calculate_diploid_gammaUpdate(
+    arma::cube& gammaUpdate_t,
     const Rcpp::List& sampleReads,
     const int nReads,
     const arma::mat& gamma_t,
@@ -627,7 +630,6 @@ arma::cube calculate_diploid_gammaUpdate(
     const int K = eHapsCurrent_t.n_rows;
     const int nSNPs = eHapsCurrent_t.n_cols;
     //
-    arma::cube gammaUpdate_t = arma::zeros(K, nSNPs,2);
     arma::colvec eMatHap_t_col;
     arma::colvec eHapsCurrent_t_col, gamma_t_col;
     arma::ivec bqU, pRU;    
@@ -690,7 +692,7 @@ arma::cube calculate_diploid_gammaUpdate(
             } // end of loop onk
         } // end of loop on SNP within read
     }
-    return(gammaUpdate_t);
+    return;
 }
 
 
@@ -704,11 +706,17 @@ Rcpp::List forwardBackwardDiploid(
     const arma::mat& transMatRate_t_D,
     const arma::mat& alphaMat_t,
     const arma::mat& eHaps_t,
+    arma::mat& alphaHat_t,
+    arma::mat& betaHat_t,
     const double maxDifferenceBetweenReads,
     const double maxEmissionMatrixDifference,
     const int Jmax,
     const int suppressOutput,
     const arma::mat& blocks_for_output,
+    arma::cube& gammaUpdate_t, // see update_in_place
+    arma::mat& jUpdate_t,
+    arma::mat& hapSum_t,
+    Rcpp::NumericVector& priorSum,
     const bool generate_fb_snp_offsets = false,
     const Rcpp::NumericVector alphaStart = 0,
     const Rcpp::NumericVector betaEnd = 0,
@@ -720,7 +728,9 @@ Rcpp::List forwardBackwardDiploid(
     const int snp_end_1_based = -1,
     const Rcpp::IntegerVector grid = 0, // end of things needed for genProbs and dosage
     const bool return_gamma = false, // full gamma, K * K rows
-    const bool return_extra = false // whether to return stuff useful for debugging
+    const bool return_extra = false, // whether to return stuff useful for debugging
+    const bool update_in_place = false, // update directly into output variables
+    const bool pass_in_alphaBeta = false // whether to pass in pre-made alphaHat, betaHat
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -731,14 +741,17 @@ Rcpp::List forwardBackwardDiploid(
   // constants
   //
   const int T = alphaMat_t.n_cols + 1;  // what we iterate over / grid
+  const int nSNPs = eHaps_t.n_cols; // traditional K for haplotypes  
   const int K = eHaps_t.n_rows; // traditional K for haplotypes
   const int KK = K*K; // KK is number of states / traditional K for HMMs
   //
   // new variables
   //
   // variables working on nReads
-  arma::mat alphaHat_t = arma::zeros(KK, T);  
-  arma::mat betaHat_t = arma::zeros(KK, T);
+  if (!pass_in_alphaBeta) {
+      alphaHat_t = arma::zeros(KK, T);  
+      betaHat_t = arma::zeros(KK, T);
+  }
   arma::rowvec c = arma::zeros(1, T);
   // variables for faster forward backward calculation  double alphaConst, betaConst;
   arma::vec alphaTemp1 = arma::zeros(K);
@@ -880,6 +893,12 @@ Rcpp::List forwardBackwardDiploid(
         gammaK_t(k1, t) = d;
     }
   }
+  if (update_in_place) {  
+      hapSum_t += gammaK_t;
+      for(int k=0; k < K; k++) {
+          priorSum(k) = priorSum(k) + gammaK_t(k, 0);
+      }
+  }
   //
   //
   // do gamma update here - save large matrix, just put in necessary values
@@ -888,7 +907,11 @@ Rcpp::List forwardBackwardDiploid(
   next_section="Gamma update";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  arma::cube gammaUpdate_t = calculate_diploid_gammaUpdate(
+  if (!update_in_place) {    
+      gammaUpdate_t = arma::zeros(K, nSNPs, 2);      
+  }
+  calculate_diploid_gammaUpdate(
+      gammaUpdate_t,
       sampleReads,
       nReads,
       gamma_t,
@@ -903,7 +926,11 @@ Rcpp::List forwardBackwardDiploid(
   next_section="Make xi-like calculations";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  arma::mat jUpdate_t = rcpp_make_diploid_jUpdate(
+  if (!update_in_place) {    
+      jUpdate_t = arma::zeros(K, T - 1);
+  }
+  rcpp_make_diploid_jUpdate(
+      jUpdate_t,
       K,
       T,
       alphaHat_t,
@@ -927,9 +954,11 @@ Rcpp::List forwardBackwardDiploid(
   next_section="Done";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  to_return.push_back(jUpdate_t, "jUpdate_t");
-  to_return.push_back(gammaUpdate_t, "gammaUpdate_t");
   to_return.push_back(gammaK_t, "gammaK_t");
+  if (!update_in_place) {    
+      to_return.push_back(gammaUpdate_t, "gammaUpdate_t");
+      to_return.push_back(jUpdate_t, "jUpdate_t");      
+  }
   if (generate_fb_snp_offsets) {
       to_return.push_back(alphaBetaBlocks, "alphaBetaBlocks");
   }
@@ -1047,11 +1076,17 @@ Rcpp::List forwardBackwardHaploid(
     const arma::mat& transMatRate_t_H,
     const arma::mat& alphaMat_t,
     const arma::mat& eHaps_t,
+    arma::mat& alphaHat_t,
+    arma::mat& betaHat_t,
     const double maxDifferenceBetweenReads,
     const double maxEmissionMatrixDifference,
     const int Jmax,
     const int suppressOutput,
     const int model,
+    arma::cube& gammaUpdate_t, // see use_supplied_gammaUpdate_t
+    arma::mat& jUpdate_t,
+    arma::mat& hapSum_t,
+    Rcpp::NumericVector& priorSum,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
     const bool run_pseudo_haploid,
@@ -1061,7 +1096,9 @@ Rcpp::List forwardBackwardHaploid(
     const Rcpp::NumericVector betaEnd = 0,
     const bool run_fb_subset = false,
     const int run_fb_grid_offset = 0, // this is 0-based
-    const bool return_extra = false
+    const bool return_extra = false,
+    const bool update_in_place = false,
+    const bool pass_in_alphaBeta = false // whether to pass in pre-made alphaHat, betaHat    
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -1073,25 +1110,27 @@ Rcpp::List forwardBackwardHaploid(
   //
   //
   const int T = alphaMat_t.n_cols + 1;  // what we iterate over / grid
+  const int nGrids = T; // will make change eventually
   const int K = eHaps_t.n_rows; // traditional K for haplotypes
   //
   // new variables
   //
   // variables working on nReads
-  arma::mat alphaHat_t = arma::zeros(K,T);  
-  arma::mat betaHat_t = arma::zeros(K,T);
+  if (!pass_in_alphaBeta) {
+      alphaHat_t = arma::zeros(K, T);
+      betaHat_t = arma::zeros(K, T);
+  }
   arma::rowvec c = arma::zeros(1,T);  
-  arma::mat gamma_t = arma::zeros(K,T);
   // eMatHapSNP works on the SNPs themselves
-  arma::mat eMatHapSNP_t = arma::ones(K,T);
-  // variables working on full space
-  arma::mat jUpdate_t = arma::zeros(K,T-1);
+  arma::mat gamma_t = arma::zeros(K, T);  
+  arma::mat eMatHapSNP_t = arma::ones(K, T);
   // variables for transition matrix and initialization
   // int variables and such
   int t, k1, iRead, readSNP, k;
   double d = 1;
   double rescale, x;
-  Rcpp::List alphaBetaBlocks;  
+  Rcpp::List alphaBetaBlocks;
+  Rcpp::List to_return;  
   //
   //
   //
@@ -1131,9 +1170,8 @@ Rcpp::List forwardBackwardHaploid(
   for(iRead=0; iRead<=nReads-1; iRead++) {
     Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
     readSNP = as<int>(readData[1]) - run_fb_grid_offset; // leading SNP from read
-    for(k=0; k<=K-1; k++) {
-        eMatHapSNP_t(k, readSNP) = eMatHapSNP_t(k, readSNP) *  \
-            eMatHap_t(k,iRead);
+    for(k = 0; k < K; k++) {
+        eMatHapSNP_t(k, readSNP) *= eMatHap_t(k, iRead);
     }
   }
   //
@@ -1232,9 +1270,7 @@ Rcpp::List forwardBackwardHaploid(
   // optional early return, for final iteration
   if (run_fb_subset == true) {
       return(wrap(Rcpp::List::create(
-                                     Rcpp::Named("gamma_t") = gamma_t,
-                                     Rcpp::Named("alphaHat_t") = alphaHat_t,
-                                     Rcpp::Named("betaHat_t") = betaHat_t
+                                     Rcpp::Named("gamma_t") = gamma_t
                                      )));
   }
   // make outputs here
@@ -1244,6 +1280,12 @@ Rcpp::List forwardBackwardHaploid(
           betaHat_t,
           blocks_for_output
       );
+  }
+  if (update_in_place) {  
+      hapSum_t += gamma_t; // same as gammaK_t
+      for(k=0; k < K; k++) {
+          priorSum(k) = priorSum(k) + gamma_t(k, 0);
+      }
   }
   //
   //
@@ -1255,8 +1297,10 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  const int nSNPs = eHaps_t.n_cols;  
-  arma::cube gammaUpdate_t = arma::zeros(K, nSNPs, 2);
+  if (!update_in_place) {        
+      const int nSNPs = eHaps_t.n_cols;
+      gammaUpdate_t = arma::zeros(K, nSNPs, 2);
+  }
   make_haploid_gammaUpdate_t(  
       gammaUpdate_t,
       sampleReads,
@@ -1278,9 +1322,13 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  for(t=0; t<=T-2; t++) {
-      for(k=0; k<=K-1; k++) {
-          jUpdate_t(k,t) = transMatRate_t_H(1, t) * alphaMat_t(k,t) * betaHat_t(k,t+1) * eMatHapSNP_t(k,t+1);
+  if (!update_in_place) {
+      jUpdate_t = arma::zeros(K, nGrids - 1);
+  }
+  for(t = 0; t <= T - 2; t++) {
+      d = transMatRate_t_H(1, t);
+      for(k=0; k < K; k++) {
+          jUpdate_t(k, t) += d * alphaMat_t(k, t) * betaHat_t(k, t + 1) * eMatHapSNP_t(k, t + 1);
       }
   }
   //
@@ -1290,13 +1338,13 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  Rcpp::List to_return = Rcpp::List::create(
-      Rcpp::Named("gamma_t") = gamma_t,                                            
-      Rcpp::Named("gammaUpdate_t") = gammaUpdate_t,
-      Rcpp::Named("eMatHap_t") = eMatHap_t,
-      Rcpp::Named("eMatHapOri_t") = eMatHapOri_t,
-      Rcpp::Named("jUpdate_t") = jUpdate_t
-  );
+  to_return.push_back(gamma_t, "gamma_t");
+  to_return.push_back(eMatHap_t, "eMatHap_t");
+  to_return.push_back(eMatHapOri_t, "eMatHapOri_t");
+  if (!update_in_place) {
+      to_return.push_back(gammaUpdate_t, "gammaUpdate_t");
+      to_return.push_back(jUpdate_t, "jUpdate_t");
+  }
   if (return_extra) {
       to_return.push_back(alphaHat_t, "alphaHat_t");
       to_return.push_back(betaHat_t, "betaHat_t");
@@ -1410,54 +1458,3 @@ List cpp_read_reassign(
   );
   return to_return;
 }
-
-
-//' @export
-// [[Rcpp::export]]
-Rcpp::List rcpp_get_update_pieces(
-    arma::cube& gammaSum_t,
-    arma::mat& alphaMatSum_t,
-    Rcpp::NumericVector& priorSum,
-    arma::mat& hapSum_t,    
-    const arma::mat& gammaK_t,
-    const arma::cube& gammaUpdate_t,
-    const arma::mat& jUpdate_t,
-    const bool only_update_hapSum
-) {
-    //
-    const int nGrids = hapSum_t.n_cols;
-    const int nSNPs = gammaSum_t.n_cols;
-    const int K = hapSum_t.n_rows;
-    int t, k, i;
-    for(t=0; t < nGrids; t++) {
-        for(k=0; k < K; k++) {
-            hapSum_t(k, t) = hapSum_t(k, t) + gammaK_t(k, t);
-        }
-    }
-    if (only_update_hapSum) {
-        return R_NilValue;
-    }
-    for(k=0; k < K; k++) {
-        priorSum(k) = priorSum(k) + gammaK_t(k);
-    }
-    //
-    for(t=0; t < (nGrids - 1); t++) {
-        for(k=0; k < K; k++) {
-            alphaMatSum_t(k, t) = alphaMatSum_t(k, t) + \
-                jUpdate_t(k, t);
-        }
-    }
-    for(t=0; t < nSNPs; t++) {
-        // only bother if non-0
-        if (gammaUpdate_t(1, t, 1) > 0) {        
-            for(k=0; k < K; k++) {
-                for(i=0; i < 2; i++) {
-                    gammaSum_t(k, t, i) = gammaSum_t(k, t, i) + \
-                        gammaUpdate_t(k, t, i);
-                }
-            }
-        }
-    }
-    return R_NilValue;
-}
-

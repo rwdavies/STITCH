@@ -237,6 +237,13 @@ test_that("can sample one path from forwardBackwardDiploid", {
             grid = grid
         )
     }
+    nSNPs <- n_snps
+    priorSum <- array(0, K)
+    jUpdate_t <- array(0, c(K, nGrids - 1))
+    gammaUpdate_t <- array(0, c(K, nSNPs, 2))
+    hapSum_t <- array(0,c(K, nGrids))
+    alphaHat_t <- array(0, c(K * K, nGrids))
+    betaHat_t <- array(0, c(K * K, nGrids))    
     
     ##out2 <- forwardBackwardDiploid_old(
     ##    sampleReads = sampleReads,
@@ -271,7 +278,15 @@ test_that("can sample one path from forwardBackwardDiploid", {
         grid = grid,
         snp_start_1_based = 1,
         snp_end_1_based = n_snps,
-        return_extra = TRUE
+        return_extra = TRUE,
+        update_in_place = TRUE,
+        gammaUpdate_t = gammaUpdate_t,
+        jUpdate_t = jUpdate_t,
+        hapSum_t = hapSum_t,
+        priorSum = priorSum,
+        pass_in_alphaBeta = TRUE,        
+        alphaHat_t = alphaHat_t,
+        betaHat_t = betaHat_t,
     )
     
 
