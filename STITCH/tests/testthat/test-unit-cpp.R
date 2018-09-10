@@ -241,7 +241,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     priorSum <- array(0, K)
     jUpdate_t <- array(0, c(K, nGrids - 1))
     gammaUpdate_t <- array(0, c(K, nSNPs, 2))
-    hapSum_t <- array(0,c(K, nGrids))
+    hapSum_t <- array(0, c(K, nGrids))
     alphaHat_t <- array(0, c(K * K, nGrids))
     betaHat_t <- array(0, c(K * K, nGrids))    
     
@@ -260,6 +260,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     ##    blocks_for_output = array(NA, c(1, 1)),
     ##    whatToReturn = as.integer(0)
     ## )
+    set.seed(50)
     out <- forwardBackwardDiploid(
         sampleReads = sampleReads,
         nReads = as.integer(length(sampleReads)),
@@ -288,7 +289,6 @@ test_that("can sample one path from forwardBackwardDiploid", {
         alphaHat_t = alphaHat_t,
         betaHat_t = betaHat_t,
     )
-    
 
     ##expect_equal(out1$alphaHat_t, out2$alphaHat_t)
     ##expect_equal(out1$betaHat_t, out2$betaHat_t)
