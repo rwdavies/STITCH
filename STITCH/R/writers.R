@@ -5,7 +5,7 @@ make_and_write_output_file <- function(
     regionName,
     output_format,
     blocks_for_output,
-    alphaBetaBlockList,
+    allAlphaBetaBlocks,
     reference_panel_SNPs,
     priorCurrent,    
     sigmaCurrent,
@@ -30,7 +30,8 @@ make_and_write_output_file <- function(
     niterations,
     maxEmissionMatrixDifference,
     maxDifferenceBetweenReads,
-    Jmax
+    Jmax,
+    useTempdirWhileWriting
 ) {
 
     print_message("Begin making and writing output file")
@@ -136,7 +137,7 @@ make_and_write_output_file <- function(
             regionName = regionName,
             bundling_info = bundling_info,
             K = K,
-            alphaBetaBlockList = alphaBetaBlockList,
+            allAlphaBetaBlocks = allAlphaBetaBlocks,
             alphaMatCurrentLocal_t = alphaMatCurrentLocal_t,
             eHapsCurrent_t = eHapsCurrent_t,
             transMatRateLocal_t_H = transMatRateLocal_t_H,
@@ -158,6 +159,7 @@ make_and_write_output_file <- function(
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             Jmax = Jmax,
+            useTempdirWhileWriting = useTempdirWhileWriting,
             FUN = per_core_get_results
         )
 
@@ -319,7 +321,7 @@ per_core_get_results <- function(
     regionName,
     bundling_info,
     K,
-    alphaBetaBlockList,
+    allAlphaBetaBlocks,
     alphaMatCurrentLocal_t,
     eHapsCurrent_t,
     transMatRateLocal_t_H,
@@ -340,11 +342,13 @@ per_core_get_results <- function(
     niterations,
     maxEmissionMatrixDifference,
     maxDifferenceBetweenReads,
-    Jmax
+    Jmax,
+    useTempdirWhileWriting
 ) {
 
     bundledSampleReads <- NULL
     bundledSampleProbs <- NULL
+    bundledAlphaBetaBlocks <- NULL
     
     ## load sample
     ## load pRgivenH1
@@ -386,7 +390,18 @@ per_core_get_results <- function(
         )
         sampleReads <- out$sampleReads
         bundledSampleReads <- out$bundledSampleReads
-        
+
+        out <- get_alphaBetaBlocks_from_dir_for_sample(
+            dir = tempdir,
+            regionName = regionName,
+            iSample = iSample,
+            bundling_info = bundling_info,
+            bundledAlphaBetaBlocks = bundledAlphaBetaBlocks,
+            allAlphaBetaBlocks = allAlphaBetaBlocks
+        )
+        alphaBetaBlocks <- out$alphaBetaBlocks
+        bundledAlphaBetaBlocks <- out$bundledAlphaBetaBlocks
+
         if (method == "pseudoHaploid") {
             out <- get_sampleProbs_from_dir_for_sample(
                 dir = tempdir,
@@ -414,7 +429,7 @@ per_core_get_results <- function(
             ## only 1 grid being imputed (rare!)
             ## also, imputation more or less meaningless
             ## but anyway, make valid output
-            abSmall <- alphaBetaBlockList[[iSample]] ## how long is this?
+            abSmall <- alphaBetaBlocks ## how long is this?
             fbsoL <- lapply(1:length(abSmall), function(i) {
                 a <- abSmall[[i]]$alphaHatBlocks_t
                 b <- abSmall[[i]]$betaHatBlocks_t
@@ -449,7 +464,7 @@ per_core_get_results <- function(
                 eHapsCurrent_t = eHapsCurrent_t,
                 transMatRate_t_H = transMatRateLocal_t_H,
                 transMatRate_t_D = transMatRateLocal_t_D, 
-                alphaBetaBlock = alphaBetaBlockList[[iSample]],
+                alphaBetaBlock = alphaBetaBlocks, ## dammit singular vs plural
                 i_snp_block_for_alpha_beta = i_output_block,
                 run_fb_grid_offset = first_grid_in_region,
                 run_fb_subset = TRUE,

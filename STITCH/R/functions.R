@@ -70,6 +70,7 @@
 #' @param shuffle_bin_nSNPs Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then break per-SNP (or per-grid) every this many SNPs / grids, and compare each to detect whether haplotypes either 1) are more likely to stay where they are or 2) switch from one haplotype to another. Note that only one of shuffle_bin_nSNPs or shuffle_bin_radius should be non-NULL
 #' @param shuffle_bin_radius Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then recombination rate is calculated around pairs of SNPs in window of twice this value, and those that exceed what should be the maximum (defined by nGen and maxRate) are checked for whether they are shuffled
 #' @param keepSampleReadsInRAM Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM
+#' @param useTempdirWhileWriting Whether to use temporary directory while writing output file (TRUE), or to keep result in RAM (FALSE). Using temporary directory is slower but uses less RAM
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -144,7 +145,8 @@ STITCH <- function(
     gridWindowSize = NA,
     shuffle_bin_nSNPs = NULL,
     shuffle_bin_radius = 5000,
-    keepSampleReadsInRAM = FALSE
+    keepSampleReadsInRAM = FALSE,
+    useTempdirWhileWriting = FALSE
 ) {
 
     ## capture command line
@@ -590,10 +592,10 @@ STITCH <- function(
         ##
         ## fork out and get results
         ##
-        results <- completeSampleIteration(N=N,tempdir=tempdir,chr=chr,K=K,K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids,priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,environment=environment,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, B_bit_prob = B_bit_prob, nSNPsInRegion = nSNPsInRegion, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, snps_in_grid_1_based = snps_in_grid_1_based, minimizeSwitchingIterations = minimizeSwitchingIterations)
+        results <- completeSampleIteration(N=N,tempdir=tempdir,chr=chr,K=K,K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids,priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,environment=environment,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, B_bit_prob = B_bit_prob, nSNPsInRegion = nSNPsInRegion, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, snps_in_grid_1_based = snps_in_grid_1_based, minimizeSwitchingIterations = minimizeSwitchingIterations, useTempdirWhileWriting = useTempdirWhileWriting)
         ##
         if (iteration == niterations) {        
-            alphaBetaBlockList <- results$alphaBetaBlockList
+            allAlphaBetaBlocks <- results$allAlphaBetaBlocks
             ## this is a "result" for this iteration
             hapSumCurrent_t <- results$hapSum_t
         } else {
@@ -605,7 +607,7 @@ STITCH <- function(
             sigmaFuture <- results$sigmaFuture
             priorFuture <- results$priorFuture
             hapSumCurrent_t <- results$hapSum_t
-            alphaBetaBlockList <- results$alphaBetaBlockList
+            allAlphaBetaBlocks <- results$allAlphaBetaBlocks
             rm(results)
             ## save everything if needed
             if (keepInterimFiles) {
@@ -640,7 +642,6 @@ STITCH <- function(
         }
     }
 
-
     ##
     ## build final output
     ##
@@ -650,7 +651,7 @@ STITCH <- function(
         regionName = regionName,
         output_format = output_format,
         blocks_for_output = blocks_for_output,
-        alphaBetaBlockList = alphaBetaBlockList,
+        allAlphaBetaBlocks = allAlphaBetaBlocks,
         reference_panel_SNPs = reference_panel_SNPs,
         priorCurrent = priorCurrent,
         sigmaCurrent = sigmaCurrent,
@@ -675,7 +676,8 @@ STITCH <- function(
         niterations = niterations,
         maxEmissionMatrixDifference = maxEmissionMatrixDifference,
         maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-        Jmax = Jmax
+        Jmax = Jmax,
+        useTempdirWhileWriting = useTempdirWhileWriting
     )
     
     gen_imp <- out$gen_imp
@@ -4010,7 +4012,7 @@ calculate_gp_t_from_fbsoL <- function(
 
 
 
-subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize, bundling_info, transMatRate_t_H, transMatRate_t_D, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, L_grid, grid_distances, minimizeSwitchingIterations) {
+subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids, priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, Jmax,highCovInLow,iteration,method,nsplit,expRate,minRate,maxRate,gen,outputdir,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize, bundling_info, transMatRate_t_H, transMatRate_t_D, sampleRanges, N, niterations, L, samples_with_phase, nbreaks, break_results, vcf.piece_unique, grid, B_bit_prob, start_and_end_minus_buffer, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, L_grid, grid_distances, minimizeSwitchingIterations, useTempdirWhileWriting) {
 
     ## know what core we are in for writing
     i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
@@ -4068,9 +4070,9 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
 
     ##
     if (iteration == niterations) {
-        alphaBetaBlockList <- as.list(1:length(who_to_run))
+        allAlphaBetaBlocks <- as.list(1:length(who_to_run))
     } else {
-        alphaBetaBlockList <- NULL
+        allAlphaBetaBlocks <- NULL
     }
 
     ## run either once (default) or more than once
@@ -4171,10 +4173,27 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
         )
         fbsoL <- out$fbsoL
 
-        ## prepare output
+        ## kind of like 
         if (iteration == niterations) {
-            ## right - there are potentially two of them!
-            alphaBetaBlockList[[iiSample]] <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
+            if (useTempdirWhileWriting) {
+                alphaBetaBlocks <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
+                save(alphaBetaBlocks, file = file_alphaBetaBlocks(tempdir, iSample, regionName), compress = FALSE)
+                if (length(bundling_info) > 0) {
+                    ## bundle here
+                    last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
+                    if (last_in_bundle == 1) {
+                        bundle_inputs_after_generation(
+                            bundling_info = bundling_info,
+                            iBam = iSample,
+                            dir = tempdir,
+                            regionName = regionName,
+                            what = "alphaBetaBlocks"
+                        )
+                    }
+                }
+            } else {
+                allAlphaBetaBlocks[[iiSample]] <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
+            }
         }
         
         out <- within_EM_per_sample_heuristics(
@@ -4246,7 +4265,7 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             readsSplit = readsSplit,
             readsTotal = readsTotal,
             restartMatrixList = restartMatrixList,
-            alphaBetaBlockList = alphaBetaBlockList,
+            allAlphaBetaBlocks = allAlphaBetaBlocks,
             sampledPathList = sampledPathList
         )
     )
@@ -4291,7 +4310,7 @@ get_Jmax_wrt_iteration <- function(Jmax, iteration, niterations) {
 }
 
 
-completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, B_bit_prob, nSNPsInRegion, start_and_end_minus_buffer, shuffle_bin_nSNPs, shuffle_bin_radius, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, snps_in_grid_1_based, minimizeSwitchingIterations
+completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, nGrids,priorCurrent,eHapsCurrent_t,alphaMatCurrent_t,sigmaCurrent,maxDifferenceBetweenReads,maxEmissionMatrixDifference, Jmax,aSW=NA,bSW=NA,highCovInLow,iteration,method,expRate,minRate,maxRate,niterations,splitReadIterations,shuffleHaplotypeIterations,nCores,L,nGen,alphaMatThreshold,emissionThreshold,gen,outputdir,environment,pseudoHaploidModel,outputHaplotypeProbabilities,switchModelIteration,regionName,restartIterations,refillIterations,outputBlockSize,bundling_info, alleleCount, phase, samples_with_phase, vcf.piece_unique, grid, grid_distances, L_grid, B_bit_prob, nSNPsInRegion, start_and_end_minus_buffer, shuffle_bin_nSNPs, shuffle_bin_radius, plot_shuffle_haplotype_attempts, blocks_for_output, allSampleReads, snps_in_grid_1_based, minimizeSwitchingIterations, useTempdirWhileWriting
 ) {
 
     print_message(paste0("Start of iteration ", iteration))
@@ -4330,41 +4349,17 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
         sampleRanges,
         mc.cores=nCores,
         FUN = subset_of_complete_iteration,
-        tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t_H = transMatRate_t_H, transMatRate_t_D = transMatRate_t_D, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, L_grid = L_grid, grid_distances = grid_distances, minimizeSwitchingIterations = minimizeSwitchingIterations
+        tempdir=tempdir,chr=chr,K=K, K_subset = K_subset, K_random = K_random, nSNPs = nSNPs,nGrids = nGrids, priorCurrent=priorCurrent,eHapsCurrent_t=eHapsCurrent_t,alphaMatCurrent_t=alphaMatCurrent_t,sigmaCurrent=sigmaCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,nsplit=nsplit,expRate=expRate,minRate=minRate,maxRate=maxRate,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, transMatRate_t_H = transMatRate_t_H, transMatRate_t_D = transMatRate_t_D, sampleRanges = sampleRanges, N = N, niterations = niterations, L = L, samples_with_phase = samples_with_phase, nbreaks = nbreaks, break_results = break_results, vcf.piece_unique = vcf.piece_unique, grid = grid, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, L_grid = L_grid, grid_distances = grid_distances, minimizeSwitchingIterations = minimizeSwitchingIterations, useTempdirWhileWriting = useTempdirWhileWriting
     )
 
     check_mclapply_OK(single_iteration_results)
 
-    ## if this is the final iteration, just save forward backwards
-    ## then exit
-    ## no need to do updating etc
-    ## re-build alphaBetaBlockList as per-individual
-    ## this feels really ugly, and does not need to be lists, maybe re-write as cubes etc
     if (iteration == niterations) {
-        alphaBetaBlockList <- as.list(1:N)
-        for(i_core in 1:length(single_iteration_results)) {
-            sampleRange <- sampleRanges[[i_core]]
-            who_to_run <- sampleRange[1]:sampleRange[2]
-            abSmall <- single_iteration_results[[i_core]]$alphaBetaBlockList
-            for(iiSample in 1:length(who_to_run)) {
-                iSample <- who_to_run[[iiSample]]
-                alphaBetaBlockList[[iSample]] <- abSmall[[iiSample]]
-            }
-        }
-        ## also want hapSum
-        hapSum_t <- array(0, c(K, nGrids))
-        ## sum and sum
-        for(i in 1:length(sampleRanges)) {
-            hapSum_t <- hapSum_t + single_iteration_results[[i]]$hapSum_t
-        }
-        return(
-            list(
-                alphaBetaBlockList = alphaBetaBlockList,
-                hapSum_t = hapSum_t
-            )
-        )
+        ## if this is the final iteration, just save forward backwards, possibly to disk
+        ## then exit
+        return(reorder_alphaBetaBlocks(single_iteration_results, sampleRanges, N, K, nGrids, useTempdirWhileWriting))
     } else {
-        alphaBetaBlockList <- NULL
+        allAlphaBetaBlocks <- NULL
     }
 
     
@@ -4546,7 +4541,7 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
             priorFuture = priorSum,
             alphaMatFuture_t = alphaMatSum_t,
             hapSum_t = hapSum_t,
-            alphaBetaBlockList = alphaBetaBlockList
+            allAlphaBetaBlocks = allAlphaBetaBlocks
         )
     )
 
@@ -5929,4 +5924,30 @@ determine_snp_and_grid_blocks_for_output <- function(
 
 
 
-
+reorder_alphaBetaBlocks <- function(single_iteration_results, sampleRanges, N, K, nGrids, useTempdirWhileWriting) {
+    if (useTempdirWhileWriting) {
+        allAlphaBetaBlocks <- NULL
+    } else {
+        allAlphaBetaBlocks <- as.list(1:N)
+        for(i_core in 1:length(single_iteration_results)) {
+            sampleRange <- sampleRanges[[i_core]]
+            who_to_run <- sampleRange[1]:sampleRange[2]
+            abSmall <- single_iteration_results[[i_core]]$allAlphaBetaBlocks
+            for(iiSample in 1:length(who_to_run)) {
+                iSample <- who_to_run[[iiSample]]
+                allAlphaBetaBlocks[[iSample]] <- abSmall[[iiSample]]
+            }
+        }
+    }
+    ## also want hapSum
+    hapSum_t <- array(0, c(K, nGrids))
+    ## sum and sum
+    for(i in 1:length(sampleRanges)) {
+        hapSum_t <- hapSum_t + single_iteration_results[[i]]$hapSum_t
+    }
+    list(
+        allAlphaBetaBlocks = allAlphaBetaBlocks,
+        hapSum_t = hapSum_t
+    )
+}
+    

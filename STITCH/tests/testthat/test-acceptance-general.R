@@ -926,3 +926,36 @@ test_that("STITCH can generate interim plots", {
     }
 
 })
+
+test_that("STITCH works when using a tempdir for writing useTempdirWhileWriting", {
+
+    outputdir <- make_unique_tempdir()
+
+    for(inputBundleBlockSize in c(NA, 5)) {
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            nCores = 1,
+            useTempdirWhileWriting = TRUE,
+            inputBundleBlockSize = inputBundleBlockSize
+        )
+        
+        vcf <- read.table(
+            file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+            header = FALSE,
+            stringsAsFactors = FALSE
+        )
+        
+        check_vcf_against_phase(
+            vcf = vcf,
+            phase = data_package$phase,
+            tol = 0.2
+        )
+    }
+
+})

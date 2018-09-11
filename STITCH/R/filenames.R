@@ -44,6 +44,18 @@ file_sampleProbs <- function(
     ))
 }
 
+file_alphaBetaBlocks <- function(
+    dir,
+    iBam,
+    regionName
+) {
+    return(
+        file.path(
+            dir,
+            paste0("alphaBetaBlocks.", iBam , ".", regionName, ".RData")
+        )
+    )
+}
 
 
 file_bundledSampleReads <- function(
@@ -84,6 +96,20 @@ file_bundledSampleProbs <- function(
         dir,
         paste0("bundledSampleProbs.", start, "-", end, ".", regionName, ".RData")
     ))
+}
+
+file_bundledAlphaBetaBlocks <- function(
+    dir,
+    start,
+    end,
+    regionName
+) {
+    return(
+        file.path(
+            dir,
+            paste0("bundledAlphaBetaBlocks.", start, "-", end, ".", regionName, ".RData")
+        )
+    )
 }
 
 

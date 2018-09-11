@@ -88,6 +88,53 @@ get_sampleReads_from_dir_for_sample <- function(
 }
 
 
+get_alphaBetaBlocks_from_dir_for_sample <- function(
+    dir,
+    regionName,
+    iSample,
+    bundling_info,
+    bundledAlphaBetaBlocks = NULL,
+    what = "alphaBetaBlocks",
+    allAlphaBetaBlocks = NULL
+) {
+    if (is.null(allAlphaBetaBlocks) == FALSE) {
+        return(
+            list(
+                alphaBetaBlocks = allAlphaBetaBlocks[[iSample]],
+                bundledAlphaBetaBlocks = NULL
+            )
+        )
+    }
+    file_loader <- file_alphaBetaBlocks
+    file_bundled_loader <- file_bundledAlphaBetaBlocks
+    if (length(bundling_info) == 0) {
+        load(file_loader(dir, iSample, regionName))
+    } else {
+        x <- bundling_info$matrix[iSample, ]
+        iC <- x["iCore"]
+        iB <- x["iBundle"]
+        iP <- x["iPosition"]
+        y <- bundling_info$list[[iC]][[iB]]
+        s <- y[1]
+        e <- y[2]
+        file <- file_bundled_loader(dir, s, e, regionName)
+        if (length(bundledAlphaBetaBlocks) == 0) {
+            load(file)
+        } else {
+            if (bundledAlphaBetaBlocks$name != paste0(s, "_", e)) {
+                load(file)
+            }
+        }
+        alphaBetaBlocks <- bundledAlphaBetaBlocks[[iP]]
+    }
+    return(
+        list(
+            alphaBetaBlocks = alphaBetaBlocks,
+            bundledAlphaBetaBlocks = bundledAlphaBetaBlocks
+        )
+    )
+}
+
 
 bundle_inputs_after_generation <- function(
     bundling_info,
@@ -96,13 +143,18 @@ bundle_inputs_after_generation <- function(
     regionName,
     what = "sampleReads",
     remove_files = TRUE
-    ) {
-    if (what == "sampleReads")
+) {
+    if (what == "sampleReads") {
         file_samples <- file_sampleReads
-    if (what == "sampleProbs")
+    } else if (what == "sampleProbs") {
         file_samples <- file_sampleProbs
-    if (what == "referenceSampleReads")
+    } else if (what == "referenceSampleReads") {
         file_samples <- file_referenceSampleReads
+    } else if (what == "alphaBetaBlocks") {
+        file_samples <- file_alphaBetaBlocks
+    } else {
+        stop("bad bundle choice")
+    }
     iC <- bundling_info$matrix[iBam, "iCore"]
     iB <- bundling_info$matrix[iBam, "iBundle"]
     y <- bundling_info$list[[iC]][[iB]]
@@ -126,6 +178,10 @@ bundle_inputs_after_generation <- function(
                 file <- file_referenceSampleReads(dir, iBam, regionName)
                 load(file = file)
                 return(sampleReads)
+            } else if (what == "alphaBetaBlocks") {
+                file <- file_alphaBetaBlocks(dir, iBam, regionName)
+                load(file = file)
+                    return(alphaBetaBlocks)
             }
         }
     )
@@ -150,6 +206,13 @@ bundle_inputs_after_generation <- function(
             bundledSampleReads,
             file = file_bundledReferenceSampleReads(dir, s, e, regionName),
             compress = FALSE
+        )
+    } else if (what == "alphaBetaBlocks") {
+        bundledAlphaBetaBlocks <- bundledSampleObject
+        save(
+            bundledAlphaBetaBlocks,
+            file = file_bundledAlphaBetaBlocks(dir, s, e, regionName),
+            compress = TRUE
         )
     }
     if (remove_files == TRUE) {
