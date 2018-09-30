@@ -226,8 +226,8 @@ test_that("can sample one path from forwardBackwardDiploid", {
     eHaps <- array(runif(n_snps * K), c(n_snps, K))
     sigma <- rep(0.999, nGrids - 1)
     alphaMat <- array(1 / K / K, c(nGrids - 1, K))
-    x <- sigma
-    transMatRate <- cbind(x ** 2, x * (1 - x), (1 - x) ** 2)
+    transMatRate_t_D <- get_transMatRate("diploid", sigma)
+    transMatRate_t_H <- get_transMatRate("diploid-inbred", sigma)
     pi <- runif(K) / K
     eHaps[, 1] <- 0.01
     eHaps[, 2] <- 0.99
@@ -265,7 +265,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         sampleReads = sampleReads,
         nReads = as.integer(length(sampleReads)),
         pi = pi,
-        transMatRate = t(transMatRate),
+        transMatRate = transMatRate_t_D,
         alphaMat = t(alphaMat),
         eHaps = t(eHaps),
         maxDifferenceBetweenReads = as.double(1000),
@@ -306,6 +306,80 @@ test_that("can sample one path from forwardBackwardDiploid", {
     ## should be 1, 0 -> 1
     ## or 0, 1 -> 20
     expect_equal(sum(sampled_path != 1 & sampled_path != 20), 0)
+
+    if (speed_test) {
+        print("test haploid")
+    }
+    alphaHat_t <- array(0, c(K, nGrids))
+    betaHat_t <- array(0, c(K, nGrids))
+    priorSum <- array(0, K)
+    jUpdate_t <- array(0, c(K, nGrids - 1))
+    gammaUpdate_t <- array(0, c(K, nSNPs, 2))
+    hapSum_t <- array(0, c(K, nGrids))
+    out1 <- forwardBackwardHaploid(
+        sampleReads = sampleReads,
+        nReads = as.integer(length(sampleReads)),
+        pi = pi,
+        transMatRate = transMatRate_t_H,
+        alphaMat = t(alphaMat),
+        eHaps = t(eHaps),
+        maxDifferenceBetweenReads = as.double(1000),
+        maxEmissionMatrixDifference = as.double(1000),
+        Jmax = as.integer(10),
+        suppressOutput = suppressOutput,
+        blocks_for_output = array(NA, c(1, 1)),
+        return_extra = FALSE,
+        update_in_place = TRUE,
+        gammaUpdate_t = gammaUpdate_t,
+        jUpdate_t = jUpdate_t,
+        hapSum_t = hapSum_t,
+        priorSum = priorSum,
+        pass_in_alphaBeta = TRUE,        
+        alphaHat_t = alphaHat_t,
+        betaHat_t = betaHat_t,
+        model = 1000,
+        run_pseudo_haploid = FALSE,
+        pRgivenH1 = array(0, 1),
+        pRgivenH2 = array(0, 1)
+    )
+    ## print("OLD")
+    ## priorSum2 <- array(0, K)
+    ## jUpdate_t2 <- array(0, c(K, nGrids - 1))
+    ## gammaUpdate_t2 <- array(0, c(K, nSNPs, 2))
+    ## hapSum_t2 <- array(0, c(K, nGrids))
+    ## out2 <- forwardBackwardHaploid_TEMP(
+    ##     sampleReads = sampleReads,
+    ##     nReads = as.integer(length(sampleReads)),
+    ##     pi = pi,
+    ##     transMatRate = transMatRate_t_H,
+    ##     alphaMat = t(alphaMat),
+    ##     eHaps = t(eHaps),
+    ##     maxDifferenceBetweenReads = as.double(1000),
+    ##     maxEmissionMatrixDifference = as.double(1000),
+    ##     Jmax = as.integer(10),
+    ##     suppressOutput = 0,
+    ##     blocks_for_output = array(NA, c(1, 1)),
+    ##     return_extra = FALSE,
+    ##     update_in_place = TRUE,
+    ##     gammaUpdate_t = gammaUpdate_t2,
+    ##     jUpdate_t = jUpdate_t2,
+    ##     hapSum_t = hapSum_t2,
+    ##     priorSum = priorSum2,
+    ##     pass_in_alphaBeta = TRUE,        
+    ##     alphaHat_t = alphaHat_t,
+    ##     betaHat_t = betaHat_t,
+    ##     model = 1000,
+    ##     run_pseudo_haploid = FALSE,
+    ##     pRgivenH1 = array(0, 1),
+    ##     pRgivenH2 = array(0, 1)
+    ## )
+    ## expect_equal(out1, out2)
+    ## expect_equal(priorSum, priorSum2)
+    ## expect_equal(jUpdate_t2, jUpdate_t)
+    ## expect_equal(gammaUpdate_t2, gammaUpdate_t)
+    ## expect_equal(hapSum_t, hapSum_t2)
+    
+    
 
 })
 

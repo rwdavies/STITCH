@@ -384,25 +384,20 @@ void run_forward_haploid(
     int k;
     double alphaConst;
     //
-    for(int t=1; t<=T-1; t++) {
-        // make the constant
-        alphaConst=0;
-        for(k=0; k<=K-1; k++)
-            alphaConst = alphaConst + alphaHat_t(k,t-1);
-        alphaConst = alphaConst * transMatRate_t_H(1, t-1);
+    for(int t = 1; t < T; t++) {
+        alphaConst = transMatRate_t_H(1, t-1) * arma::sum(alphaHat_t.col(t - 1));
         //
-        // each entry is emission * (no change * that value + constant)
+        alphaHat_t.col(t) = eMatHapSNP_t.col(t) % ( \
+            transMatRate_t_H(0, t - 1) * alphaHat_t.col(t - 1) + \
+            alphaConst * alphaMat_t.col(t - 1) );
         //
-        for(k=0; k<=K-1; k++)
-            alphaHat_t(k,t) = eMatHapSNP_t(k,t) *                  \
-                ( transMatRate_t_H(0, t-1) * alphaHat_t(k,t-1) +     \
-                  alphaConst * alphaMat_t(k,t-1));
-        //
-        c(t) = 1 / sum(alphaHat_t.col(t));
-        alphaHat_t.col(t) = alphaHat_t.col(t) * c(t);
+        c(t) = 1 / arma::sum(alphaHat_t.col(t));
+        alphaHat_t.col(t) *= c(t);
     }
     return ;
 }
+
+
 
 void run_backward_haploid(
     arma::mat& betaHat_t,
@@ -415,20 +410,15 @@ void run_backward_haploid(
 ) {
     double x;
     int k;
-    for(int t = T-2; t>=0; --t) {
-      x = 0;
-      for(k=0; k<=K-1; k++)
-          x = x + alphaMat_t(k,t) * eMatHapSNP_t(k,t+1) * betaHat_t(k,t+1);
-      x = x * transMatRate_t_H(1, t);
-      for(k=0; k<=K-1; k++)
-          betaHat_t(k,t) = x + \
-              transMatRate_t_H(0, t) * eMatHapSNP_t(k,t+1) * betaHat_t(k,t+1);
-      // 
-      betaHat_t.col(t) = betaHat_t.col(t) * c(t);
-  }
-  return;
+    arma::colvec e_times_b;
+    for(int t = T-2; t >= 0; --t) {
+        //x = 0;
+        e_times_b = eMatHapSNP_t.col(t+1) % betaHat_t.col(t+1);
+        x = transMatRate_t_H(1, t) * sum(alphaMat_t.col(t) % e_times_b);
+        betaHat_t.col(t) = c(t) * (x + transMatRate_t_H(0, t) * e_times_b);
+    }
+    return;
 }
-
 
 
 //' @export
@@ -1054,7 +1044,7 @@ void make_haploid_gammaUpdate_t(
             } else {
                 for(k = 0; k < K; k++) {
                     a1 = pA * eHapsCurrent_t(k, t);
-                    a2 = pR * (1- eHapsCurrent_t(k, t));
+                    a2 = pR * (1 - eHapsCurrent_t(k, t));
                     y = a1 + a2;
                     d = gamma_t_col(k) / y;
                     gammaUpdate_t(k, t, 0) += a1 * d;
@@ -1325,11 +1315,8 @@ Rcpp::List forwardBackwardHaploid(
   if (!update_in_place) {
       jUpdate_t = arma::zeros(K, nGrids - 1);
   }
-  for(t = 0; t <= T - 2; t++) {
-      d = transMatRate_t_H(1, t);
-      for(k=0; k < K; k++) {
-          jUpdate_t(k, t) += d * alphaMat_t(k, t) * betaHat_t(k, t + 1) * eMatHapSNP_t(k, t + 1);
-      }
+  for(t = 0; t < T - 1; t++) {
+      jUpdate_t.col(t) += transMatRate_t_H(1, t) * (alphaMat_t.col(t) % betaHat_t.col(t + 1) % eMatHapSNP_t.col(t + 1));
   }
   //
   //
@@ -1458,3 +1445,7 @@ List cpp_read_reassign(
   );
   return to_return;
 }
+
+
+
+
