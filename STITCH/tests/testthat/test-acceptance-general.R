@@ -2,7 +2,6 @@ if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    
     ## dir <- "~/Google Drive/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
@@ -957,5 +956,49 @@ test_that("STITCH works when using a tempdir for writing useTempdirWhileWriting"
             tol = 0.2
         )
     }
+
+})
+
+test_that("STITCH can rebundle inputs", {
+
+    outputdir <- make_unique_tempdir()
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 2,        
+        inputBundleBlockSize = 2
+    )
+    unlink(file.path(outputdir, paste0("stitch.chr", chr, ".vcf.gz")))
+
+    STITCH(
+        chr = data_package$chr,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 3,
+        inputBundleBlockSize = 4,
+        regenerateInput = FALSE,
+        originalRegionName = data_package$chr,
+        regenerateInputWithDefaultValues = TRUE
+    )
+    vcf <- read.table(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+    
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+    
 
 })

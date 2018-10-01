@@ -226,7 +226,13 @@ bundle_inputs_after_generation <- function(
 
 
 get_rebundled_files <- function(inputdir, regionName, outputdir) {
-    files <- system(paste0("ls ", file_bundledSampleReads(inputdir, "*", "*", regionName)), intern = TRUE)
+    command <- paste0(
+        'cd ', shQuote(inputdir),
+        ' && find . -name "',
+        'bundledSamples.*-*.', regionName, '.RData', '"'
+    )
+    files <- file.path(inputdir, system(command, intern = TRUE))
+    ## files <- system(paste0("ls ", file_bundledSampleReads(inputdir, "*", "*", regionName)), intern = TRUE)
     ## get start and end of bundledSampleReads
     a <- unlist(strsplit(files, paste0(".", regionName, ".RData")))
     x <- strsplit(a, paste0( "bundledSamples."))
