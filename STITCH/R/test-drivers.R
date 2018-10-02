@@ -544,9 +544,10 @@ make_reference_package <- function(
         L = L
     )
 
-    reference_haplotype_file <- tempfile(fileext = ".gz")
-    reference_legend_file <- tempfile(fileext = ".gz")
-    reference_sample_file <- tempfile()
+    ## add a space in it
+    reference_haplotype_file <- tempfile(pattern = "fi le", fileext = ".gz")
+    reference_legend_file <- tempfile(pattern = "fi le", fileext = ".gz")
+    reference_sample_file <- tempfile(pattern = "fi le")
 
     ##ID POP GROUP SEX
     ##HG00096 GBR EUR male

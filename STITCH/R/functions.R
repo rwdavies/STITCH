@@ -1771,7 +1771,7 @@ load_reference_legend <- function(
     }
     legend_and_range <- system(
         paste0(
-            "gunzip -c ", reference_legend_file, " | ", "awk '{if(", extract_condition,  ") {print NR\" \"$0}}'"
+            "gunzip -c ", shQuote(reference_legend_file), " | ", "awk '{if(", extract_condition,  ") {print NR\" \"$0}}'"
         ), intern = TRUE
     )
     a <- strsplit(legend_and_range, " ")
@@ -1805,8 +1805,8 @@ extract_validate_and_load_haplotypes <- function(
 ) {
 
     print_message("Extract reference haplotypes")
-    temp_haps_file <- paste0(tempdir, ".haps.", regionName, ".txt.gz")
-    temp_extract_file <- paste0(tempdir, ".extract.", regionName, ".txt")
+    temp_haps_file <- file.path(tempdir, paste0("haps.", regionName, ".txt.gz"))
+    temp_extract_file <- file.path(tempdir, paste0("extract.", regionName, ".txt"))
 
     pos_snps <- paste(pos[,2], pos[,3], pos[,4], sep = "-")
     legend_snps <- paste(
@@ -1834,13 +1834,12 @@ extract_validate_and_load_haplotypes <- function(
         "awk '{if (NR==FNR) {a[$1]=$1; next} ",
         "if (FNR in a) {print $0}}' "
     )
-    out <- system(
-        paste0(
-            "gunzip -c ", reference_haplotype_file, " | ",
-            awk_command, temp_extract_file, " - | ",
-            "gzip > ", temp_haps_file
-        )
+    command <- paste0(
+        "gunzip -c ", shQuote(reference_haplotype_file), " | ",
+        awk_command, shQuote(temp_extract_file), " - | ",
+        "gzip > ", shQuote(temp_haps_file)
     )
+    out <- system(command)
 
     print_message("Load reference haplotypes")
     haps <- read.table(
