@@ -242,9 +242,9 @@ out <- system2(
         paste0("--bamlist=", data_package$bamlist),
         paste0("--posfile=", data_package$posfile),
         paste0("--outputdir=", data_package$outputdir),
-        paste0("--reference_haplotype_file=", refpack$reference_haplotype_file),
-        paste0("--reference_legend_file=", refpack$reference_legend_file),
-        paste0("--reference_sample_file=", refpack$reference_sample_file),
+        paste0("--reference_haplotype_file=", shQuote(refpack$reference_haplotype_file)),
+        paste0("--reference_legend_file=", shQuote(refpack$reference_legend_file)),
+        paste0("--reference_sample_file=", shQuote(refpack$reference_sample_file)),
         "--reference_populations='c(\"CEU\",\"GBR\")'",
         "--K=2",
         "--nGen=100"
