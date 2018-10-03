@@ -62,6 +62,23 @@ validate_B_bit_prob <- function(B_bit_prob, output_format) {
     }
 }
 
+## acceptable are integer greater than or equal to 0
+validate_reference_iterations <- function(reference_iterations) {
+    if (
+    (class(reference_iterations) != "integer") &
+    (class(reference_iterations) != "numeric")
+    ) {
+        stop("reference_iterations must be an integer of at least 0")
+    }
+    if (round(reference_iterations) != reference_iterations) {
+        stop("reference_iterations must be an integer")
+    }
+    if (reference_iterations < 0) {
+        stop("reference_iterations must be an integer of at least 0")
+    }
+    return(NULL)
+}
+
 validate_pos_and_legend_snps_for_niterations_equals_1 <- function(legend_snps, pos_snps, niterations) {
     if (niterations == 1) {
         x <- is.na(match(legend_snps, pos_snps))

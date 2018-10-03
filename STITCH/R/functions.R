@@ -1420,13 +1420,14 @@ initialize_parameters <- function(
                 eHapsCurrent[is.na(eHapsCurrent[, 1]), ] <- to_replace
             }
 
-            out <- run_EM_on_reference_sample_reads(reference_iterations = reference_iterations, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances)
-
-            sigmaCurrent <- out$sigmaCurrent
-            eHapsCurrent <- out$eHapsCurrent
-            alphaMatCurrent <- out$alphaMatCurrent
-            hapSumCurrent <- out$hapSumCurrent
-            priorCurrent <- out$priorCurrent
+            if (reference_iterations > 0) {
+                out <- run_EM_on_reference_sample_reads(reference_iterations = reference_iterations, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances)
+                sigmaCurrent <- out$sigmaCurrent
+                eHapsCurrent <- out$eHapsCurrent
+                alphaMatCurrent <- out$alphaMatCurrent
+                hapSumCurrent <- out$hapSumCurrent
+                priorCurrent <- out$priorCurrent
+            }
 
             ## add some noise to NA sites - just in case
             ## there are too many of them nearby

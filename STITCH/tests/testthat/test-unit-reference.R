@@ -1,3 +1,18 @@
+test_that("can validate reference iterations", {
+
+    expect_error(validate_reference_iterations("wer"))
+    expect_error(validate_reference_iterations("two"))
+    expect_error(validate_reference_iterations(NULL))
+    expect_error(validate_reference_iterations(NA))
+    expect_error(validate_reference_iterations(0.1))
+    expect_error(validate_reference_iterations(11.2))    
+    
+    expect_null(validate_reference_iterations(0))
+    expect_null(validate_reference_iterations(1))  
+    expect_null(validate_reference_iterations(10))      
+})
+
+
 test_that("reference position SNPs can be valid for niterations = 1", {
     expect_equal(
         validate_pos_and_legend_snps_for_niterations_equals_1(
