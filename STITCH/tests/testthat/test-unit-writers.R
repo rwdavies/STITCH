@@ -37,3 +37,22 @@ test_that("can write column of VCF output in C++", {
 
 })
 
+test_that("can write column of VCF output in C++ with posterior state probabilities", {
+
+    set.seed(9449)
+    nSNPs <- 100
+    K <- 5
+    gp <- array(rbeta(nSNPs * 3, 0.2, 0.2), c(nSNPs, 3))
+    gp_t <- t(gp / rowSums(gp))
+    q <- array(runif(nSNPs * K), c(nSNPs, K))
+    q_t <- t(q / rowSums(q))
+    gp_t[, 1] <- c(0.1, 0.2, 0.7) ## sums to 1
+    q_t[, 1] <- c(0, 0.2, 0.1, 0.5, 1.2)
+    out1 <- make_column_of_vcf(gp_t = gp_t, q_t = q_t)
+    expect_equal(out1[1], "./.:0.100,0.200,0.700:1.600:0.000,0.200,0.100,0.500,1.200")
+    
+    ##out2 <- rcpp_make_column_of_vcf(gp_t, 0, matrix())    
+    ##expect_equal(out1, out2)
+
+})
+

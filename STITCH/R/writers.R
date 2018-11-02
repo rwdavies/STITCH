@@ -827,6 +827,7 @@ get_max_gen_rapid <- function(x) {
 ## I think this was for the phasing things
 make_column_of_vcf <- function(
     gp_t,
+    q_t = NULL,
     read_proportions = NULL
 ) {
     ## write out genotype, genotype likelihood, and dosage
@@ -846,6 +847,14 @@ make_column_of_vcf <- function(
         gt, 
         sprintf(format_string, gp_t[1, ], gp_t[2, ], gp_t[3, ], gp_t[2, ] + 2 * gp_t[3, ])
     )
+    if (is.null(q_t) == FALSE) {
+        format_string <- paste0("%.", precision, "f")
+        str <- paste0(
+            str,
+            ":",
+            apply(q_t, 2, function(x) paste0(sapply(x, function(y) sprintf(format_string, y)), collapse = ","))
+        )
+    }
     if (is.null(read_proportions) == FALSE) {
         format_string <- paste0(":%.", precision, "f,%.", precision, "f,%.", precision, "f,%.", precision, "f")
         str <- paste0(
