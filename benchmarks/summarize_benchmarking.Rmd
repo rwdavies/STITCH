@@ -90,7 +90,7 @@ profile_whole_chr <- function(small = TRUE) {
 }
 
 
-profile_smaller_chunk <- function(K, input, small = TRUE) {
+profile_smaller_chunk <- function(K, input, small = TRUE, plot_results = FALSE) {
     profile <- t(sapply(1:n, function(i) {
         version <- version_list[i]
     	name <- name_list[i]
@@ -109,10 +109,35 @@ profile_smaller_chunk <- function(K, input, small = TRUE) {
     colnames(profile) <- c("Version", "Options", "Input", "K", "Time (min)", "Log ctime", "RAM (Gbyte)")
     if (small) {
        profile <- profile[, 1:5]
-    }  
+    }
+    if (plot_results) {
+        ##plot_profile(profile, include_options = FALSE, K = K, input = input)
+        plot_profile(profile, include_options = TRUE, K = K, input = input)
+    }
     return(profile)
 }
 
+plot_profile <- function(profile, K, input, include_options = FALSE) {
+    y <- as.numeric(profile[, "Time (min)"])
+    if (include_options) {
+        order <- rev(nrow(profile):1)
+        names.arg <- paste0(profile[, "Version"], " ", profile[, "Options"])
+	xlab <- "STITCH Version"
+    } else {
+        names.arg <- profile[, "Version"]
+        order <- rev(which(profile[, "Options"] == " "))
+	xlab <- "STITCH Version and options" 	
+    }
+    barplot(
+        y[order],
+	names.arg = names.arg[order],
+	main = paste0("Input format = ", input, ", K = ", K),
+	xlab = xlab,
+	ylab = "Time (min)",
+	col = "#56B4E9",
+        las = 2
+    )
+}
 
 
 ```
@@ -157,5 +182,7 @@ kable(profile_smaller_chunk(20, "BAMS"))
 
 ### K=20, CRAMs
 ```{r profile_20_CRAMS, echo=FALSE}
+## , dev = "pdf", fig.show = "asis", fig.height = 6, fig.width = 8}
+par(mar=c(10,5,0,0))
 kable(profile_smaller_chunk(20, "CRAMS"))
 ```

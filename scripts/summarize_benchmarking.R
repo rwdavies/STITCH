@@ -15,5 +15,7 @@ for(key in c("--file=", "--f=")) {
 STITCH_home <- getwd()
 setwd(STITCH_home)
 
-knitr::knit('benchmarks/summarize_benchmarking.Rmd', output = "benchmarks/summarize_benchmarking.md")
-system("rsync -av benchmarks/summarize_benchmarking.md florence:~/")
+setwd("benchmarks")
+knitr::knit('summarize_benchmarking.Rmd', output = "summarize_benchmarking.md")
+setwd("../")
+system("rsync -av benchmarks florence:~/")
