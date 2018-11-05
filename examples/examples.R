@@ -101,7 +101,7 @@ human_reference_haplotype_file <- paste0(human_datadir, "1000GP_Phase3_chr20.hap
 # ------ Human examples
 # Human example 1 - Run diploid on previously generated input, downsample samples and coverage
 # Human example 2 - Run with reference panel
-
+# Human example 3 - Run with reference panel with no updating
 
 
 
