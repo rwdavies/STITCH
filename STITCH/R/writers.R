@@ -536,6 +536,8 @@ per_core_get_results <- function(
                     ## do this here I suppose? 
                     q_t <- 2 * fbsoL[[1]][["gammaEK_t"]]
                 }
+            } else {
+                q_t <- matrix()
             }
             vcf_matrix_to_out[, iiSample] <- rcpp_make_column_of_vcf(
                 gp_t = gp_t,
