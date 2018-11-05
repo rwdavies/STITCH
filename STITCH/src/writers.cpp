@@ -12,8 +12,10 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 Rcpp::StringVector rcpp_make_column_of_vcf(
     const arma::mat& gp_t,
-    const int use_read_proportions,
-    const arma::mat& read_proportions
+    const bool use_read_proportions,
+    const bool use_state_probabilities,
+    const arma::mat& read_proportions,
+    const arma::mat& q_t
 ) {
     // ## write out genotype, genotype likelihood, and dosage
     // ##GT:GL:DS
@@ -25,7 +27,9 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
     const int T = gp_t.n_cols;
     Rcpp::StringVector output(T);
     int t = 0;
+    int k;
     char buffer[30];
+    const int K = q_t.n_rows;
     for(t=0; t < T; t++) {
       output(t) = "";
       // first, get genotype at the start
@@ -61,13 +65,26 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
       // now, add on gp
       sprintf(buffer, ":%.3f,%.3f,%.3f:%.3f", gp_t(0, t), gp_t(1, t), gp_t(2, t), gp_t(1, t) + 2 * gp_t(2, t));
       output(t) += buffer;
-      if (use_read_proportions == 1) {
+      if (use_read_proportions) {
 	sprintf(buffer, ":%.3f,%.3f,%.3f,%.3f",
 		read_proportions(t, 0),
 		read_proportions(t, 1),
 		read_proportions(t, 2),
 		read_proportions(t, 3));
 	output(t) += buffer;	
+      }
+      if (use_state_probabilities) {
+	// ok, here, can I do each, one at a time?
+	output(t) += ":";
+	for(k = 0; k < K; k++) {
+	  // add to string
+	  sprintf(buffer, "%.3f", q_t(k, t));
+	  output(t) += buffer;
+	  // add comma is not last one
+	  if (k < (K - 1)) {
+	    output(t) += ",";	    
+	  }
+	}
       }
     }
     return output;

@@ -32,7 +32,13 @@ test_that("can write column of VCF output in C++", {
     gp_t <- t(gp / rowSums(gp))
     rm(gp)    
     out1 <- make_column_of_vcf(gp_t)
-    out2 <- rcpp_make_column_of_vcf(gp_t, 0, matrix())    
+    out2 <- rcpp_make_column_of_vcf(
+        gp_t = gp_t,
+        use_read_proportions = FALSE,
+        use_state_probabilities = FALSE,
+        read_proportions = matrix(),
+        q_t = matrix()
+    )    
     expect_equal(out1, out2)
 
 })
@@ -51,8 +57,14 @@ test_that("can write column of VCF output in C++ with posterior state probabilit
     out1 <- make_column_of_vcf(gp_t = gp_t, q_t = q_t)
     expect_equal(out1[1], "./.:0.100,0.200,0.700:1.600:0.000,0.200,0.100,0.500,1.200")
     
-    ##out2 <- rcpp_make_column_of_vcf(gp_t, 0, matrix())    
-    ##expect_equal(out1, out2)
+    out2 <- rcpp_make_column_of_vcf(
+        gp_t = gp_t,
+        use_read_proportions = FALSE,
+        use_state_probabilities = TRUE,
+        read_proportions = matrix(),
+        q_t = q_t
+    )    
+    expect_equal(out1, out2)
 
 })
 
