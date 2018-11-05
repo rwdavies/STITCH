@@ -381,7 +381,6 @@ void run_forward_haploid(
     const int& T,
     const int& K
 ) {
-    int k;
     double alphaConst;
     //
     for(int t = 1; t < T; t++) {
@@ -409,7 +408,6 @@ void run_backward_haploid(
     const int& K
 ) {
     double x;
-    int k;
     arma::colvec e_times_b;
     for(int t = T-2; t >= 0; --t) {
         //x = 0;
@@ -618,7 +616,6 @@ void calculate_diploid_gammaUpdate(
 ) {
     //
     const int K = eHapsCurrent_t.n_rows;
-    const int nSNPs = eHapsCurrent_t.n_cols;
     //
     arma::colvec eMatHap_t_col;
     arma::colvec eHapsCurrent_t_col, gamma_t_col;
@@ -686,6 +683,58 @@ void calculate_diploid_gammaUpdate(
 }
 
 
+// gammaK_t already exists
+// but we need it to be "expanded" depending on grid, etc
+arma::mat make_gammaEK_t_from_gammaK_t(
+    const arma::mat& gammaK_t,
+    const int K,
+    const Rcpp::IntegerVector& grid,
+    const int snp_start_1_based,
+    const int snp_end_1_based,
+    const int grid_offset = 0
+) {
+    const int nSNPs = snp_end_1_based - snp_start_1_based + 1;
+    arma::mat gammaEK_t = arma::zeros(K, nSNPs);
+    int t;
+    int prev_grid = -1;
+    int iSNP;
+    int cur_grid;
+    arma::colvec gamma_t_col;
+    for(iSNP = 0; iSNP < nSNPs; iSNP++) {
+        t = iSNP + snp_start_1_based - 1;
+        cur_grid = grid(t) - grid_offset;
+        if (cur_grid > prev_grid) {
+            gamma_t_col = gammaK_t.col(cur_grid);
+            prev_grid = cur_grid;
+        }
+        gammaEK_t.col(iSNP) = gamma_t_col;
+    }
+    return(gammaEK_t);
+}
+
+arma::mat collapse_diploid_gamma(
+    const arma::mat& gamma_t,
+    const int T,
+    const int K
+) {
+    arma::mat gammaK_t = arma::zeros(K, T);
+    int K_times_k1;
+    int t, k1, k2;
+    double d;
+    for(t = 0; t < T; t++) {
+        for(k1 = 0; k1 < K; k1++) {
+            d = 0;
+            K_times_k1 = K * k1;
+            for(k2 = 0; k2 < K; k2++) {
+                d += gamma_t(K_times_k1 + k2, t);
+            }
+            gammaK_t(k1, t) = d;
+        }
+    }
+    return(gammaK_t);
+}
+
+
 
 //' @export
 // [[Rcpp::export]]
@@ -720,7 +769,8 @@ Rcpp::List forwardBackwardDiploid(
     const bool return_gamma = false, // full gamma, K * K rows
     const bool return_extra = false, // whether to return stuff useful for debugging
     const bool update_in_place = false, // update directly into output variables
-    const bool pass_in_alphaBeta = false // whether to pass in pre-made alphaHat, betaHat
+    const bool pass_in_alphaBeta = false, // whether to pass in pre-made alphaHat, betaHat
+    const bool output_haplotype_dosages = false // whether to output state probabilities
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -761,6 +811,8 @@ Rcpp::List forwardBackwardDiploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   // dummy variables
+  arma::mat gammaK_t;
+  arma::mat gammaEK_t;
   arma::mat eMatHapPH_t;
   arma::vec pRgivenH1;
   arma::vec pRgivenH2;
@@ -850,15 +902,8 @@ Rcpp::List forwardBackwardDiploid(
       );
       to_return.push_back(genProbs_t, "genProbs_t");      
   }
-  // optional early return, for final iteration, only need these
-  if (run_fb_subset == true) {
-      // Rcpp::Named("gamma_t") = gamma_t,      
-      return(wrap(Rcpp::List::create(
-          Rcpp::Named("genProbs_t") = genProbs_t
-      )));
-  }
   // make outputs here
-  if (generate_fb_snp_offsets == true) {
+  if (generate_fb_snp_offsets) {
       alphaBetaBlocks = rcpp_make_fb_snp_offsets(
           alphaHat_t,
           betaHat_t,
@@ -868,21 +913,31 @@ Rcpp::List forwardBackwardDiploid(
   //
   // make collapsed gamma here
   //
-  next_section="Make collapsed gamma";
-  prev=print_times(prev, suppressOutput, prev_section, next_section);
-  prev_section=next_section;
-  arma::mat gammaK_t = arma::zeros(K,T);
-  int K_times_k1;
-  for(t = 0; t < T; t++) {
-    for(k1 = 0; k1 < K; k1++) {
-        d = 0;
-        K_times_k1 = K * k1;
-        for(k2 = 0; k2 < K; k2++) {
-            d += gamma_t(K_times_k1 + k2, t);
-        }
-        gammaK_t(k1, t) = d;
-    }
+  // skip if run_fb_dosage and we don't want output haplotype dosages
+  if (!(run_fb_subset & !output_haplotype_dosages)) {
+      next_section="Make collapsed gamma";
+      prev=print_times(prev, suppressOutput, prev_section, next_section);
+      prev_section=next_section;
+      gammaK_t = collapse_diploid_gamma(gamma_t, T, K);
+      if (output_haplotype_dosages) {
+          gammaEK_t = make_gammaEK_t_from_gammaK_t(
+              gammaK_t, K, grid,
+              snp_start_1_based, snp_end_1_based, run_fb_grid_offset
+          );
+      }
   }
+  //
+  // optional, end early
+  //
+  if (run_fb_subset) {
+      if (output_haplotype_dosages) {
+          to_return.push_back(gammaEK_t, "gammaEK_t");
+      }
+      return(to_return);
+  }
+  //
+  //
+  //
   if (update_in_place) {  
       hapSum_t += gammaK_t;
       for(int k=0; k < K; k++) {
@@ -966,6 +1021,9 @@ Rcpp::List forwardBackwardDiploid(
   // deprecated?
   if (return_a_sampled_path) {
       to_return.push_back(sampled_path_diploid_t, "sampled_path_diploid_t");
+  }
+  if (output_haplotype_dosages) {
+      to_return.push_back(gammaEK_t, "gammaEK_t");
   }
   return(to_return);
 }
@@ -1088,7 +1146,11 @@ Rcpp::List forwardBackwardHaploid(
     const int run_fb_grid_offset = 0, // this is 0-based
     const bool return_extra = false,
     const bool update_in_place = false,
-    const bool pass_in_alphaBeta = false // whether to pass in pre-made alphaHat, betaHat    
+    const bool pass_in_alphaBeta = false, // whether to pass in pre-made alphaHat, betaHat
+    const bool output_haplotype_dosages = false, // whether to output state probabilities
+    const int snp_start_1_based = -1,
+    const int snp_end_1_based = -1,
+    const Rcpp::IntegerVector grid = 0
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -1258,10 +1320,20 @@ Rcpp::List forwardBackwardHaploid(
   }
   //
   // optional early return, for final iteration
+  //
+  if (output_haplotype_dosages) {
+      // calculate expanded version? for output?
+      arma::mat gammaEK_t = make_gammaEK_t_from_gammaK_t(
+          gamma_t, K, grid,
+          snp_start_1_based, snp_end_1_based, run_fb_grid_offset
+      );
+      to_return.push_back(gammaEK_t, "gammaEK_t");      
+  }
+  //
+  to_return.push_back(gamma_t, "gamma_t");
+  //
   if (run_fb_subset == true) {
-      return(wrap(Rcpp::List::create(
-                                     Rcpp::Named("gamma_t") = gamma_t
-                                     )));
+      return(to_return);
   }
   // make outputs here
   if (generate_fb_snp_offsets == true) {
@@ -1325,7 +1397,6 @@ Rcpp::List forwardBackwardHaploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  to_return.push_back(gamma_t, "gamma_t");
   to_return.push_back(eMatHap_t, "eMatHap_t");
   to_return.push_back(eMatHapOri_t, "eMatHapOri_t");
   if (!update_in_place) {

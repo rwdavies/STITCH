@@ -31,7 +31,8 @@ make_and_write_output_file <- function(
     maxEmissionMatrixDifference,
     maxDifferenceBetweenReads,
     Jmax,
-    useTempdirWhileWriting
+    useTempdirWhileWriting,
+    output_haplotype_dosages
 ) {
 
     print_message("Begin making and writing output file")
@@ -160,6 +161,7 @@ make_and_write_output_file <- function(
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             Jmax = Jmax,
             useTempdirWhileWriting = useTempdirWhileWriting,
+            output_haplotype_dosages = output_haplotype_dosages,
             FUN = per_core_get_results
         )
 
@@ -343,7 +345,8 @@ per_core_get_results <- function(
     maxEmissionMatrixDifference,
     maxDifferenceBetweenReads,
     Jmax,
-    useTempdirWhileWriting
+    useTempdirWhileWriting,
+    output_haplotype_dosages
 ) {
 
     bundledSampleReads <- NULL
@@ -476,7 +479,8 @@ per_core_get_results <- function(
                 return_genProbs = TRUE,
                 grid = grid,
                 snp_start_1_based = first_snp_in_region,
-                snp_end_1_based = last_snp_in_region
+                snp_end_1_based = last_snp_in_region,
+                output_haplotype_dosages = output_haplotype_dosages ## whether to return states
             )$fbsoL
             
         }
@@ -509,7 +513,13 @@ per_core_get_results <- function(
 
         ##
         if (output_format == "bgvcf") {
-            vcf_matrix_to_out[, iiSample] <- rcpp_make_column_of_vcf(gp_t, 0, matrix())
+            vcf_matrix_to_out[, iiSample] <- rcpp_make_column_of_vcf(
+                gp_t = gp_t,
+                use_read_proportions = FALSE,
+                use_state_probabilities = FALSE,
+                read_proportions = matrix(),
+                q_t = matrix()
+            )
         } else if (output_format == "bgen") {
             rrbgen::rcpp_place_gp_t_into_output(
                 gp_t,

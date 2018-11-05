@@ -160,6 +160,9 @@ STITCH <- function(
 
     minimizeSwitchingIterations = NA
 
+    output_haplotype_dosages <- FALSE    
+    ## #' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
+    ## output_haplotype_dosages = FALSE    
     
     ## #' @param pseudoHaploidModel How to model read probabilities in pseudo diploid model (shouldn't be changed)    
     pseudoHaploidModel <- 9 ## remove this from being settable
@@ -231,6 +234,7 @@ STITCH <- function(
     validate_output_format(output_format)    
     validate_output_filename(output_filename, output_format)
     validate_B_bit_prob(B_bit_prob, output_format)
+    validate_output_haplotype_dosages(output_haplotype_dosages, output_format)    
 
     ## more involved checks
     validate_regionStart_regionEnd_and_buffer(regionStart, regionEnd, buffer)
@@ -677,7 +681,8 @@ STITCH <- function(
         maxEmissionMatrixDifference = maxEmissionMatrixDifference,
         maxDifferenceBetweenReads = maxDifferenceBetweenReads,
         Jmax = Jmax,
-        useTempdirWhileWriting = useTempdirWhileWriting
+        useTempdirWhileWriting = useTempdirWhileWriting,
+        output_haplotype_dosages = output_haplotype_dosages
     )
     
     gen_imp <- out$gen_imp
@@ -3589,7 +3594,8 @@ run_forward_backwards <- function(
     priorSum = array(0, 1),
     pass_in_alphaBeta = FALSE,        
     alphaHat_t = array(0, c(1, 1)),
-    betaHat_t = array(0, c(1, 1))
+    betaHat_t = array(0, c(1, 1)),
+    output_haplotype_dosages = FALSE
 ) {
 
     Jmax_local <- get_Jmax_wrt_iteration(Jmax, iteration, niterations)
@@ -3676,9 +3682,13 @@ run_forward_backwards <- function(
                 priorSum = priorSum,
                 pass_in_alphaBeta = pass_in_alphaBeta,
                 alphaHat_t = alphaHat_t,
-                betaHat_t = betaHat_t
+                betaHat_t = betaHat_t,
+                snp_start_1_based = snp_start_1_based,
+                snp_end_1_based = snp_end_1_based,
+                grid = grid,
+                output_haplotype_dosages = output_haplotype_dosages
             )
-            fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
+            fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t
         }
     }
     if(method=="diploid-inbred") {
@@ -3713,7 +3723,11 @@ run_forward_backwards <- function(
             priorSum = priorSum,
             pass_in_alphaBeta = pass_in_alphaBeta,
             alphaHat_t = alphaHat_t,
-            betaHat_t = betaHat_t
+            betaHat_t = betaHat_t,
+            snp_start_1_based = snp_start_1_based,
+            snp_end_1_based = snp_end_1_based,
+            grid = grid,
+            output_haplotype_dosages = output_haplotype_dosages
         )
         fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t            
     }
@@ -3750,7 +3764,8 @@ run_forward_backwards <- function(
             priorSum = priorSum,
             pass_in_alphaBeta = pass_in_alphaBeta,
             alphaHat_t = alphaHat_t,
-            betaHat_t = betaHat_t
+            betaHat_t = betaHat_t,
+            output_haplotype_dosages = output_haplotype_dosages
         )
     }
 
@@ -4008,6 +4023,7 @@ calculate_gp_t_from_fbsoL <- function(
     }
     return(gp_t)
 }
+
 
 
 

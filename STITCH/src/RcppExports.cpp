@@ -239,8 +239,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // forwardBackwardDiploid
-Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta);
-RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP) {
+Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages);
+RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -275,7 +275,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type return_extra(return_extraSEXP);
     Rcpp::traits::input_parameter< const bool >::type update_in_place(update_in_placeSEXP);
     Rcpp::traits::input_parameter< const bool >::type pass_in_alphaBeta(pass_in_alphaBetaSEXP);
-    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta));
+    Rcpp::traits::input_parameter< const bool >::type output_haplotype_dosages(output_haplotype_dosagesSEXP);
+    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -299,8 +300,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // forwardBackwardHaploid
-Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t_H, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const int model, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid, const arma::mat& blocks_for_output, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta);
-RcppExport SEXP _STITCH_forwardBackwardHaploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_HSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP modelSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP, SEXP blocks_for_outputSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP) {
+Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t_H, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const int model, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid, const arma::mat& blocks_for_output, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid);
+RcppExport SEXP _STITCH_forwardBackwardHaploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_HSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP modelSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP, SEXP blocks_for_outputSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -333,7 +334,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type return_extra(return_extraSEXP);
     Rcpp::traits::input_parameter< const bool >::type update_in_place(update_in_placeSEXP);
     Rcpp::traits::input_parameter< const bool >::type pass_in_alphaBeta(pass_in_alphaBetaSEXP);
-    rcpp_result_gen = Rcpp::wrap(forwardBackwardHaploid(sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, run_fb_subset, run_fb_grid_offset, return_extra, update_in_place, pass_in_alphaBeta));
+    Rcpp::traits::input_parameter< const bool >::type output_haplotype_dosages(output_haplotype_dosagesSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type grid(gridSEXP);
+    rcpp_result_gen = Rcpp::wrap(forwardBackwardHaploid(sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, run_fb_subset, run_fb_grid_offset, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, snp_start_1_based, snp_end_1_based, grid));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -465,15 +470,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_column_of_vcf
-Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const int use_read_proportions, const arma::mat& read_proportions);
-RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP read_proportionsSEXP) {
+Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const bool use_read_proportions, const bool use_state_probabilities, const arma::mat& read_proportions, const arma::mat& q_t);
+RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP use_state_probabilitiesSEXP, SEXP read_proportionsSEXP, SEXP q_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type gp_t(gp_tSEXP);
-    Rcpp::traits::input_parameter< const int >::type use_read_proportions(use_read_proportionsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_read_proportions(use_read_proportionsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_state_probabilities(use_state_probabilitiesSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type read_proportions(read_proportionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp_t, use_read_proportions, read_proportions));
+    Rcpp::traits::input_parameter< const arma::mat& >::type q_t(q_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp_t, use_read_proportions, use_state_probabilities, read_proportions, q_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -495,9 +502,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
     {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 8},
     {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},
-    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 31},
+    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 32},
     {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 10},
-    {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 29},
+    {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 33},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 7},
     {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 9},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 10},
@@ -505,7 +512,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 7},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
-    {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 3},
+    {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 5},
     {NULL, NULL, 0}
 };
 
