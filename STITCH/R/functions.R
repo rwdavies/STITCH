@@ -71,6 +71,7 @@
 #' @param shuffle_bin_radius Parameter that controls how to detect ancestral haplotypes that are shuffled during EM for possible re-setting. If set (not NULL), then recombination rate is calculated around pairs of SNPs in window of twice this value, and those that exceed what should be the maximum (defined by nGen and maxRate) are checked for whether they are shuffled
 #' @param keepSampleReadsInRAM Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM
 #' @param useTempdirWhileWriting Whether to use temporary directory while writing output file (TRUE), or to keep result in RAM (FALSE). Using temporary directory is slower but uses less RAM
+#' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -146,7 +147,8 @@ STITCH <- function(
     shuffle_bin_nSNPs = NULL,
     shuffle_bin_radius = 5000,
     keepSampleReadsInRAM = FALSE,
-    useTempdirWhileWriting = FALSE
+    useTempdirWhileWriting = FALSE,
+    output_haplotype_dosages = FALSE        
 ) {
 
     ## capture command line
@@ -160,10 +162,6 @@ STITCH <- function(
 
     minimizeSwitchingIterations = NA
 
-    output_haplotype_dosages <- FALSE    
-    ## #' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
-    ## output_haplotype_dosages = FALSE    
-    
     ## #' @param pseudoHaploidModel How to model read probabilities in pseudo diploid model (shouldn't be changed)    
     pseudoHaploidModel <- 9 ## remove this from being settable
     environment <- "server" ## I'm assuming this is true anyway. more or less deprecated

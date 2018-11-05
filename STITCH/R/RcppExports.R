@@ -82,6 +82,16 @@ rcpp_calculate_fbd_dosage <- function(eHapsCurrent_t, gamma_t, grid, snp_start_1
 }
 
 #' @export
+make_gammaEK_t_from_gammaK_t <- function(gammaK_t, K, grid, snp_start_1_based, snp_end_1_based, grid_offset = 0L) {
+    .Call('_STITCH_make_gammaEK_t_from_gammaK_t', PACKAGE = 'STITCH', gammaK_t, K, grid, snp_start_1_based, snp_end_1_based, grid_offset)
+}
+
+#' @export
+collapse_diploid_gamma <- function(gamma_t, T, K) {
+    .Call('_STITCH_collapse_diploid_gamma', PACKAGE = 'STITCH', gamma_t, T, K)
+}
+
+#' @export
 forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE) {
     .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages)
 }

@@ -108,35 +108,6 @@ test_that("STITCH diploid works under default parameters", {
 })
 
 
-test_that("STITCH diploid can write to bgen", {
-
-    outputdir <- make_unique_tempdir()
-    
-    set.seed(10)
-    STITCH(
-        chr = data_package$chr,
-        bamlist = data_package$bamlist,
-        posfile = data_package$posfile,
-        genfile = data_package$genfile,        
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        nCores = 1,
-        output_format = "bgen"
-    )
-
-    out_gp <- rrbgen::rrbgen_load(bgen_file = file.path(outputdir, paste0("stitch.", data_package$chr, ".bgen")))
-    expect_equal(as.character(out_gp$var_info[, "chr"]), as.character(data_package$pos[, "CHR"]))
-    expect_equal(as.character(out_gp$var_info[, "position"]), as.character(data_package$pos[, "POS"]))
-    expect_equal(as.character(out_gp$var_info[, "ref"]), as.character(data_package$pos[, "REF"]))
-    expect_equal(as.character(out_gp$var_info[, "alt"]), as.character(data_package$pos[, "ALT"]))        
-    check_bgen_gp_against_phase(
-        gp = out_gp$gp,
-        phase = data_package$phase,
-        tol = 0.2
-    )
-    
-})
 
 
 ## afterwards, everything should test both bgen and bgvcf
@@ -608,77 +579,6 @@ test_that("STITCH with generateInputOnly actually only generates input", {
 
 
 
-test_that("STITCH can generate input in VCF format", {
-
-    outputdir <- make_unique_tempdir()    
-
-    sink("/dev/null")
-
-    set.seed(10)
-    n_snps <- 5
-    chr <- 10
-    phasemaster <- matrix(c(0, 1, 0, 0, 1, 0, 1, 1, 0, 0), ncol = 2)
-    n_reads <- n_snps * 10
-    n_samples <- 10
-    data_package_local <- make_acceptance_test_data_package(
-        n_samples = n_samples,
-        n_snps = n_snps,
-        n_reads = n_reads,
-        seed = 1,
-        chr = chr,
-        K = 2,
-        phasemaster = phasemaster
-    )
-
-    STITCH(
-        chr = data_package_local$chr,
-        bamlist = data_package_local$bamlist,
-        posfile = data_package_local$posfile,
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        nCores = 1,
-        outputInputInVCFFormat = TRUE
-    )
-
-    ## expect not to find normal VCF output, but new one
-    expect_equal(
-        FALSE,
-        file.exists(file.path(outputdir, paste0("stitch.", data_package_local$chr, ".vcf.gz")))
-    )
-    expect_equal(
-        TRUE,
-        file.exists(file.path(outputdir, paste0("stitch.input.", data_package_local$chr, ".vcf.gz")))
-    )
-
-    ## since this is comparatively high coverage
-    ## results should be OK
-    vcf <- read.table(
-        file.path(outputdir, paste0("stitch.input.", data_package_local$chr, ".vcf.gz")),
-        header = FALSE,
-        stringsAsFactors = FALSE
-    )
-
-    ## check read counts are OK
-    ## in this, > 0 read counts as appropriate
-    for (iSample in 1:n_samples) {
-        rc <- sapply(strsplit(vcf[, iSample + 9], ":"), I)[2, ]
-        rc2 <- sapply(strsplit(rc, ","), I) ## ref, alt
-        genotype <- data_package_local$phase[, iSample, 1] + data_package_local$phase[, iSample, 2]
-        ## ref counts - expect no alternate reads
-        expect_equal(sum(as.integer(rc2[1, genotype == 0]) == 0), 0)
-        expect_equal(sum(as.integer(rc2[2, genotype == 0]) > 0), 0)
-        ## alt counts - expect both to never be 0
-        expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)
-        expect_equal(sum(as.integer(rc2[2, genotype == 1]) == 0), 0)
-        ## hom alt counts - expect no reference reads
-        expect_equal(sum(as.integer(rc2[1, genotype == 2]) > 0), 0)
-        expect_equal(sum(as.integer(rc2[2, genotype == 2]) == 0), 0)
-    }
-
-})
-
-
 
 
 
@@ -715,45 +615,47 @@ test_that("STITCH throws an error when no SNPs in region to impute, or if fewer 
 ## OK if no SNPs in left buffer, 1 in central, 1 in left buffer
 test_that("STITCH works with very few SNPs in central region and buffer", {
 
-    for(output_format in c("bgvcf", "bgen")) {
+    for(output_haplotype_dosages in c(FALSE, TRUE)) {
+        for(output_format in c("bgvcf", "bgen")) {
 
-        for(i in 1:3) {
-            
-            if (i == 1) {
-                regionStart <- 10; regionEnd <- 100; buffer <- 1 ## 1 1 0
-            } else if (i == 2) {
-                regionStart <- 9; regionEnd <- 100; buffer <- 0 ## 0 2 0
-            } else if (i == 3) {
-                regionStart <- 1; regionEnd <- 6; buffer <- 1 ## 0 1 1
+            for(i in 1:3) {
+                
+                if (i == 1) {
+                    regionStart <- 10; regionEnd <- 100; buffer <- 1 ## 1 1 0
+                } else if (i == 2) {
+                    regionStart <- 9; regionEnd <- 100; buffer <- 0 ## 0 2 0
+                } else if (i == 3) {
+                    regionStart <- 1; regionEnd <- 6; buffer <- 1 ## 0 1 1
+                }
+                
+                outputdir <- make_unique_tempdir()
+                
+                output_filename <- paste0("jimmy", extension[output_format])
+                STITCH(
+                    chr = data_package_few$chr,
+                    bamlist = data_package_few$bamlist,
+                    posfile = data_package_few$posfile,
+                    genfile = data_package_few$genfile,        
+                    outputdir = outputdir,
+                    K = 2,
+                    nGen = 100,
+                    nCores = 1,
+                    output_format = output_format,
+                    regionStart = regionStart,
+                    regionEnd = regionEnd,
+                    buffer = buffer,
+                    output_filename = output_filename
+                )
+                
+                check_output_against_phase(
+                    file =  file.path(outputdir, output_filename),
+                    data_package = data_package_few,
+                    output_format,
+                    which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
+                    tol = 0.2
+                )
+
             }
-
-            outputdir <- make_unique_tempdir()
-
-            output_filename <- paste0("jimmy", extension[output_format])
-            STITCH(
-                chr = data_package_few$chr,
-                bamlist = data_package_few$bamlist,
-                posfile = data_package_few$posfile,
-                genfile = data_package_few$genfile,        
-                outputdir = outputdir,
-                K = 2,
-                nGen = 100,
-                nCores = 1,
-                output_format = output_format,
-                regionStart = regionStart,
-                regionEnd = regionEnd,
-                buffer = buffer,
-                output_filename = output_filename
-            )
-            
-            check_output_against_phase(
-                file =  file.path(outputdir, output_filename),
-                data_package = data_package_few,
-                output_format,
-                which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
-                tol = 0.2
-            )
-            
         }
         
     }

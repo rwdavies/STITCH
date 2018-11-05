@@ -238,6 +238,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// make_gammaEK_t_from_gammaK_t
+arma::mat make_gammaEK_t_from_gammaK_t(const arma::mat& gammaK_t, const int K, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, const int grid_offset);
+RcppExport SEXP _STITCH_make_gammaEK_t_from_gammaK_t(SEXP gammaK_tSEXP, SEXP KSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP grid_offsetSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type gammaK_t(gammaK_tSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid(gridSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type grid_offset(grid_offsetSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_gammaEK_t_from_gammaK_t(gammaK_t, K, grid, snp_start_1_based, snp_end_1_based, grid_offset));
+    return rcpp_result_gen;
+END_RCPP
+}
+// collapse_diploid_gamma
+arma::mat collapse_diploid_gamma(const arma::mat& gamma_t, const int T, const int K);
+RcppExport SEXP _STITCH_collapse_diploid_gamma(SEXP gamma_tSEXP, SEXP TSEXP, SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< const int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    rcpp_result_gen = Rcpp::wrap(collapse_diploid_gamma(gamma_t, T, K));
+    return rcpp_result_gen;
+END_RCPP
+}
 // forwardBackwardDiploid
 Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages);
 RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP) {
@@ -502,6 +531,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
     {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 8},
     {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},
+    {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 6},
+    {"_STITCH_collapse_diploid_gamma", (DL_FUNC) &_STITCH_collapse_diploid_gamma, 3},
     {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 32},
     {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 10},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 33},

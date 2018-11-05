@@ -217,8 +217,10 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     grid = grid,
                     output_haplotype_dosages = output_haplotype_dosages
                 )$fbsoL
-                if (output_haplotype_dosages) {
-                    gammaEK_t_all <- out1[[1]][["gammaEK_t"]]
+                if (method == "pseudoHaploid") {
+                    gammaEK_t_all <- out1[[1]][["gammaEK_t"]] + out1[[2]][["gammaEK_t"]]
+                } else {
+                    gammaEK_t_all <- out1[[1]][["gammaEK_t"]]                            
                 }
                 gp_t_all <- calculate_gp_t_from_fbsoL(
                     eHapsCurrent_t = eHapsCurrent_t,
@@ -276,7 +278,11 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                         output_haplotype_dosages = TRUE
                     )$fbsoL
                     if (output_haplotype_dosages) {
-                        gammaEK_t_local <- out2[[1]][["gammaEK_t"]]
+                        if (method == "pseudoHaploid") {
+                            gammaEK_t_local <- out2[[1]][["gammaEK_t"]] + out2[[2]][["gammaEK_t"]]
+                        } else {
+                            gammaEK_t_local <- out2[[1]][["gammaEK_t"]]
+                        }
                     }
                     
                     gp_t_local <- calculate_gp_t_from_fbsoL(

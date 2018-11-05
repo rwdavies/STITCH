@@ -473,6 +473,15 @@ check_vcf_against_phase <- function(
         expect_equal(sum(genotype_posteriors > 1), 0)
         d2 <- genotype_posteriors[, 2] + 2 * genotype_posteriors[, 3]
         expect_equal(sum(abs(d2 - dosage) > 0.00101), 0)
+        ## check ancestral haplotype dosages (if applicable)
+        if ("HD" %in% gt_names) {
+            q_t <- sapply(strsplit(vcf_col_split[, "HD"], ","), as.numeric)
+            y <- sum(abs(colSums(q_t) - 2) > 0.01)
+            if (y > 0) {
+                print(q_t)
+            }
+            expect_equal(y, 0)
+        }
     }
 }
 

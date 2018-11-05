@@ -683,8 +683,8 @@ void calculate_diploid_gammaUpdate(
 }
 
 
-// gammaK_t already exists
-// but we need it to be "expanded" depending on grid, etc
+//' @export
+// [[Rcpp::export]]
 arma::mat make_gammaEK_t_from_gammaK_t(
     const arma::mat& gammaK_t,
     const int K,
@@ -712,6 +712,8 @@ arma::mat make_gammaEK_t_from_gammaK_t(
     return(gammaEK_t);
 }
 
+//' @export
+// [[Rcpp::export]]
 arma::mat collapse_diploid_gamma(
     const arma::mat& gamma_t,
     const int T,

@@ -68,7 +68,9 @@ make_and_write_output_file <- function(
             output_vcf_header = output_unbgzipped,
             annot_header = annot_header,
             method = method,
-            sampleNames = sampleNames
+            sampleNames = sampleNames,
+            output_haplotype_dosages = output_haplotype_dosages,
+            K = K
         )
     } else if (output_format == "bgen") {
         ## bgen header here
@@ -236,7 +238,13 @@ make_and_write_output_file <- function(
 
         ## now write block for
         if (output_format == "bgvcf") {
-            
+
+            if (!output_haplotype_dosages) {
+                FORMAT <- "GT:GP:DS"
+            } else {
+                FORMAT <- "GT:GP:DS:HD"
+            }
+                
             vcf_matrix_to_out[, 1] <- pos[snps_in_output_block, 1]
             vcf_matrix_to_out[, 2] <- pos[snps_in_output_block, 2]
             vcf_matrix_to_out[, 3] <- "."
@@ -245,7 +253,7 @@ make_and_write_output_file <- function(
             vcf_matrix_to_out[, 6] <- "."
             vcf_matrix_to_out[, 7] <- "PASS"
             vcf_matrix_to_out[, 8] <- INFO
-            vcf_matrix_to_out[, 9] <- "GT:GP:DS"
+            vcf_matrix_to_out[, 9] <- FORMAT
             data.table::fwrite(
                 vcf_matrix_to_out,
                 file = output_unbgzipped,
@@ -448,10 +456,18 @@ per_core_get_results <- function(
                         snp_end_1_based = last_snp_in_region,
                         grid_offset = first_grid_in_region
                     )
+                    gammaK_t <- collapse_diploid_gamma(gamma_t, T, K)
                 } else {
+                    gammaK_t <- gamma_t
                     genProbs_t <- NA
                 }
-                return(list(gamma_t = gamma_t, genProbs_t = genProbs_t))
+                gammaEK_t <-  make_gammaEK_t_from_gammaK_t(
+                    gammaK_t, K, grid, 
+                    snp_start_1_based = first_snp_in_region,
+                    snp_end_1_based = last_snp_in_region,
+                    grid_offset = first_grid_in_region
+                )
+                return(list(gamma_t = gamma_t, genProbs_t = genProbs_t, gammaEK_t = gammaEK_t))
             })
             
         } else {    
@@ -513,12 +529,20 @@ per_core_get_results <- function(
 
         ##
         if (output_format == "bgvcf") {
+            if (output_haplotype_dosages) {
+                if (method == "pseudoHaploid") {
+                    q_t <- fbsoL[[1]][["gammaEK_t"]] + fbsoL[[2]][["gammaEK_t"]]
+                } else {
+                    ## do this here I suppose? 
+                    q_t <- 2 * fbsoL[[1]][["gammaEK_t"]]
+                }
+            }
             vcf_matrix_to_out[, iiSample] <- rcpp_make_column_of_vcf(
                 gp_t = gp_t,
                 use_read_proportions = FALSE,
-                use_state_probabilities = FALSE,
+                use_state_probabilities = output_haplotype_dosages,
                 read_proportions = matrix(),
-                q_t = matrix()
+                q_t = q_t
             )
         } else if (output_format == "bgen") {
             rrbgen::rcpp_place_gp_t_into_output(
@@ -931,14 +955,20 @@ make_var_info <- function(pos, start_and_end_minus_buffer) {
     return(var_info)
 }
 
-make_and_write_vcf_header <- function(output_vcf_header, annot_header, method, sampleNames) {
+make_and_write_vcf_header <- function(output_vcf_header, annot_header, method, sampleNames, output_haplotype_dosages, K) {
     header <- paste0(
         '##fileformat=VCFv4.0\n',
+        annot_header,        
         '##FORMAT=<ID=GT,Number=1,Type=String,Description="Best Guessed Genotype with posterior probability threshold of 0.9">\n',
-        annot_header,
         '##FORMAT=<ID=GP,Number=3,Type=Float,Description="Posterior genotype probability of 0/0, 0/1, and 1/1">\n',
         '##FORMAT=<ID=DS,Number=1,Type=Float,Description="Dosage">\n'
     )
+    if (output_haplotype_dosages) {
+        header <- paste0(
+            header,
+            '##FORMAT=<ID=HD,Number=', K, ',Type=Float,Description="Ancestral haplotype dosages for one through K haplotypes">\n'
+        )
+    }
     ## disable for now    
     if (method == "pseudoHaploid" && 1 == 0) {
         header <- paste0(
