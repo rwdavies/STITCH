@@ -827,8 +827,8 @@ get_max_gen_rapid <- function(x) {
 ## I think this was for the phasing things
 make_column_of_vcf <- function(
     gp_t,
-    q_t = NULL,
-    read_proportions = NULL
+    read_proportions = NULL,
+    q_t = NULL    
 ) {
     ## write out genotype, genotype likelihood, and dosage
     ##GT:GL:DS
