@@ -45,7 +45,7 @@ If you see an error similar to ```configure: error: liblzma not found, please in
 ```
 ./scripts/install-xz.sh
 echo "CPPFLAGS += -I`pwd`/install/include" >> ~/.R/Makevars
-echo "LDFLAGS += -I`pwd`/install/lib" >> ~/.R/Makevars
+echo "LDFLAGS += -L`pwd`/install/lib" >> ~/.R/Makevars
 ```
 
 If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience other compilation issues, please raise an issue. To experiment with configuration options during compilation, you can edit ```STITCH/src/Makevars``` then build a package and install using ```./scripts/build-and-install.sh``` or test using ```./scripts/test-unit.sh```.
