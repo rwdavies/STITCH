@@ -133,20 +133,20 @@ Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const 
   std::vector<int> qR;
   std::vector<int> pR;
   Rcpp::List sampleReadsRaw(nRead_count);
-  nRead_count = 0;
+  int nReadCounter = 0;
   for(int iRead = 0; iRead < n; iRead++) {
       // 0 - keep building read
       nSNPInRead = out_num_SNPs[iRead];
       iRead_out = out_iRead[iRead];
       qR.push_back(out_BQs[iRead]);
       pR.push_back(out_SNP_pos[iRead]);
-      if (flush_read[iRead]) {
-	sampleReadsRaw[nRead_count] = Rcpp::List::create(
+      if (flush_read[iRead] == true) {
+	sampleReadsRaw[nReadCounter] = Rcpp::List::create(
             nSNPInRead, 0, qR, pR, iRead_out
 	);
-	nRead_count++;
 	qR.clear();
-	pR.clear();
+   	pR.clear();
+	nReadCounter++;
       }
   }
 
