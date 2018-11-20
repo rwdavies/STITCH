@@ -110,39 +110,41 @@ Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const 
   //
   // convert format to sampleReadsRaw
   //
-  Rcpp::List sampleReadsRaw;
-  int flush_read;
-  int nSNPInRead;
   int iRead_out = -1;
   int n = out_num_SNPs.size();
-  nSNPInRead = 0;
-  //std::cout << "n=" << n << std::endl;
-  std::vector<int> qR;
-  std::vector<int> pR;
+  int nRead_count = 0;
+  Rcpp::LogicalVector flush_read(n);
   for(int iRead = 0; iRead < n; iRead++) {
       //std::cout << "iRead=" << iRead << std::endl;    
       // either flush the read, or keep going
       if (iRead == (n - 1)) {
-	  flush_read = 1;
+	flush_read[iRead] = true;
+	nRead_count++;
       } else if (out_iRead[iRead + 1] != out_iRead[iRead]) {
-          flush_read = 1;
+	flush_read[iRead] = true;
+	nRead_count++;	
       } else {
-	flush_read = 0;
+	flush_read[iRead] = false;
       }
-      //std::cout << "out_num_SNPs[iRead]=" << out_num_SNPs[iRead] << std::endl;
-      //std::cout << "out_iRead[iRead]=" << out_iRead[iRead] << std::endl;
-      //std::cout << "out_BQs[iRead]=" << out_BQs[iRead] << std::endl;
-      //std::cout << "out_SNP_pos[iRead]=" << out_SNP_pos[iRead] << std::endl;
-      //std::cout << "flush_read=" << flush_read << std::endl; 
+  }
+
+  //
+  int nSNPInRead = 0;  
+  std::vector<int> qR;
+  std::vector<int> pR;
+  Rcpp::List sampleReadsRaw(nRead_count);
+  nRead_count = 0;
+  for(int iRead = 0; iRead < n; iRead++) {
       // 0 - keep building read
       nSNPInRead = out_num_SNPs[iRead];
       iRead_out = out_iRead[iRead];
       qR.push_back(out_BQs[iRead]);
       pR.push_back(out_SNP_pos[iRead]);
-      if (flush_read == 1) {
-	sampleReadsRaw.push_back(
-            Rcpp::List::create(nSNPInRead, 0, qR, pR, iRead_out)
-        );
+      if (flush_read[iRead]) {
+	sampleReadsRaw[nRead_count] = Rcpp::List::create(
+            nSNPInRead, 0, qR, pR, iRead_out
+	);
+	nRead_count++;
 	qR.clear();
 	pR.clear();
       }
