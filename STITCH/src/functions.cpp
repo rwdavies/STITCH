@@ -1437,88 +1437,133 @@ List cpp_read_reassign(
     arma::ivec readEnd_ord,
     int iSizeUpperLimit
 ) {
-  // ord is 0-based original ordering
-  // qnameInteger_ord is (ordered) integer representing reads
+    // ord is 0-based original ordering
+    // qnameInteger_ord is (ordered) integer representing reads
   
-  // initialize
-  List sampleReads;
-  int curRead = qnameInteger_ord[0];
-  int iReadStart = 0;
-  int nRawReads = sampleReadsRaw.size();
-  arma::ivec base_bq(10000);
-  arma::ivec base_pos(10000); // there shouldnt be this many SNPs
-  Rcpp::IntegerVector save_read(nRawReads); // over-sized
-  int count = 0;
-  if(verbose == 1) {
-    std::cout << "curRead=" << curRead << "\n";
-  }
+    // initialize
+    int curRead = qnameInteger_ord[0];
+    int iReadStart = 0;
+    int nRawReads = sampleReadsRaw.size();
+    int maxnSNPInRead = 1000;
+    std::vector<int> base_bq(maxnSNPInRead);
+    std::vector<int> base_pos(maxnSNPInRead); // there shouldnt be this many SNPs
+    Rcpp::IntegerVector save_read(nRawReads); // over-sized
+    Rcpp::LogicalVector save_this_read_check(nRawReads); // over-sized
+    save_this_read_check.fill(false);
+    int count = 0;
+    int nReadsToSave = 0;
+    int nSNPsInRead = -1;
+    bool save_this_read;
+    int iRead = 0;
+    int j, r;
+    arma::ivec bqL;
+    arma::ivec posL;
+    int to_add, k;
 
-  for (int iRead = 0; iRead < nRawReads; iRead++ ) {
+    // first loop, define which reads to save
+    for (iRead = 0; iRead < nRawReads; iRead++ ) {
+        if (qnameInteger_ord[iRead + 1] != curRead) {
+            nSNPsInRead = -1;
+            save_this_read = true;      
+            for(j = iReadStart; j <= iRead; j++) {
+                if (j < iRead) {
+                    if ((readEnd_ord[j + 1] - readStart_ord[j]) > iSizeUpperLimit) {
+                        save_this_read = false;
+                    }
+                }
+            }
+            if (save_this_read) {
+                save_read(count) = curRead;
+                save_this_read_check(iRead) = true;
+                count++;
+                nReadsToSave++;
+            }
+            iReadStart = iRead + 1;
+            curRead = qnameInteger_ord[iRead + 1]; // + 1
+        }
+    }
+
+    // second loop, use pre-defined sampleReads
+    Rcpp::List sampleReads(nReadsToSave);
     
-    if(verbose == 1) {
-      std::cout << "iRead=" << iRead << "\n";
-      std::cout << "qnameInteger_ord[iRead + 1]=" << qnameInteger_ord[iRead + 1] << "\n";
-      std::cout << "curRead==" << curRead << "\n";    
+    curRead = qnameInteger_ord[0];    
+    count = 0;
+    iReadStart = 0;
+    for (iRead = 0; iRead < nRawReads; iRead++ ) {
+        if (qnameInteger_ord[iRead + 1] != curRead) {
+            nSNPsInRead = -1;
+            for(j = iReadStart; j <= iRead; j++) {
+                r = ord[j];
+                // so say first read is 0-based 0:2
+                // want to take reads from ord[0:2]
+                Rcpp::List readData = as<Rcpp::List>(sampleReadsRaw[r]);
+                arma::ivec bqU = as<arma::ivec>(readData[2]);
+                arma::ivec pRU = as<arma::ivec>(readData[3]);
+                to_add = int(bqU.size());
+                while ((nSNPsInRead + to_add) > maxnSNPInRead) {
+                    base_bq.resize(maxnSNPInRead * 2);
+                    base_pos.resize(maxnSNPInRead * 2);
+                    maxnSNPInRead *= 2;
+                }
+                for(k = 0; k < to_add; k++) {
+                    nSNPsInRead++;
+                    base_bq[nSNPsInRead] = bqU[k];
+                    base_pos[nSNPsInRead] = pRU[k];	  
+                }
+            }
+            //
+            if (save_this_read_check(iRead)) {
+                arma::ivec bqL(nSNPsInRead + 1);
+                arma::ivec posL(nSNPsInRead + 1);
+                for(k = 0; k <= nSNPsInRead; k++) {
+                    bqL[k] = base_bq[k];
+                    posL[k] = base_pos[k];                    
+                }
+                //bqL = base_bq.subvec(0, nSNPsInRead);
+                //posL = base_pos.subvec(0, nSNPsInRead);
+                sampleReads[count] = Rcpp::List::create(nSNPsInRead, 0, bqL, posL);
+                count++;
+            }
+            iReadStart = iRead + 1;
+            curRead = qnameInteger_ord[iRead + 1]; // + 1
+        }
     }
     
-    if (qnameInteger_ord[iRead + 1] != curRead) {
-      
-      int nSNPsInRead = -1;
-      bool save_this_read = true;      
-      for(int j = iReadStart; j <= iRead; j++) {
-
-          // check distance is OK
-          if (j < iRead) {
-              if ((readEnd_ord[j + 1] - readStart_ord[j]) > iSizeUpperLimit) {
-                  if(verbose == 1) {
-                      std::cout << "violate iSizeUpperLimit, reset curRead=" << curRead << "\n";
-                  }
-                  save_this_read = false;
-              }
-          }
-          int r = ord[j];
-	
-          if(verbose == 1) {
-              std::cout << "j=" << j << "\n";
-              std::cout << "r=" << r << "\n";
-          }
-	
-          // so say first read is 0-based 0:2
-          // want to take reads from ord[0:2]
-          Rcpp::List readData = as<Rcpp::List>(sampleReadsRaw[r]);
-          arma::ivec bqU = as<arma::ivec>(readData[2]);
-          arma::ivec pRU = as<arma::ivec>(readData[3]);
-          for(int k = 0; k < int(bqU.size()); k++) {
-              // std::cout << "k=" << k << "\n";
-              nSNPsInRead++;
-              base_bq[nSNPsInRead] = bqU[k];
-              base_pos[nSNPsInRead] = pRU[k];	  
-          }
-      }
-
-      arma::ivec bqL = base_bq.subvec(0, nSNPsInRead);
-      arma::ivec posL = base_pos.subvec(0, nSNPsInRead);
-      if (save_this_read) {
-          sampleReads.push_back(Rcpp::List::create(nSNPsInRead, 0, bqL, posL));
-          save_read(count) = curRead;
-          count++;
-      }
-      iReadStart = iRead + 1;
-      curRead = qnameInteger_ord[iRead + 1]; // + 1
-      if(verbose == 1) {
-	std::cout << "reset curRead=" << curRead << "\n";
-      }
-      
-    }
-    
-  }
-  Rcpp::List to_return = Rcpp::List::create(
-      Rcpp::Named("sampleReads") = sampleReads,
-      Rcpp::Named("save_read") = save_read
-  );
-  return to_return;
+    Rcpp::List to_return = Rcpp::List::create(
+        Rcpp::Named("sampleReads") = sampleReads,
+        Rcpp::Named("save_read") = save_read
+    );
+    return to_return;
 }
 
 
 
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::List rcpp_test(const int option, const int n) {
+    std::cout << "option = " << option << ", n = " << n << std::endl;
+    int suppressOutput = 0;
+  double prev=clock();
+  std::string prev_section="Null";
+  std::string next_section="run";
+  prev=print_times(prev, suppressOutput, prev_section, next_section);
+  prev_section=next_section;
+  Rcpp::List sampleReads(n);  
+  if (option == 0) {
+    for(int i = 0; i < n; i++) {
+      sampleReads[i]=Rcpp::List::create(i, 0, 0, 0);
+    }
+  } else if (option == 1) {
+    for(int i = 0; i < n; i++) {
+      sampleReads.push_back(
+          Rcpp::List::create(i, 0, 0, 0)
+      );
+    }
+  }
+  next_section="oOne";
+  prev=print_times(prev, suppressOutput, prev_section, next_section);
+  prev_section=next_section;
+    return sampleReads;
+}
 

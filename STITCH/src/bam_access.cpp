@@ -155,8 +155,9 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     std::vector<int> cigarLengthVec_temp;    
     std::vector<std::string> cigarTypeVec;
     std::vector<std::string> cigarTypeVec_temp;
-    std::vector<int> qualLocal(1000);
-    std::vector<int> posLocal(1000); // there shouldnt be this many SNPs
+    int maxnSNPInRead = 1000;
+    std::vector<int> qualLocal(maxnSNPInRead);
+    std::vector<int> posLocal(maxnSNPInRead); // there shouldnt be this many SNPs
     int refPosition, refOffset, strandOffset, refPosition_temp;
     int iNumOfMs, cigarLength;
     char s;
@@ -294,18 +295,22 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 		      // also bound BQ above by MQ
 		      if(localbq > mapq) // if greater, than reduce
 			localbq = mapq;
-		      if((s==ref[t][0] || s==alt[t][0]) && (localbq>=bqFilter))
-			{
-			  // is this the reference or alternate?
-			  nSNPInRead = nSNPInRead+1;
-			  if(s==ref[t][0]) {
-			      qualLocal[nSNPInRead] = - localbq;
-			    }
-			  if(s==alt[t][0]) {
-			      qualLocal[nSNPInRead] = localbq;
-			    }
-			  posLocal[nSNPInRead] = t;
-			} // end of check if ref or alt
+		      if ((s==ref[t][0] || s==alt[t][0]) && (localbq>=bqFilter)) {
+			// is this the reference or alternate?
+			nSNPInRead = nSNPInRead+1;
+                        if (nSNPInRead >= maxnSNPInRead) {
+                          qualLocal.resize(maxnSNPInRead * 2);
+                          posLocal.resize(maxnSNPInRead * 2);
+                          maxnSNPInRead *= 2;
+                        }
+			if(s==ref[t][0]) {
+			  qualLocal[nSNPInRead] = - localbq;
+			}
+			if(s==alt[t][0]) {
+			  qualLocal[nSNPInRead] = localbq;
+			}
+			posLocal[nSNPInRead] = t;
+		      } // end of check if ref or alt
 		    } // end of whether this SNP intersects read
 		} // end of loop on SNP
 		// now, bump up ref and pos offset by x1
