@@ -24,7 +24,7 @@ extension_list=("bgen" "vcf.gz" "vcf.gz" "vcf.gz")
 ##     extension_list+=("vcf.gz")
 ## done
 
-versions=(1.5.3 1.5.2 1.5.1 1.5.0 1.4.2 1.4.1 1.4.0 1.3.7 1.3.6 1.3.5 1.3.4 1.3.3 1.2.5 1.1.1)
+versions=(1.5.3 1.5.2 1.5.1 1.5.0 1.4.2 1.4.1 1.4.0 1.3.7 1.3.6 1.3.5 1.3.4 1.3.3 1.2.7 1.2.5 1.1.1)
 
 n_e=${#extra_list[@]}
 for i_v in $(seq 0 $((${#versions[@]} - 1)))
@@ -35,7 +35,7 @@ do
     version_list[${i_v} + ${n_e}]=${version}
     extension_list[${i_v} + ${n_e}]="vcf.gz"
     name_list[${i_v} + ${n_e}]=${versions[${i_v}]}
-    if [ "$version" == "1.2.5" ] || [ "$version" == "1.1.1" ]
+    if [ "$version" == "1.2.7" ] || [ "$version" == "1.2.5" ] || [ "$version" == "1.1.1" ]
     then
 	interface_list[${i_v} + ${n_e}]="R"
     else
