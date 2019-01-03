@@ -64,7 +64,15 @@ option_list <- list(
         help = "Where CFW truth files are stored",
         dest = "cfw_data_dir",
         default = "/data/smew1/rdavies/stitch_development/truth/cfw/"
+    ),
+    make_option(
+        "--whose-samples",
+        type = "character",        
+        help = "Whether to analyze oxford or chicago samples",
+        dest = "whose_samples",
+        default = "oxford"
     )
+    
 )
 
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -86,12 +94,14 @@ if (1 == 0) {
 test_file <- opt[["test-file"]]
 truth_vcf_file <- opt$truth_vcf
 chr <- opt$chr
+whose_samples <- opt$whose_samples
 compare_against <- opt$compare_against
 verbose <- opt$verbose
 mega_save_file <- opt$mega_save_file
 cfw_data_dir <- opt$cfw_data_dir
 megamugadir <- file.path(cfw_data_dir, "megamuga")
 affydir <- file.path(cfw_data_dir, "affy")
+
 
 if (substr(test_file, nchar(test_file) - 3, nchar(test_file)) == "bgen") {
     output_format <- "bgen"
@@ -126,9 +136,14 @@ if (compare_against == "affy") {
     if (rebuild == TRUE) {
         message("Get MegaMUGA calls for chr")
         megamuga <- get_megamuga_calls_for_chr(chr)
-        mega_calls <- convert_megamuga_to_calls(megamuga, chr)
+        mega_calls <- convert_megamuga_to_calls(megamuga, chr, whose_samples)
         mega_calls <- filter_calls_for_chr(mega_calls)
-        subjects <- colnames(mega_calls)[grep("Q_", colnames(mega_calls))]
+        subjects <- setdiff(colnames(mega_calls), c("chr", "pos"))
+        ## if (whose_samples == "oxford") {
+        ##     subjects <- colnames(mega_calls)[grep("Q_", colnames(mega_calls))]
+        ## } else if (whose_samples == "chicago") {
+        ##     subjects <- colnames(mega_calls)[-grep("Q_", colnames(mega_calls))]
+        ## }
         if (is.na(mega_save_file) == FALSE) {
             message("Save MegaMUGA calls for chr")
             save(mega_calls, subjects, file = mega_save_file)
@@ -163,6 +178,13 @@ if (output_format == "bgvcf") {
 
 dosages <- out$dosages
 dosages_meta <- out$dosages_meta
+genotypes <- out$genotypes
 
-compare_array_calls_and_dosages(truth_calls, dosages, dosages_meta)
+compare_array_calls_and_dosages(
+    calls = truth_calls,
+    dosages = dosages,
+    dosages_meta = dosages_meta,
+    genotypes = genotypes
+)
 
+quit()
