@@ -109,7 +109,7 @@ tabix ${OUTPUTDIR}/stitch.chr19.vcf.gz
 " >> ${SUBMIT_SCRIPT}
     fi
     ## fix non bgzipped file
-    if [ ${version} == "1.2.5" ]
+    if  [ "$version" == "1.2.7" ] || [ ${version} == "1.2.5" ]
     then
    echo -e "    
 gunzip ${OUTPUTDIR}/stitch.chr19.vcf.gz
