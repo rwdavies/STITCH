@@ -30,7 +30,7 @@ test_that("simple diploid method can work", {
         outputdir = outputdir,
         K = 2,
         nGen = 100,
-        nCores = 2
+        nCores = 1
     )
 
     vcf <- read.table(
