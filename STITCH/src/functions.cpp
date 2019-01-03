@@ -1539,31 +1539,3 @@ List cpp_read_reassign(
 
 
 
-//' @export
-// [[Rcpp::export]]
-Rcpp::List rcpp_test(const int option, const int n) {
-    std::cout << "option = " << option << ", n = " << n << std::endl;
-    int suppressOutput = 0;
-  double prev=clock();
-  std::string prev_section="Null";
-  std::string next_section="run";
-  prev=print_times(prev, suppressOutput, prev_section, next_section);
-  prev_section=next_section;
-  Rcpp::List sampleReads(n);  
-  if (option == 0) {
-    for(int i = 0; i < n; i++) {
-      sampleReads[i]=Rcpp::List::create(i, 0, 0, 0);
-    }
-  } else if (option == 1) {
-    for(int i = 0; i < n; i++) {
-      sampleReads.push_back(
-          Rcpp::List::create(i, 0, 0, 0)
-      );
-    }
-  }
-  next_section="oOne";
-  prev=print_times(prev, suppressOutput, prev_section, next_section);
-  prev_section=next_section;
-    return sampleReads;
-}
-
