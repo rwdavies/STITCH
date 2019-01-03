@@ -1,14 +1,15 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.3__**
-Release date: September 7th, 2018
+**__Current Version: 1.5.4__**
+Release date: January 3, 2019
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Significant speedups and some RAM improvements
-2. Minor changes to heuristics
+1. Speed up analysis of very large BAMs
+2. Can output haplotype dosage
+3. Change release mechanism
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -26,8 +27,8 @@ git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
 cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.5.3/STITCH_1.5.3.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.5.3.tar.gz
+wget https://github.com/rwdavies/stitch/releases/download/1.5.4/STITCH_1.5.4.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.5.4.tar.gz
 ```
 
 A quick test on real data can be performed using 

@@ -1,3 +1,7 @@
+* v1.5.4
+	* Speed up analysis of very large BAMs
+	* Can output haplotype dosage
+	* Change release mechanism
 * v1.5.3
 	* Significant speedups and some RAM improvements
 	* Minor changes to heuristics

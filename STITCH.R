@@ -418,6 +418,18 @@ option_list <- list(
         type = "logical",
         help = "Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM [default FALSE] ",
         default = FALSE
+    ), 
+    make_option(
+        "--useTempdirWhileWriting",
+        type = "logical",
+        help = "Whether to use temporary directory while writing output file (TRUE), or to keep result in RAM (FALSE). Using temporary directory is slower but uses less RAM [default FALSE] ",
+        default = FALSE
+    ), 
+    make_option(
+        "--output_haplotype_dosages",
+        type = "logical",
+        help = "Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus [default FALSE        ] ",
+        default = FALSE        
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -493,5 +505,7 @@ STITCH(
     gridWindowSize = opt$gridWindowSize,
     shuffle_bin_nSNPs = opt$shuffle_bin_nSNPs,
     shuffle_bin_radius = opt$shuffle_bin_radius,
-    keepSampleReadsInRAM = opt$keepSampleReadsInRAM
+    keepSampleReadsInRAM = opt$keepSampleReadsInRAM,
+    useTempdirWhileWriting = opt$useTempdirWhileWriting,
+    output_haplotype_dosages = opt$output_haplotype_dosages
 )
