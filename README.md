@@ -20,13 +20,18 @@ For the old website, please see http://www.well.ox.ac.uk/~rwdavies/stitch.html
 
 ### Quick start on Linux and Mac
 
-Install R if not already installed. Then
+STITCH can be installed in a few ways. The simplest way to get a release is as follows. First, install R. Then, do the following 
 ```
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
-R CMD INSTALL ./releases/STITCH_1.5.3.tar.gz
+cd releases
+wget https://github.com/rwdavies/stitch/releases/download/1.5.3/STITCH_1.5.3.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.5.3.tar.gz
+```
 
+A quick test on real data can be performed using 
+```
 # test on CFW mouse data
 wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
 # or curl -O http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
@@ -34,6 +39,8 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
 # if this works the file stitch.chr19.vcf.gz will be created
 ```
+
+To install the latest development code in the repository, use `./scripts/build-and-install.sh`. To install alternative releases, either download other releases from Github, or use the historical `releases` directory. 
 
 If you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
 ```
