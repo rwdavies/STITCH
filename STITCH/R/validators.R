@@ -195,7 +195,7 @@ validate_pos <- function(
 }
 
 
-
+#' @export
 validate_vcf_output_name <- function(
     vcf_output_name
 ) {
@@ -237,7 +237,7 @@ validate_phase_col <- function(col, i_samp) {
 
 
 
-
+#' @export
 get_and_validate_pos_gen_and_phase <- function(
     posfile,
     genfile = "",
@@ -371,6 +371,7 @@ validate_gridWindowSize <- function(gridWindowSize) {
 }
 
 
+#' @export
 validate_chr <- function(chr) {
     if (length(chr) == 0)
         stop("Please specify chr, the chromosome to impute")
@@ -379,6 +380,7 @@ validate_chr <- function(chr) {
 }
 
 
+#' @export
 validate_nCores <- function(nCores) {
     if (is.numeric(nCores) == FALSE) {
         stop("nCores must be an integer")
@@ -405,6 +407,8 @@ validate_nGen <- function(nGen) {
         stop("nGen must be greater than 0")
 }
 
+
+#' @export
 validate_posfile <- function(posfile) {
     if(posfile=="")
         stop("Please specify posfile, the file with sites to impute over")
@@ -455,10 +459,12 @@ validate_K_subset <- function(method, K, K_subset) {
     return(NULL)
 }
 
+#' @export
 validate_outputdir <- function(outputdir)
     if(outputdir=="")
         stop("Please specify outputdir")
 
+#' @export
 validate_tempdir <- function(tempdir) {
     if (is.na(tempdir) == FALSE) {
         if (tempdir=="")
@@ -478,7 +484,7 @@ validate_outputBlockSize <- function(outputBlockSize) {
     return(NULL)
 }
 
-
+#' @export
 validate_downsampleFraction <- function(downsampleFraction) {
     if(downsampleFraction < 0 | downsampleFraction > 1)
         stop("downsampleFraction must be between 0 and 1")
@@ -496,7 +502,7 @@ validate_plotHapSumDuringIterations <- function(plotHapSumDuringIterations)
     if (is.logical(plotHapSumDuringIterations) == FALSE | is.na(plotHapSumDuringIterations))
         stop("plotHapSumDuringIterations must be either TRUE or FALSE")
 
-
+#' @export
 validate_regionStart_regionEnd_and_buffer <- function(regionStart, regionEnd, buffer) {
     w <- as.integer(is.na(regionStart))+
         as.integer(is.na(regionEnd))+
@@ -521,6 +527,7 @@ validate_regionStart_regionEnd_and_buffer <- function(regionStart, regionEnd, bu
     }
 }
 
+#' @export
 validate_bamlist_and_cramlist_for_input_generation <- function(
     regenerateInput = TRUE,
     originalRegionName = NA,

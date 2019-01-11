@@ -1,4 +1,4 @@
-## centralize the writing of the sampleRead filename
+#' @export
 file_sampleReads <- function(
   dir,
   iBam,
@@ -10,6 +10,7 @@ file_sampleReads <- function(
     ))
 }
 
+#' @export
 file_sampleReadsInfo <- function(
   dir,
   iBam,

@@ -367,7 +367,7 @@ rebundle_input_subfunction <- function(
 
 
 
-
+#' @export
 load_all_sampleReads_into_memory <- function(
     N,
     nCores,

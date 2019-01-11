@@ -10,7 +10,7 @@ make_STITCH_cli(function_file, cli_output_file,
   character_vectors = c("reference_populations"),
   other_logical_params = NULL, other_integer_params = NULL,
   other_double_params = NULL, other_character_params = NULL,
-  function_name = "STITCH")
+  function_name = "STITCH", library_name = "STITCH")
 }
 \arguments{
 \item{function_file}{to main STITCH function file}

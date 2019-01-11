@@ -441,7 +441,7 @@ STITCH <- function(
     ## downsample to percent
     ##
     if(downsampleFraction < 1) {
-        downsampleToFraction(N=N,nCores=nCores,downsampleFraction=downsampleFraction,regionName=regionName,tempdir=tempdir,environment=environment, bundling_info = bundling_info)
+        downsampleToFraction(N=N,nCores=nCores,downsampleFraction=downsampleFraction,regionName=regionName,tempdir=tempdir, bundling_info = bundling_info)
     }
 
     ##
@@ -831,7 +831,7 @@ STITCH <- function(
 
 
 
-## make sure the directories exist
+#' @export
 initialize_directories <- function(
     tempdir,
     keepTempDir,
@@ -893,7 +893,7 @@ initialize_directories <- function(
     )
 }
 
-
+#' @export
 initialize_chrStart_and_chrEnd <- function(chrStart, chrEnd, L, iSizeUpperLimit) {
     if ((as.integer(is.na(chrStart)) + as.integer(is.na(chrEnd))) == 1)
         stop("Please set either both or neither of chrStart and chrEnd to NA")
@@ -923,7 +923,7 @@ check_program_dependency <- function(program) {
 }
 
 
-
+#' @export
 remove_buffer_from_variables <- function(
     L,
     regionStart,
@@ -1038,7 +1038,7 @@ remove_buffer_from_variables <- function(
 }
 
 
-
+#' @export
 match_gen_and_phase_to_samples <- function(
     sampleNames,
     gen = NULL,
@@ -1079,7 +1079,8 @@ match_gen_and_phase_to_samples <- function(
 
 
 
-## get sample names from disk for bam files or cram files
+
+#' @export
 get_sample_names <- function(
     bamlist = "",
     cramlist = "",
@@ -1096,11 +1097,11 @@ get_sample_names <- function(
     cram_files <- NULL
     if (bamlist != "" | cramlist != "") {
         if (cramlist != "") {
-            files <- as.character(read.table(cramlist)[,1])
+            files <- as.character(readLines(cramlist))
             cram_files <- files
             file_type <- "CRAM"
         } else {
-            files <- as.character(read.table(bamlist)[,1])
+            files <- as.character(readLines(bamlist))
             bam_files <- files
             file_type <- "BAM"
         }
@@ -1171,6 +1172,8 @@ get_sample_names <- function(
 ## AFTER SHRINKING
 ## defined by regionStart, regionEnd and buffer: pos, L, inRegionL (1-based from larger pos, what was kept)
 ## defined by regionStart, regionEnd: start_and_end_minus_buffer (1-based what to keep from current SNPs to remove the buffer)
+
+#' @export
 shrink_region <- function(
     regionStart,
     regionEnd,
@@ -2171,32 +2174,34 @@ downsample_the_samples <- function(
 ##    make bundled inuput
 ## regenerateIput == FALSE, is.na(inputBundleBlockSize) == FALSE
 ##    check or rebundle input
+
+#' @export
 generate_or_refactor_input <- function(
-  regenerateInput,
-  bundling_info,
-  L,
-  pos,
-  nSNPs,
-  bam_files,
-  cram_files,
-  reference,
-  iSizeUpperLimit,
-  bqFilter,
-  chr,
-  outputdir,
-  N,
-  downsampleToCov,
-  sampleNames,
-  inputdir,
-  useSoftClippedBases,
-  regionName,
-  tempdir,
-  chrStart,
-  chrEnd,
-  generateInputOnly,
-  environment,
-  nCores,
-  save_sampleReadsInfo
+    regenerateInput,
+    bundling_info,
+    L,
+    pos,
+    nSNPs,
+    bam_files,
+    cram_files,
+    reference,
+    iSizeUpperLimit,
+    bqFilter,
+    chr,
+    outputdir,
+    N,
+    downsampleToCov,
+    sampleNames,
+    inputdir,
+    useSoftClippedBases,
+    regionName,
+    tempdir,
+    chrStart,
+    chrEnd,
+    generateInputOnly,
+    environment,
+    nCores,
+    save_sampleReadsInfo
 ) {
     if (regenerateInput == TRUE) {
         ## handles both bundled and unbundled inputs
@@ -2389,10 +2394,10 @@ get_sample_name_from_bam_file_using_SeqLib <- function(file) {
 ## for a set of bam or cram files
 ## use samtools to get the names of the samples
 get_sample_names_from_bam_or_cram_files <- function(
-  files,
-  nCores,
-  file_type = "BAM",
-  verbose = TRUE
+    files,
+    nCores,
+    file_type = "BAM",
+    verbose = TRUE
 ) {
 
     if (verbose)
@@ -2794,7 +2799,7 @@ add_central_SNP_to_sampleReads <- function(
 
 
 
-
+#' @export
 shrinkReads <- function(
     N,
     nCores,
@@ -3126,20 +3131,20 @@ downsample <- function(
 
 
 
-# convert scaled base quality to probabilities
+#' @export
 convertScaledBQtoProbs <- function(x) {
-  # for a matrix with 1 column, with base qualities, get the probabilities of the ref or alternate
-  # recall < 0 is ref, >1 is alternate
-  # output is a matrix, two columns
-  n=nrow(x)
-  o=array(0,c(n,2))
-  e=10**(-abs(x)/10)
-  # fill in
-  w=cbind(1:n,2-as.integer(x<0))
-  o[w]=1-e
-  w[,2]=3-w[,2]
-  o[w]=e*1/3
-  return(o)
+    ## for a matrix with 1 column, with base qualities, get the probabilities of the ref or alternate
+    ## recall < 0 is ref, >1 is alternate
+    ## output is a matrix, two columns
+    n <- nrow(x)
+    o <- array(0, c(n, 2))
+    e <- 10 ** ( - abs(x)/10)
+    ## fill in
+    w <- cbind(1:n, 2 - as.integer(x < 0))
+    o[w] <- 1 - e
+    w[, 2] <- 3 - w[, 2]
+    o[w] <- e * 1 / 3
+    return(o)
 }
 
 
@@ -3192,7 +3197,8 @@ buildAlleleCount_subfunction <- function(
 }
 
 
-### build allele count matrix from input RData files
+
+#' @export
 buildAlleleCount <- function(
     nSNPs,
     N,
@@ -3304,29 +3310,31 @@ downsampleToFraction_a_range <- function(
 
 
 ## build allele count matrix from input RData files
-downsampleToFraction <- function(N,nCores,downsampleFraction,regionName,tempdir,environment, bundling_info) {
 
-    
-  print_message("Begin downsampling reads")
-  # do first loop
-  sampleRanges <- getSampleRange(N = N, nCores = nCores)
-  if(environment=="server")
-  {
-    out2=mclapply(sampleRanges,mc.cores=nCores,FUN=downsampleToFraction_a_range,tempdir=tempdir,regionName=regionName,downsampleFraction=downsampleFraction, bundling_info = bundling_info)
-  }
-  if(environment=="cluster")
-  {
-    cl = makeCluster(nCores, type = "FORK")
-    out2 = parLapply(cl, sampleRanges, fun=downsampleToFraction_a_range,tempdir=tempdir,regionName=regionName,downsampleFraction=downsampleFraction, bundling_info = bundling_info)
-    stopCluster(cl)
-  }
-  error_check <- sapply(out2, class) == "try-error"
-  if (sum(error_check) > 0) {
-    print_message(out2[[which(error_check)[1]]])
-    stop("There has been an error downsampling the reads. Please see error message above")
-  }
-  print_message("Done downsampling reads")
-  return(NULL)
+#' @export
+downsampleToFraction <- function(
+    N,
+    nCores,
+    downsampleFraction,
+    regionName,
+    tempdir,
+    environment,
+    bundling_info
+) {
+    print_message("Begin downsampling reads")
+    sampleRanges <- getSampleRange(N = N, nCores = nCores)
+    out2 <- mclapply(
+        sampleRanges,
+        mc.cores = nCores,
+        FUN = downsampleToFraction_a_range,
+        tempdir = tempdir,
+        regionName = regionName,
+        downsampleFraction = downsampleFraction,
+        bundling_info = bundling_info
+    )
+    check_mclapply_OK(out2, stop_message = "There has been an error downsampling the reads. Please see error message above")
+    print_message("Done downsampling reads")
+    return(NULL)
 }
 
 
@@ -3386,72 +3394,76 @@ getSampleRange <- function(
 
 
 
-# for N, nCores, blockSize
-# return a matrix and a list
-# -- for the matrix,
-# with N rows, one per sample, in sampleNames order
-# where first column is what core it is in
-# where second column is what bundle in that core it is in
-# where third column is position within that bundle
-# -- for the list,
-# bundlingList[[iCore]][[iBundle]] gives start and end
+## for N, nCores, blockSize
+## return a matrix and a list
+## -- for the matrix,
+## with N rows, one per sample, in sampleNames order
+## where first column is what core it is in
+## where second column is what bundle in that core it is in
+## where third column is position within that bundle
+## -- for the list,
+## bundlingList[[iCore]][[iBundle]] gives start and end
+
+#' @export
 get_bundling_position_information <- function(
-  N,
-  nCores,
-  blockSize
+    N,
+    nCores,
+    blockSize
 ) {
-  if (is.na(blockSize))
-    return(NULL)
-  # one entry per core, the range
-  x3 <- getSampleRange(N = N, nCores = nCores)
-  out <- lapply(1:nCores, function(i_core) {
-    x2 <- getOutputBlockRange(
-      sampleRange = x3[[i_core]],
-      outputBlockSize = blockSize
-    )
-    # for each of these block ranges, get the bundle
-    inputBundle <- unlist(lapply(1:(length(x2) - 1), function(i_sub_block) {
-      return(rep(i_sub_block, x2[i_sub_block + 1] - x2[i_sub_block]))
-    }))
-    # within each core and bundle, get the position
-    positionWithinBundle <- unlist(lapply(1:(length(x2) - 1), function(i_sub_block) {
-      return(1:(x2[i_sub_block + 1] - x2[i_sub_block]))
-    }))
-    # this is 0-based - transform to 1 based and return
-    # also - return a list
-    start <- x2[-length(x2)] + 1
-    end <- x2[-1]
-    bundleList <- lapply(1:length(start), function(i) {
-      c(start[i], end[i])
+    if (is.na(blockSize)){
+        return(NULL)
+    }
+    ## one entry per core, the range
+    x3 <- getSampleRange(N = N, nCores = nCores)
+    out <- lapply(1:nCores, function(i_core) {
+        x2 <- getOutputBlockRange(
+            sampleRange = x3[[i_core]],
+            outputBlockSize = blockSize
+        )
+        ## for each of these block ranges, get the bundle
+        inputBundle <- unlist(lapply(1:(length(x2) - 1), function(i_sub_block) {
+            return(rep(i_sub_block, x2[i_sub_block + 1] - x2[i_sub_block]))
+        }))
+        ## within each core and bundle, get the position
+        positionWithinBundle <- unlist(lapply(1:(length(x2) - 1), function(i_sub_block) {
+            return(1:(x2[i_sub_block + 1] - x2[i_sub_block]))
+        }))
+        ## this is 0-based - transform to 1 based and return
+        ## also - return a list
+        start <- x2[-length(x2)] + 1
+        end <- x2[-1]
+        bundleList <- lapply(1:length(start), function(i) {
+            c(start[i], end[i])
+        })
+        return(
+            list(
+                inputCore = rep(i_core, diff(x3[[i_core]]) + 1),
+                inputBundle = inputBundle,
+                positionWithinBundle = positionWithinBundle,
+                bundleList = bundleList
+            ))
     })
-    return(list(
-      inputCore = rep(i_core, diff(x3[[i_core]]) + 1),
-      inputBundle = inputBundle,
-      positionWithinBundle = positionWithinBundle,
-      bundleList = bundleList
-    ))
-  })
-  # turn into a matrix
-  iCore <- unlist(lapply(out, function(x) x$inputCore))
-  iBundle <- unlist(lapply(out, function(x) x$inputBundle))
-  iPosition <- unlist(lapply(out, function(x) x$positionWithinBundle))
-  bundlePosition = cbind(
-    iCore = iCore,
-    iBundle = iBundle,
-    iPosition = iPosition,
-    last_in_bundle = 0
-  )
-  # also - add "last_in_bundle
-  w <- which(diff(bundlePosition[, "iPosition"]) < 0)
-  w <- unique(c(w, N))
-  bundlePosition[w, "last_in_bundle"] <- 1
-  bundlingList <- lapply(out, function(x) x$bundleList)
-  return(
-    list(
-        matrix = bundlePosition,
-        list = bundlingList
+    ## turn into a matrix
+    iCore <- unlist(lapply(out, function(x) x$inputCore))
+    iBundle <- unlist(lapply(out, function(x) x$inputBundle))
+    iPosition <- unlist(lapply(out, function(x) x$positionWithinBundle))
+    bundlePosition = cbind(
+        iCore = iCore,
+        iBundle = iBundle,
+        iPosition = iPosition,
+        last_in_bundle = 0
     )
-  )
+    ## also - add "last_in_bundle
+    w <- which(diff(bundlePosition[, "iPosition"]) < 0)
+    w <- unique(c(w, N))
+    bundlePosition[w, "last_in_bundle"] <- 1
+    bundlingList <- lapply(out, function(x) x$bundleList)
+    return(
+        list(
+            matrix = bundlePosition,
+            list = bundlingList
+        )
+    )
 }
 
 
@@ -5152,6 +5164,8 @@ get_phase_switch_error <- function(
 ## calculate phase switch error
 ## for now, assume everything is an integer
 ## and rowSums == 1
+
+#' @export
 calculate_pse <- function(
     test,
     truth,
@@ -5548,6 +5562,7 @@ estimate_read_proportions <- function(
     }
     return(output)
 }
+
 
 print_message <- function(x, include_mem = FALSE) {
     if (include_mem) {

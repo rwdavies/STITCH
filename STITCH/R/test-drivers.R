@@ -1,3 +1,4 @@
+#' @export
 make_unique_tempdir <- function() {
     ## make every folder have a space!
     x <- tempfile(pattern = "folder", fileext = "wer wer2")
@@ -43,13 +44,13 @@ make_simple_bam <- function(
     system2(
         "samtools",
         args = c(
-            "view", "-bS", paste0(file_stem, ".sam"),
-            ">", paste0(file_stem, ".bam")
+            "view", "-bS", shQuote(paste0(file_stem, ".sam")),
+            ">", shQuote(paste0(file_stem, ".bam"))
         ),
         stderr = FALSE
     )
     file.remove(paste0(file_stem, ".sam"))
-    system2("samtools", c("index", paste0(file_stem, ".bam")))
+    system2("samtools", c("index", shQuote(paste0(file_stem, ".bam"))))
     return(paste0(file_stem, ".bam"))
 }
 
@@ -81,14 +82,14 @@ make_simple_cram <- function(
     system2(
         "samtools",
         args = c(
-            "view", "-T", paste0(file_stem, ".fa"), "-C",
-            "-o", paste0(file_stem, ".cram"),
-            paste0(file_stem, ".sam")
+            "view", "-T", shQuote(paste0(file_stem, ".fa")), "-C",
+            "-o", shQuote(paste0(file_stem, ".cram")),
+            shQuote(paste0(file_stem, ".sam"))
         ),
         stderr = FALSE
     )
     file.remove(paste0(file_stem, ".sam"))
-    system2("samtools", c("index", paste0(file_stem, ".cram")))
+    system2("samtools", c("index", shQuote(paste0(file_stem, ".cram"))))
     return(
         list(
             cram_file = paste0(file_stem, ".cram"),
@@ -208,7 +209,7 @@ make_phasefile <- function(
 }
 
 
-
+#' @export
 make_acceptance_test_data_package <- function(
     n_samples = 10,
     n_snps = 3,
@@ -223,7 +224,8 @@ make_acceptance_test_data_package <- function(
     tmpdir = tempdir(),
     use_crams = FALSE,
     sample_names = NULL,
-    samples_are_inbred = FALSE
+    samples_are_inbred = FALSE,
+    phred_bq = 25
 ) {
 
     if (length(n_reads) == 1) {
@@ -242,8 +244,14 @@ make_acceptance_test_data_package <- function(
     dir.create(outputdir)
     dir.create(rawdir)
 
+    if (is.na(L[1])) {
+        L_is_simple <- TRUE
+    } else {
+        L_is_simple <- FALSE
+    }
     posfile <- file.path(outputdir, "posfile.txt")
     pos <- make_posfile(posfile, L = L, n_snps = n_snps, chr = chr)
+    L <- pos[, 2]
 
     phasefile <- file.path(outputdir, "phasefile.txt")
     phase <- make_phasefile(
@@ -270,7 +278,8 @@ make_acceptance_test_data_package <- function(
     a <- as.character(pos[, "ALT"])
     n <- reads_span_n_snps
     cigar <- paste0(n, "M")
-    bq <- paste0(rep(":", n), collapse = "")
+    phred_bq_char <-  rawToChar(as.raw(c(phred_bq + 33)))
+    bq <- paste0(rep(phred_bq_char, n), collapse = "")
 
     if (is.null(sample_names)) {
         sample_names <- sapply(1:n_samples, function(i_sample)
@@ -280,22 +289,26 @@ make_acceptance_test_data_package <- function(
     }
 
     sample_files <- lapply(1:n_samples, function(i_sample) {
+        to_sample <- 1:(n_snps - reads_span_n_snps + 1)
         reads <- mclapply(
             1:n_reads[i_sample],
             mc.cores = n_cores,
-            function(i_read) {
-            ## w is 1-based sampling of start to end 
-            w <- sample(1:(n_snps - reads_span_n_snps + 1), 1) + 0:(reads_span_n_snps - 1)
-            h <- phase[w, i_sample, (i_read %% 2) + 1]
-            seq <- r[w]
-            seq[h == 1] <- a[w][h == 1]
-            seq <- paste0(seq, collapse = "")
-            return(
-                c(paste0("r00", i_read), "0", chr, pos[w[1], 2], "60",
-                  cigar, "*", "0", "0",
-                  seq, bq)
-            )
-        })
+            simulate_a_read,
+            n_snps = n_snps,
+            reads_span_n_snps = reads_span_n_snps,
+            i_sample = i_sample,
+            phase = phase,
+            seq = seq,
+            r = r,
+            a = a,
+            phred_bq_char = phred_bq_char,
+            L_is_simple = L_is_simple,
+            bq = bq,
+            cigar = cigar,
+            chr = chr,
+            pos = pos,
+            L = L
+        )
         reads <- reads[order(as.integer(sapply(reads, function(x) x[[4]])))]
         sample_name <- sample_names[i_sample]
         key <- round(10e4 * runif(1))
@@ -617,4 +630,67 @@ make_reference_package <- function(
         )
     )
 
+}
+
+simulate_a_read <- function(
+    i_read,
+    n_snps,
+    reads_span_n_snps,
+    i_sample,
+    phase,
+    seq,
+    r,
+    a,
+    phred_bq_char,
+    L_is_simple,
+    bq,
+    cigar,
+    chr,
+    pos,
+    L
+) {
+    ## choose which SNP to intersect, then choose a position
+    if (L_is_simple) {
+        w <- sample(1:(n_snps - reads_span_n_snps + 1), 1) + 0:(reads_span_n_snps - 1)
+        h <- phase[w, i_sample, (i_read %% 2) + 1]
+        seq <- r[w]
+        seq[h == 1] <- a[w][h == 1]
+        seq <- paste0(seq, collapse = "")
+        seq <- r[w]
+        seq[h == 1] <- a[w][h == 1]
+        seq <- paste0(seq, collapse = "")
+        local_bq <- bq
+        local_cigar <- cigar
+    } else {
+        snp_to_intersect <- sample(n_snps, 1)
+        which_in_intercept <- sample(reads_span_n_snps, 1) ## 1-based
+        ##print("------------------------")
+        ##print(snp_to_intersect)
+        ##print(which_in_intercept)
+        w <- snp_to_intersect + (0:(reads_span_n_snps - 1)) - (which_in_intercept - 1)
+        ## now, if out of bounds, nudge back in
+        if (sum(w <= 0) > 0) {
+            w <- w + -min(w)+ 1
+        }
+        if (sum(w > n_snps) > 0) {
+            w <- w - (max(w) - n_snps)
+        }
+        ## w is 1-based sampling of start to end 
+        ## w <- sample(to_sample, 1) + 0:(reads_span_n_snps - 1)
+        h <- phase[w, i_sample, sample(2, 1)]
+        ## make "A" otherwise
+        seq <- rep("A", tail(L[w], 1) - head(L[w], 1) + 1)
+        seq_w <- L[w] - min(L[w]) + 1
+        seq[seq_w] <- r[w]
+        seq[seq_w][h == 1] <- a[w][h == 1]                    
+        n <- length(seq)                    
+        seq <- paste0(seq, collapse = "")
+        local_bq <- paste0(rep(phred_bq_char, n), collapse = "")
+        local_cigar <- paste0(n, "M")
+    }
+    return(
+        c(paste0("r00", i_read), "0", chr, pos[w[1], 2], "60",
+          local_cigar, "*", "0", "0",
+          seq, local_bq)
+    )
 }

@@ -911,7 +911,8 @@ make_column_of_vcf <- function(
 
 
 
-## specify here the output file from the process
+
+#' @export
 get_output_filename <- function(
     output_filename,
     outputdir,
