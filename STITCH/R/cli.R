@@ -1,6 +1,7 @@
 #' @title Make STITCH command line interface
 #' @param function_file to main STITCH function file
 #' @param stitch_cli_file where output goes
+#' @export
 make_STITCH_cli <- function(
     function_file,
     cli_output_file,
@@ -10,7 +11,8 @@ make_STITCH_cli <- function(
     other_integer_params = NULL,
     other_double_params = NULL,
     other_character_params = NULL,
-    function_name = "STITCH"
+    function_name = "STITCH",
+    library_name = "STITCH"
 ) {
 
     a <- readLines(function_file, n = 200)
@@ -134,7 +136,7 @@ make_STITCH_cli <- function(
     cat("\n    )\n)\n", sep = "", file = cli_output_file, append = TRUE)
     ## why of why is parse_args giving warnings when it seems to be working fine
     cat("opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))\n", sep = "", file = cli_output_file, append = TRUE)
-    cat("suppressPackageStartupMessages(library(STITCH))\n", sep = "", file = cli_output_file, append = TRUE)
+    cat(paste0("suppressPackageStartupMessages(library(", library_name, "))\n"), sep = "", file = cli_output_file, append = TRUE)
     cat("Sys.setenv(PATH = paste0(Sys.getenv(\"PATH\"), \":\", getwd()))\n", sep = "", file = cli_output_file, append = TRUE)
 
     ## cat("print(opt)\n", sep = "", file = cli_output_file, append = TRUE)
