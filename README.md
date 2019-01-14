@@ -1,21 +1,19 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.4__**
-Release date: January 3, 2019
+**__Current Version: 1.5.5__**
+Release date: January 14, 2019
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Speed up analysis of very large BAMs
-2. Can output haplotype dosage
-3. Change release mechanism
+1. Export functions so STITCH can serve as a library
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
 STITCH is an R program for reference panel free, read aware, low coverage sequencing genotype imputation. STITCH runs on a set of samples with sequencing reads in BAM format, as well as a list of positions to genotype, and outputs imputed genotypes in VCF format.
 
-For the old website, please see http://www.well.ox.ac.uk/~rwdavies/stitch.html
+For the old website, please see https://www.well.ox.ac.uk/~rwdavies/stitch.html
 
 ## Installation and quick start on real data example
 
@@ -27,15 +25,15 @@ git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
 cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.5.4/STITCH_1.5.4.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.5.4.tar.gz
+wget https://github.com/rwdavies/stitch/releases/download/1.5.5/STITCH_1.5.5.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.5.5.tar.gz
 ```
 
 A quick test on real data can be performed using 
 ```
 # test on CFW mouse data
-wget http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
-# or curl -O http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
+wget https://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
+# or curl -O https://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz
 tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
 # if this works the file stitch.chr19.vcf.gz will be created
@@ -64,7 +62,7 @@ If you're on Mac you may see an error similar to ```ld: library not found for -l
 2. Install R dependencies parallel, Rcpp and RcppArmadillo from CRAN (using the "install.packages" option within R)
 3. Install [bgzip](http://www.htslib.org/) and make it available to your [PATH](https://en.wikipedia.org/wiki/PATH_(variable)). This can be done using a system installation, or doing a local installation and either modifying the PATH variable using code like ```export PATH=/path/to/dir-with-bgzip-binary/:$PATH```, or through R, doing something like ```Sys.setenv( PATH = paste0("/path/to/dir-with-bgzip-binary/:", Sys.getenv("PATH")))```. You'll know samtools is available if you run something like ```system("which bgzip")``` in R and get the path to bgzip
 4. Install STITCH. First, download the latest STITCH tar.gz from the releases folder above. Second, install by opening R and using install.packages, giving install.packages the path to the downloaded STITCH tar.gz. This should install SeqLib automatically as well.
-5. Download example dataset [STITCH_example_2016_05_10.tgz](http://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz).
+5. Download example dataset [STITCH_example_2016_05_10.tgz](https://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz).
 6. Run STITCH. Open R, change your working directory using setwd() to the directory where the example tar.gz was unzipped, and then run ```STITCH(tempdir = tempdir(), chr = "chr19", bamlist = "bamlist.txt", posfile = "pos.txt", genfile = "gen.txt", outputdir = paste0(getwd(), "/"), K = 4, nGen = 100, nCores = 1)```. Once complete, a VCF should appear in the current working directory named stitch.chr19.vcf.gz
 
 ## Help, command line interface and common options

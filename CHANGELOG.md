@@ -1,3 +1,5 @@
+* v1.5.5
+	* Export functions so STITCH can serve as a library
 * v1.5.4
 	* Speed up analysis of very large BAMs
 	* Can output haplotype dosage
