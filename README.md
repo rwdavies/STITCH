@@ -19,7 +19,7 @@ For the old website, please see https://www.well.ox.ac.uk/~rwdavies/stitch.html
 
 ### Quick start on Linux and Mac
 
-STITCH can be installed in a few ways. The simplest way to get a release is as follows. First, install R. Then, do the following 
+Conda instructions below. Alternatively, STITCH can be installed in a few ways. The simplest way to get a release is as follows. First, install R. Then, do the following 
 ```
 git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
@@ -41,7 +41,7 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 
 To install the latest development code in the repository, use `./scripts/build-and-install.sh`. To install alternative releases, either download other releases from Github, or use the historical `releases` directory. 
 
-If you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
+If you experience a problem with installation, you can either try conda below. Alternatively, if you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
 ```
 ./scripts/install-package-dependencies.sh
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`/install/lib/
@@ -56,6 +56,17 @@ echo "LDFLAGS += -L`pwd`/install/lib" >> ~/.R/Makevars
 
 If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience other compilation issues, please raise an issue. To experiment with configuration options during compilation, you can edit ```STITCH/src/Makevars``` then build a package and install using ```./scripts/build-and-install.sh``` or test using ```./scripts/test-unit.sh```.
 
+### Install using conda
+
+STITCH (as r-stitch) can be installed using [conda](https://conda.io/miniconda.html). Full tutorials can be found elsewhere, but briefly, something like this should work
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+conda install r-stitch -c defaults -c bioconda -c conda-forge
+source activate
+R -e 'library("STITCH")'
+```
+Note that currently the command like `STITCH.R` is not included with the bioconda installation, so from the command line, you can either run something like `R -e 'library("STITCH"); STITCH(chr="chr19", bamlist="bamlist.txt", posfile="pos.txt", genfile="gen.txt", outputdir="./", K=4, nGen=100, nCores=1)'`, or clone the repo to get `STITCH.R`. 
 
 ### Interactive start
 1. Install R if not already installed.
