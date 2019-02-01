@@ -694,3 +694,110 @@ simulate_a_read <- function(
           seq, local_bq)
     )
 }
+
+
+#' @export
+make_fb_test_package <- function(
+    K = 4,
+    nReads = 8,
+    nSNPs = 10,
+    gridWindowSize = 3
+) {
+    set.seed(4916)
+    L <- 1:nSNPs
+    maxDifferenceBetweenReads <- 1e10
+    maxEmissionMatrixDifference <- 1e50
+    Jmax_local <- 1e3
+    ##
+    out <- assign_positions_to_grid(
+        L = L,
+        gridWindowSize = gridWindowSize
+    )
+    grid <- out$grid
+    grid_distances <- out$grid_distances
+    L_grid <- out$L_grid
+    nGrids <- out$nGrids
+    snps_in_grid_1_based <- out$snps_in_grid_1_based
+    ##
+    eHapsCurrent_t <-
+        0.1 * array(runif(K * nSNPs), c(K, nSNPs)) +
+        0.9 * array(sample(c(0, 1), K * nSNPs, replace = TRUE), c(K, nSNPs))
+    alphaMatCurrent_t <- array(runif(K * (nGrids - 1)), c(K, (nGrids - 1)))
+    alphaMatCurrent_t <- apply(alphaMatCurrent_t, 2, function(x) x / sum(x))
+    sigmaCurrent <- 0.9 + 0.1 * runif(nGrids - 1)
+    priorCurrent <- runif(K)
+    priorCurrent <- priorCurrent / sum(priorCurrent)
+    transMatRate_t_D <- get_transMatRate("diploid", sigmaCurrent)
+    transMatRate_t_H <- get_transMatRate("diploid-inbred", sigmaCurrent)
+    ## sample reads
+    cr <- sort(sample(1:nGrids, nReads, replace = TRUE)) - 1
+    true_H <- sample(c(1, 2), nReads, replace = TRUE)    
+    ## choose them from haps 1 and 2
+    sampleReads <- lapply(
+        1:length(cr),
+        function(ii) {
+        i <- cr[ii] ## 0-based
+        w <- which(grid == i)
+        g <- w[sample(1:length(w), size = 1)] - 1
+        x <- c(g - 2, g - 1, g, g + 1, g + 2)
+        x <- x[x %in% 0:(nSNPs - 1)] ## 0-based
+        i_hap <- true_H[ii]
+        bq <- matrix(round(30 * (eHapsCurrent_t[i_hap, x + 1] - 0.5)), ncol = 1)
+        list(
+            length(x) - 1,
+            i,
+            bq,
+            matrix(x,ncol=1,nrow=length(x))
+        )
+    })
+    ##
+    eMatHap_t <- rcpp_make_eMatHap_t(
+        sampleReads = sampleReads,
+        nReads = nReads,
+        eHaps_t = eHapsCurrent_t,
+        maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+        Jmax = Jmax_local,
+        eMatHapOri_t = array(0, c(1, 1)), ## ugh
+        pRgivenH1 = array(0),
+        pRgivenH2 = array(0),
+        run_pseudo_haploid = FALSE
+    )
+    ##
+    eMatHapSNP_t <- rcpp_make_eMatHapSNP_t(
+        eMatHap_t = eMatHap_t,
+        H = TRUE, 
+        sampleReads = sampleReads,
+        hap = TRUE,
+        nGrids = nGrids,
+        run_fb_grid_offset = 0,
+        use_all_reads = TRUE
+    )
+    ##
+    return(
+        list(
+            K = K,
+            gridWindowSize = gridWindowSize,
+            nReads = nReads,
+            nSNPs = nSNPs,
+            L = L,
+            grid = grid,
+            grid_distances = grid_distances,
+            L_grid = L_grid,
+            nGrids = nGrids,
+            snps_in_grid_1_based = snps_in_grid_1_based,
+            eHapsCurrent_t = eHapsCurrent_t,
+            alphaMatCurrent_t = alphaMatCurrent_t,
+            sigmaCurrent = sigmaCurrent,
+            priorCurrent = priorCurrent,
+            transMatRate_t_D = transMatRate_t_D,
+            transMatRate_t_H = transMatRate_t_H,
+            sampleReads = sampleReads,
+            true_H = true_H,
+            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+            Jmax_local = Jmax_local,
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+            eMatHap_t = eMatHap_t,
+            eMatHapSNP_t = eMatHapSNP_t
+        )
+    )
+}

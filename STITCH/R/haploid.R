@@ -1,0 +1,51 @@
+R_run_forward_haploid <- function(
+    alphaHat_t,
+    c,
+    eMatHapSNP_t,
+    alphaMat_t,    
+    transMatRate_t_H,
+    T,
+    K,
+    pi,
+    alphaStart = 0,
+    run_fb_subset = FALSE
+) {
+    nSNPs <- T
+    ## 
+    if (!run_fb_subset) {
+        for(k1 in 0:(K - 1)) {
+            alphaHat_t[k1 + 1,0 + 1] <- pi[k1 + 1] * eMatHapSNP_t[k1 + 1, 0 + 1]
+        }
+    } else {
+        for(k1 in 0:(K - 1)) {        
+            alphaHat_t[k1 + 1, 1] <- alphaStart[k1 + 1]
+        }
+    }
+    c[1] <- 1 / sum(alphaHat_t[, 1])
+    alphaHat_t[, 1] <- alphaHat_t[, 1] * c[1]
+    ## 
+    ## 
+    alphaConst <- 0
+    for(t_0_based in 1:(T - 1)) {
+        alphaConst <-
+            transMatRate_t_H[1 + 1, t_0_based - 1 + 1] *
+            sum(alphaHat_t[, t_0_based - 1 + 1])
+        ## 
+        alphaHat_t[, t_0_based + 1] <-
+            eMatHapSNP_t[, t_0_based + 1] * (
+                transMatRate_t_H[0 + 1, t_0_based - 1 + 1] *
+                alphaHat_t[, t_0_based - 1 + 1] + 
+                alphaConst *
+                alphaMat_t[, t_0_based - 1 + 1]
+            )
+        ## 
+        c[t_0_based + 1] <- 1 / sum(alphaHat_t[, t_0_based + 1])
+        alphaHat_t[, t_0_based + 1] <- alphaHat_t[, t_0_based + 1] * c[t_0_based + 1]
+    }
+    return(
+        list(
+            alphaHat_t = alphaHat_t,
+            c = c
+        )
+    )
+}
