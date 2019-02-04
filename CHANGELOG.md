@@ -116,5 +116,5 @@
 * v1.0.1
 	* Added ability to use soft clipped bases
 * v1.0.0
-	* Version used for paper
+	* Version used for paper 
 
