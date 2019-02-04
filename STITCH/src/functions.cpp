@@ -227,13 +227,17 @@ arma::mat rcpp_calculate_fbd_dosage(
 //' @export
 // [[Rcpp::export]]
 List cpp_read_reassign(
-    arma::ivec ord,
-    arma::ivec qnameInteger_ord,
-    Rcpp::List sampleReadsRaw,
-    int verbose,
-    arma::ivec readStart_ord,
-    arma::ivec readEnd_ord,
-    int iSizeUpperLimit
+    const arma::ivec& ord,
+    const arma::ivec& qnameInteger_ord,
+    const Rcpp::CharacterVector& qname,
+    const Rcpp::CharacterVector& strand,
+    const Rcpp::List& sampleReadsRaw,
+    const arma::ivec& readStart_ord,
+    const arma::ivec& readEnd_ord,
+    const arma::ivec& readStart,
+    const arma::ivec& readEnd,
+    int iSizeUpperLimit,
+    bool save_sampleReadsInfo = false
 ) {
     // ord is 0-based original ordering
     // qnameInteger_ord is (ordered) integer representing reads
@@ -245,7 +249,7 @@ List cpp_read_reassign(
     int maxnSNPInRead = 1000;
     std::vector<int> base_bq(maxnSNPInRead);
     std::vector<int> base_pos(maxnSNPInRead); // there shouldnt be this many SNPs
-    Rcpp::IntegerVector save_read(nRawReads); // over-sized
+    //Rcpp::IntegerVector save_read(nRawReads); // over-sized
     Rcpp::LogicalVector save_this_read_check(nRawReads); // over-sized
     save_this_read_check.fill(false);
     int count = 0;
@@ -257,7 +261,9 @@ List cpp_read_reassign(
     arma::ivec bqL;
     arma::ivec posL;
     int to_add, k;
-
+    long int minReadStart, maxReadEnd;
+    std::string strand_to_out;
+    
     // first loop, define which reads to save
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
         if (qnameInteger_ord[iRead + 1] != curRead) {
@@ -271,7 +277,7 @@ List cpp_read_reassign(
                 }
             }
             if (save_this_read) {
-                save_read(count) = curRead;
+                //save_read(count) = curRead;
                 save_this_read_check(iRead) = true;
                 count++;
                 nReadsToSave++;
@@ -283,13 +289,20 @@ List cpp_read_reassign(
 
     // second loop, use pre-defined sampleReads
     Rcpp::List sampleReads(nReadsToSave);
+    Rcpp::CharacterVector sri_qname(nReadsToSave);
+    Rcpp::CharacterVector sri_strand(nReadsToSave);    
+    Rcpp::IntegerVector sri_minReadStart(nReadsToSave);
+    Rcpp::IntegerVector sri_maxReadEnd(nReadsToSave);
     
     curRead = qnameInteger_ord[0];    
     count = 0;
     iReadStart = 0;
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
         if (qnameInteger_ord[iRead + 1] != curRead) {
-            nSNPsInRead = -1;
+            nSNPsInRead = -1; // this is 0-based (why did I do this)
+            minReadStart = 2147483647;
+            maxReadEnd = -1;
+            strand_to_out = "";
             for(j = iReadStart; j <= iRead; j++) {
                 r = ord[j];
                 // so say first read is 0-based 0:2
@@ -308,6 +321,16 @@ List cpp_read_reassign(
                     base_bq[nSNPsInRead] = bqU[k];
                     base_pos[nSNPsInRead] = pRU[k];	  
                 }
+                // can also take from r otherwise                
+                if (save_sampleReadsInfo) {
+                    if (readStart[r] < minReadStart) {
+                        minReadStart = readStart[r];
+                    }
+                    if (maxReadEnd < readEnd[r]) {
+                        maxReadEnd = readEnd[r];
+                    }
+                    strand_to_out.append(strand[r]);
+                }
             }
             //
             if (save_this_read_check(iRead)) {
@@ -315,22 +338,39 @@ List cpp_read_reassign(
                 arma::ivec posL(nSNPsInRead + 1);
                 for(k = 0; k <= nSNPsInRead; k++) {
                     bqL[k] = base_bq[k];
-                    posL[k] = base_pos[k];                    
+                    posL[k] = base_pos[k];
                 }
                 //bqL = base_bq.subvec(0, nSNPsInRead);
                 //posL = base_pos.subvec(0, nSNPsInRead);
                 sampleReads[count] = Rcpp::List::create(nSNPsInRead, 0, bqL, posL);
+                // can draw from ord(iRead);
+                if (save_sampleReadsInfo) {
+                    sri_qname[count] = qname[r];
+                    sri_minReadStart[count] = minReadStart;
+                    sri_maxReadEnd[count] = maxReadEnd;
+                    sri_strand[count] = strand_to_out;
+                }
                 count++;
             }
             iReadStart = iRead + 1;
             curRead = qnameInteger_ord[iRead + 1]; // + 1
         }
     }
-    
+
+    Rcpp::DataFrame sampleReadsInfo;
+    if (save_sampleReadsInfo) {
+        sampleReadsInfo = Rcpp::DataFrame::create(
+            Rcpp::Named("qname") = sri_qname,
+            Rcpp::Named("strand") = sri_strand,
+            Rcpp::Named("minReadStart") = sri_minReadStart,
+            Rcpp::Named("maxReadEnd") = sri_maxReadEnd
+        );
+    }
     Rcpp::List to_return = Rcpp::List::create(
         Rcpp::Named("sampleReads") = sampleReads,
-        Rcpp::Named("save_read") = save_read
+        Rcpp::Named("sampleReadsInfo") = sampleReadsInfo
     );
+    //         Rcpp::Named("save_read") = save_read,
     return to_return;
 }
 

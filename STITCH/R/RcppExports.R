@@ -87,8 +87,8 @@ rcpp_calculate_fbd_dosage <- function(eHapsCurrent_t, gamma_t, grid, snp_start_1
 }
 
 #' @export
-cpp_read_reassign <- function(ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit) {
-    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit)
+cpp_read_reassign <- function(ord, qnameInteger_ord, qname, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, save_sampleReadsInfo = FALSE) {
+    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, qname, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, save_sampleReadsInfo)
 }
 
 #' @export

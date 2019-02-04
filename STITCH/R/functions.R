@@ -2522,13 +2522,15 @@ merge_reads_from_sampleReadsRaw <- function(
     strand,
     readStart,
     readEnd,
-    iSizeUpperLimit
+    iSizeUpperLimit,
+    save_sampleReadsInfo = FALSE
 ) {
     ## wif: 1-based which read it came from
     wif <- sapply(sampleReadsRaw, function(x) x[[5]]) + 1
     qnameUnique <- unique(qname[wif])
     qnameInteger <- match(qname[wif], qnameUnique)
     ord <- order(qnameInteger) - 1 ## 0-based for C++
+    qname_ord <- qname[ord + 1]
     qnameInteger_ord <- c(qnameInteger[ord + 1], - 2)
     readStart_ord <- readStart[ord + 1]
     readEnd_ord <- readEnd[ord + 1]
@@ -2537,21 +2539,29 @@ merge_reads_from_sampleReadsRaw <- function(
     ## ord is 0-based ordered version of qnameInteger
     ## qnameInteger_ord is the ordered version of qnameInteger
     out <- cpp_read_reassign(
-        ord,
-        qnameInteger_ord,
-        sampleReadsRaw,
-        as.integer(0),
-        readStart_ord,
-        readEnd_ord,
-        iSizeUpperLimit
+        ord = ord,
+        qnameInteger_ord = qnameInteger_ord,
+        qname = qname,
+        strand = strand,
+        sampleReadsRaw = sampleReadsRaw,
+        readStart_ord = readStart_ord,
+        readEnd_ord = readEnd_ord,
+        readStart = readStart,
+        readEnd = readEnd,
+        iSizeUpperLimit = iSizeUpperLimit,
+        save_sampleReadsInfo = save_sampleReadsInfo 
     )
     sampleReads <- out$sampleReads
+    sampleReadsInfo <- out$sampleReadsInfo
+    ## 
     ## which reads are saved (i.e. do not violate iSizeUpperLimit)    
-    save_read <-  head(out$save_read, length(qnameUnique)) 
-    sampleReadsInfo <- data.frame(
-        qname = qnameUnique[save_read],
-        strand = strand[match(qnameUnique, qname)][save_read] ## problem if varies
-    )
+    ##    save_read <-  head(out$save_read, length(qnameUnique))
+    ## add information on "left-most" edge of read, "right-most" edge of read
+    ## are read start, read end always ordered small to large?
+    ##    sampleReadsInfo <- data.frame(
+    ##        qname = qnameUnique[save_read],
+    ##       strand = strand[match(qnameUnique, qname)][save_read] ## problem if varies
+    ## )
     return(
         list(
             sampleReads = sampleReads,
@@ -2716,7 +2726,8 @@ loadBamAndConvert <- function(
             strand = strand,
             readStart = readStart,
             readEnd = readEnd,
-            iSizeUpperLimit = iSizeUpperLimit
+            iSizeUpperLimit = iSizeUpperLimit,
+            save_sampleReadsInfo = save_sampleReadsInfo
         )
         sampleReads <- out$sampleReads
         sampleReadsInfo <- out$sampleReadsInfo

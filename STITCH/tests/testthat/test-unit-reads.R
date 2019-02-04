@@ -248,6 +248,9 @@ test_that("BAM with one read can be properly interpreted", {
 
 
 
+
+
+
 test_that("BAM with two reads can be properly interpreted", {
 
     chr <- 10
@@ -695,7 +698,8 @@ test_that("BAM with several informative and uninformative reads is properly inte
         tempdir = tempdir(),
         chr = chr,
         chrStart = 1,
-        chrEnd = 100
+        chrEnd = 100,
+        save_sampleReadsInfo = TRUE
     )
 
     load(file_sampleReads(tempdir(), 1, regionName))
@@ -706,6 +710,9 @@ test_that("BAM with several informative and uninformative reads is properly inte
         sampleReads,
         expected_sample_reads
     )
+
+    ## check read length is OK
+    load(file_sampleReadsInfo(tempdir(), 1, regionName))
 
 })
 

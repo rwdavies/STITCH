@@ -276,19 +276,23 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_read_reassign
-List cpp_read_reassign(arma::ivec ord, arma::ivec qnameInteger_ord, Rcpp::List sampleReadsRaw, int verbose, arma::ivec readStart_ord, arma::ivec readEnd_ord, int iSizeUpperLimit);
-RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP sampleReadsRawSEXP, SEXP verboseSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP iSizeUpperLimitSEXP) {
+List cpp_read_reassign(const arma::ivec& ord, const arma::ivec& qnameInteger_ord, const Rcpp::CharacterVector& qname, const Rcpp::CharacterVector& strand, const Rcpp::List& sampleReadsRaw, const arma::ivec& readStart_ord, const arma::ivec& readEnd_ord, const arma::ivec& readStart, const arma::ivec& readEnd, int iSizeUpperLimit, bool save_sampleReadsInfo);
+RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP qnameSEXP, SEXP strandSEXP, SEXP sampleReadsRawSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP iSizeUpperLimitSEXP, SEXP save_sampleReadsInfoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::ivec >::type ord(ordSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type qnameInteger_ord(qnameInteger_ordSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type sampleReadsRaw(sampleReadsRawSEXP);
-    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type readStart_ord(readStart_ordSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type readEnd_ord(readEnd_ordSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type ord(ordSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type qnameInteger_ord(qnameInteger_ordSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type qname(qnameSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type strand(strandSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReadsRaw(sampleReadsRawSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type readStart_ord(readStart_ordSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type readEnd_ord(readEnd_ordSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type readStart(readStartSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type readEnd(readEndSEXP);
     Rcpp::traits::input_parameter< int >::type iSizeUpperLimit(iSizeUpperLimitSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, sampleReadsRaw, verbose, readStart_ord, readEnd_ord, iSizeUpperLimit));
+    Rcpp::traits::input_parameter< bool >::type save_sampleReadsInfo(save_sampleReadsInfoSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, qname, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, save_sampleReadsInfo));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -568,7 +572,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
     {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},
-    {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 7},
+    {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 11},
     {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 6},
     {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
     {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 9},
