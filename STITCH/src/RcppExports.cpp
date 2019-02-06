@@ -331,6 +331,20 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// Rcpp_run_backward_haploid
+void Rcpp_run_backward_haploid(arma::mat& betaHat_t, arma::rowvec& c, const arma::mat& eMatHapSNP_t, const arma::mat& alphaMat_t, const arma::mat& transMatRate_t_H);
+RcppExport SEXP _STITCH_Rcpp_run_backward_haploid(SEXP betaHat_tSEXP, SEXP cSEXP, SEXP eMatHapSNP_tSEXP, SEXP alphaMat_tSEXP, SEXP transMatRate_t_HSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type betaHat_t(betaHat_tSEXP);
+    Rcpp::traits::input_parameter< arma::rowvec& >::type c(cSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHapSNP_t(eMatHapSNP_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_H(transMatRate_t_HSEXP);
+    Rcpp_run_backward_haploid(betaHat_t, c, eMatHapSNP_t, alphaMat_t, transMatRate_t_H);
+    return R_NilValue;
+END_RCPP
+}
 // rcpp_make_eMatHap_t
 arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid);
 RcppExport SEXP _STITCH_rcpp_make_eMatHap_t(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP) {
@@ -575,6 +589,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 11},
     {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 6},
     {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
+    {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 5},
     {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 9},
     {"_STITCH_rcpp_make_eMatHapSNP_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHapSNP_t, 7},
     {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 10},

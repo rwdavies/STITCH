@@ -102,6 +102,11 @@ Rcpp_run_forward_haploid <- function(alphaHat_t, c, eMatHapSNP_t, alphaMat_t, tr
 }
 
 #' @export
+Rcpp_run_backward_haploid <- function(betaHat_t, c, eMatHapSNP_t, alphaMat_t, transMatRate_t_H) {
+    invisible(.Call('_STITCH_Rcpp_run_backward_haploid', PACKAGE = 'STITCH', betaHat_t, c, eMatHapSNP_t, alphaMat_t, transMatRate_t_H))
+}
+
+#' @export
 rcpp_make_eMatHap_t <- function(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid = FALSE) {
     .Call('_STITCH_rcpp_make_eMatHap_t', PACKAGE = 'STITCH', sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid)
 }

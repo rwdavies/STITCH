@@ -91,15 +91,17 @@ void Rcpp_run_forward_haploid(
 }
 
 
-void run_backward_haploid(
+//' @export
+// [[Rcpp::export]]
+void Rcpp_run_backward_haploid(
     arma::mat& betaHat_t,
     arma::rowvec& c,
     const arma::mat& eMatHapSNP_t,
     const arma::mat& alphaMat_t,    
-    const arma::mat& transMatRate_t_H,
-    const int& T,
-    const int& K
+    const arma::mat& transMatRate_t_H
 ) {
+    const int T = eMatHapSNP_t.n_cols;
+    const int K = eMatHapSNP_t.n_rows;
     double x;
     arma::colvec e_times_b;
     for(int t = T-2; t >= 0; --t) {
@@ -541,14 +543,12 @@ Rcpp::List forwardBackwardHaploid(
           betaHat_t(k, T-1) = betaEnd(k);
       }
   }
-  run_backward_haploid(
+  Rcpp_run_backward_haploid(
       betaHat_t,
       c,
       eMatHapSNP_t,
       alphaMat_t,
-      transMatRate_t_H,
-      T,
-      K
+      transMatRate_t_H
   );
   //
   //
