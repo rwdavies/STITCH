@@ -2558,17 +2558,12 @@ merge_reads_from_sampleReadsRaw <- function(
     sampleReadsInfo <- out$sampleReadsInfo
     ##
     if (save_sampleReadsInfo) {
-        ## qname vs qname[wif]??
-        readMin <- array(2147483647, nrow(sampleReadsInfo))
-        readMax <- array(0, nrow(sampleReadsInfo))
+        ## 
+        readMin <- array(-1, nrow(sampleReadsInfo))
+        readMax <- array(-1, nrow(sampleReadsInfo))
         match_vec <- match(qname_all, sampleReadsInfo[, "qname"]) - 1 ## make 0-based
         match_vec[is.na(match_vec)] <- -1
         ##
-        ##print(match_vec)
-        ##print(readStart_all)
-        ##print(readEnd_all)
-        ##print(readMin)
-        ##print(readMax)
         ## pass by reference
         get_min_from_position(
             match_vec = match_vec,
@@ -2577,6 +2572,9 @@ merge_reads_from_sampleReadsRaw <- function(
             readMin = readMin,
             readMax = readMax
         )
+        ##
+        sampleReadsInfo[, "minReadStart"] <- readMin
+        sampleReadsInfo[, "maxReadEnd"] <- readMax
     }
     ## 
     ## which reads are saved (i.e. do not violate iSizeUpperLimit)    

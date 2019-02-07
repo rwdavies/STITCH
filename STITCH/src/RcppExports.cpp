@@ -237,15 +237,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_min_from_position
-void get_min_from_position(const Rcpp::IntegerVector& match_vec, const Rcpp::IntegerVector& readStart_all, const Rcpp::IntegerVector& readEnd_all, Rcpp::IntegerVector& readMin, Rcpp::IntegerVector& readMax);
+void get_min_from_position(const Rcpp::NumericVector& match_vec, const Rcpp::NumericVector& readStart_all, const Rcpp::NumericVector& readEnd_all, Rcpp::NumericVector& readMin, Rcpp::NumericVector& readMax);
 RcppExport SEXP _STITCH_get_min_from_position(SEXP match_vecSEXP, SEXP readStart_allSEXP, SEXP readEnd_allSEXP, SEXP readMinSEXP, SEXP readMaxSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type match_vec(match_vecSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type readStart_all(readStart_allSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type readEnd_all(readEnd_allSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type readMin(readMinSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type readMax(readMaxSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type match_vec(match_vecSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type readStart_all(readStart_allSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type readEnd_all(readEnd_allSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector& >::type readMin(readMinSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector& >::type readMax(readMaxSEXP);
     get_min_from_position(match_vec, readStart_all, readEnd_all, readMin, readMax);
     return R_NilValue;
 END_RCPP

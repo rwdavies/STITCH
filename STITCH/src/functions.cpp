@@ -86,21 +86,27 @@ Rcpp::List ram_test(
 //' @export
 // [[Rcpp::export]]
 void get_min_from_position(
-    const Rcpp::IntegerVector & match_vec,
-    const Rcpp::IntegerVector & readStart_all,
-    const Rcpp::IntegerVector & readEnd_all,
-    Rcpp::IntegerVector & readMin,
-    Rcpp::IntegerVector & readMax
+    const Rcpp::NumericVector & match_vec,
+    const Rcpp::NumericVector & readStart_all,
+    const Rcpp::NumericVector & readEnd_all,
+    Rcpp::NumericVector & readMin,
+    Rcpp::NumericVector & readMax
 ) {
     int w;
     for(int i=0; i<match_vec.length(); i++) {
         if (0 <= match_vec(i)) {
             w = match_vec(i);
-            if (readStart_all(i) < readMin(w)) {
+            // if empty, take first value
+            if (readMin(w) == -1) {
+              readMin(w) = readStart_all(i);
+            } else if (readStart_all(i) < readMin(w)) {
                 readMin(w) = readStart_all(i);
             }
-            if (readMax(w) < readStart_all(i)) {
-                readMax(w) = readStart_all(i);
+	    //                                    
+            if (readMax(w) == -1) {
+              readMax(w) = readEnd_all(i);
+            } else if (readMax(w) < readEnd_all(i)) {
+                readMax(w) = readEnd_all(i);
             }
         }
     }
