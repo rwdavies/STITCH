@@ -69,22 +69,23 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_sampleReadsRaw_from_SeqLib
-Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, const std::vector<std::string> ref, const std::vector<std::string> alt, const int nSNPs, const std::vector<int> L, std::string region, std::string file_name, std::string reference);
-RcppExport SEXP _STITCH_get_sampleReadsRaw_from_SeqLib(SEXP useSoftClippedBasesSEXP, SEXP bqFilterSEXP, SEXP iSizeUpperLimitSEXP, SEXP refSEXP, SEXP altSEXP, SEXP nSNPsSEXP, SEXP LSEXP, SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP) {
+Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, const std::vector<std::string>& ref, const std::vector<std::string>& alt, const int nSNPs, const std::vector<int>& L, std::string region, std::string file_name, std::string reference, const bool save_sampleReadsInfo);
+RcppExport SEXP _STITCH_get_sampleReadsRaw_from_SeqLib(SEXP useSoftClippedBasesSEXP, SEXP bqFilterSEXP, SEXP iSizeUpperLimitSEXP, SEXP refSEXP, SEXP altSEXP, SEXP nSNPsSEXP, SEXP LSEXP, SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP, SEXP save_sampleReadsInfoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const bool >::type useSoftClippedBases(useSoftClippedBasesSEXP);
     Rcpp::traits::input_parameter< const int >::type bqFilter(bqFilterSEXP);
     Rcpp::traits::input_parameter< const int >::type iSizeUpperLimit(iSizeUpperLimitSEXP);
-    Rcpp::traits::input_parameter< const std::vector<std::string> >::type ref(refSEXP);
-    Rcpp::traits::input_parameter< const std::vector<std::string> >::type alt(altSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type alt(altSEXP);
     Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
-    Rcpp::traits::input_parameter< const std::vector<int> >::type L(LSEXP);
+    Rcpp::traits::input_parameter< const std::vector<int>& >::type L(LSEXP);
     Rcpp::traits::input_parameter< std::string >::type region(regionSEXP);
     Rcpp::traits::input_parameter< std::string >::type file_name(file_nameSEXP);
     Rcpp::traits::input_parameter< std::string >::type reference(referenceSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_sampleReadsRaw_from_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference));
+    Rcpp::traits::input_parameter< const bool >::type save_sampleReadsInfo(save_sampleReadsInfoSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_sampleReadsRaw_from_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference, save_sampleReadsInfo));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -233,6 +234,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type mat4(mat4SEXP);
     rcpp_result_gen = Rcpp::wrap(ram_test(mat1, mat2, mat3, mat4));
     return rcpp_result_gen;
+END_RCPP
+}
+// get_min_from_position
+void get_min_from_position(const Rcpp::IntegerVector& match_vec, const Rcpp::IntegerVector& readStart_all, const Rcpp::IntegerVector& readEnd_all, Rcpp::IntegerVector& readMin, Rcpp::IntegerVector& readMax);
+RcppExport SEXP _STITCH_get_min_from_position(SEXP match_vecSEXP, SEXP readStart_allSEXP, SEXP readEnd_allSEXP, SEXP readMinSEXP, SEXP readMaxSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type match_vec(match_vecSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type readStart_all(readStart_allSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type readEnd_all(readEnd_allSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type readMin(readMinSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type readMax(readMaxSEXP);
+    get_min_from_position(match_vec, readStart_all, readEnd_all, readMin, readMax);
+    return R_NilValue;
 END_RCPP
 }
 // get_random_values
@@ -574,7 +589,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_cpp_cigar_split_many", (DL_FUNC) &_STITCH_cpp_cigar_split_many, 1},
     {"_STITCH_cpp_deal_with_soft_clipped_bases", (DL_FUNC) &_STITCH_cpp_deal_with_soft_clipped_bases, 5},
     {"_STITCH_get_sample_data_from_SeqLib", (DL_FUNC) &_STITCH_get_sample_data_from_SeqLib, 3},
-    {"_STITCH_get_sampleReadsRaw_from_SeqLib", (DL_FUNC) &_STITCH_get_sampleReadsRaw_from_SeqLib, 10},
+    {"_STITCH_get_sampleReadsRaw_from_SeqLib", (DL_FUNC) &_STITCH_get_sampleReadsRaw_from_SeqLib, 11},
     {"_STITCH_collapse_diploid_gamma", (DL_FUNC) &_STITCH_collapse_diploid_gamma, 3},
     {"_STITCH_rcpp_make_and_bound_eMat_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMat_t, 7},
     {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
@@ -583,6 +598,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},
     {"_STITCH_increment2N", (DL_FUNC) &_STITCH_increment2N, 4},
     {"_STITCH_ram_test", (DL_FUNC) &_STITCH_ram_test, 4},
+    {"_STITCH_get_min_from_position", (DL_FUNC) &_STITCH_get_min_from_position, 5},
     {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
     {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},

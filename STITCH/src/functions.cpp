@@ -83,6 +83,30 @@ Rcpp::List ram_test(
 
 
 
+//' @export
+// [[Rcpp::export]]
+void get_min_from_position(
+    const Rcpp::IntegerVector & match_vec,
+    const Rcpp::IntegerVector & readStart_all,
+    const Rcpp::IntegerVector & readEnd_all,
+    Rcpp::IntegerVector & readMin,
+    Rcpp::IntegerVector & readMax
+) {
+    int w;
+    for(int i=0; i<match_vec.length(); i++) {
+        if (0 <= match_vec(i)) {
+            w = match_vec(i);
+            if (readStart_all(i) < readMin(w)) {
+                readMin(w) = readStart_all(i);
+            }
+            if (readMax(w) < readStart_all(i)) {
+                readMax(w) = readStart_all(i);
+            }
+        }
+    }
+}
+    
+                      
 
 
 //' @export

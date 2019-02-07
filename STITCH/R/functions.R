@@ -2523,7 +2523,10 @@ merge_reads_from_sampleReadsRaw <- function(
     readStart,
     readEnd,
     iSizeUpperLimit,
-    save_sampleReadsInfo = FALSE
+    save_sampleReadsInfo = FALSE,
+    qname_all,
+    readStart_all,
+    readEnd_all
 ) {
     ## wif: 1-based which read it came from
     wif <- sapply(sampleReadsRaw, function(x) x[[5]]) + 1
@@ -2553,6 +2556,28 @@ merge_reads_from_sampleReadsRaw <- function(
     )
     sampleReads <- out$sampleReads
     sampleReadsInfo <- out$sampleReadsInfo
+    ##
+    if (save_sampleReadsInfo) {
+        ## qname vs qname[wif]??
+        readMin <- array(2147483647, nrow(sampleReadsInfo))
+        readMax <- array(0, nrow(sampleReadsInfo))
+        match_vec <- match(qname_all, sampleReadsInfo[, "qname"]) - 1 ## make 0-based
+        match_vec[is.na(match_vec)] <- -1
+        ##
+        ##print(match_vec)
+        ##print(readStart_all)
+        ##print(readEnd_all)
+        ##print(readMin)
+        ##print(readMax)
+        ## pass by reference
+        get_min_from_position(
+            match_vec = match_vec,
+            readStart_all = readStart_all,
+            readEnd_all = readEnd_all,
+            readMin = readMin,
+            readMax = readMax
+        )
+    }
     ## 
     ## which reads are saved (i.e. do not violate iSizeUpperLimit)    
     ##    save_read <-  head(out$save_read, length(qnameUnique))
@@ -2706,13 +2731,18 @@ loadBamAndConvert <- function(
         L = L,
         region = paste0(chr, ":", chrStart, "-", chrEnd),
         file_name = file_name,
-        reference = reference
+        reference = reference,
+        save_sampleReadsInfo = save_sampleReadsInfo
     )
     sampleReadsRaw <- out$sampleReadsRaw
     qname <- out$qname
     strand <- out$strand
     readStart <- out$readStart
     readEnd <- out$readEnd
+    ## relevant if save_sampleReadsInfo = TRUE
+    qname_all <- out$qname_all
+    readStart_all <- out$readStart_all
+    readEnd_all <- out$readEnd_all
 
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
@@ -2727,7 +2757,10 @@ loadBamAndConvert <- function(
             readStart = readStart,
             readEnd = readEnd,
             iSizeUpperLimit = iSizeUpperLimit,
-            save_sampleReadsInfo = save_sampleReadsInfo
+            save_sampleReadsInfo = save_sampleReadsInfo,
+            qname_all = qname_all,
+            readStart_all = readStart_all,
+            readEnd_all = readEnd_all
         )
         sampleReads <- out$sampleReads
         sampleReadsInfo <- out$sampleReadsInfo

@@ -119,7 +119,7 @@ std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<int>,
 }
 
 
-std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int nSNPs, std::vector<int> L, std::string region, std::string file_name, std::string reference) {
+std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int nSNPs, std::vector<int> L, std::string region, std::string file_name, std::string reference, const bool save_sampleReadsInfo) {
     //
     // initialize SeqLib stuff
     //
@@ -146,6 +146,12 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     // slightly separate
     std::vector<std::string> qname; // read name for reads with SNPs in them
     std::vector<std::string> strand; // strand for reads with SNPs in them
+    //
+    // if save_sampleReadsInfo
+    //
+    std::vector<std::string> qname_all; // read name for reads with SNPs in them
+    std::vector<int> out_readStart_all; // 1-based start of read
+    std::vector<int> out_readEnd_all; // 1-based end of read
     //
     // new variables
     //
@@ -253,6 +259,14 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	  }
 	}
 	//
+	// no matter what, save some minimal info on read
+	//
+	if (save_sampleReadsInfo) {
+	  //
+  	    qname_all.push_back(record.Qname());
+	    out_readStart_all.push_back(readStart);
+	    out_readEnd_all.push_back(readEnd);
+	}
 	//
 	// now, for this read, calculate whether there are SNPs - only bother if tMin>=tMax
 	//
@@ -347,5 +361,5 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	  }
 	}
     } // end of loop on read
-    return std::make_tuple(out_num_SNPs, out_BQs, out_SNP_pos, out_iRead, qname, strand, out_readStart, out_readEnd);
+    return std::make_tuple(out_num_SNPs, out_BQs, out_SNP_pos, out_iRead, qname, strand, out_readStart, out_readEnd, qname_all, out_readStart_all, out_readEnd_all);
 }

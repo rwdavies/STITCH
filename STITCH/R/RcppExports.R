@@ -27,8 +27,8 @@ get_sample_data_from_SeqLib <- function(region, file_name, reference = "") {
 }
 
 #' @export
-get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference = "") {
-    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference)
+get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference = "", save_sampleReadsInfo = FALSE) {
+    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference, save_sampleReadsInfo)
 }
 
 #' @export
@@ -69,6 +69,11 @@ increment2N <- function(yT, xT, y, z) {
 #' @export
 ram_test <- function(mat1, mat2, mat3, mat4) {
     .Call('_STITCH_ram_test', PACKAGE = 'STITCH', mat1, mat2, mat3, mat4)
+}
+
+#' @export
+get_min_from_position <- function(match_vec, readStart_all, readEnd_all, readMin, readMax) {
+    invisible(.Call('_STITCH_get_min_from_position', PACKAGE = 'STITCH', match_vec, readStart_all, readEnd_all, readMin, readMax))
 }
 
 #' @export
