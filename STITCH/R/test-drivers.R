@@ -770,8 +770,10 @@ make_fb_test_package <- function(
         hap = TRUE,
         nGrids = nGrids,
         run_fb_grid_offset = 0,
-        use_all_reads = TRUE
-    )
+        use_all_reads = TRUE,
+	bound = TRUE,
+	maxEmissionMatrixDifference = maxEmissionMatrixDifference
+    ) ## can be bounded
     ##
     return(
         list(

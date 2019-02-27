@@ -101,7 +101,7 @@ void Rcpp_run_backward_haploid(
     const arma::mat& transMatRate_t_H
 ) {
     const int T = eMatHapSNP_t.n_cols;
-    const int K = eMatHapSNP_t.n_rows;
+    //const int K = eMatHapSNP_t.n_rows;
     double x;
     arma::colvec e_times_b;
     for(int t = T-2; t >= 0; --t) {
@@ -214,12 +214,14 @@ arma::mat rcpp_make_eMatHapSNP_t(
     const bool hap,
     const int nGrids,
     const int run_fb_grid_offset = 0,
-    const bool use_all_reads = false
+    const bool use_all_reads = false,
+    const bool bound = false,
+    const double maxEmissionMatrixDifference = 1000
 ) {
     //const Rcpp::IntegerVector& wif
     int nReads = sampleReads.size(); //
     const int K = eMatHap_t.n_rows; // traditional K for haplotypes        
-    arma::mat eMatHapSNP_t = arma::ones(K, nGrids);
+    arma::mat eMatHapSNP_t = arma::ones(K, nGrids); // why is this called SNP? 
     int iRead, k, w, readSNP;
     bool proceed;
     //
@@ -241,6 +243,30 @@ arma::mat rcpp_make_eMatHapSNP_t(
             eMatHapSNP_t.col(w) %= eMatHap_t.col(iRead);
             //std::cout << "eMatHap_t.col(iRead) = " << eMatHap_t(0, iRead) << ", " << eMatHap_t(1, iRead) << ", " << eMatHap_t(2, iRead) << ", " << eMatHap_t(3, iRead);
             //                std::cout << std::endl;                
+        }
+    }
+    // now - afterward - cap eMatHapSNP
+    double x, rescale, d2;
+    int t;
+    if (bound) {
+        for(t = 0; t < nGrids; t++) {
+            if (eMatHapSNP_t(0, t) > 0) {
+                x = 0;
+            }
+            for (k = 0; k < K; k++) {
+                if (eMatHapSNP_t(k, t) > x) {
+                    x = eMatHapSNP_t(k, t);
+                }
+            }
+            // x is the maximum now
+            rescale = 1 / x;        
+            for (k = 0; k < K; k++) {
+                eMatHapSNP_t(k, t) *= rescale;
+                d2 = 1 / maxEmissionMatrixDifference;
+                if(eMatHapSNP_t(k, t) < (d2)) {
+                    eMatHapSNP_t(k, t) = d2;
+                }
+            }
         }
     }
     return(eMatHapSNP_t);
@@ -436,9 +462,7 @@ Rcpp::List forwardBackwardHaploid(
   arma::mat gamma_t = arma::zeros(K, T);  
   // variables for transition matrix and initialization
   // int variables and such
-  int t, k1, iRead, readSNP, k;
-  double d = 1;
-  double rescale, x;
+  int t, k;
   Rcpp::List alphaBetaBlocks;
   Rcpp::List to_return;  
   //
@@ -483,30 +507,10 @@ Rcpp::List forwardBackwardHaploid(
       true,
       nGrids,
       run_fb_grid_offset,
-      true
+      true,
+      true,
+      maxEmissionMatrixDifference
   );
-  //
-  // afterwards - cap per-SNP by difference squared 
-  //
-  // now - afterward - cap eMatHapSNP
-  for(t=0; t<=T-1; t++) {
-      // if eMatHapSNP(t, 0) != 0, proceed
-      if (eMatHapSNP_t(0, t) > 0) {
-          x=0;
-          for(k=0; k<=K-1; k++)
-              if(eMatHapSNP_t(k, t)>x)
-                  x=eMatHapSNP_t(k, t);
-          // x is the maximum now
-          rescale = 1 / x;        
-          x=x/d;
-          for(k=0; k<=K-1; k++) {
-              eMatHapSNP_t(k, t) = eMatHapSNP_t(k, t) * rescale;
-              if(eMatHapSNP_t(k, t) < (1 / maxEmissionMatrixDifference)) {
-                  eMatHapSNP_t(k, t)=1 / maxEmissionMatrixDifference;
-              }
-          }
-      }
-  }
   //
   //
   // forward recursion
