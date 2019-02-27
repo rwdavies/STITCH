@@ -250,21 +250,22 @@ arma::mat rcpp_make_eMatHapSNP_t(
     int t;
     if (bound) {
         for(t = 0; t < nGrids; t++) {
-            if (eMatHapSNP_t(0, t) > 0) {
+            // if this is less than exactly 1 (i.e. there are results here), proceed
+            if (eMatHapSNP_t(0, t) < 1) {
                 x = 0;
-            }
-            for (k = 0; k < K; k++) {
-                if (eMatHapSNP_t(k, t) > x) {
-                    x = eMatHapSNP_t(k, t);
+                for (k = 0; k < K; k++) {
+                    if (eMatHapSNP_t(k, t) > x) {
+                        x = eMatHapSNP_t(k, t);
+                    }
                 }
-            }
-            // x is the maximum now
-            rescale = 1 / x;        
-            for (k = 0; k < K; k++) {
-                eMatHapSNP_t(k, t) *= rescale;
-                d2 = 1 / maxEmissionMatrixDifference;
-                if(eMatHapSNP_t(k, t) < (d2)) {
-                    eMatHapSNP_t(k, t) = d2;
+                // x is the maximum now
+                rescale = 1 / x;        
+                for (k = 0; k < K; k++) {
+                    eMatHapSNP_t(k, t) *= rescale;
+                    d2 = 1 / maxEmissionMatrixDifference;
+                    if(eMatHapSNP_t(k, t) < (d2)) {
+                        eMatHapSNP_t(k, t) = d2;
+                    }
                 }
             }
         }
