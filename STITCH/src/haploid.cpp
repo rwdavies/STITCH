@@ -216,7 +216,8 @@ arma::mat rcpp_make_eMatHapSNP_t(
     const int run_fb_grid_offset = 0,
     const bool use_all_reads = false,
     const bool bound = false,
-    const double maxEmissionMatrixDifference = 1000
+    const double maxEmissionMatrixDifference = 1000,
+    const bool rescale = false
 ) {
     //const Rcpp::IntegerVector& wif
     int nReads = sampleReads.size(); //
@@ -246,7 +247,7 @@ arma::mat rcpp_make_eMatHapSNP_t(
         }
     }
     // now - afterward - cap eMatHapSNP
-    double x, rescale, d2;
+    double x, rescale_val, d2;
     int t;
     if (bound) {
         for(t = 0; t < nGrids; t++) {
@@ -259,9 +260,11 @@ arma::mat rcpp_make_eMatHapSNP_t(
                     }
                 }
                 // x is the maximum now
-                rescale = 1 / x;        
+                rescale_val = 1 / x;        
                 for (k = 0; k < K; k++) {
-                    eMatHapSNP_t(k, t) *= rescale;
+                    if (rescale) {                    
+                        eMatHapSNP_t(k, t) *= rescale_val;
+                    }
                     d2 = 1 / maxEmissionMatrixDifference;
                     if(eMatHapSNP_t(k, t) < (d2)) {
                         eMatHapSNP_t(k, t) = d2;
@@ -436,7 +439,8 @@ Rcpp::List forwardBackwardHaploid(
     const bool output_haplotype_dosages = false, // whether to output state probabilities
     const int snp_start_1_based = -1,
     const int snp_end_1_based = -1,
-    const Rcpp::IntegerVector grid = 0
+    const Rcpp::IntegerVector grid = 0,
+    const bool rescale = false
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -510,7 +514,8 @@ Rcpp::List forwardBackwardHaploid(
       run_fb_grid_offset,
       true,
       true,
-      maxEmissionMatrixDifference
+      maxEmissionMatrixDifference,
+      rescale
   );
   //
   //
