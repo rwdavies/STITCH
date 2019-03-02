@@ -765,9 +765,9 @@ make_fb_test_package <- function(
     ##
     eMatHapSNP_t <- rcpp_make_eMatHapSNP_t(
         eMatHap_t = eMatHap_t,
-        H = TRUE, 
+        H = 1, 
         sampleReads = sampleReads,
-        hap = TRUE,
+        hap = 1,
         nGrids = nGrids,
         run_fb_grid_offset = 0,
         use_all_reads = TRUE,

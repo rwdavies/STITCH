@@ -17,7 +17,6 @@ test_that("R and c++ run forward haploid algorithms are the same", {
     eMatHapSNP_t <- test_package$eMatHapSNP_t
     priorCurrent <- test_package$priorCurrent
 
-    
     ## 
     ## c++ - pass by reference
     ##
@@ -35,7 +34,7 @@ test_that("R and c++ run forward haploid algorithms are the same", {
         alphaStart = array(0, 100),
         run_fb_subset = FALSE
     )
-    
+
     ## 
     ## R (returns alphaHat_t, c)
     ## 

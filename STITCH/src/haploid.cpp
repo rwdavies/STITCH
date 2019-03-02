@@ -209,9 +209,9 @@ arma::mat rcpp_make_eMatHap_t(
 // [[Rcpp::export]]
 arma::mat rcpp_make_eMatHapSNP_t(
     const arma::mat& eMatHap_t,
-    const Rcpp::LogicalVector& H,
+    const Rcpp::IntegerVector& H,
     const Rcpp::List sampleReads,
-    const bool hap,
+    const int hap,
     const int nGrids,
     const int run_fb_grid_offset = 0,
     const bool use_all_reads = false,
@@ -507,9 +507,9 @@ Rcpp::List forwardBackwardHaploid(
   prev_section=next_section;
   arma::mat eMatHapSNP_t = rcpp_make_eMatHapSNP_t(
       eMatHap_t,
-      true,
+      1,
       sampleReads,
-      true,
+      1,
       nGrids,
       run_fb_grid_offset,
       true,
