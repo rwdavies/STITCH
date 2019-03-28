@@ -171,6 +171,9 @@ if (error_check == 1) {
     expect_equal(length(grep("teration", stdout)), 0)
 } else if (error_check == 2) {
     expect_equal(length(grep("Build VCF from input", stderr)), 1)
+    if (length(grep("teration", stderr[-1])) != 0) {
+        print(stderr)
+    }
     expect_equal(length(grep("teration", stderr[-1])), 0)
 } else {
     stop("bad CLI test")

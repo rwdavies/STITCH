@@ -5,7 +5,7 @@
 make_STITCH_cli <- function(
     function_file,
     cli_output_file,
-    integer_vectors = c("shuffleHaplotypeIterations", "splitReadIterations", "refillIterations"),
+    integer_vectors = c("shuffleHaplotypeIterations", "splitReadIterations", "refillIterations", "reference_shuffleHaplotypeIterations"),
     character_vectors = c("reference_populations"),
     other_logical_params = NULL,
     other_integer_params = NULL,
@@ -34,7 +34,7 @@ make_STITCH_cli <- function(
     logical_params <- c("outputInputInVCFFormat", "readAware", "regenerateInput", "keepInterimFiles", "keepTempDir", "generateInputOnly", "useSoftClippedBases", "regenerateInputWithDefaultValues", "plotHapSumDuringIterations", "plotAfterImputation", "save_sampleReadsInfo", "plot_shuffle_haplotype_attempts", "keepSampleReadsInRAM", "useTempdirWhileWriting", "output_haplotype_dosages")
     integer_params <- c("K", "chrStart", "chrEnd", "regionStart", "regionEnd", "buffer", "niterations", "nCores", "Jmax", "pseudoHaploidModel", "switchModelIteration", "outputBlockSize", "inputBundleBlockSize", "reference_phred", "reference_iterations", "gridWindowSize", "B_bit_prob", "shuffle_bin_nSNPs", "shuffle_bin_radius", "outputSNPBlockSize")
     double_params <- c("nGen", "downsampleToCov", "downsampleFraction", "maxDifferenceBetweenReads", "maxEmissionMatrixDifference", "alphaMatThreshold", "emissionThreshold", "iSizeUpperLimit", "bqFilter", "expRate", "maxRate", "minRate", "downsampleSamples", "initial_min_hapProb", "initial_max_hapProb")
-    character_params <- c("chr", "posfile", "outputdir", "tempdir", "bamlist", "cramlist", "sampleNames_file", "reference", "genfile", "method", "shuffleHaplotypeIterations", "splitReadIterations", "originalRegionName", "environment", "restartIterations", "refillIterations", "downsampleSamplesKeepList", "subsetSNPsfile", "reference_haplotype_file", "reference_legend_file", "reference_sample_file", "reference_populations", "vcf_output_name", "output_filename", "output_format")
+    character_params <- c("chr", "posfile", "outputdir", "tempdir", "bamlist", "cramlist", "sampleNames_file", "reference", "genfile", "method", "shuffleHaplotypeIterations", "splitReadIterations", "originalRegionName", "environment", "restartIterations", "refillIterations", "downsampleSamplesKeepList", "subsetSNPsfile", "reference_haplotype_file", "reference_legend_file", "reference_sample_file", "reference_populations", "vcf_output_name", "output_filename", "output_format", "reference_shuffleHaplotypeIterations")
     ## deprecated
     integer_params <- c(integer_params, "diploidModel")
     logical_params <- c(logical_params, "outputHaplotypeProbabilities")

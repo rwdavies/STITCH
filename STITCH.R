@@ -344,8 +344,14 @@ option_list <- list(
     make_option(
         "--reference_iterations",
         type = "integer",
-        help = "When using reference haplotypes, how many iterations to use to train the starting data [default 10] ",
-        default = 10
+        help = "When using reference haplotypes, how many iterations to use to train the starting data [default 40] ",
+        default = 40
+    ), 
+    make_option(
+        "--reference_shuffleHaplotypeIterations",
+        type = "character",
+        help = "When using reference haplotypes, how much shuffling to do to lead to better global fit [default c(4, 8, 12, 16)] ",
+        default = "c(4, 8, 12, 16)"
     ), 
     make_option(
         "--output_filename",
@@ -494,6 +500,7 @@ STITCH(
     reference_populations = eval(parse(text=opt$reference_populations)),
     reference_phred = opt$reference_phred,
     reference_iterations = opt$reference_iterations,
+    reference_shuffleHaplotypeIterations = eval(parse(text=opt$reference_shuffleHaplotypeIterations)),
     output_filename = opt$output_filename,
     initial_min_hapProb = opt$initial_min_hapProb,
     initial_max_hapProb = opt$initial_max_hapProb,

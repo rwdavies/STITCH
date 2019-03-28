@@ -136,7 +136,7 @@ STITCH <- function(
     reference_populations = NA,
     reference_phred = 20,
     reference_iterations = 40,
-    reference_shuffleHaplotypeIterations = c(4, 8, 12, 16),    
+    reference_shuffleHaplotypeIterations = c(4, 8, 12, 16),
     output_filename = NULL,
     initial_min_hapProb = 0.4,
     initial_max_hapProb = 0.6,
