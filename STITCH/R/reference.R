@@ -429,44 +429,6 @@ run_EM_on_reference_sample_reads <- function(
     shuffle_bin_radius
 ) {
 
-    if (1 == 0) {
-
-    ## default values
-    eHapsCurrent <- matrix(runif(nSNPs * K), ncol = K)
-    if (startIterations > 0) # but, make the rest of them uniform - get info later
-        eHapsCurrent[(2 * windowSNPs + 1):nSNPs, ] <- 0.25
-        ## initialize using rate assuming 0.5 cM/Mb, nSNPs = 100
-    alphaMatCurrent <- matrix(1 / K, nrow = (nGrids - 1), ncol = K)
-    priorCurrent <- rep(1 / K, K)
-    hapSumCurrent <- array(1 / K, c(nGrids, K))
-    reference_panel_SNPs <- array(FALSE, nSNPs)
-    ##
-    if (is.null(grid_distances)) {
-        dl <- diff(L)
-    } else {
-        dl <- grid_distances
-    }
-    sigmaCurrent <- exp(-nGen * expRate / 100 / 1000000 * dl)
-        cols_to_replace <- sample(1:ncol(reference_haps), K)
-        n1 <- nrow(reference_haps)
-        n2 <- length(cols_to_replace)
-        noise <- matrix(
-            runif(n1 * n2, min = 0, max = 1),
-            nrow = n1, ncol = n2
-        )
-        eHapsCurrent <- 0.99 * reference_haps[, cols_to_replace] + 0.01 * noise
-        n1 <- sum(is.na(eHapsCurrent[, 1]))
-        if (n1 > 0) {
-            n2 <- ncol(eHapsCurrent)
-            to_replace <- matrix(
-                runif(n1 * n2, min = 0.4, max = 0.6),
-                nrow = n1, ncol = n2
-            )
-            eHapsCurrent[is.na(eHapsCurrent[, 1]), ] <- to_replace
-        }
-
-    }
-    
     ## note - for haplotype shuffling
     ## after   (iteration - 1), find the spots to examine
     ## during  (iteration - 0), examine the shuffling
