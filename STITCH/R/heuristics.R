@@ -315,8 +315,10 @@ define_and_save_breaks_to_consider <- function(
             ##for(i in 1:(nSNPs - 1)) {
             ##    rate[L[i]:L[i + 1]] <- (-log(sigmaSum_unnormalized[i]) / grid_distances[i])
             ## }
-            x1 <- exp(-nGen * minRate * grid_distances/100/1000000) # lower
-            x2 <- exp(-nGen * maxRate * grid_distances/100/1000000) # upper
+            x1_pre_exp <- -nGen * minRate * grid_distances/100/1000000
+            x1 <- exp(x1_pre_exp) # lower
+            x2_pre_exp <- -nGen * maxRate * grid_distances/100/1000000
+            x2 <- exp(x2_pre_exp) # upper
             ## make matrix with useful things
             realized_rate <- (-log(sigmaSum_unnormalized) / grid_distances)
             realized_rate_no_NA <- realized_rate
@@ -327,9 +329,9 @@ define_and_save_breaks_to_consider <- function(
                 min_prob = x1,
                 realized_prob = sigmaSum_unnormalized,
                 max_prob = x2,
-                min_rate = (-log(x1) / grid_distances),
+                min_rate = (-x1_pre_exp / grid_distances),
                 realized_rate = realized_rate,
-                max_rate = (-log(x2) / grid_distances),
+                max_rate = (-x2_pre_exp / grid_distances),
                 cumu_rate = cumu_rate
             )
             save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName))
@@ -626,7 +628,8 @@ plot_attempt_to_find_shuffles <- function(
     outputdir,
     regionName,
     iteration,
-    whichIsBest = NULL
+    whichIsBest = NULL,
+    is_reference = FALSE
 ) {
     add_grey_background <- function(L_grid) {
         from <- floor(min(L_grid) / 1e6)
@@ -654,7 +657,12 @@ plot_attempt_to_find_shuffles <- function(
     }
     xlim <- c(head(L_grid)[1], tail(L_grid)[1])    
     ## do plot here
-    outname <- file.path(outputdir, "plots", paste0("shuffleHaplotypes.", iteration, ".",regionName,".png"))
+    if (is_reference) {
+        ref_text <- ".ref"
+    } else {
+        ref_text <- ""
+    }
+    outname <- file.path(outputdir, "plots", paste0("shuffleHaplotypes", ref_text, ".", iteration, ".",regionName,".png"))
     ## make a 5 Mbp segment 60 wide. then bound up and down at 20 and 200
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 30, width = width, res = 100, units = "in")

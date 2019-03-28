@@ -27,7 +27,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   outputSNPBlockSize = 10000, inputBundleBlockSize = NA,
   reference_haplotype_file = "", reference_legend_file = "",
   reference_sample_file = "", reference_populations = NA,
-  reference_phred = 20, reference_iterations = 10,
+  reference_phred = 20, reference_iterations = 40,
+  reference_shuffleHaplotypeIterations = c(4, 8, 12, 16),
   output_filename = NULL, initial_min_hapProb = 0.4,
   initial_max_hapProb = 0.6, regenerateInputWithDefaultValues = FALSE,
   plotHapSumDuringIterations = FALSE,
@@ -153,6 +154,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{reference_phred}{Phred scaled likelihood or an error of reference haplotype. Higher means more confidence in reference haplotype genotypes, lower means less confidence}
 
 \item{reference_iterations}{When using reference haplotypes, how many iterations to use to train the starting data}
+
+\item{reference_shuffleHaplotypeIterations}{When using reference haplotypes, how much shuffling to do to lead to better global fit}
 
 \item{output_filename}{Override the default bgzip-VCF / bgen output name with this given file name. Please note that this does not change the names of inputs or outputs (e.g. RData, plots), so if outputdir is unchanged and if multiple STITCH runs are processing on the same region then they may over-write each others inputs and outputs}
 

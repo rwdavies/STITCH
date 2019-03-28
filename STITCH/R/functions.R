@@ -58,6 +58,7 @@
 #' @param reference_populations Vector with character populations to include from reference_sample_file e.g. CHB, CHS
 #' @param reference_phred Phred scaled likelihood or an error of reference haplotype. Higher means more confidence in reference haplotype genotypes, lower means less confidence
 #' @param reference_iterations When using reference haplotypes, how many iterations to use to train the starting data
+#' @param reference_shuffleHaplotypeIterations When using reference haplotypes, how much shuffling to do to lead to better global fit
 #' @param output_filename Override the default bgzip-VCF / bgen output name with this given file name. Please note that this does not change the names of inputs or outputs (e.g. RData, plots), so if outputdir is unchanged and if multiple STITCH runs are processing on the same region then they may over-write each others inputs and outputs
 #' @param initial_min_hapProb Initial lower bound for probability read comes from haplotype. Double bounded between 0 and 1
 #' @param initial_max_hapProb Initial upper bound for probability read comes from haplotype. Double bounded between 0 and 1
@@ -134,7 +135,8 @@ STITCH <- function(
     reference_sample_file = "",
     reference_populations = NA,
     reference_phred = 20,
-    reference_iterations = 10,
+    reference_iterations = 40,
+    reference_shuffleHaplotypeIterations = c(4, 8, 12, 16),    
     output_filename = NULL,
     initial_min_hapProb = 0.4,
     initial_max_hapProb = 0.6,
@@ -241,6 +243,7 @@ STITCH <- function(
     validate_reference_files(reference_haplotype_file, reference_legend_file, reference_sample_file, reference_populations, niterations)
     validate_refillIterations(refillIterations, niterations)
     validate_shuffleHaplotypeIterations(shuffleHaplotypeIterations, niterations)
+    validate_shuffleHaplotypeIterations(reference_shuffleHaplotypeIterations, reference_iterations)
     validate_hapProb(initial_min_hapProb, initial_max_hapProb)
 
 
@@ -519,7 +522,7 @@ STITCH <- function(
     ##
     ## initialize variables
     ##
-    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids)
+    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius)
     sigmaCurrent <- out$sigmaCurrent
     eHapsCurrent <- out$eHapsCurrent
     alphaMatCurrent <- out$alphaMatCurrent
@@ -1261,7 +1264,11 @@ initialize_parameters <- function(
     niterations,
     grid,
     grid_distances,
-    nGrids
+    nGrids,
+    reference_shuffleHaplotypeIterations,
+    L_grid,
+    plot_shuffle_haplotype_attempts,
+    shuffle_bin_radius
 ) {
 
     print_message("Begin parameter initialization")
@@ -1299,7 +1306,7 @@ initialize_parameters <- function(
         ## 
         to_out <- get_and_initialize_from_reference(
             sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, ## first bit is default
-            reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids)
+            reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius)
     }
 
     print_message("Done parameter initialization")
@@ -3813,7 +3820,8 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
                 outputdir = outputdir,
                 regionName = regionName,
                 iteration = iteration,
-                whichIsBest = whichIsBest
+                whichIsBest = whichIsBest,
+                is_reference = FALSE ## obvious!
             )
             ## for now, re-save everything to replot, etc
             ## print("REMOVE ME")
