@@ -545,6 +545,7 @@ simple_write <- function(matrix, file, gzip = FALSE, col.names = TRUE) {
         close(file)
 }
 
+#' @export
 make_reference_package <- function(
     regionName = "test",
     n_snps = 10,
