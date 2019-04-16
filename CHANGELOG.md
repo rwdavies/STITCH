@@ -1,3 +1,5 @@
+* v1.5.6
+	* Add reference_shuffleHaplotypeIterations
 * v1.5.5
 	* Export functions so STITCH can serve as a library
 * v1.5.4
