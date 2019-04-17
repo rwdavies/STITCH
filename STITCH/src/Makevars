@@ -8,12 +8,13 @@ all : $(SHLIB)
 
 $(SHLIB) : SeqLib
 
+CC=$(shell "R CMD config CC")
 CXX=$(shell "R CMD config CXX")
 CPPFLAGS=$(shell "R CMD config CPPFLAGS")
 LDFLAGS=$(shell "R CMD config LDFLAGS")
 
 SeqLib:
 	(cd SeqLib && \
-	./configure CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
-	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
-	cd htslib && $(MAKE) libhts.a CXX="$(CXX)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
+	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
+	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
+	cd htslib && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
