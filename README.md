@@ -1,13 +1,13 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.6__**
-Release date: April 16, 2019
+**__Current Version: 1.5.7__**
+Release date: April 17, 2019
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Add reference_shuffleHaplotypeIterations
+1. Push CC through to htslib to robustify against compilation issues 
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -25,8 +25,8 @@ git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
 cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.5.6/STITCH_1.5.6.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.5.6.tar.gz
+wget https://github.com/rwdavies/stitch/releases/download/1.5.7/STITCH_1.5.7.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.5.7.tar.gz
 ```
 
 A quick test on real data can be performed using 
