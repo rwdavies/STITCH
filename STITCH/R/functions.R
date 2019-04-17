@@ -3737,6 +3737,17 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
 
     check_mclapply_OK(single_iteration_results)
 
+    ## print r2's
+    print_estimate_of_performance_during_run(
+        highCovInLow = highCovInLow,
+        gen = gen,
+        tempdir = tempdir,
+        regionName = regionName,
+        alleleCount = alleleCount,
+        iteration = iteration,
+        outputdir = outputdir
+    )
+    
     if (iteration == niterations) {
         ## if this is the final iteration, just save forward backwards, possibly to disk
         ## then exit
@@ -3873,26 +3884,6 @@ completeSampleIteration <- function(N,tempdir,chr,K,K_subset, K_random, nSNPs, n
             "Split reads, average N=",round(mean(readsSplit))," (",round(100*mean(readsSplit)/mean(readsTotal),3), " %)"
         ))
         save(readsTotal,readsSplit,file = file.path(outputdir, "RData", paste0("splitReads.",regionName,".iteration.",iteration,".RData")))
-    }
-    ##
-    ## finally, if we have high coverage samples, run them
-    ##
-    if(length(highCovInLow)>0) {
-        currentR2 <- getR2DuringEMAlgorithm(highCovInLow,gen=gen,tempdir=tempdir,regionName=regionName, alleleCount = alleleCount)
-        ## output!
-        write.table(
-            matrix(c(iteration,round(currentR2,4),date()),nrow=1),
-            file = file.path(outputdir, "RData", paste0("interim.r2",chr,".txt")),
-            row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE,append=iteration>1
-        )
-        if (iteration == 1)
-            print_message("Printing out per-sample and mean estimates of correlation between provided genotypes from genfile and sample dosages, oriented so that the major allele has dosage 0 and the minor allele has dosage 1")
-        y <- round(currentR2, 3)
-        print_message(paste0(
-            "iteration=", iteration, ", sample(r2)=",
-            paste(y[-length(y)], collapse = ", "),
-            " - mean=", y[length(y)]
-        ))
     }
     ##
     ## also, if there is phasing data, calculate PSE
@@ -4960,58 +4951,6 @@ snap_sampleReads_to_grid <- function(sampleReads, grid) {
 }
 
 
-## assign each of the positions to a grid
-## input is numbers, e.g. 3, 5, 10, 15
-## and a windowSize, like 5
-## output is 1-based on grid coordinates, like
-## 1-5 -> 0, 6-10 -> 1, etc
-## remove holes, sigma will be made able to handle it with bounding
-assign_positions_to_grid <- function(
-    L,
-    gridWindowSize
-) {
-    if (is.na(gridWindowSize) == FALSE) {
-        grid <- ceiling(L / gridWindowSize)
-        grid <- grid - min(grid)
-        ## for L_grid, get first mid-point
-        L_grid_start <- gridWindowSize * (ceiling(L[1] / gridWindowSize) - 0.5)
-        grid_distances <- diff(unique(grid)) * gridWindowSize
-        L_grid <- L_grid_start + c(0, cumsum(grid_distances))
-        grid <- match(grid, unique(grid)) - 1
-        nGrids <- length(grid_distances) + 1
-        if ((length(L_grid) - length(grid_distances)) != 1) {
-            stop("An error has been made assigning SNP positions to grid. Please report this")
-        }
-        ## this allows one to go from grid to start and end of SNPs in that grid
-        ## so e.g. the fifth grid with 0-based index 4
-        ## has 1-based SNPs starting from
-        ## snps_in_grid_1_based[4 + 1, "grid_starts"]
-        ## to
-        ## snps_in_grid_1_based[4 + 1, "grid_ends"]        
-        snps_in_grid_1_based <- cbind(
-            snps_start = match(unique(grid), grid),
-            snps_end = length(grid) - match(unique(grid), grid[length(grid):1]) + 1
-        )
-    } else {
-        grid <- 0:(length(L) - 1)
-        grid_distances <- diff(L)
-        L_grid <- L
-        nGrids <- length(L)
-        snps_in_grid_1_based <- cbind(
-            snps_start = 1:nGrids,
-            snps_end = 1:nGrids
-        )
-    }
-    return(
-        list(
-            grid = grid,
-            grid_distances = grid_distances,
-            L_grid = L_grid,
-            nGrids = nGrids,
-            snps_in_grid_1_based = snps_in_grid_1_based
-        )
-    )
-}
 
 
 
@@ -5338,3 +5277,39 @@ reorder_alphaBetaBlocks <- function(single_iteration_results, sampleRanges, N, K
     )
 }
     
+
+print_estimate_of_performance_during_run <- function(
+    highCovInLow,
+    gen,
+    tempdir,
+    regionName,
+    alleleCount,
+    iteration,
+    outputdir
+) {
+    if (length(highCovInLow) > 0) {
+        currentR2 <- getR2DuringEMAlgorithm(
+            highCovInLow = highCovInLow,
+            gen = gen,
+            tempdir = tempdir,
+            regionName = regionName,
+            alleleCount = alleleCount
+        )
+        ## output!
+        write.table(
+            matrix(c(iteration,round(currentR2,4),date()),nrow=1),
+            file = file.path(outputdir, "RData", paste0("interim.r2", regionName, ".txt")),
+            row.names = FALSE, col.names = FALSE, sep="\t", quote = FALSE, append = iteration > 1
+        )
+        if (iteration == 1) {
+            print_message("Printing out per-sample and mean estimates of correlation between provided genotypes from genfile and sample dosages, oriented so that the major allele has dosage 0 and the minor allele has dosage 1")
+        }
+        y <- round(currentR2, 3)
+        print_message(paste0(
+            "iteration=", iteration, ", sample(r2)=",
+            paste(y[-length(y)], collapse = ", "),
+            " - mean=", y[length(y)]
+        ))
+    }
+    return(NULL)
+}
