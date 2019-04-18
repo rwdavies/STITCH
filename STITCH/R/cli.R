@@ -16,7 +16,7 @@ make_STITCH_cli <- function(
 ) {
 
     a <- readLines(function_file, n = 200)
-    params <- a[grep("param", a)]
+    params <- a[grep("@param", a)]
     x <- grep("initialize_parameters", params)
     if (length(x) > 0)
         params <- params[-x]
@@ -49,13 +49,14 @@ make_STITCH_cli <- function(
     param_type[match(integer_params, param_names)] <- "integer"
     param_type[match(double_params, param_names)] <- "double"
     param_type[match(character_params, param_names)] <- "character"
-    if (sum(is.na(param_type)) > 0)
+    if (sum(is.na(param_type)) > 0) {
         stop(
             paste0(
                 "Unassigned parameter types:",
                 paste0(param_names[is.na(param_type)], collapse = ",")
             )
         )
+    }
 
     names(param_type) <- param_names
 
