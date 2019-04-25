@@ -363,8 +363,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_eMatHap_t
-arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid);
-RcppExport SEXP _STITCH_rcpp_make_eMatHap_t(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP) {
+arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid, const bool rescale_eMatHap_t);
+RcppExport SEXP _STITCH_rcpp_make_eMatHap_t(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP, SEXP rescale_eMatHap_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -377,7 +377,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH1(pRgivenH1SEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH2(pRgivenH2SEXP);
     Rcpp::traits::input_parameter< const bool >::type run_pseudo_haploid(run_pseudo_haploidSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_eMatHap_t(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid));
+    Rcpp::traits::input_parameter< const bool >::type rescale_eMatHap_t(rescale_eMatHap_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_eMatHap_t(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid, rescale_eMatHap_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -612,7 +613,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 6},
     {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
     {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 5},
-    {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 9},
+    {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 10},
     {"_STITCH_rcpp_make_eMatHapSNP_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHapSNP_t, 10},
     {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 10},
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},

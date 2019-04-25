@@ -33,7 +33,8 @@ arma::mat rcpp_make_eMatHap_t(
     arma::mat& eMatHapOri_t,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
-    const bool run_pseudo_haploid = false
+    const bool run_pseudo_haploid = false,
+    const bool rescale_eMatHap_t = true    
 );
 
 arma::mat rcpp_calculate_fbd_dosage(
