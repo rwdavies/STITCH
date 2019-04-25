@@ -2963,7 +2963,8 @@ run_forward_backwards <- function(
     alphaHat_t = array(0, c(1, 1)),
     betaHat_t = array(0, c(1, 1)),
     output_haplotype_dosages = FALSE,
-    rescale_eMat_t = TRUE
+    rescale_eMat_t = TRUE,
+    rescale_eMatHap_t = TRUE
 ) {
 
     Jmax_local <- get_Jmax_wrt_iteration(Jmax, iteration, niterations)

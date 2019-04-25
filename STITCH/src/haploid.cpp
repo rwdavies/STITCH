@@ -127,7 +127,8 @@ arma::mat rcpp_make_eMatHap_t(
     arma::mat& eMatHapOri_t,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
-    const bool run_pseudo_haploid = false
+    const bool run_pseudo_haploid = false,
+    const bool rescale_eMatHap_t = true
 ) {
     //
     // constants
@@ -190,15 +191,17 @@ arma::mat rcpp_make_eMatHap_t(
         //
         // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
         //
-        x=0;
-        for(k=0; k<=K-1; k++)
-            if(eMatHap_t(k,iRead)>x)
-                x=eMatHap_t(k,iRead);
-        x = x / maxDifferenceBetweenReads;
-        // x is the maximum now
-        for(k=0; k<=K-1; k++)
-            if(eMatHap_t(k,iRead)<x)
-                eMatHap_t(k,iRead) = x;
+        if (rescale_eMatHap_t) {
+            x=0;
+            for(k=0; k<=K-1; k++)
+                if(eMatHap_t(k,iRead)>x)
+                    x=eMatHap_t(k,iRead);
+            x = x / maxDifferenceBetweenReads;
+            // x is the maximum now
+            for(k=0; k<=K-1; k++)
+                if(eMatHap_t(k,iRead)<x)
+                    eMatHap_t(k,iRead) = x;
+        }
     }
     return(eMatHap_t);
 }
