@@ -103,8 +103,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_and_bound_eMat_t
-arma::mat rcpp_make_and_bound_eMat_t(const arma::mat& eMatHap_t, const Rcpp::List& sampleReads, const int& nReads, const int& K, const int& T, const double& maxEmissionMatrixDifference, const int run_fb_grid_offset);
-RcppExport SEXP _STITCH_rcpp_make_and_bound_eMat_t(SEXP eMatHap_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP KSEXP, SEXP TSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP run_fb_grid_offsetSEXP) {
+arma::mat rcpp_make_and_bound_eMat_t(const arma::mat& eMatHap_t, const Rcpp::List& sampleReads, const int& nReads, const int& K, const int& T, const double& maxEmissionMatrixDifference, const int run_fb_grid_offset, const bool rescale_eMat_t);
+RcppExport SEXP _STITCH_rcpp_make_and_bound_eMat_t(SEXP eMatHap_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP KSEXP, SEXP TSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP run_fb_grid_offsetSEXP, SEXP rescale_eMat_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -115,7 +115,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type T(TSEXP);
     Rcpp::traits::input_parameter< const double& >::type maxEmissionMatrixDifference(maxEmissionMatrixDifferenceSEXP);
     Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset));
+    Rcpp::traits::input_parameter< const bool >::type rescale_eMat_t(rescale_eMat_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset, rescale_eMat_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -154,8 +155,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // forwardBackwardDiploid
-Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages);
-RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP) {
+Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages, const bool rescale_eMat_t);
+RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP, SEXP rescale_eMat_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -191,7 +192,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type update_in_place(update_in_placeSEXP);
     Rcpp::traits::input_parameter< const bool >::type pass_in_alphaBeta(pass_in_alphaBetaSEXP);
     Rcpp::traits::input_parameter< const bool >::type output_haplotype_dosages(output_haplotype_dosagesSEXP);
-    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages));
+    Rcpp::traits::input_parameter< const bool >::type rescale_eMat_t(rescale_eMat_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, rescale_eMat_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -595,10 +597,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_sample_data_from_SeqLib", (DL_FUNC) &_STITCH_get_sample_data_from_SeqLib, 3},
     {"_STITCH_get_sampleReadsRaw_from_SeqLib", (DL_FUNC) &_STITCH_get_sampleReadsRaw_from_SeqLib, 11},
     {"_STITCH_collapse_diploid_gamma", (DL_FUNC) &_STITCH_collapse_diploid_gamma, 3},
-    {"_STITCH_rcpp_make_and_bound_eMat_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMat_t, 7},
+    {"_STITCH_rcpp_make_and_bound_eMat_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMat_t, 8},
     {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
     {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 8},
-    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 32},
+    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 33},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},
     {"_STITCH_increment2N", (DL_FUNC) &_STITCH_increment2N, 4},
     {"_STITCH_ram_test", (DL_FUNC) &_STITCH_ram_test, 4},

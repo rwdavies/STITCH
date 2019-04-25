@@ -37,8 +37,8 @@ collapse_diploid_gamma <- function(gamma_t, T, K) {
 }
 
 #' @export
-rcpp_make_and_bound_eMat_t <- function(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset = 0L) {
-    .Call('_STITCH_rcpp_make_and_bound_eMat_t', PACKAGE = 'STITCH', eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset)
+rcpp_make_and_bound_eMat_t <- function(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset = 0L, rescale_eMat_t = TRUE) {
+    .Call('_STITCH_rcpp_make_and_bound_eMat_t', PACKAGE = 'STITCH', eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset, rescale_eMat_t)
 }
 
 #' @export
@@ -52,8 +52,8 @@ rcpp_make_diploid_jUpdate <- function(jUpdate_t, K, T, alphaHat_t, betaHat_t, tr
 }
 
 #' @export
-forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE) {
-    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages)
+forwardBackwardDiploid <- function(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets = FALSE, alphaStart = 0L, betaEnd = 0L, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE, rescale_eMat_t = TRUE) {
+    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, rescale_eMat_t)
 }
 
 #' @export

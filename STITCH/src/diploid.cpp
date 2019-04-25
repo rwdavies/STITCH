@@ -96,7 +96,8 @@ arma::mat rcpp_make_and_bound_eMat_t(
     const int& K,
     const int& T,
     const double& maxEmissionMatrixDifference,
-    const int run_fb_grid_offset = 0
+    const int run_fb_grid_offset = 0,
+    const bool rescale_eMat_t = true
 ) {
     int readSNP;
     double x, rescale;
@@ -115,6 +116,12 @@ arma::mat rcpp_make_and_bound_eMat_t(
                 eMat_t(k3 + k2, readSNP) *= (x + eMatHap_t_col(k2));                
             }
         }  // end of SNP in read
+    }
+    //
+    // if so desired, do not rescale eMat_t
+    //
+    if (!rescale_eMat_t) {
+        return eMat_t;
     }
     //
     // cap eMat, ie P(reads | k1,k2) to be within maxDifferenceBetweenReads^2
@@ -522,7 +529,8 @@ Rcpp::List forwardBackwardDiploid(
     const bool return_extra = false, // whether to return stuff useful for debugging
     const bool update_in_place = false, // update directly into output variables
     const bool pass_in_alphaBeta = false, // whether to pass in pre-made alphaHat, betaHat
-    const bool output_haplotype_dosages = false // whether to output state probabilities
+    const bool output_haplotype_dosages = false, // whether to output state probabilities
+    const bool rescale_eMat_t = true // whether to rescale emat to minimize underflow problems, or to avoid, so log(c) = P(O | \lambda) has meaning    
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -584,7 +592,7 @@ Rcpp::List forwardBackwardDiploid(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   //
-  arma::mat eMat_t = rcpp_make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset);
+  arma::mat eMat_t = rcpp_make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset, rescale_eMat_t);
   //
   // forward recursion
   //
