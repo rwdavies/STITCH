@@ -246,7 +246,7 @@ test_that("phase throws an error if values other than 0 or 1 are used", {
     expect_error(
         get_and_validate_phase(phasefile),
         paste0(
-            "The phasefile contains entries other than 0 or 1. One such entry is in column 1 and row 4  with value 2|0"
+            "The phasefile contains entries other than 0 or 1. One such entry is in column 1 and row 2  with value 2|0"
         ),
         fixed = TRUE
     )

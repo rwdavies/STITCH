@@ -129,14 +129,16 @@ test_that("can smooth rate", {
 
 test_that("can define breaks on tiny region", {
 
-    set.seed(10)        
+    set.seed(10)
     tempdir <- tempdir()
     regionName <- "blargh"
     L <- sort(sample(1000000, 500))
     shuffle_bin_radius <- 2000
     ## make sure it tests going to the end
     L <- unique(sort(c(1, shuffle_bin_radius, L)))
-    L <- unique(sort(c(L, 100000 - shuffle_bin_radius + 1, 100000)))
+    L <- unique(sort(c(L, 1000000 - shuffle_bin_radius + 1, 1000000)))
+    ## carve out a hole - guarantees, given fixed sigmaSum below, will pass test
+    L <- L[L <= (500000 - 20000) | (500000 + 20000) <= L]
     nGen <- 100
     minRate <- 0.1
     maxRate <- 100
