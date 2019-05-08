@@ -413,6 +413,10 @@ check_output_against_phase <- function(
         )
         var_info <- read.table(paste0(file, ".per_snp_stats.txt.gz"), header = TRUE)
         expect_equal(nrow(var_info), nrow(out$gp))
+        if (sum((var_info[, "INFO_SCORE"] < min_info)) > 0) {
+            print(paste0("min_info = ", min_info))
+            print(var_info[, "INFO_SCORE"])
+        }
         expect_equal((var_info[, "INFO_SCORE"] >= min_info), rep(TRUE, nrow(var_info)))
     } else {
         ## 

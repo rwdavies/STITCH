@@ -3247,7 +3247,7 @@ within_EM_per_sample_heuristics <- function(
         pRgivenH2 <- r$pRgivenH2
         save(
             srp, pRgivenH1, pRgivenH2,
-            file = file.path(tempdir, paste0("sample.",iSample,".readProbs.",regionName,".RData"))
+            file = file_sampleProbs(tempdir, iSample, regionName)
         )
     }
     ##
