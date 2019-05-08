@@ -4484,7 +4484,11 @@ getR2DuringEMAlgorithm <- function(
         ## print_message(paste0("range(y) = ", range(y, na.rm=TRUE)))
         x[to_flip] <- 2 - x[to_flip]
         y[to_flip] <- 2 - y[to_flip]
-        store[isample] <- suppressWarnings(cor(x, y, use = "complete.obs") ** 2)
+        if (sum(!is.na(x + y)) == 0) {
+            store[isample] <- NA
+        } else {
+            store[isample] <- suppressWarnings(cor(x, y, use = "complete.obs") ** 2)
+        }
     }
     store[n_hc + 1]=mean(store[1:n_hc])
     return(store)

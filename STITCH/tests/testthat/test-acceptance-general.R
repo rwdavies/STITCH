@@ -173,6 +173,41 @@ test_that("STITCH diploid works with completely split reads", {
 
 })
 
+test_that("STITCH diploid works with genfile with entirely NA columns", {
+
+    outputdir <- make_unique_tempdir()
+
+    local_genfile <- tempfile()
+    gen <- read.table(data_package$genfile, header = TRUE)
+    gen[, 1] <- NA
+    write.table(gen, file = local_genfile, row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = local_genfile,
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        outputBlockSize = 3
+    )
+
+    vcf <- read.table(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
+
+
 test_that("STITCH diploid works under default parameters when outputdir has a space or a tilda in it", {
 
     ## not 100% sure I can write to this in all systems, so check it first
