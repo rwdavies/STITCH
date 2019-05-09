@@ -268,8 +268,7 @@ STITCH <- function(
     print_message("Program start")
     if(generateInputOnly==FALSE) {
         date <- date()        
-        file <- file.path(outputdir, "RData", paste0("start.", regionName ,".RData"))
-        save(date, file = file)
+        save(date, file = file_date(outputdir, regionName, "start"))
     }
 
 
@@ -571,9 +570,9 @@ STITCH <- function(
     ##
     ## run EM algorithm here
     ##
-    print_message("Begin EM")
+    print_message("Start EM")
     date <- date()
-    save(date, file = file.path(outputdir, "RData", paste0("startEM.", regionName, ".RData")))
+    save(date, file = file_date(outputdir, regionName, "startEM"))
     print_message(paste0("Number of samples: ", N))
     print_message(paste0("Number of SNPs: ", nSNPs))
     if (nGrids != nSNPs) {
@@ -647,6 +646,10 @@ STITCH <- function(
         }
     }
 
+    print_message("End EM")
+    date <- date()
+    save(date, file = file_date(outputdir, regionName, "endEM"))
+    
     ##
     ## build final output
     ##
@@ -825,7 +828,7 @@ STITCH <- function(
 
     date <- date()
     print_message("Program done")
-    save(date, file = file.path(outputdir, "RData", paste0("end.",regionName,".RData")))
+    save(date, file = file_date(outputdir, regionName, "end"))
 
     return(NULL)
 

@@ -158,3 +158,11 @@ file_fbdStore <- function(tempdir, regionName, iteration) {
         paste0("fbdStore.",regionName,".", iteration, ".RData")
     ))
 }
+
+#' @export
+file_date <- function(outputdir, regionName, what) {
+    if (!(what %in% c("start", "startEM", "endEM", "end"))) {
+        stop("bad date file selection")
+    }
+    file.path(outputdir, "RData", paste0(what, ".", regionName,".RData"))
+}
