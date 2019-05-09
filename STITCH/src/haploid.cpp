@@ -580,7 +580,6 @@ Rcpp::List forwardBackwardHaploid(
       gamma_t.col(t) *= g_temp;
   }
   //
-  // optional early return, for final iteration
   //
   if (output_haplotype_dosages) {
       // calculate expanded version? for output?
@@ -592,6 +591,8 @@ Rcpp::List forwardBackwardHaploid(
   }
   //
   to_return.push_back(gamma_t, "gamma_t");
+  //
+  // optional early return, when running subset (i.e. writing)
   //
   if (run_fb_subset == true) {
       return(to_return);

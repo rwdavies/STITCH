@@ -3196,7 +3196,10 @@ within_EM_per_sample_heuristics <- function(
     plot_shuffle_haplotype_attempts,
     grid_distances,
     return_a_sampled_path,
-    sampledPathList
+    sampledPathList,
+    bundling_info,
+    niterations,
+    priorCurrent
 ) {
     ## 
     ##
@@ -3241,16 +3244,31 @@ within_EM_per_sample_heuristics <- function(
         fbsoL <- out$fbsoL
     }
     ##
-    ## update pseudo diploid probabilities
+    ## update pseudo diploid probabilities - unless final iteration
     ##
     if (method == "pseudoHaploid") {
-        r <- pseudoHaploidUpdate(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp, K = K)
-        pRgivenH1 <- r$pRgivenH1
-        pRgivenH2 <- r$pRgivenH2
+        if (iteration != niterations) {
+            r <- pseudoHaploidUpdate(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp, K = K)
+            pRgivenH1 <- r$pRgivenH1
+            pRgivenH2 <- r$pRgivenH2
+        }
         save(
             srp, pRgivenH1, pRgivenH2,
             file = file_sampleProbs(tempdir, iSample, regionName)
         )
+        ##
+        if (length(bundling_info) > 0) {
+            last_in_bundle <- bundling_info$matrix[iSample, "last_in_bundle"]
+            if (last_in_bundle == 1) {
+                bundle_inputs_after_generation(
+                    bundling_info = bundling_info,
+                    iBam = iSample,
+                    dir = tempdir,
+                    regionName = regionName,
+                    what = "sampleProbs"
+                )
+            }
+        }
     }
     ##
     ## check high coverage samples if applicable
@@ -3628,7 +3646,10 @@ subset_of_complete_iteration <- function(sampleRange,tempdir,chr,K,K_subset, K_r
             plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
             grid_distances = grid_distances,
             return_a_sampled_path = return_a_sampled_path,
-            sampledPathList = sampledPathList
+            sampledPathList = sampledPathList,
+            bundling_info = bundling_info,
+            niterations = niterations,
+            priorCurrent = priorCurrent
         )
         readsTotal <- out$readsTotal
         readsSplit <- out$readsSplit

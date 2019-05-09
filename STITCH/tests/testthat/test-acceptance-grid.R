@@ -101,11 +101,11 @@ test_that("STITCH diploid works with snap to grid with a buffer", {
 
 test_that("STITCH pseudoHaploid works with grid", {
 
-    outputdir <- make_unique_tempdir()
-
     for(output_format in c("bgvcf", "bgen")) {
 
-        set.seed(1301)
+        outputdir <- make_unique_tempdir()
+
+        set.seed(1302)
 
         STITCH(
             chr = data_package$chr,
