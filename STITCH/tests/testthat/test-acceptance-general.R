@@ -534,7 +534,8 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
                     data_package = data_package_few,
                     output_format,
                     which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
-                    tol = 0.2
+                    tol = 0.2,
+                    min_info = 0.95
                 )
 
             }
@@ -595,7 +596,7 @@ test_that("STITCH can get sample names from a file", {
 test_that("STITCH works in a situation with grid, buffer, outputBlockSize, etc", {
 
     ## lots of samples, K, varying coverages, has grid, etc
-    set.seed(9950)
+    set.seed(9952)    
     n_snps <- 50
     reads_span_n_snps <- 4
     chr <- 1
@@ -671,7 +672,7 @@ test_that("STITCH works in a situation with grid, buffer, outputBlockSize, etc",
             which_snps = which_snps,
             tol = 0.2,
             who = who,
-            min_info = 0.95
+            min_info = 0.945
         )
         
     }
