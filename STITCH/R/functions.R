@@ -265,11 +265,7 @@ STITCH <- function(
     ##
     ## print out date
     ##
-    print_message("Program start")
-    if(generateInputOnly==FALSE) {
-        date <- date()        
-        save(date, file = file_date(outputdir, regionName, "start"))
-    }
+    print_message_and_save_time(outputdir, regionName, "Program start", "start")        
 
 
     ##
@@ -570,9 +566,8 @@ STITCH <- function(
     ##
     ## run EM algorithm here
     ##
-    print_message("Start EM")
-    date <- date()
-    save(date, file = file_date(outputdir, regionName, "startEM"))
+    print_message_and_save_time(outputdir, regionName, "Start EM", "startEM")
+    
     print_message(paste0("Number of samples: ", N))
     print_message(paste0("Number of SNPs: ", nSNPs))
     if (nGrids != nSNPs) {
@@ -646,9 +641,7 @@ STITCH <- function(
         }
     }
 
-    print_message("End EM")
-    date <- date()
-    save(date, file = file_date(outputdir, regionName, "endEM"))
+    print_message_and_save_time(outputdir, regionName, "End EM", "endEM")    
     
     ##
     ## build final output
@@ -826,14 +819,20 @@ STITCH <- function(
         unlink(tempdir, recursive = TRUE)
     }
 
-    date <- date()
-    print_message("Program done")
-    save(date, file = file_date(outputdir, regionName, "end"))
-
+    print_message_and_save_time(outputdir, regionName, "Program done", "end")
+    
     return(NULL)
 
 }
 
+
+print_message_and_save_time <- function(outputdir, regionName, mess, what) {
+    print_message(mess)
+    date <- date()
+    dateS <- Sys.time()
+    save(date, dateS, file = file_date(outputdir, regionName, what))
+    return(NULL)
+}
 
 
 
