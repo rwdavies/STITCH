@@ -975,9 +975,9 @@ remove_buffer_from_variables <- function(
     if ( length(highCovInLow) > 0 )
         gen_imp <- gen_imp[inRegion2, ]
     alleleCount <- alleleCount[inRegion2, ]
-    if (!is.na(ref_alleleCount)) {
-        ref_alleleCount <- ref_alleleCount[inRegion2, ]
-    }
+    if ((length(ref_alleleCount) > 1) && (!is.na(ref_alleleCount))) {
+       ref_alleleCount <- ref_alleleCount[inRegion2, ]
+    }   
     L <- L[inRegion2]
     nSNPs <- as.integer(nrow(pos))
     reference_panel_SNPs <- reference_panel_SNPs[inRegion2]
