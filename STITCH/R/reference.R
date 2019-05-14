@@ -63,6 +63,12 @@ get_and_initialize_from_reference <- function(
         niterations = niterations
     )
     reference_panel_SNPs <- is.na(reference_haps[, 1]) == FALSE
+
+    ## build ref_alleleCount
+    ref_alleleCount <- array(NA, c(nrow(reference_haps), 3))
+    ref_alleleCount[, 1] <- rowSums(reference_haps)
+    ref_alleleCount[, 2] <- nrow(reference_haps)
+    ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
     
     if (is.null(alleleCount) == FALSE) {
         compare_reference_haps_against_alleleCount(
@@ -170,7 +176,8 @@ get_and_initialize_from_reference <- function(
             alphaMatCurrent = alphaMatCurrent,
             hapSumCurrent = hapSumCurrent,
             priorCurrent = priorCurrent,
-            reference_panel_SNPs = reference_panel_SNPs
+            reference_panel_SNPs = reference_panel_SNPs,
+            ref_alleleCount = ref_alleleCount
         )
     )
 

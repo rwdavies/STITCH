@@ -524,6 +524,7 @@ STITCH <- function(
     ##    hapSumCurrent <- out$hapSumCurrent ## not needed?
     priorCurrent <- out$priorCurrent
     reference_panel_SNPs <- out$reference_panel_SNPs
+    ref_alleleCount <- out$ref_alleleCount
 
 
 
@@ -708,7 +709,7 @@ STITCH <- function(
             gen_imp,
             gridWindowSize, grid, grid_distances, L_grid, nGrids, snps_in_grid_1_based,
             inRegionL, start_and_end_minus_buffer,
-            reference_panel_SNPs,
+            reference_panel_SNPs, ref_alleleCount,
             info, hwe, passQC, hweCount,
             file = file.path(
                 outputdir, "RData", paste0("EM.all.", regionName, ".withBuffer.RData")
@@ -717,12 +718,13 @@ STITCH <- function(
         ##
         ## next, remove buffer
         ##
-        out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent_t = alphaMatCurrent_t, sigmaCurrent = sigmaCurrent, eHapsCurrent_t = eHapsCurrent_t, hapSumCurrent_t = hapSumCurrent_t, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize, hwe = hwe, hweCount = hweCount, info = info, passQC = passQC, estimatedAlleleFrequency = estimatedAlleleFrequency)
+        out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent_t = alphaMatCurrent_t, sigmaCurrent = sigmaCurrent, eHapsCurrent_t = eHapsCurrent_t, hapSumCurrent_t = hapSumCurrent_t, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize, hwe = hwe, hweCount = hweCount, info = info, passQC = passQC, estimatedAlleleFrequency = estimatedAlleleFrequency, ref_alleleCount = ref_alleleCount)
         pos <- out$pos
         gen <- out$gen
         phase <- out$phase
         gen_imp <- out$gen_imp
         alleleCount <- out$alleleCount
+        ref_alleleCount <- out$ref_alleleCount
         L <- out$L
         nSNPs <- out$nSNPs
         alphaMatCurrent_t <- out$alphaMatCurrent_t
@@ -760,7 +762,7 @@ STITCH <- function(
         gen_imp,
         gridWindowSize, grid, grid_distances, L_grid, nGrids, snps_in_grid_1_based,
         inRegionL, start_and_end_minus_buffer,
-        reference_panel_SNPs,
+        reference_panel_SNPs, ref_alleleCount,
         info, hwe, passQC, hweCount,
         file = file.path(
             outputdir, "RData", paste0("EM.all.", regionName, ".RData")
@@ -937,6 +939,7 @@ remove_buffer_from_variables <- function(
     gen = NULL,
     phase = NULL,
     alleleCount = NULL,
+    ref_alleleCount = NULL,    
     highCovInLow = NULL,
     gen_imp = NULL,
     alphaMatCurrent_t = NULL,
@@ -972,6 +975,7 @@ remove_buffer_from_variables <- function(
     if ( length(highCovInLow) > 0 )
         gen_imp <- gen_imp[inRegion2, ]
     alleleCount <- alleleCount[inRegion2, ]
+    ref_alleleCount <- ref_alleleCount[inRegion2, ]
     L <- L[inRegion2]
     nSNPs <- as.integer(nrow(pos))
     reference_panel_SNPs <- reference_panel_SNPs[inRegion2]
@@ -1016,6 +1020,7 @@ remove_buffer_from_variables <- function(
             phase = phase,
             gen_imp = gen_imp,
             alleleCount = alleleCount,
+            ref_alleleCount = ref_alleleCount,
             L = L,
             nSNPs = nSNPs,
             alphaMatCurrent_t = alphaMatCurrent_t,
@@ -1292,7 +1297,7 @@ initialize_parameters <- function(
         dl <- grid_distances
     }
     sigmaCurrent <- exp(-nGen * expRate / 100 / 1000000 * dl)
-
+    ref_alleleCount <- NA
     
     if (reference_haplotype_file == "") {
         ##
@@ -1302,7 +1307,8 @@ initialize_parameters <- function(
             alphaMatCurrent = alphaMatCurrent,
             hapSumCurrent = hapSumCurrent,
             priorCurrent = priorCurrent,
-            reference_panel_SNPs = reference_panel_SNPs
+            reference_panel_SNPs = reference_panel_SNPs,
+            ref_alleleCount = ref_alleleCount            
         )
         ##
     } else {
