@@ -1297,7 +1297,7 @@ initialize_parameters <- function(
         dl <- grid_distances
     }
     sigmaCurrent <- exp(-nGen * expRate / 100 / 1000000 * dl)
-    ref_alleleCount <- NA
+    ref_alleleCount <- NULL
     
     if (reference_haplotype_file == "") {
         ##
