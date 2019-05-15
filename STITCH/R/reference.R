@@ -67,9 +67,9 @@ get_and_initialize_from_reference <- function(
     ## build ref_alleleCount
     ref_alleleCount <- array(NA, c(nrow(reference_haps), 3))
     ref_alleleCount[, 1] <- rowSums(reference_haps)
-    ref_alleleCount[, 2] <- nrow(reference_haps)
+    ref_alleleCount[, 2] <- ncol(reference_haps)
     ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
-    
+
     if (is.null(alleleCount) == FALSE) {
         compare_reference_haps_against_alleleCount(
             alleleCount = alleleCount,
@@ -78,13 +78,13 @@ get_and_initialize_from_reference <- function(
             regionName = regionName
         )
     }
-    
+
     if (K > ncol(reference_haps)) {
         ## fill in rest with noise
         print_message("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start")
         w <- is.na(eHapsCurrent[, 1])
         eHapsCurrent[w, 1:ncol(reference_haps)] <- reference_haps[w, ]
-        
+
     } else if (K == ncol(reference_haps)) {
         print_message("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes")
         ## shrink them from 0 -> e and 1 -> (1-e)
@@ -93,14 +93,14 @@ get_and_initialize_from_reference <- function(
         reference_haps[reference_haps == 1] <- (1 - e)
         eHapsCurrent <- reference_haps
     } else {
-        
+
         N_haps <- ncol(reference_haps)
         reference_bundling_info <- get_bundling_position_information(
             N = N_haps,
             nCores = nCores,
             blockSize = inputBundleBlockSize
         )
-        
+
         make_fake_sample_reads_from_haplotypes(
             reference_haps = reference_haps,
             nCores = nCores,
@@ -110,7 +110,7 @@ get_and_initialize_from_reference <- function(
             reference_phred = reference_phred,
             regionName = regionName
         )
-        
+
         ## snap to grid
         if (nSNPs > nGrids) {
             snap_reads_to_grid(
@@ -125,8 +125,8 @@ get_and_initialize_from_reference <- function(
                 allSampleReads = NULL
             )
         }
-        
-        
+
+
         ## chose some haps at random to fill in eHaps
         cols_to_replace <- sample(1:ncol(reference_haps), K)
         n1 <- nrow(reference_haps)
@@ -145,7 +145,7 @@ get_and_initialize_from_reference <- function(
             )
             eHapsCurrent[is.na(eHapsCurrent[, 1]), ] <- to_replace
         }
-        
+
         if (reference_iterations > 0) {
             out <- run_EM_on_reference_sample_reads(reference_iterations = reference_iterations, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, outputdir = outputdir)
             sigmaCurrent <- out$sigmaCurrent
@@ -154,7 +154,7 @@ get_and_initialize_from_reference <- function(
             hapSumCurrent <- out$hapSumCurrent
             priorCurrent <- out$priorCurrent
         }
-        
+
         ## add some noise to NA sites - just in case
         ## there are too many of them nearby
         n1 <- sum(is.na(reference_haps[, 1]))
@@ -166,7 +166,7 @@ get_and_initialize_from_reference <- function(
             )
             eHapsCurrent[is.na(reference_haps[, 1]), ] <- to_replace
         }
-        
+
     }
     print_message("Done initializing paramters using reference haplotypes")
     return(
@@ -181,7 +181,7 @@ get_and_initialize_from_reference <- function(
         )
     )
 
-    
+
 }
 
 
@@ -400,7 +400,7 @@ make_fake_sample_reads_from_haplotypes <- function(
     })
 
     check_mclapply_OK(out, "There has been an error generating the input. Please see error message above")
-    
+
     print_message("End convert reference haplotypes to internal input format")
 
 }
@@ -444,7 +444,7 @@ run_EM_on_reference_sample_reads <- function(
     ## during  (iteration - 0), examine the shuffling
     ## after   (iteration - 0), do the shuffling
     print_message("Begin EM using reference haplotypes")
-    
+
     for(iteration in 1:reference_iterations) {
 
         print_message(paste0("Reference iteration = ", iteration))
@@ -455,13 +455,13 @@ run_EM_on_reference_sample_reads <- function(
             nbreaks <- out$nbreaks
             break_results <- out$break_results
         } else {
-            nbreaks <- 0            
+            nbreaks <- 0
         }
 
         out <- single_reference_iteration(N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen  = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, priorCurrent = priorCurrent, grid_distances = grid_distances, nbreaks = nbreaks, break_results = break_results, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, iteration = iteration)
-        
+
         sigmaCurrent <- out$sigmaSum
-        sigmaSum_unnormalized <- out$sigmaSum_unnormalized        ## 
+        sigmaSum_unnormalized <- out$sigmaSum_unnormalized        ##
         eHapsCurrent <- out$gammaSum
         alphaMatCurrent <- out$alphaMatSum
         hapSumCurrent <- out$hapSum ## only relevant final iteration?
@@ -485,9 +485,9 @@ run_EM_on_reference_sample_reads <- function(
                 plot_attempt_to_find_shuffles(grid_distances = grid_distances, L_grid = L_grid, fbd_store = fbd_store, tempdir = tempdir, outputdir = outputdir, regionName = regionName, iteration = iteration, whichIsBest = whichIsBest, is_reference = TRUE)
             }
         }
-        
+
     }
-        
+
     print_message("Done EM using reference haplotypes")
 
     return(
@@ -544,7 +544,7 @@ single_reference_iteration <- function(
         sampleRanges,
         mc.cores = nCores,
         function(sampleRange) {
-            
+
             priorSum <- array(0,K)
             alphaMatSum_t <- array(0, c(K, nGrids - 1))
             gammaSum_t <- array(0, c(K, nSNPs, 2))
@@ -556,10 +556,10 @@ single_reference_iteration <- function(
             } else {
                 fromMat <- NULL
             }
-            
+
             bundledSampleReads <- NULL
             for(iSample in sampleRange[1]:sampleRange[2]) {
-              
+
                 out <- get_sampleReads_from_dir_for_sample(
                     dir = tempdir,
                     regionName = regionName,
@@ -570,7 +570,7 @@ single_reference_iteration <- function(
                 )
                 sampleReads <- out$sampleReads
                 bundledSampleReads <- out$bundledSampleReads
-                
+
                 fbsoL <- forwardBackwardHaploid(
                     sampleReads = sampleReads,
                     nReads = as.integer(length(sampleReads)),
@@ -592,11 +592,11 @@ single_reference_iteration <- function(
                     jUpdate_t = alphaMatSum_t,
                     priorSum = priorSum,
                     hapSum_t = hapSum_t,
-                    pass_in_alphaBeta = TRUE,        
+                    pass_in_alphaBeta = TRUE,
                     alphaHat_t = alphaHat_t,
                     betaHat_t = betaHat_t
                 )
-                
+
                 if (nbreaks > 0) {
                     for(iBreak in 1:nbreaks) {
                         from <- break_results[iBreak, "left_grid_break_0_based"]
@@ -607,7 +607,7 @@ single_reference_iteration <- function(
                             fromMat[iBreak, , ] + hp1 %*% t(hp2)
                     }
                     if (plot_shuffle_haplotype_attempts) {
-                        i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))                    
+                        i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
                         if (i_core == 1) {
                             M <- min(20, sampleRange[2]) ## how many to plot
                             if (iSample == 1) {
@@ -624,8 +624,8 @@ single_reference_iteration <- function(
                         }
                     }
                 }
-                
-                
+
+
             }
             return(
                 list(
@@ -638,7 +638,7 @@ single_reference_iteration <- function(
             )
         }
     )
-    
+
     check_mclapply_OK(out2, "There has been an error generating the input. Please see error message above")
 
     out <- calculate_updates(
@@ -655,15 +655,15 @@ single_reference_iteration <- function(
     hapSum <- t(out$hapSum_t) ## TRANSPOSE-CLEAN
 
     if (nbreaks > 0) {
-        ## after iteration, get the switches, and fix!            
-        fromMat <- array(0, c(nbreaks, K, K))            
+        ## after iteration, get the switches, and fix!
+        fromMat <- array(0, c(nbreaks, K, K))
         for(i in 1:length(sampleRanges)) {
             fromMat <- fromMat + out2[[i]][["fromMat"]]
         }
     } else {
         fromMat <- NULL
     }
-        
+
 
     return(
         list(
