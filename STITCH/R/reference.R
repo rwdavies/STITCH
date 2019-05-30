@@ -126,9 +126,10 @@ get_and_initialize_from_reference <- function(
             )
         }
 
-
         ## chose some haps at random to fill in eHaps
-        cols_to_replace <- sample(1:ncol(reference_haps), K)
+        ## cols_to_replace <- sample(1:ncol(reference_haps), K)
+        ## choose some haps using sampling from PCA approach
+        cols_to_replace <- sample_haps_to_use(reference_haps, K)
         n1 <- nrow(reference_haps)
         n2 <- length(cols_to_replace)
         noise <- matrix(
@@ -852,5 +853,82 @@ remove_NA_columns_from_haps <- function(haps) {
     return(haps)
 }
 
+
+
+
+
+
+## was originally
+## cols_to_replace <- sample(1:ncol(reference_haps), K)
+## but this fails on low K, trivial examples
+##
+## note - on toy data - this works very well
+##        ## how often is this working properly
+##        sapply(1:1000, function(i) {
+##           set.seed(i)
+##            cols_to_replace <- sample_haps_to_use(reference_haps, K)
+##            a <- sort(colSums(reference_haps[, cols_to_replace]))
+##            sum(c(a[1] == 1, a[2] == 3, a[3] == 6))
+##        })
+##
+sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples = 2000) {
+    if (nrow(reference_haps) > max_snps) {
+        ## make weight proportional to allele frequency
+        a <- rowSums(haps) / ncol(haps)
+        a[a > 0.5] <- 1 - a[a > 0.5]
+        prob <- a / sum(a)
+        keep <- sort(sample(1:nrow(haps), size = max_snps, replace = FALSE, prob = prob))
+        reference_haps <- reference_haps[keep, ]
+    }
+    ##
+    if (ncol(reference_haps) > max_samples) {
+        ## meh, do at random
+        keep_samples <- sort(sample(1:ncol(reference_haps), size = max_samples, replace = FALSE))
+        reference_haps <- reference_haps[, keep_samples]
+    } else {
+        keep_samples <- 1:ncol(reference_haps)
+    }
+    ## 
+    h <- reference_haps
+    c <- rowMeans(h)
+    h <- h - c
+    h <- t(h)
+    h2 <- h %*% t(h)
+    out <- eigen(h2)
+    v <- out$vectors
+    ## at least K, at most >50% fit
+    k <- min(ncol(v), max(K, which.max((cumsum (out$values / sum(out$values))) > 0.50) - 1))
+    ## 
+    b <- v[, 1:k, drop = FALSE]
+    for(i in 1:k) {
+        b[, i] <- b[, i] * out$values[i]
+    }
+    ## k-nearest neighbours
+    out2 <- suppressWarnings(kmeans(b, centers = K, iter.max = 100, nstart = 10))
+    ## take average of members
+    ## eHapsCurrent <- array(NA, c(nrow(reference_haps), K))
+    cols_to_replace <- array(NA, K)
+    for(k in 1:K) {
+        w <- which(out2$cluster == k)
+        ## yuck - just sample
+        cols_to_replace[k] <- sample(keep_samples[w], 1)
+        ## eHapsCurrent[, k] <- rowSums(reference_haps[, keep_samples[w]]) / length(w)        
+        ## eHapsCurrent[, k] <- reference_haps[, sample(keep_samples[w], 1)]
+    }
+    return(cols_to_replace)
+    ##
+    ## WHAT THE FUCK KMEANS
+    ## cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    ## plot(v[, 1] + rnorm(n = 60) / 100, v[, 2] + rnorm(n = 60) / 100, col = cbPalette[out2$cluster])
+    ## ## but proportional to values (multiply by that value)
+    ## 
+    ## pdf("~/temp.pdf", height = 8, width = 20)
+    ## par(mfrow = c(2, 5))
+    ## col <- 
+    ## for(i in 1:10) {
+    ##     plot(v[, 1], v[, i], col = col)
+    ## }
+    ## dev.off()
+}
 
 
