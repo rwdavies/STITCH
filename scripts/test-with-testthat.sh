@@ -5,7 +5,7 @@ set -e
 what_to_test=$1
 if [ "${what_to_test}" != "unit" ] && [ "${what_to_test}" != "acceptance" ] && [ "${what_to_test}" != "acceptance-one" ]
 then
-    if ! [ -e "STITCH/tests/testthat/test-acceptance-${what_to_test}.R" ] && ! [ -e "STITCH/tests/testthat/test-unit-${what_to_test}.R" ]
+    if ! [ -e "STITCH/tests/testthat/test-${what_to_test}.R" ] && ! [ -e "STITCH/tests/testthat/test-${what_to_test}.R" ]
     then
 	echo Acceptance test either runs all, one, or specify file test-{unit/acceptance}-{argument}.R
 	exit 1
@@ -24,7 +24,10 @@ export PATH=`pwd`/:${PATH}
 
 # suppressPackageStartupMessages
 # --slave
-R -e 'devtools::document("STITCH"); devtools::test("STITCH", filter = "'${what_to_test}'", reporter = "summary")' 2>&1 | tee ${logfile}
+# add new load_all step to ensure compilation is printed properly
+R -e 'devtools::document("STITCH"); devtools::load_all("STITCH", quiet = FALSE); devtools::test("STITCH", filter = "'${what_to_test}'", reporter = "summary")' 2>&1 | tee ${logfile}
+
+# print(getwd()); library(devtools); load_all("STITCH", quiet = FALSE);
 
 # somehow this gives 0 exit code on parse failure
 started_if_1=`cat ${logfile} | grep 'Testing STITCH' | wc -l`
