@@ -435,6 +435,19 @@ validate_K <- function(K) {
     return(NULL)
 }
 
+validate_S <- function(S) {
+    if (is.numeric(K) == FALSE) {
+        stop(paste0("S must be numeric but class(S)=", class(S)))
+    }
+    if (round(S) != S) {
+        stop(paste0("S must be an integer but you have selected S = ", S))
+    }
+    if (S < 1) {
+        stop(paste0("S must be an integer greater than 0 S = ", S))
+    }
+    return(NULL)
+}
+
 validate_K_subset <- function(method, K, K_subset) {
     if (method == "diploid_subset") {
         if (is.na(K_subset)) {

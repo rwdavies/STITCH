@@ -1,8 +1,8 @@
 get_and_initialize_from_reference <- function(
-    sigmaCurrent,
     eHapsCurrent,
-    alphaMatCurrent,
+    alphaMatCurrent,                                              
     hapSumCurrent,
+    sigmaCurrent,
     priorCurrent,
     reference_haplotype_file,
     reference_legend_file,
@@ -18,7 +18,6 @@ get_and_initialize_from_reference <- function(
     nCores,
     regionName,
     alleleCount,
-    startIterations,
     windowSNPs,
     expRate,
     nGen,
@@ -80,18 +79,22 @@ get_and_initialize_from_reference <- function(
     }
 
     if (K > ncol(reference_haps)) {
+        
         ## fill in rest with noise
         print_message("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start")
-        w <- is.na(eHapsCurrent[, 1])
-        eHapsCurrent[w, 1:ncol(reference_haps)] <- reference_haps[w, ]
+        w <- is.na(eHapsCurrent_tc[1, , , drop = FALSE])
+        eHapsCurrent_tc[w, 1:ncol(reference_haps), ] <- t(reference_haps[w, , ])
 
     } else if (K == ncol(reference_haps)) {
+        
         print_message("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes")
         ## shrink them from 0 -> e and 1 -> (1-e)
         e <- 0.001
+        reference_haps <- t(reference_haps)
         reference_haps[reference_haps == 0] <- e
         reference_haps[reference_haps == 1] <- (1 - e)
-        eHapsCurrent <- reference_haps
+        eHapsCurrent_tc[, , s] <- reference_haps
+        
     } else {
 
         N_haps <- ncol(reference_haps)

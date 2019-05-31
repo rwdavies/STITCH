@@ -2,6 +2,7 @@
 #' @param chr What chromosome to run. Should match BAM headers
 #' @param posfile Where to find file with positions to run. File is tab seperated with no header, one row per SNP, with col 1 = chromosome, col 2 = physical position (sorted from smallest to largest), col 3 = reference base, col 4 = alternate base. Bases are capitalized. Example first row: 1<tab>1000<tab>A<tab>G<tab>
 #' @param K How many founder / mosaic haplotypes to use
+#' @param S How many sets of founder / mosaic haplotypes to use
 #' @param nGen Number of generations since founding or mixing. Note that the algorithm is relatively robust to this. Use nGen = 4 * Ne / K if unsure
 #' @param outputdir What output directory to use
 #' @param tempdir What directory to use as temporary directory. If set to NA, use default R tempdir. If possible, use ramdisk, like /dev/shm/
@@ -81,7 +82,9 @@ STITCH <- function(
     nGen,
     posfile,
     K,
+    S = 1,
     outputdir,
+    nStarts,
     tempdir = NA,
     bamlist = "",
     cramlist = "",
@@ -195,7 +198,6 @@ STITCH <- function(
     ## define some other variables - remove eventually
     ##
     outputInputGen <- FALSE # whether to output input in gen format
-    startIterations <- 0 # how many start iterations to run
 
     windowSNPs <- 5000 # if doing the window start, how many SNPs to loop over
     if(method=="diploid")
@@ -222,6 +224,7 @@ STITCH <- function(
     validate_posfile(posfile)
     validate_genfile(genfile)
     validate_K(K)
+    validate_S(S)    
     validate_K_subset(method, K, K_subset)
     validate_outputdir(outputdir)
     validate_tempdir(tempdir)
@@ -517,7 +520,7 @@ STITCH <- function(
     ##
     ## initialize variables
     ##
-    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based)
+    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based)
     sigmaCurrent <- out$sigmaCurrent
     eHapsCurrent <- out$eHapsCurrent
     alphaMatCurrent <- out$alphaMatCurrent
@@ -1250,13 +1253,13 @@ initialize_parameters <- function(
     reference_iterations,
     nSNPs,
     K,
+    S,
     L,
     pos,
     inputBundleBlockSize,
     nCores,
     regionName,
     alleleCount,
-    startIterations,
     windowSNPs,
     expRate,
     nGen,
@@ -1282,33 +1285,33 @@ initialize_parameters <- function(
 ) {
 
     print_message("Begin parameter initialization")
-    
-    ## default values
-    eHapsCurrent <- matrix(runif(nSNPs * K), ncol = K)
-    if (startIterations > 0) # but, make the rest of them uniform - get info later
-        eHapsCurrent[(2 * windowSNPs + 1):nSNPs, ] <- 0.25
-        ## initialize using rate assuming 0.5 cM/Mb, nSNPs = 100
-    alphaMatCurrent <- matrix(1 / K, nrow = (nGrids - 1), ncol = K)
-    priorCurrent <- rep(1 / K, K)
-    hapSumCurrent <- array(1 / K, c(nGrids, K))
-    reference_panel_SNPs <- array(FALSE, nSNPs)
+
     ##
     if (is.null(grid_distances)) {
         dl <- diff(L)
     } else {
         dl <- grid_distances
     }
-    sigmaCurrent <- exp(-nGen * expRate / 100 / 1000000 * dl)
+    
+    ## default values
+    eHapsCurrent_tc <- array(runif(nSNPs * K), c(K, nSNPs, S))
+    alphaMatCurrent_tc <- array(1 / K, c(K, nGrids - 1, S))
+    hapSumCurrent_tc <- array(1 / K, c(K, nGrids - 1, S))
+    sigmaCurrent_m <- array(exp(-nGen * expRate / 100 / 1000000 * dl), c(nGrids - 1, S))    
+    priorCurrent_m <- array(1 / K, c(K, S))
+
+    ## 
+    reference_panel_SNPs <- array(FALSE, nSNPs)
     ref_alleleCount <- NA
     
     if (reference_haplotype_file == "") {
         ##
         to_out <- list(
-            sigmaCurrent = sigmaCurrent,
-            eHapsCurrent = eHapsCurrent,
-            alphaMatCurrent = alphaMatCurrent,
-            hapSumCurrent = hapSumCurrent,
-            priorCurrent = priorCurrent,
+            eHapsCurrent_tc = eHapsCurrent_t,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            hapSumCurrent_tc = hapSumCurrent_tc,
+            sigmaCurrent_m = sigmaCurrent_m,
+            priorCurrent_m = priorCurrent_m,
             reference_panel_SNPs = reference_panel_SNPs,
             ref_alleleCount = ref_alleleCount            
         )
@@ -1316,8 +1319,12 @@ initialize_parameters <- function(
     } else {
         ## 
         to_out <- get_and_initialize_from_reference(
-            sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, ## first bit is default
-            reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, startIterations = startIterations, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based)
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            hapSumCurrent_tc = hapSumCurrent_tc,
+            sigmaCurrent_m = sigmaCurrent_m,
+            priorCurrent_m = priorCurrent_m,
+            reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based)
     }
 
     print_message("Done parameter initialization")
