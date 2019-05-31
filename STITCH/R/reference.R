@@ -1,9 +1,9 @@
 get_and_initialize_from_reference <- function(
-    eHapsCurrent,
-    alphaMatCurrent,                                              
-    hapSumCurrent,
-    sigmaCurrent,
-    priorCurrent,
+    eHapsCurrent_tc,
+    alphaMatCurrent_tc,                                              
+    hapSumCurrent_tc,
+    sigmaCurrent_m,
+    priorCurrent_m,
     reference_haplotype_file,
     reference_legend_file,
     reference_sample_file,
@@ -12,6 +12,7 @@ get_and_initialize_from_reference <- function(
     reference_iterations,
     nSNPs,
     K,
+    S,
     L,
     pos,
     inputBundleBlockSize,
@@ -42,8 +43,55 @@ get_and_initialize_from_reference <- function(
     snps_in_grid_1_based
 ) {
 
+    stop("working on this")
+    save(    eHapsCurrent_tc,
+    alphaMatCurrent_tc,                                              
+    hapSumCurrent_tc,
+    sigmaCurrent_m,
+    priorCurrent_m,
+    reference_haplotype_file,
+    reference_legend_file,
+    reference_sample_file,
+    reference_populations,
+    reference_phred,
+    reference_iterations,
+    nSNPs,
+    K,
+    S,
+    L,
+    pos,
+    inputBundleBlockSize,
+    nCores,
+    regionName,
+    alleleCount,
+    windowSNPs,
+    expRate,
+    nGen,
+    tempdir,
+    outputdir,
+    pseudoHaploidModel,
+    emissionThreshold,
+    alphaMatThreshold,
+    minRate,
+    maxRate,
+    regionStart,
+    regionEnd,
+    buffer,
+    niterations,
+    grid,
+    grid_distances,
+    nGrids,
+    reference_shuffleHaplotypeIterations,
+    L_grid,
+    plot_shuffle_haplotype_attempts,
+    shuffle_bin_radius,
+    snps_in_grid_1_based,
+    file = "~/temp.RData")
+    stop("WER")
+    
+    load("~/temp.RData")
+    
     print_message("Begin initializing paramters using reference haplotypes")
-
     ## get reference haplotypes matched to posfile
     ## NA's where there are no match
     ## only for populations of interest
@@ -78,22 +126,30 @@ get_and_initialize_from_reference <- function(
         )
     }
 
+    ## AM HERE
+    ## TACKLE THIS AFTER LUNCH - RECALL - WHY ARE THERE NAs
+    ## AND HOW TO ADD PROPERLY TO EHAPS ETC
+    
     if (K > ncol(reference_haps)) {
         
         ## fill in rest with noise
         print_message("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start")
-        w <- is.na(eHapsCurrent_tc[1, , , drop = FALSE])
-        eHapsCurrent_tc[w, 1:ncol(reference_haps), ] <- t(reference_haps[w, , ])
+        h <- t(reference_haps[reference_panel_SNPs, ])
+        for(s in 1:S) {
+            eHapsCurrent_tc[1:ncol(reference_haps), reference_panel_SNPs, s] <- h
+        }
 
     } else if (K == ncol(reference_haps)) {
         
         print_message("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes")
         ## shrink them from 0 -> e and 1 -> (1-e)
         e <- 0.001
-        reference_haps <- t(reference_haps)
         reference_haps[reference_haps == 0] <- e
         reference_haps[reference_haps == 1] <- (1 - e)
-        eHapsCurrent_tc[, , s] <- reference_haps
+        reference_haps_t <- t(reference_haps[reference_panel_SNPs, ])
+        for(s in 1:S) {        
+            eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t
+        }
         
     } else {
 
@@ -875,6 +931,7 @@ remove_NA_columns_from_haps <- function(haps) {
 ##        })
 ##
 sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples = 2000) {
+    reference_haps <- reference_haps[!is.na(reference_haps[, 1]), ] 
     if (nrow(reference_haps) > max_snps) {
         ## make weight proportional to allele frequency
         a <- rowSums(haps) / ncol(haps)

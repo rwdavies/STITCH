@@ -436,7 +436,7 @@ validate_K <- function(K) {
 }
 
 validate_S <- function(S) {
-    if (is.numeric(K) == FALSE) {
+    if (is.numeric(S) == FALSE) {
         stop(paste0("S must be numeric but class(S)=", class(S)))
     }
     if (round(S) != S) {
