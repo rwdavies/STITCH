@@ -78,12 +78,14 @@ void Rcpp_run_forward_haploid(
     // t here is 0-based
     //
     for(int t = 1; t < T; t++) {
-        alphaConst = transMatRate_t_H(1, t-1) * arma::sum(alphaHat_t.col(t - 1));
+        // NOTE - previously used this code, which is mathematically right
+        // BUT since scaling is being used here, arma::sum(alphaHat_t.col(t - 1) is equal to 1 by definition
+        // so can use the below (uncommented) code to simplify
+        // alphaConst = transMatRate_t_H(1, t-1) * arma::sum(alphaHat_t.col(t - 1));
         //
-        alphaHat_t.col(t) = eMatHapSNP_t.col(t) % ( \
+        alphaHat_t.col(t) = eMatHapSNP_t.col(t) % (		   \
             transMatRate_t_H(0, t - 1) * alphaHat_t.col(t - 1) + \
-            alphaConst * alphaMat_t.col(t - 1) );
-        //
+            transMatRate_t_H(1, t - 1) * alphaMat_t.col(t - 1) );
         c(t) = 1 / arma::sum(alphaHat_t.col(t));
         alphaHat_t.col(t) *= c(t);
     }
