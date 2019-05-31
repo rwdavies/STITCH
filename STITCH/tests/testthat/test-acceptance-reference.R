@@ -87,6 +87,51 @@ test_that("STITCH can initialize with reference data", {
 })
 
 
+test_that("STITCH can initialize with reference data with three sizes of K vs number of haps", {
+
+    ## these are diploid
+    n_samples_per_pop <- 4
+    refpackL <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = n_samples_per_pop,
+        reference_populations = c("CEU"),
+        chr = 1,
+        phasemaster = phasemaster
+    )
+
+    output_format <- "bgvcf"
+
+    for(i_scenario in 1:3) {
+
+        outputdir <- make_unique_tempdir()
+        ## scenarios are: too few, exactly right amount, too many
+        K <- list(n_samples_per_pop * 4, n_samples_per_pop * 2, n_samples_per_pop)[[i_scenario]]
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,                
+            outputdir = outputdir,
+            reference_haplotype_file = refpackL$reference_haplotype_file,
+            reference_legend_file = refpackL$reference_legend_file,
+            K = K,
+            nGen = 100,
+            nCores = 1,
+            output_format = output_format
+        )
+        
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 0.2
+        )
+
+    }
+})
+
+
 test_that("STITCH can initialize with reference data with defined regionStart and regionEnd", {
 
     for(output_format in c("bgvcf", "bgen")) {
