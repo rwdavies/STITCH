@@ -24,17 +24,18 @@ double print_times(
     std::string next_text
 );
 
-arma::mat rcpp_make_eMatHap_t(
+void rcpp_make_eMatHap_t(
+    arma::mat& eMatHap_t,
     const Rcpp::List& sampleReads,
-    const int nReads,
-    const arma::mat& eHaps_t,
+    const arma::cube& eHapsCurrent_tc,
+    const int s,
     const double maxDifferenceBetweenReads,
     const int Jmax,
     arma::mat& eMatHapOri_t,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
     const bool run_pseudo_haploid = false,
-    const bool rescale_eMatHap_t = true    
+    const bool rescale_eMatHap_t = true
 );
 
 arma::mat rcpp_calculate_fbd_dosage(
@@ -576,16 +577,10 @@ Rcpp::List forwardBackwardDiploid(
   arma::mat eMatHapPH_t;
   arma::vec pRgivenH1;
   arma::vec pRgivenH2;
-  arma::mat eMatHap_t = rcpp_make_eMatHap_t(
-      sampleReads,
-      nReads,
-      eHaps_t,
-      maxDifferenceBetweenReads,
-      Jmax,
-      eMatHapPH_t,
-      pRgivenH1,
-      pRgivenH2
-  );
+  arma::mat eMatHap_t = arma::ones(K, nReads);
+  arma::cube eHapsCurrent_tc;
+  int s = 1;
+  rcpp_make_eMatHap_t(eMatHap_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapPH_t, pRgivenH1, pRgivenH2);
   //
   // once we have all the eMatHaps, ie probabilities from reads, make eMat from this
   //

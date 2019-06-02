@@ -1,6 +1,6 @@
 get_and_initialize_from_reference <- function(
     eHapsCurrent_tc,
-    alphaMatCurrent_tc,                                              
+    alphaMatCurrent_tc,
     hapSumCurrent_tc,
     sigmaCurrent_m,
     priorCurrent_m,
@@ -43,9 +43,9 @@ get_and_initialize_from_reference <- function(
     snps_in_grid_1_based
 ) {
 
-    stop("working on this")
+
     save(    eHapsCurrent_tc,
-    alphaMatCurrent_tc,                                              
+    alphaMatCurrent_tc,
     hapSumCurrent_tc,
     sigmaCurrent_m,
     priorCurrent_m,
@@ -88,9 +88,9 @@ get_and_initialize_from_reference <- function(
     snps_in_grid_1_based,
     file = "~/temp.RData")
     stop("WER")
-    
+
     load("~/temp.RData")
-    
+
     print_message("Begin initializing paramters using reference haplotypes")
     ## get reference haplotypes matched to posfile
     ## NA's where there are no match
@@ -126,12 +126,8 @@ get_and_initialize_from_reference <- function(
         )
     }
 
-    ## AM HERE
-    ## TACKLE THIS AFTER LUNCH - RECALL - WHY ARE THERE NAs
-    ## AND HOW TO ADD PROPERLY TO EHAPS ETC
-    
     if (K > ncol(reference_haps)) {
-        
+
         ## fill in rest with noise
         print_message("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start")
         h <- t(reference_haps[reference_panel_SNPs, ])
@@ -140,17 +136,17 @@ get_and_initialize_from_reference <- function(
         }
 
     } else if (K == ncol(reference_haps)) {
-        
+
         print_message("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes")
         ## shrink them from 0 -> e and 1 -> (1-e)
         e <- 0.001
         reference_haps[reference_haps == 0] <- e
         reference_haps[reference_haps == 1] <- (1 - e)
         reference_haps_t <- t(reference_haps[reference_panel_SNPs, ])
-        for(s in 1:S) {        
+        for(s in 1:S) {
             eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t
         }
-        
+
     } else {
 
         N_haps <- ncol(reference_haps)
@@ -188,31 +184,41 @@ get_and_initialize_from_reference <- function(
         ## chose some haps at random to fill in eHaps
         ## cols_to_replace <- sample(1:ncol(reference_haps), K)
         ## choose some haps using sampling from PCA approach
-        cols_to_replace <- sample_haps_to_use(reference_haps, K)
         n1 <- nrow(reference_haps)
         n2 <- length(cols_to_replace)
         noise <- matrix(
             runif(n1 * n2, min = 0, max = 1),
             nrow = n1, ncol = n2
         )
-        eHapsCurrent <- 0.99 * reference_haps[, cols_to_replace] + 0.01 * noise
-        n1 <- sum(is.na(eHapsCurrent[, 1]))
-        if (n1 > 0) {
-            n2 <- ncol(eHapsCurrent)
-            to_replace <- matrix(
-                runif(n1 * n2, min = 0.4, max = 0.6),
-                nrow = n1, ncol = n2
-            )
-            eHapsCurrent[is.na(eHapsCurrent[, 1]), ] <- to_replace
+        for(s in 1:S) {
+            ## get new cols each time!
+            cols_to_replace <- sample_haps_to_use(reference_haps, K)
+            reference_haps_t <- t(reference_haps[, cols_to_replace])
+            ## add some noise
+            e <- 0.01
+            reference_haps_t[reference_haps_t == 0] <- e
+            reference_haps_t[reference_haps_t == 1] <- (1 - e)
+            ##
+            eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t
+            ## make the other positions have more noise
+            n1 <- sum(!reference_panel_SNPs)
+            eHapsCurrent_tc[, !reference_panel_SNPs, s] <- matrix(runif(n1 * K, min = 0.4, max = 0.6), nrow = K, ncol = n1)
         }
 
         if (reference_iterations > 0) {
-            out <- run_EM_on_reference_sample_reads(reference_iterations = reference_iterations, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, hapSumCurrent = hapSumCurrent, priorCurrent = priorCurrent, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, outputdir = outputdir)
-            sigmaCurrent <- out$sigmaCurrent
-            eHapsCurrent <- out$eHapsCurrent
-            alphaMatCurrent <- out$alphaMatCurrent
-            hapSumCurrent <- out$hapSumCurrent
-            priorCurrent <- out$priorCurrent
+            out <- run_EM_on_reference_sample_reads(
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                alphaMatCurrent_tc = alphaMatCurrent_tc,
+                hapSumCurrent_tc = hapSumCurrent_tc,
+                sigmaCurrent_m = sigmaCurrent_m,
+                priorCurrent_m = priorCurrent_m,
+                reference_iterations = reference_iterations,
+                N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, outputdir = outputdir)
+            eHapsCurrent_tc <- out$eHapsCurrent_tc
+            alphaMatCurrent_tc <- out$alphaMatCurrent_tc
+            hapSumCurrent_tc <- out$hapSumCurrent_tc
+            sigmaCurrent_m <- out$sigmaCurrent_m
+            priorCurrent_m <- out$priorCurrent_m
         }
 
         ## add some noise to NA sites - just in case
@@ -231,11 +237,11 @@ get_and_initialize_from_reference <- function(
     print_message("Done initializing paramters using reference haplotypes")
     return(
         list(
-            sigmaCurrent = sigmaCurrent,
-            eHapsCurrent = eHapsCurrent,
-            alphaMatCurrent = alphaMatCurrent,
-            hapSumCurrent = hapSumCurrent,
-            priorCurrent = priorCurrent,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            hapSumCurrent_tc = hapSumCurrent_tc,
+            sigmaCurrent_m = sigmaCurrent_m,
+            priorCurrent_m = priorCurrent_m,
             reference_panel_SNPs = reference_panel_SNPs,
             ref_alleleCount = ref_alleleCount
         )
@@ -467,12 +473,12 @@ make_fake_sample_reads_from_haplotypes <- function(
 
 
 run_EM_on_reference_sample_reads <- function(
+    eHapsCurrent_tc,
+    alphaMatCurrent_tc,
+    hapSumCurrent_tc,
+    sigmaCurrent_m,
+    priorCurrent_m,
     reference_iterations,
-    eHapsCurrent,
-    sigmaCurrent,
-    alphaMatCurrent,
-    priorCurrent,
-    hapSumCurrent,
     N_haps,
     nCores,
     reference_bundling_info,
@@ -518,6 +524,7 @@ run_EM_on_reference_sample_reads <- function(
             nbreaks <- 0
         }
 
+        ## here
         out <- single_reference_iteration(N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen  = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, priorCurrent = priorCurrent, grid_distances = grid_distances, nbreaks = nbreaks, break_results = break_results, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, iteration = iteration)
 
         sigmaCurrent <- out$sigmaSum
@@ -567,6 +574,10 @@ run_EM_on_reference_sample_reads <- function(
 
 
 single_reference_iteration <- function(
+    eHapsCurrent_tc,
+    alphaMatCurrent_tc,
+    sigmaCurrent_m,
+    priorCurrent_m,
     N_haps,
     nCores,
     reference_bundling_info,
@@ -584,10 +595,6 @@ single_reference_iteration <- function(
     maxRate,
     pseudoHaploidModel,
     reference_phred,
-    sigmaCurrent,
-    eHapsCurrent,
-    alphaMatCurrent,
-    priorCurrent,
     grid_distances,
     nbreaks,
     break_results,
@@ -595,16 +602,16 @@ single_reference_iteration <- function(
     iteration
 ) {
 
+    stop("am working on this function - make new forwardBackwardHaploid")
     sampleRanges <- getSampleRange(N_haps, nCores)
-    transMatRate_t_H <- get_transMatRate(method = "pseudoHaploid", sigmaCurrent)
-    eHapsCurrent_t <- t(eHapsCurrent)
-    alphaMatCurrent_t <- t(alphaMatCurrent)
+    transMatRate_tc_H <- get_transMatRate_m(method = "pseudoHaploid", sigmaCurrent_m)
 
     out2 <- mclapply(
         sampleRanges,
         mc.cores = nCores,
         function(sampleRange) {
 
+            ## YUCK - HOW SHOULD THESE BE
             priorSum <- array(0,K)
             alphaMatSum_t <- array(0, c(K, nGrids - 1))
             gammaSum_t <- array(0, c(K, nSNPs, 2))
@@ -631,6 +638,9 @@ single_reference_iteration <- function(
                 sampleReads <- out$sampleReads
                 bundledSampleReads <- out$bundledSampleReads
 
+                ## AM HERE
+                ## NEED TO RE-WRITE FORWARD-BACKWARD-HAPLOID
+                ## BUT CAN DO THAT IN PIECES BETTER HOPEFULLY
                 fbsoL <- forwardBackwardHaploid(
                     sampleReads = sampleReads,
                     nReads = as.integer(length(sampleReads)),
@@ -931,7 +941,7 @@ remove_NA_columns_from_haps <- function(haps) {
 ##        })
 ##
 sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples = 2000) {
-    reference_haps <- reference_haps[!is.na(reference_haps[, 1]), ] 
+    reference_haps <- reference_haps[!is.na(reference_haps[, 1]), ]
     if (nrow(reference_haps) > max_snps) {
         ## make weight proportional to allele frequency
         a <- rowSums(haps) / ncol(haps)
@@ -948,7 +958,7 @@ sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples =
     } else {
         keep_samples <- 1:ncol(reference_haps)
     }
-    ## 
+    ##
     h <- reference_haps
     c <- rowMeans(h)
     h <- h - c
@@ -958,21 +968,32 @@ sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples =
     v <- out$vectors
     ## at least K, at most >50% fit
     k <- min(ncol(v), max(K, which.max((cumsum (out$values / sum(out$values))) > 0.50) - 1))
-    ## 
+    ##
     b <- v[, 1:k, drop = FALSE]
     for(i in 1:k) {
         b[, i] <- b[, i] * out$values[i]
     }
+    ##
+    b <- round(b, 3)
+    b <- b[, colSums(b != 0) > 0, drop = FALSE]
+    ## yuck - if K < number of unique, will fail
+    local_K <- min(K, nrow(unique(b)))
+    out2 <- suppressWarnings(kmeans(b, centers = local_K, iter.max = 100, nstart = 10))
+    ## remove useless columns
     ## k-nearest neighbours
-    out2 <- suppressWarnings(kmeans(b, centers = K, iter.max = 100, nstart = 10))
     ## take average of members
     ## eHapsCurrent <- array(NA, c(nrow(reference_haps), K))
     cols_to_replace <- array(NA, K)
     for(k in 1:K) {
-        w <- which(out2$cluster == k)
+        if (k <= local_K) {
+            w <- which(out2$cluster == k)
+        } else {
+            ## any remaining sample
+            w <- setdiff(keep_samples, cols_to_replace[1:(k - 1)])
+        }
         ## yuck - just sample
         cols_to_replace[k] <- sample(keep_samples[w], 1)
-        ## eHapsCurrent[, k] <- rowSums(reference_haps[, keep_samples[w]]) / length(w)        
+        ## eHapsCurrent[, k] <- rowSums(reference_haps[, keep_samples[w]]) / length(w)
         ## eHapsCurrent[, k] <- reference_haps[, sample(keep_samples[w], 1)]
     }
     return(cols_to_replace)
@@ -981,10 +1002,10 @@ sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples =
     ## cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
     ## plot(v[, 1] + rnorm(n = 60) / 100, v[, 2] + rnorm(n = 60) / 100, col = cbPalette[out2$cluster])
     ## ## but proportional to values (multiply by that value)
-    ## 
+    ##
     ## pdf("~/temp.pdf", height = 8, width = 20)
     ## par(mfrow = c(2, 5))
-    ## col <- 
+    ## col <-
     ## for(i in 1:10) {
     ##     plot(v[, 1], v[, i], col = col)
     ## }

@@ -231,7 +231,7 @@ make_acceptance_test_data_package <- function(
     if (length(n_reads) == 1) {
         n_reads <- rep(n_reads, n_samples)
     }
-    
+
     if (is.null(reads_span_n_snps))
         reads_span_n_snps <- n_snps
 
@@ -403,7 +403,7 @@ check_output_against_phase <- function(
         expect_equal(as.character(out$var_info[, "position"]), as.character(data_package$pos[which_snps, "POS"]))
         expect_equal(as.character(out$var_info[, "ref"]), as.character(data_package$pos[which_snps, "REF"]))
         expect_equal(as.character(out$var_info[, "alt"]), as.character(data_package$pos[which_snps, "ALT"]))
-        ## 
+        ##
         check_bgen_gp_against_phase(
             gp = out$gp,
             phase = data_package$phase,
@@ -419,7 +419,7 @@ check_output_against_phase <- function(
         }
         expect_equal((var_info[, "INFO_SCORE"] >= min_info), rep(TRUE, nrow(var_info)))
     } else {
-        ## 
+        ##
         vcf <- read.table(
             file,
             header = FALSE,
@@ -515,7 +515,7 @@ check_bgen_gp_against_phase <- function(
     for(i_sample in who) {
         ## check genotype probability
         genotype_posteriors <- array(NA, c(dim(gp)[1], 3))
-        genotype_posteriors[, ] <- gp[, i_sample, , drop = FALSE]        
+        genotype_posteriors[, ] <- gp[, i_sample, , drop = FALSE]
         r <- rowSums(genotype_posteriors)
         ## check their sum, up to a tolerance
         expect_equal(sum(abs(r - 1) > 0.00101), 0)
@@ -528,7 +528,7 @@ check_bgen_gp_against_phase <- function(
             print(paste0("i_sample = ", i_sample))
             print(cbind("gp_dosage" = gp_dosage, "truth_dosage" = truth_dosage))
         }
-        expect_equal(max(abs(gp_dosage - truth_dosage)) <= tol, TRUE)        
+        expect_equal(max(abs(gp_dosage - truth_dosage)) <= tol, TRUE)
     }
 }
 
@@ -680,15 +680,15 @@ simulate_a_read <- function(
         if (sum(w > n_snps) > 0) {
             w <- w - (max(w) - n_snps)
         }
-        ## w is 1-based sampling of start to end 
+        ## w is 1-based sampling of start to end
         ## w <- sample(to_sample, 1) + 0:(reads_span_n_snps - 1)
         h <- phase[w, i_sample, sample(2, 1)]
         ## make "A" otherwise
         seq <- rep("A", tail(L[w], 1) - head(L[w], 1) + 1)
         seq_w <- L[w] - min(L[w]) + 1
         seq[seq_w] <- r[w]
-        seq[seq_w][h == 1] <- a[w][h == 1]                    
-        n <- length(seq)                    
+        seq[seq_w][h == 1] <- a[w][h == 1]
+        n <- length(seq)
         seq <- paste0(seq, collapse = "")
         local_bq <- paste0(rep(phred_bq_char, n), collapse = "")
         local_cigar <- paste0(n, "M")
@@ -706,6 +706,7 @@ make_fb_test_package <- function(
     K = 4,
     nReads = 8,
     nSNPs = 10,
+    S = 2,
     gridWindowSize = 3
 ) {
     set.seed(4916)
@@ -723,20 +724,25 @@ make_fb_test_package <- function(
     L_grid <- out$L_grid
     nGrids <- out$nGrids
     snps_in_grid_1_based <- out$snps_in_grid_1_based
-    ##
+    ## make almost the same
+    eHapsCurrent_tc <- array(NA, c(K, nSNPs, S))
+    alphaMatCurrent_tc <- array(NA, c(K, nGrids - 1, S))
     eHapsCurrent_t <-
         0.1 * array(runif(K * nSNPs), c(K, nSNPs)) +
         0.9 * array(sample(c(0, 1), K * nSNPs, replace = TRUE), c(K, nSNPs))
-    alphaMatCurrent_t <- array(runif(K * (nGrids - 1)), c(K, (nGrids - 1)))
-    alphaMatCurrent_t <- apply(alphaMatCurrent_t, 2, function(x) x / sum(x))
-    sigmaCurrent <- 0.9 + 0.1 * runif(nGrids - 1)
-    priorCurrent <- runif(K)
-    priorCurrent <- priorCurrent / sum(priorCurrent)
-    transMatRate_t_D <- get_transMatRate("diploid", sigmaCurrent)
-    transMatRate_t_H <- get_transMatRate("diploid-inbred", sigmaCurrent)
+    for(s in 1:S) {
+        eHapsCurrent_tc[, , s] <- 0.90 * eHapsCurrent_t + 0.10 * runif(nSNPs * K)
+        m <- array(runif(K * (nGrids - 1)), c(K, (nGrids - 1)))
+        alphaMatCurrent_tc[, , s] <- t(t(m) / colSums(m))
+    }
+    sigmaCurrent_m <- array(0.9 + 0.1 * runif((nGrids - 1) * S), c(nGrids - 1, S))
+    priorCurrent_m <- array(1 / K, c(K, S))
+    ##
+    transMatRate_tc_D <- get_transMatRate_m("diploid", sigmaCurrent_m)
+    transMatRate_tc_H <- get_transMatRate_m("diploid-inbred", sigmaCurrent_m)
     ## sample reads
     cr <- sort(sample(1:nGrids, nReads, replace = TRUE)) - 1
-    true_H <- sample(c(1, 2), nReads, replace = TRUE)    
+    true_H <- sample(c(1, 2), nReads, replace = TRUE)
     ## choose them from haps 1 and 2
     sampleReads <- lapply(
         1:length(cr),
@@ -747,7 +753,7 @@ make_fb_test_package <- function(
         x <- c(g - 2, g - 1, g, g + 1, g + 2)
         x <- x[x %in% 0:(nSNPs - 1)] ## 0-based
         i_hap <- true_H[ii]
-        bq <- matrix(round(30 * (eHapsCurrent_t[i_hap, x + 1] - 0.5)), ncol = 1)
+        bq <- matrix(round(30 * (eHapsCurrent_tc[i_hap, x + 1, 1] - 0.5)), ncol = 1)
         list(
             length(x) - 1,
             i,
@@ -755,33 +761,50 @@ make_fb_test_package <- function(
             matrix(x,ncol=1,nrow=length(x))
         )
     })
+    ## almost certainly want to pre-declare
+    list_of_eMatHap_t <- lapply(0:(S - 1), function(s) {
+        eMatHap_t <- array(1, c(K, nReads))
+        rcpp_make_eMatHap_t(
+            eMatHap_t = eMatHap_t,
+            sampleReads = sampleReads,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            s = s,
+            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+            Jmax = Jmax_local,
+            eMatHapOri_t = array(0, c(1, 1)), ## ugh
+            pRgivenH1 = array(0),
+            pRgivenH2 = array(0),
+            run_pseudo_haploid = FALSE
+        )
+        return(eMatHap_t)
+    })
     ##
-    eMatHap_t <- rcpp_make_eMatHap_t(
-        sampleReads = sampleReads,
-        nReads = nReads,
-        eHaps_t = eHapsCurrent_t,
-        maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-        Jmax = Jmax_local,
-        eMatHapOri_t = array(0, c(1, 1)), ## ugh
-        pRgivenH1 = array(0),
-        pRgivenH2 = array(0),
-        run_pseudo_haploid = FALSE
-    )
-    ##
-    eMatHapSNP_t <- rcpp_make_eMatHapSNP_t(
-        eMatHap_t = eMatHap_t,
-        H = 1, 
-        sampleReads = sampleReads,
-        hap = 1,
-        nGrids = nGrids,
-        run_fb_grid_offset = 0,
-        use_all_reads = TRUE,
-	bound = TRUE,
-	maxEmissionMatrixDifference = maxEmissionMatrixDifference
-    ) ## can be bounded
+    list_of_eMatHapSNP_t <- lapply(0:(S - 1), function(s) {
+        eMatHapSNP_t <- array(1, c(K, nGrids))
+        rcpp_make_eMatHapSNP_t(
+            eMatHapSNP_t = eMatHapSNP_t,
+            eMatHap_t = list_of_eMatHap_t[[s + 1]],
+            H = 1,
+            sampleReads = sampleReads,
+            hap = 1,
+            nGrids = nGrids,
+            run_fb_grid_offset = 0,
+            use_all_reads = TRUE,
+            bound = TRUE,
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference
+        )
+        return(eMatHapSNP_t)
+    })
     ##
     return(
         list(
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            sigmaCurrent_m = sigmaCurrent_m,
+            priorCurrent_m = priorCurrent_m,
+            transMatRate_tc_D = transMatRate_tc_D,
+            transMatRate_tc_H = transMatRate_tc_H,
+            S = S,
             K = K,
             gridWindowSize = gridWindowSize,
             nReads = nReads,
@@ -792,19 +815,13 @@ make_fb_test_package <- function(
             L_grid = L_grid,
             nGrids = nGrids,
             snps_in_grid_1_based = snps_in_grid_1_based,
-            eHapsCurrent_t = eHapsCurrent_t,
-            alphaMatCurrent_t = alphaMatCurrent_t,
-            sigmaCurrent = sigmaCurrent,
-            priorCurrent = priorCurrent,
-            transMatRate_t_D = transMatRate_t_D,
-            transMatRate_t_H = transMatRate_t_H,
             sampleReads = sampleReads,
             true_H = true_H,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             Jmax_local = Jmax_local,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-            eMatHap_t = eMatHap_t,
-            eMatHapSNP_t = eMatHapSNP_t
+            list_of_eMatHap_t = list_of_eMatHap_t,
+            list_of_eMatHapSNP_t = list_of_eMatHapSNP_t
         )
     )
 }

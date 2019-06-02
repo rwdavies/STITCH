@@ -36,7 +36,7 @@ validate_output_filename <- function(
     } else {
         stop("internal error")
     }
-    min_chars <- (nchar(extension))        
+    min_chars <- (nchar(extension))
     if (is.null(output_filename) == FALSE) {
         err_msg <- paste0("output_filename must have at least ", min_chars + 1, " characters and end with ", extension, ", and you have supplied:", output_filename)
         if (nchar(output_filename) < min_chars) {
@@ -659,7 +659,7 @@ validate_region_to_impute_when_using_regionStart <- function(L, regionStart, reg
                 nCentralSNPs <- s
         }
         if (i == 3) {
-            s <- sum( (regionEnd < L) & (L <= (regionEnd + buffer))) ## right region            
+            s <- sum( (regionEnd < L) & (L <= (regionEnd + buffer))) ## right region
             x <- paste0(regionEnd, " < position <= ", regionEnd + buffer)
         }
         print_message(
@@ -688,6 +688,9 @@ validate_output_haplotype_dosages <- function(output_haplotype_dosages, output_f
         if (output_format != "bgvcf") {
             stop("Currently, can only output ancestral haplotype dosages with bgvcf")
         }
+    }
+    if (S > 1) {
+        stop("Currently output haplotypes can only be output with S=1")
     }
     return(NULL)
 }
