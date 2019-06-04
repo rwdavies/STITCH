@@ -89,40 +89,46 @@ get_nbreaks <- function(
     regionName,
     shuffleHaplotypeIterations,
     nGrids,
+    S = 1,
     shuffle_bin_nSNPs = NULL,
     shuffle_bin_radius = 5000
 ) {
-    break_results <- NULL ## matrix otherwise
-    if(is.na(match(iteration, shuffleHaplotypeIterations))==FALSE) {
-        if (is.null(shuffle_bin_radius) == FALSE) {
-            ## have previously (previous iteration) ended with define_breaks_to_consider
-            ## now, load break_results
-            ## NOTE - can be NULL, but unlikely
-            load(file_break_results(tempdir, regionName))
-        } else {
-            ## mimic format here as well
-            start <- round(shuffle_bin_nSNPs / 2) + 1
-            if (nGrids >= (start + shuffle_bin_nSNPs)) {
-                ##
-                left_break <- seq(start, nGrids - shuffle_bin_nSNPs, by = shuffle_bin_nSNPs)
-                nbreaks <- length(left_break) - 1
-                break_results <- cbind(
-                    left_grid_break_0_based = left_break - 1,
-                    left_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start),
-                    right_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start + 1),
-                    right_grid_break_0_based = left_break + shuffle_bin_nSNPs - 1
-                )
+    ## 
+    list_of_break_results <- lapply(1:S, function(x) NULL)
+    nbreaks <- rep(0, S)            
+    ## 
+    if (iteration %in% shuffleHaplotypeIterations) {
+        for(s in 1:S) {
+            if (!is.null(shuffle_bin_radius)) {
+                ## have previously (previous iteration) ended with define_breaks_to_consider
+                ## now, load break_results
+                ## NOTE - can be NULL, but unlikely
+                load(file_break_results(tempdir = tempdir, regionName = regionName, s = s))
+                ## 
+                if (length(break_results) > 0) {
+                    list_of_break_results[[s]] <- break_results                    
+                    nbreaks[s] <- nrow(break_results)
+                }
+            } else {
+                ## mimic format here as well
+                start <- round(shuffle_bin_nSNPs / 2) + 1
+                if (nGrids >= (start + shuffle_bin_nSNPs)) {
+                    ##
+                    left_break <- seq(start, nGrids - shuffle_bin_nSNPs, by = shuffle_bin_nSNPs)
+                    nbreaks[s] <- length(left_break) - 1
+                    list_of_break_results[[s]] <- cbind(
+                        left_grid_break_0_based = left_break - 1,
+                        left_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start),
+                        right_grid_focal_0_based = left_break + (shuffle_bin_nSNPs - start + 1),
+                        right_grid_break_0_based = left_break + shuffle_bin_nSNPs - 1
+                    )
+                }
             }
         }
     }
-    if (is.null(break_results)) {
-        nbreaks <- 0
-    } else {
-        nbreaks <- nrow(break_results)
-    }
     return(
         list(
-            break_results = break_results,
+            list_of_break_results = list_of_break_results,
             nbreaks = nbreaks
         )
     )
@@ -266,7 +272,7 @@ getBetterSwitchesSimple <- function(
 define_and_save_breaks_to_consider <- function(
     tempdir,
     regionName,
-    sigmaSum_unnormalized,
+    sigmaSum_m_unnormalized,
     L_grid,
     grid_distances,
     nGrids,
@@ -277,12 +283,18 @@ define_and_save_breaks_to_consider <- function(
     shuffle_bin_radius = 2000,
     plot_shuffle_haplotype_attempts = FALSE
 ) {
+    S <- ncol(sigmaSum_m_unnormalized)
     ## if too few SNPs, do not bother
+    if (nGrids < 5) {
+        break_results <- NULL    
+        for(s in 1:S) {        
+            save(break_results, file = file_break_results(tempdir = tempdir, regionName = regionName, s = s))
+        }
+    }
     ## EM algorithm should be fine, won't get stuck this way
-    if ((nGrids < 5)) {
-        break_results <- NULL
-        save(break_results, file = file_break_results(tempdir, regionName))
-    } else {
+    for(s in 1:S) {
+        ## these are defined and fine to work on
+        sigmaSum_unnormalized <- sigmaSum_m_unnormalized[, s]
         ## generate smoothed rate
         smoothed_rate <- rcpp_make_smoothed_rate(
             sigmaSum = sigmaSum_unnormalized,
@@ -306,8 +318,8 @@ define_and_save_breaks_to_consider <- function(
         break_results <- out$results
         break_thresh <- out$thresh
         ## NULL return unlikely but probably probable
-        if (plot_shuffle_haplotype_attempts == FALSE) {
-            save(break_results, file = file_break_results(tempdir, regionName))
+        if (!plot_shuffle_haplotype_attempts) {
+            save(break_results, file = file_break_results(tempdir = tempdir, regionName = regionName, s = s))
         } else {
             ## add in useful things for plot on subsequent iteration
             ##binSize <- 10000
@@ -334,9 +346,9 @@ define_and_save_breaks_to_consider <- function(
                 max_rate = (-x2_pre_exp / grid_distances),
                 cumu_rate = cumu_rate
             )
-            save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName))
+            save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir = tempdir, regionName = regionName, s = s))
             ## save extra copy - useful for debugging etc
-            save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName, iteration))
+            ## save(break_thresh, smoothed_rate, recomb_usage, break_results, file = file_break_results(tempdir, regionName, iteration))
         }
     }
     return(NULL)
@@ -929,4 +941,49 @@ plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outp
         plot_fbd_store(fbd_store, xleft, xright, xlim, main = main)
         dev.off()
     }
+}
+
+
+
+apply_better_switches_if_appropriate <- function(
+    list_of_fromMat,
+    nbreaks,
+    list_of_break_results,
+    eHapsCurrent_tc,
+    alphaMatCurrent_tc,
+    grid,
+    iteration,
+    snps_in_grid_1_based,
+    tempdir,
+    regionName,
+    grid_distances,
+    L_grid,
+    outputdir
+) {
+    ## only do for s that suit it
+    K <- dim(eHapsCurrent_tc)[1]
+    S <- dim(eHapsCurrent_tc)[3]
+    ## 
+    list_of_whichIsBest <- lapply(NA, S)
+    for(s in 1:S) {
+        if (nbreaks[s] > 0) {
+            out <- getBetterSwitchesSimple(fromMat = list_of_fromMat[[s]], nbreaks = nbreaks[s], break_results = list_of_break_results[[s]], K = K, eHapsFuture_t = eHapsCurrent_tc[, , s], alphaMatFuture_t = alphaMatCurrent_tc[, , s], grid = grid, iteration = iteration, snps_in_grid_1_based = snps_in_grid_1_based)
+            eHapsCurrent_tc[, , s] <- out$eHapsFuture_t
+            alphaMatCurrent_tc[, , s] <- out$alphaMatFuture_t
+            list_of_whichIsBest[[s]] <- out$whichIsBest
+            rm(out)
+        }
+    }
+    if (plot_shuffle_haplotype_attempts && sum(nbreaks) > 0) {
+        stop("fix plotting")
+        ## a single run, everything inside
+        load(file = file_fbdStore(tempdir, regionName, iteration)) ## to load fbdStore
+        plot_attempt_to_find_shuffles(grid_distances = grid_distances, L_grid = L_grid, fbd_store = fbd_store, tempdir = tempdir, outputdir = outputdir, regionName = regionName, iteration = iteration, list_of_whichIsBest = list_of_whichIsBest, is_reference = TRUE)
+    }
+    return(
+        list(
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            alphaMatCurrent_tc = alphaMatCurrent_tc            
+        )
+    )
 }

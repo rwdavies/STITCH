@@ -45,29 +45,6 @@ refpack <- make_reference_package(
 )
 
 
-chr <- "X"
-phasemasterX <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
-phasemasterX[3, ] <- c(1, 0)
-phasemasterX[5, ] <- c(0, 0)
-phasemasterX[6, ] <- c(1, 0)
-data_packageX <- make_acceptance_test_data_package(
-    n_samples = 10,
-    n_snps = n_snps,
-    n_reads = n_reads,
-    seed = 3,
-    chr = chr,
-    K = 2,
-    reads_span_n_snps = reads_span_n_snps,
-    phasemaster = phasemasterX
-)
-refpackX <- make_reference_package(
-    n_snps = n_snps,
-    n_samples_per_pop = 4,
-    reference_populations = c("CEU", "GBR", "CHB"),
-    chr = data_packageX$chr,
-    phasemaster = phasemasterX
-)
-
 
 test_that("STITCH can initialize with reference data with three sizes of K vs number of haps", {
 
@@ -105,6 +82,9 @@ test_that("STITCH can initialize with reference data with three sizes of K vs nu
             nCores = 1,
             output_format = output_format
         )
+        ## AM HERE
+        ## PAST REFERENCE FOR THE FIRST TIME (YAY!)
+        ## NOW WORK ON PROPER DIPLOID ETC (hopefully straightforward given all prep work)
 
         check_output_against_phase(
             file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),

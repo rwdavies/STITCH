@@ -683,14 +683,14 @@ validate_region_to_impute_when_using_regionStart <- function(L, regionStart, reg
 
 ## basically, for now, can only do if vcf
 ## ? no other resctrictions?
-validate_output_haplotype_dosages <- function(output_haplotype_dosages, output_format) {
+validate_output_haplotype_dosages <- function(output_haplotype_dosages, output_format, S) {
     if (output_haplotype_dosages) {
         if (output_format != "bgvcf") {
             stop("Currently, can only output ancestral haplotype dosages with bgvcf")
         }
-    }
-    if (S > 1) {
-        stop("Currently output haplotypes can only be output with S=1")
+        if (S > 1) {
+            stop("Currently output haplotypes can only be output with S=1")
+        }
     }
     return(NULL)
 }

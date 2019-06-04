@@ -4087,7 +4087,7 @@ calculate_updates <- function(
         priorSum_m[, s][priorSum_m[, s] < minPriorSum] <- minPriorSum
         priorSum_m[, s] <- priorSum_m[, s] / sum(priorSum_m[, s])
     }
-    if (is.na(priorSum[1])) { ## can happen if not at first SNP
+    if (sum(is.na(priorSum_m[1, ])) > 0) { ## can happen if not at first SNP
         priorSum_m[] <- 1 / K
     }
 

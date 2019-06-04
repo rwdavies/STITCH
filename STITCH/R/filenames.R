@@ -141,13 +141,14 @@ file_haplotypes <- function(
     ))
 }
 
-file_break_results <- function(tempdir, regionName, iteration = NULL) {
+file_break_results <- function(tempdir, regionName, s = 1, iteration = NULL) {
     return(file.path(
         tempdir,
         paste0(
             "nbreaks.", regionName,
             c(".", "")[as.integer(is.null(iteration)) + 1],
-            iteration, ".RData"
+            iteration,
+            ".s", s, ".RData"
         )
     ))
 }
