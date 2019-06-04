@@ -59,91 +59,66 @@ test_that("can do pseudoHaploid updates in C++", {
 
 test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
 
-    n_snps <- 10 ## set to 10000 to check times better
-    K <- 20
-
-    phasemaster <- matrix(
-        c(rep(0, n_snps), rep(1, n_snps)),
-        ncol = K
+    test_package <- make_fb_test_package(
+        K = 4,
+        nReads = 8,
+        nSNPs = 10,
+        gridWindowSize = 3,
+        S = 2
     )
-    data_package <- make_acceptance_test_data_package(
-        n_samples = 1,
-        n_snps = n_snps,
-        n_reads = n_snps * 2,
-        seed = 2,
-        chr = 10,
-        K = K,
-        phasemaster = phasemaster,
-        reads_span_n_snps = 3,
-        n_cores = 1
-    )
-    ##tmpdir = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/"
-    ##save(data_package, file = "/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
-    ##load("/data/smew1/rdavies/stitch_development/STITCH_v1.2.7_development/cppdir/test.RData")
+    S <- test_package$S
+    sampleReads <- test_package$sampleReads
+    nSNPs <- test_package$nSNPs
+    nGrids <- test_package$nGrids
+    K <- test_package$K
+    transMatRate_tc_H <- test_package$transMatRate_tc_H
+    alphaMatCurrent_tc <- test_package$alphaMatCurrent_tc
+    eMatHapSNP_t <- test_package$list_of_eMatHapSNP_t[[1]]
+    priorCurrent_m <- test_package$priorCurrent_m
+    eHapsCurrent_tc <- test_package$eHapsCurrent_tc
+    grid <- test_package$grid
 
-    regionName <- "region-name"
-    loadBamAndConvert(
-        iBam = 1,
-        L = data_package$L,
-        pos = data_package$pos,
-        nSNPs = data_package$nSNPs,
-        bam_files = data_package$bam_files,
-        N = 1,
-        sampleNames = data_package$sample_names,
-        inputdir = tempdir(),
-        regionName = regionName,
-        tempdir = tempdir(),
-        chr = data_package$chr,
-        chrStart = 1,
-        chrEnd = max(data_package$pos[, 2]) + 100
-    )
+    stop("resurrect diploid version, fix checks")
+    ## ## run through R function
+    ## out <- run_forward_backwards(
+    ##     sampleReads = sampleReads,
+    ##     priorCurrent = pi,
+    ##     transMatRate_t_D = t(transMatRate),
+    ##     alphaMatCurrent_t = t(alphaMat),
+    ##     eHapsCurrent_t = t(eHaps),
+    ##     method = "diploid",
+    ##     grid = grid
+    ## )
 
-    load(file_sampleReads(tempdir(), 1, regionName))
-    eHaps <- array(runif(n_snps * K), c(n_snps, K))
-    sigma <- runif(n_snps - 1)
-    alphaMat <- array(runif((n_snps - 1) * K), c(n_snps - 1, K))
-    x <- sigma
-    transMatRate <- cbind(x ** 2, x * (1 - x), (1 - x) ** 2)
-    pi <- runif(K) / K
-
-    ## run through R function
-    out <- run_forward_backwards(
-        sampleReads = sampleReads,
-        priorCurrent = pi,
-        transMatRate_t_D = t(transMatRate),
-        alphaMatCurrent_t = t(alphaMat),
-        eHapsCurrent_t = t(eHaps),
-        method = "diploid"
-    )
-
-    ## basic checks
-    gammaK_t <- out$fbsoL[[1]][["gammaK_t"]]
-    expect_equal(ncol(gammaK_t), n_snps)
-    expect_equal(min(gammaK_t) >= 0, TRUE)
-    expect_equal(max(gammaK_t) <= 1, TRUE)    
+    ## ## basic checks
+    ## gammaK_t <- out$fbsoL[[1]][["gammaK_t"]]
+    ## expect_equal(ncol(gammaK_t), n_snps)
+    ## expect_equal(min(gammaK_t) >= 0, TRUE)
+    ## expect_equal(max(gammaK_t) <= 1, TRUE)
 
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
 
-    for(run_pseudo_haploid in c(TRUE, FALSE)) {
-        ## run through R function
-        out <- run_forward_backwards(
-            sampleReads = sampleReads,
-            priorCurrent = pi,
-            transMatRate_t_H = t(transMatRate),
-            alphaMatCurrent_t = t(alphaMat),
-            eHapsCurrent_t = t(eHaps),
-            pRgivenH1 = pRgivenH1L,
-            pRgivenH2 = pRgivenH2L,
-            method = "pseudoHaploid"
-        )
-        ## basic checks
-        expect_equal(ncol(out$fbsoL[[1]]$gamma_t), n_snps)
-        expect_equal(min(out$fbsoL[[1]]$gamma_t) >= 0, TRUE)
-        expect_equal(max(out$fbsoL[[1]]$gamma_t) <= 1, TRUE)    
-    
-    }
-
+    ## run through R function
+    fbsoL <- run_forward_backwards(
+        sampleReads = sampleReads,
+        priorCurrent_m = priorCurrent_m,
+        transMatRate_tc_H = transMatRate_tc_H,
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        eHapsCurrent_tc = eHapsCurrent_tc,
+        pRgivenH1 = pRgivenH1L,
+        pRgivenH2 = pRgivenH2L,
+        method = "pseudoHaploid",
+        suppressOutput = 0,
+        return_gamma = TRUE,
+        grid = grid
+    )
+    print(names(fbsoL))
+    ## basic checks
+    gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
+    expect_equal(ncol(gamma_t), nGrids)
+    expect_equal(min(gamma_t) >= 0, TRUE)
+    expect_equal(max(gamma_t) <= 1, TRUE)
 
 })
 
@@ -161,19 +136,19 @@ test_that("can sample one path from forwardBackwardDiploid", {
         n_reads <- round(n_snps / 10)  ## set to vary coverage
         gridWindowSize <- NA  ## 10 SNPs / grid
     } else {
-        gridWindowSize <- NA        
+        gridWindowSize <- NA
         n_snps <- 10
         n_reads <- n_snps * 2
         tmpdir <- tempdir()
         suppressOutput <- as.integer(1)
     }
 
-    K <- 20    
+    K <- 20
     phasemaster <- matrix(
         c(rep(0, n_snps), rep(1, n_snps)),
         ncol = K
     )
-    file <- file.path(tmpdir, "package.RData")    
+    file <- file.path(tmpdir, "package.RData")
     if (speed_test & file.exists(file)) {
         print("loading file!")
         load(file)
@@ -222,7 +197,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     grid_distances <- out$grid_distances
     L_grid <- out$L_grid
     nGrids <- out$nGrids
-    
+
     eHaps <- array(runif(n_snps * K), c(n_snps, K))
     sigma <- rep(0.999, nGrids - 1)
     alphaMat <- array(1 / K / K, c(nGrids - 1, K))
@@ -243,8 +218,8 @@ test_that("can sample one path from forwardBackwardDiploid", {
     gammaUpdate_t <- array(0, c(K, nSNPs, 2))
     hapSum_t <- array(0, c(K, nGrids))
     alphaHat_t <- array(0, c(K * K, nGrids))
-    betaHat_t <- array(0, c(K * K, nGrids))    
-    
+    betaHat_t <- array(0, c(K * K, nGrids))
+
     ##out2 <- forwardBackwardDiploid_old(
     ##    sampleReads = sampleReads,
     ##    nReads = as.integer(length(sampleReads)),
@@ -285,7 +260,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         jUpdate_t = jUpdate_t,
         hapSum_t = hapSum_t,
         priorSum = priorSum,
-        pass_in_alphaBeta = TRUE,        
+        pass_in_alphaBeta = TRUE,
         alphaHat_t = alphaHat_t,
         betaHat_t = betaHat_t,
     )
@@ -296,7 +271,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     ##expect_equal(out1$jUpdate_t, out2$jUpdate_t)
     ##expect_equal(out1$gammaUpdate_t, out2$gammaUpdate_t)
     ##print(mean(out1$jUpdate_t - out2$jUpdate_t))
-    
+
     ## basically, these should be the same
     ## given the seed and the ridiculous good fit
     marginally_most_likely_path <- apply(out$gamma_t, 2, which.max) ## 1-based
@@ -334,7 +309,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
         jUpdate_t = jUpdate_t,
         hapSum_t = hapSum_t,
         priorSum = priorSum,
-        pass_in_alphaBeta = TRUE,        
+        pass_in_alphaBeta = TRUE,
         alphaHat_t = alphaHat_t,
         betaHat_t = betaHat_t,
         model = 1000,
@@ -365,7 +340,7 @@ test_that("can sample one path from forwardBackwardDiploid", {
     ##     jUpdate_t = jUpdate_t2,
     ##     hapSum_t = hapSum_t2,
     ##     priorSum = priorSum2,
-    ##     pass_in_alphaBeta = TRUE,        
+    ##     pass_in_alphaBeta = TRUE,
     ##     alphaHat_t = alphaHat_t,
     ##     betaHat_t = betaHat_t,
     ##     model = 1000,
@@ -378,8 +353,8 @@ test_that("can sample one path from forwardBackwardDiploid", {
     ## expect_equal(jUpdate_t2, jUpdate_t)
     ## expect_equal(gammaUpdate_t2, gammaUpdate_t)
     ## expect_equal(hapSum_t, hapSum_t2)
-    
-    
+
+
 
 })
 
@@ -458,6 +433,6 @@ test_that("can calculate eMatHapSNP and sample a haploid path", {
     )
 
     expect_equal(nrow(path), n_snps)
-    
+
 
 })

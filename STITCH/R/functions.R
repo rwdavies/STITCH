@@ -2975,6 +2975,8 @@ run_forward_backwards <- function(
     snp_end_1_based = NA,
     grid = -1,
     return_genProbs = FALSE,
+    return_hapDosage = FALSE,
+    return_gamma = FALSE,
     return_extra = FALSE,
     update_in_place = FALSE,
     gammaUpdate_t = array(0, c(1, 1, 1)),
@@ -2987,6 +2989,7 @@ run_forward_backwards <- function(
     alphaHat_t = array(0, c(1, 1)),
     betaHat_t = array(0, c(1, 1)),
     gamma_t = array(0, c(1, 1)),
+    eMatHapSNP_t = array(0, c(1, 1)),
     output_haplotype_dosages = FALSE,
     rescale_eMat_t = TRUE,
     rescale_eMatHap_t = TRUE
@@ -2995,16 +2998,29 @@ run_forward_backwards <- function(
     Jmax_local <- get_Jmax_wrt_iteration(Jmax, iteration, niterations)
 
     if (!return_genProbs) {
-        if ((is.na(iteration) == FALSE) && (iteration == niterations)) {
+        if (run_fb_subset && !is.na(iteration) && (iteration == niterations)) {
             return_genProbs <- TRUE
         } else if (iSample %in% highCovInLow) {
             return_genProbs <- TRUE
         }
     }
 
+    if (!return_hapProbs) {
+        if (run_fb_subset && !is.na(iteration) && (iteration == niterations)) {
+            return_hapProbs <- TRUE
+        } else if (iSample %in% highCovInLow) {
+            return_hapProbs <- TRUE
+        }
+    }
+
     if (return_genProbs) {
         if (grid[1] == -1) {
             stop("Include grid with return_genProbs")
+        }
+    }
+    if (return_hapProbs) {
+        if (grid[1] == -1) {
+            stop("Include grid with return_hapProbs")
         }
     }
 
@@ -3047,9 +3063,6 @@ run_forward_backwards <- function(
                 pRgivenH1L <- pRgivenH2
                 pRgivenH2L <- pRgivenH1
             }
-            print(eHapsCurrent_tc)
-            print(alphaMatCurrent_tc)
-            print(transMatRate_tc_H)
 
             fbsoL[[iNor]] <- forwardBackwardHaploid(
                 sampleReads = sampleReads,
@@ -3060,6 +3073,7 @@ run_forward_backwards <- function(
                 alphaHat_t = alphaHat_t,
                 betaHat_t = betaHat_t,
                 gamma_t = gamma_t,
+                eMatHapSNP_t = eMatHapSNP_t,
                 maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
                 maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
                 Jmax = Jmax_local,
@@ -3068,6 +3082,7 @@ run_forward_backwards <- function(
                 pRgivenH1 = pRgivenH1L,
                 pRgivenH2 = pRgivenH2L,
                 run_pseudo_haploid = TRUE,
+                return_gamma = return_gamma,
                 alphaStart = alphaBetaBlock[[iNor]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
                 betaEnd = alphaBetaBlock[[iNor]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
                 run_fb_subset = run_fb_subset,
@@ -3101,6 +3116,7 @@ run_forward_backwards <- function(
             alphaHat_t = alphaHat_t,
             betaHat_t = betaHat_t,
             gamma_t = gamma_t,
+            eMatHapSNP_t = eMatHapSNP_t,
             Jmax = Jmax_local,
             pRgivenH1 = as.double(0),
             pRgivenH2 = as.double(0),
@@ -3109,6 +3125,7 @@ run_forward_backwards <- function(
             suppressOutput = suppressOutput,
             model = -1, ## irrelevant for haploid
             run_pseudo_haploid = FALSE,
+            return_gamma = return_gamma,
             run_fb_subset = run_fb_subset,
             alphaStart = alphaBetaBlock[[iNor]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
             betaEnd = alphaBetaBlock[[iNor]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
@@ -3168,11 +3185,7 @@ run_forward_backwards <- function(
         )
     }
 
-    return(
-        list(
-            fbsoL = fbsoL
-        )
-    )
+    return(fbsoL)
 
 }
 
@@ -4039,116 +4052,140 @@ calculate_misc_updates <- function(
 
 
 calculate_updates <- function(
-    out2, sampleRanges, K, nSNPs, N,
+    out2, sampleRanges, N,
     nGen, expRate, minRate, maxRate,
     emissionThreshold, alphaMatThreshold, L,
     grid_distances, alleleCount = NA
 ) {
 
-    nGrids <- ncol(out2[[1]]$alphaMatSum_t) + 1
-    priorSum <- array(0, K)
-    alphaMatSum_t <- array(0, c(K, nGrids - 1))
-    gammaSumBoth_t <- array(0, c(K, nSNPs, 2))
-    hapSum_t <- array(0, c(K, nGrids))
-    ## sum and sum
+    d <- dim(out2[[1]][["gammaSum0_tc"]])
+    K <- d[1]
+    nSNPs <- d[2]
+    S <- d[3]
+    nGrids <- ncol(out2[[1]]$alphaMatSum_tc) + 1
 
+    gammaSum0_tc <- array(0, c(K, nSNPs, S))
+    gammaSum1_tc <- array(0, c(K, nSNPs, S))
+    alphaMatSum_tc <- array(0, c(K, nGrids - 1, S))
+    hapSum_tc <- array(0, c(K, nGrids, S))
+    priorSum_m <- array(0, c(K, S))
+
+    ## sum and sum
     for(i in 1:length(sampleRanges)) {
-        priorSum <- priorSum + out2[[i]]$priorSum
-        alphaMatSum_t <- alphaMatSum_t + out2[[i]]$alphaMatSum_t
-        gammaSumBoth_t <- gammaSumBoth_t + out2[[i]]$gammaSum_t
-        hapSum_t <- hapSum_t + out2[[i]]$hapSum_t
+        gammaSum0_tc <- out2[[i]][["gammaSum0_tc"]]
+        gammaSum1_tc <- out2[[i]][["gammaSum1_tc"]]
+        alphaMatSum_tc <- out2[[i]][["alphaMatSum_tc"]]
+        hapSum_tc <- out2[[i]][["hapSum_tc"]]
+        priorSum_m <- out2[[i]][["priorSum_m"]]
     }
 
     ## normalize prior
-    priorSum <- priorSum / sum(priorSum)
-    ## note - it is possible in simulations not to have sampled the first SNP
-    ## in which case there is no posterior information, so set to random
-    if(is.na(priorSum[1]))
-        priorSum <- rep(1 / K, K)
-
-    minPriorSum <- (1 / K) / 100
-    priorSum[priorSum < minPriorSum] <- minPriorSum
-    priorSum <- priorSum / sum(priorSum)
-
+    minPriorSum <- (1 / K) / 100 ## this seems arbitrary!
+    for(s in 1:S) {
+        priorSum_m[, s] <- priorSum_m[, s] / sum(priorSum_m[, s])
+        ## make min
+        priorSum_m[, s][priorSum_m[, s] < minPriorSum] <- minPriorSum
+        priorSum_m[, s] <- priorSum_m[, s] / sum(priorSum_m[, s])
+    }
+    if (is.na(priorSum[1])) { ## can happen if not at first SNP
+        priorSum_m[] <- 1 / K
+    }
 
     ## normalize sigma
-    sigmaSum <- colSums(alphaMatSum_t) / N / 2
-    sigmaSum <- exp(-sigmaSum)
-
-    which <- is.na(sigmaSum)
     if (is.null(grid_distances)) {
         dl <- diff(L)
     } else {
         dl <- grid_distances
     }
-    if (sum(which) > 0) {
-        sigmaSum[which] <- exp(-nGen * expRate / 100 / 1000000 * dl)[which]
-    }
-    sigmaSum_unnormalized <- sigmaSum
 
+    sigmaSum_m <- array(0, c(nGrids - 1, S))
+    sigmaSum_m_unnormalized <- array(0, c(nGrids - 1, S))
     ## morgans per SNP assuming T=100, 0.5 cM/Mb
     x1 <- exp(-nGen * minRate * dl/100/1000000) # lower
     x2 <- exp(-nGen * maxRate * dl/100/1000000) # upper
-    ## recombination average rate
-    ## we estiamte the compound parameter T * sigma_t
-    ## so we need to use nGen to bound apppropriately
-    sigmaSum[sigmaSum > x1] <- x1[sigmaSum > x1]
-    sigmaSum[sigmaSum < x2] <- x2[sigmaSum < x2]
+    ##
+    for(s in 1:S) {
+        sigmaSum_m[, s] <- colSums(alphaMatSum_tc[, , s]) / N / 2
+        sigmaSum_m[, s]<- exp(-sigmaSum_m[, s])
+        which <- is.na(sigmaSum_m[, s])
+        if (sum(which) > 0) {
+            sigmaSum_m[which] <- exp(-nGen * expRate / 100 / 1000000 * dl)[which]
+        }
+        sigmaSum_m_unnormalized[, s] <- sigmaSum_m[, s]
+        ## recombination average rate
+        ## we estiamte the compound parameter T * sigma_t
+        ## so we need to use nGen to bound apppropriately
+        sigmaSum_m[sigmaSum_m[, s] > x1, s] <- x1[sigmaSum_m[, s] > x1]
+        sigmaSum_m[sigmaSum_m[, s] < x2, s] <- x2[sigmaSum_m[, s] < x2]
+    }
+
 
     ## needed if only 1 SNP. stupid R and not able to drop selective dimensions
-    gammaSum_t <- array(0, c(K, nSNPs))
-    gammaSum_t[, ] <- gammaSumBoth_t[, , 1] / gammaSumBoth_t[, , 2]
-
+    gammaSum_tc <- array(0, c(K, nSNPs, S))
+    for(s in 1:S) {
+        ##
+        gammaSum_tc[, , s] <- gammaSum0_tc[, , s] / gammaSum1_tc[, , s]
+    }
     ## if missing, use alleleCount to fill in
     if (is.na(alleleCount[1])) {
-        gammaSum_t[is.na(gammaSum_t)] <- 0.5 ## blank out entire SNP if no reads anywhere
+        gammaSum_tc[is.na(gammaSum_tc)] <- 0.5 ## blank out entire SNP if no reads anywhere
     } else {
-        for(k in 1:K) {
-            w <- is.na(gammaSum_t[k, ])
-            gammaSum_t[k, w] <- alleleCount[w, 3]
+        ## I think this is very inefficient, but also should almost never happen?
+        for(s in 1:S) {
+            for(k in 1:K) {
+                w <- is.na(gammaSum_tc[k, , s])
+                gammaSum_t[k, w, s] <- alleleCount[w, 3]
+            }
         }
     }
+    gammaSum_tc[gammaSum_tc > (1 - emissionThreshold)] <- (1 - emissionThreshold)
+    gammaSum_tc[gammaSum_tc < emissionThreshold] <- emissionThreshold
 
-    gammaSum_t[gammaSum_t > (1 - emissionThreshold)] <- (1 - emissionThreshold)
-    gammaSum_t[gammaSum_t < emissionThreshold] <- emissionThreshold
-
-    ## honestly what was I even doing before
-    ## this looks right, possibly inefficient
-    alphaMatSum_t <- alphaMatSum_t / rep(colSums(alphaMatSum_t), each = K)
+    ## normalize so each column has sum 1
+    for(s in 1:S) {
+        alphaMatSum_tc[, , s] <-
+            alphaMatSum_tc[, , s] / rep(colSums(alphaMatSum_tc[, , s]), each = K)
+    }
 
     ## now reset columns below threshold to value to make to sum to 1
-    alphaMatSum_t[alphaMatSum_t < alphaMatThreshold] <- 0
+    alphaMatSum_tc[alphaMatSum_tc < alphaMatThreshold] <- 0
     ## if this happens, reset the averages of those columns
     ## to keep each column having sum 1, with minimum entry the thresold value
-    how_many_cols_below_0 <- colSums(alphaMatSum_t == 0)
-    if (sum(how_many_cols_below_0) > 0) {
-        ## for columns with an entry below 0
-        ## each 0 entry becomes threshold
-        ## then rest re-scaled so whole thing has sum 1
-        which_cols <- how_many_cols_below_0 > 0
-        y <- alphaMatThreshold * how_many_cols_below_0[which_cols]
-        x <- colSums(alphaMatSum_t[, which_cols, drop = FALSE])
-        for(k in 1:K) {
-            alphaMatSum_t[k, which_cols] <- (1 - y) * alphaMatSum_t[k, which_cols] / x
+    for(s in 1:S) {
+        how_many_cols_below_0 <- colSums(alphaMatSum_tc[, , s] == 0)
+        if (sum(how_many_cols_below_0) > 0) {
+            ## for columns with an entry below 0
+            ## each 0 entry becomes threshold
+            ## then rest re-scaled so whole thing has sum 1
+            which_cols <- how_many_cols_below_0 > 0
+            y <- alphaMatThreshold * how_many_cols_below_0[which_cols]
+            x <- colSums(alphaMatSum_tc[, which_cols, s, drop = FALSE])
+            for(k in 1:K) {
+                alphaMatSum_tc[k, which_cols, s] <- (1 - y) * alphaMatSum_tc[k, which_cols, s] / x
+            }
         }
-        alphaMatSum_t[alphaMatSum_t == 0] <- alphaMatThreshold
     }
+    alphaMatSum_tc[alphaMatSum_tc == 0] <- alphaMatThreshold
 
-    ## now - cols, meaning SNPs, want to
-    t1 <- colSums(is.na(alphaMatSum_t)) > 0
-    if (sum(t1) > 0) {
-        warning("alphaMat update contains NA")
-        alphaMatSum_t[, t1] <- 1 / K
+    if (sum(is.na(alphaMatSum_tc)) > 0) {
+        stop("There are NAs in alphaMatSum_tc")
     }
+    ## ## I do not think this happens anymore?
+    ## for(s in 1:S) {
+    ## t1 <- colSums(is.na(alphaMatSum_tc)) > 0
+    ## if (sum(t1) > 0) {
+    ##     warning("alphaMat update contains NA")
+    ##     alphaMatSum_t[, t1] <- 1 / K
+    ## }
 
     return(
         list(
-            sigmaSum = sigmaSum,
-            sigmaSum_unnormalized = sigmaSum_unnormalized,
-            priorSum = priorSum,
-            alphaMatSum_t = alphaMatSum_t,
-            gammaSum_t = gammaSum_t,
-            hapSum_t = hapSum_t
+            sigmaSum_m = sigmaSum_m,
+            sigmaSum_m_unnormalized = sigmaSum_m_unnormalized,
+            priorSum_m= priorSum_m,
+            alphaMatSum_tc = alphaMatSum_tc,
+            gammaSum_tc = gammaSum_tc,
+            hapSum_tc = hapSum_tc
         )
     )
 }

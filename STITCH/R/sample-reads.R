@@ -191,14 +191,14 @@ bundle_inputs_after_generation <- function(
         save(
             bundledSampleReads,
             file = file_bundledSampleReads(dir, s, e, regionName),
-            compress = FALSE            
+            compress = FALSE
         )
     } else if (what == "sampleProbs") {
         bundledSampleProbs <- bundledSampleObject
         save(
             bundledSampleProbs,
             file = file_bundledSampleProbs(dir, s, e, regionName),
-            compress = FALSE            
+            compress = FALSE
         )
     } else if (what == "referenceSampleReads") {
         bundledSampleReads <- bundledSampleObject
@@ -270,15 +270,15 @@ rebundle_input <- function(
     out <- get_rebundled_files(inputdir, regionName, outputdir)
     files <- out$files
     ranges <- out$ranges
-    
+
     if (sum(unlist(apply(ranges, 1, function(x) x[1]:x[2])) != 1:N) > 0) {
         stop ("You are rebundling old input files, however, the originally bundled files do not span the number of files you have as inferred from sampleNames")
     }
-    
+
     if (ranges[nrow(ranges), 2] != N) {
         stop ("You are rebundling old input files, however, the number of samples as inferred from the input bundles is not the same as sampleNames")
     }
-    
+
     files_do_not_exist <- unlist(lapply(bundling_info$list, function(m) {
         sapply(m, function(a) {
             s <- a[1]
@@ -291,10 +291,10 @@ rebundle_input <- function(
         print_message("Done rebundling inputs")
         return(NULL)
     }
-    
+
     newBundle <- NULL
     bundledSampleReads <- NULL
-    
+
     ## multi-core re-bundling
     sampleRanges <- getSampleRange(N, nCores)
 
@@ -307,10 +307,10 @@ rebundle_input <- function(
         tempdir = tempdir,
         regionName = regionName,
         bundling_info = bundling_info,
-        inputdir = inputdir    
+        inputdir = inputdir
     )
     check_mclapply_OK(out2)
-    
+
     print_message("Done rebundling inputs")
     return(NULL)
 }
@@ -328,10 +328,10 @@ rebundle_input_subfunction <- function(
     ## start with the file relevant to the first sample
     iSample <- sampleRange[1]
     i_file <- which(iSample >= ranges[, 1] & iSample <= ranges[, 2])
-    load(files[i_file])    
+    load(files[i_file])
     cor <- ranges[i_file, ]
     cor <- cor[1]:cor[2]
-    
+
     for(iSample in sampleRange[1]:sampleRange[2]) {
         m <- match(iSample, cor)
         if (is.na(m) == FALSE) {
@@ -382,7 +382,7 @@ load_all_sampleReads_into_memory <- function(
         sampleRanges,
         mc.cores = nCores,
         FUN = function(sampleRange) {
-        allSampleReads <- as.list(1:N)        
+        allSampleReads <- as.list(1:N)
         bundledSampleReads <- NULL
         for(iSample in sampleRange[1]:sampleRange[2]) {
             out <- get_sampleReads_from_dir_for_sample(
@@ -403,12 +403,12 @@ load_all_sampleReads_into_memory <- function(
     allSampleReads <- as.list(1:N)
     for(i_core in 1:length(out)) {
         sampleRange <- sampleRanges[[i_core]]
-        x <- out[[i_core]]        
-        for(iSample in sampleRange[1]:sampleRange[2]) {        
+        x <- out[[i_core]]
+        for(iSample in sampleRange[1]:sampleRange[2]) {
             allSampleReads[[iSample]] <- x[[iSample]]
         }
     }
-    print_message("Done loading all sample reads into memory")    
+    print_message("Done loading all sample reads into memory")
     return(allSampleReads)
 
 }
@@ -424,7 +424,7 @@ split_reads_completely <- function(
     allSampleReads
 ) {
 
-    print_message("Split reads")    
+    print_message("Split reads")
     sampleRanges <- getSampleRange(N = N, nCores = nCores)
     out <- mclapply(
         sampleRanges,
@@ -442,8 +442,8 @@ split_reads_completely <- function(
         allSampleReads <- as.list(1:N)
         for(i_core in 1:length(out)) {
             sampleRange <- sampleRanges[[i_core]]
-            x <- out[[i_core]]        
-            for(iSample in sampleRange[1]:sampleRange[2]) {        
+            x <- out[[i_core]]
+            for(iSample in sampleRange[1]:sampleRange[2]) {
                 allSampleReads[[iSample]] <- x[[iSample]]
             }
         }
@@ -469,7 +469,7 @@ split_read_subfunc <- function(
 
     who_to_run <- sampleRange[1]:sampleRange[2]
     allSampleReadsOutput <- as.list(1:N)
-    
+
     for (iiSample in 1:(length(who_to_run))) {
         ##
         iSample <- who_to_run[iiSample]

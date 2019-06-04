@@ -525,7 +525,7 @@ run_EM_on_reference_sample_reads <- function(
         }
 
         ## here
-        out <- single_reference_iteration(N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, K = K, L = L, nGen  = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, sigmaCurrent = sigmaCurrent, eHapsCurrent = eHapsCurrent, alphaMatCurrent = alphaMatCurrent, priorCurrent = priorCurrent, grid_distances = grid_distances, nbreaks = nbreaks, break_results = break_results, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, iteration = iteration)
+        out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, maxRate = maxRate, minRate = minRate, reference_phred = reference_phred, nbreaks = nbreaks, break_results = break_results, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, iteration = iteration)
 
         sigmaCurrent <- out$sigmaSum
         sigmaSum_unnormalized <- out$sigmaSum_unnormalized        ##
@@ -583,167 +583,179 @@ single_reference_iteration <- function(
     reference_bundling_info,
     tempdir,
     regionName,
-    nSNPs,
-    nGrids,
-    K,
     L,
-    nGen,
-    emissionThreshold,
-    alphaMatThreshold,
-    expRate,
-    minRate,
-    maxRate,
-    pseudoHaploidModel,
-    reference_phred,
+    grid,
     grid_distances,
-    nbreaks,
-    break_results,
-    plot_shuffle_haplotype_attempts,
-    iteration
+    nGen,
+    emissionThreshold = 1e-4,
+    alphaMatThreshold = 1e-4,
+    expRate = 0.5,
+    maxRate = 100,
+    minRate = 0.1,
+    reference_phred = 20,
+    nbreaks = 0,
+    break_results = NULL,
+    plot_shuffle_haplotype_attempts = FALSE,
+    iteration = 1
 ) {
 
-    stop("am working on this function - make new forwardBackwardHaploid")
     sampleRanges <- getSampleRange(N_haps, nCores)
     transMatRate_tc_H <- get_transMatRate_m(method = "pseudoHaploid", sigmaCurrent_m)
 
-    out2 <- mclapply(
-        sampleRanges,
-        mc.cores = nCores,
-        function(sampleRange) {
+    maxDifferenceBetweenReads <- 1 / (10 **(-(reference_phred / 10)))
+    maxEmissionMatrixDifference <- 1 / (10 **(-(reference_phred / 10)))
+    K <- nrow(eHapsCurrent_tc)
+    nSNPs <- ncol(eHapsCurrent_tc)
+    S <- dim(eHapsCurrent_tc)[[3]]
+    nGrids <- ncol(alphaMatCurrent_tc) + 1
 
-            ## YUCK - HOW SHOULD THESE BE
-            priorSum <- array(0,K)
-            alphaMatSum_t <- array(0, c(K, nGrids - 1))
-            gammaSum_t <- array(0, c(K, nSNPs, 2))
-            hapSum_t <- array(0,c(K, nGrids))
-            alphaHat_t <- array(0, c(K, nGrids))
-            betaHat_t <- array(0, c(K, nGrids))
-            if (nbreaks > 0) {
-                fromMat <- array(0, c(nbreaks, K, K))
-            } else {
-                fromMat <- NULL
-            }
+    out2 <- mclapply(sampleRanges, mc.cores = nCores, function(sampleRange) {
 
-            bundledSampleReads <- NULL
-            for(iSample in sampleRange[1]:sampleRange[2]) {
+        alphaHat_t <- array(0, c(K, nGrids))
+        betaHat_t <- array(0, c(K, nGrids))
+        gamma_t <- array(0, c(K, nGrids))
+        eMatHapSNP_t <- array(0, c(K, nGrids))
 
-                out <- get_sampleReads_from_dir_for_sample(
-                    dir = tempdir,
-                    regionName = regionName,
-                    iSample = iSample,
-                    bundling_info = reference_bundling_info,
-                    bundledSampleReads = bundledSampleReads,
-                    what = "referenceSampleReads"
-                )
-                sampleReads <- out$sampleReads
-                bundledSampleReads <- out$bundledSampleReads
+        ## for updating
+        gammaSum0_tc <- array(0, c(K, nSNPs, S))
+        gammaSum1_tc <- array(0, c(K, nSNPs, S))
+        alphaMatSum_tc <- array(0, c(K, nGrids - 1, S))
+        hapSum_tc <- array(0, c(K, nGrids, S))
+        priorSum_m <- array(0, c(K, S))
 
-                ## AM HERE
-                ## NEED TO RE-WRITE FORWARD-BACKWARD-HAPLOID
-                ## BUT CAN DO THAT IN PIECES BETTER HOPEFULLY
-                fbsoL <- forwardBackwardHaploid(
-                    sampleReads = sampleReads,
-                    nReads = as.integer(length(sampleReads)),
-                    Jmax = as.integer(1),
-                    pi = priorCurrent,
-                    pRgivenH1 = as.double(0),
-                    pRgivenH2 = as.double(0),
-                    eHaps_t = eHapsCurrent_t,
-                    alphaMat_t = alphaMatCurrent_t,
-                    transMatRate_t_H = transMatRate_t_H,
-                    maxDifferenceBetweenReads = 1 / (10 **(-(reference_phred / 10))),
-                    maxEmissionMatrixDifference = 1 / (10 **(-(reference_phred / 10))),
-                    suppressOutput = as.integer(1),
-                    model = -1, ## irrelavent here
-                    run_pseudo_haploid = as.integer(0), ## just run haploid
-                    blocks_for_output = array(0, c(1, 1)),
-                    update_in_place = TRUE,
-                    gammaUpdate_t = gammaSum_t,
-                    jUpdate_t = alphaMatSum_t,
-                    priorSum = priorSum,
-                    hapSum_t = hapSum_t,
-                    pass_in_alphaBeta = TRUE,
-                    alphaHat_t = alphaHat_t,
-                    betaHat_t = betaHat_t
-                )
+        if (nbreaks > 0) {
+            fromMat <- array(0, c(nbreaks, K, K))
+        } else {
+            fromMat <- NULL
+        }
 
-                if (nbreaks > 0) {
-                    for(iBreak in 1:nbreaks) {
-                        from <- break_results[iBreak, "left_grid_break_0_based"]
-                        to <- break_results[iBreak, "right_grid_break_0_based"]
-                        hp1 <- fbsoL$gamma_t[, from + 1]
-                        hp2 <- fbsoL$gamma_t[, to + 1]
-                        fromMat[iBreak, , ] <-
-                            fromMat[iBreak, , ] + hp1 %*% t(hp2)
-                    }
-                    if (plot_shuffle_haplotype_attempts) {
-                        i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
-                        if (i_core == 1) {
-                            M <- min(20, sampleRange[2]) ## how many to plot
-                            if (iSample == 1) {
-                                fbd_store <- as.list(1:M)
-                            }
-                            if (iSample <= M) {
-                                ## this needs to be R <- fbd_store[[iSample]]$gammaK_t
-                                fbd_store[[iSample]] <- list(gammaK_t = fbsoL[["gamma_t"]])
-                            }
-                            if (iSample == M) {
-                                save(fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
-                                fbd_store <- NULL
-                            }
+        bundledSampleReads <- NULL
+        for(iSample in sampleRange[1]:sampleRange[2]) {
+
+            out <- get_sampleReads_from_dir_for_sample(
+                dir = tempdir,
+                regionName = regionName,
+                iSample = iSample,
+                bundling_info = reference_bundling_info,
+                bundledSampleReads = bundledSampleReads,
+                what = "referenceSampleReads"
+            )
+            sampleReads <- out$sampleReads
+            bundledSampleReads <- out$bundledSampleReads
+
+            ## AM HERE
+            ## NEED TO RE-WRITE FORWARD-BACKWARD-HAPLOID
+            ## BUT CAN DO THAT IN PIECES BETTER HOPEFULLY
+            fbsoL <- forwardBackwardHaploid(
+                sampleReads = sampleReads,
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                alphaMatCurrent_tc = alphaMatCurrent_tc,
+                transMatRate_tc_H = transMatRate_tc_H,
+                priorCurrent_m = priorCurrent_m,
+                pRgivenH1 = as.double(0),
+                pRgivenH2 = as.double(0),
+                maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+                maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+                suppressOutput = 0,
+                model = -1, ## irrelavent here
+                run_pseudo_haploid = as.integer(0), ## just run haploid
+                blocks_for_output = array(0, c(1, 1)),
+                update_in_place = TRUE,
+                gammaSum0_tc = gammaSum0_tc,
+                gammaSum1_tc = gammaSum1_tc,
+                alphaMatSum_tc = alphaMatSum_tc,
+                hapSum_tc = hapSum_tc,
+                priorSum_m= priorSum_m,
+                pass_in_alphaBeta = TRUE,
+                alphaHat_t = alphaHat_t,
+                betaHat_t = betaHat_t,
+                gamma_t = gamma_t,
+                eMatHapSNP_t = eMatHapSNP_t,
+                grid = grid,
+                Jmax = 10
+            )
+
+            stop("am here, fix fromMat - do I have test")
+            for(s in 1:S) {
+                if (nbreaks[s] > 0) {
+                    ## AM HERE
+                    ## CONTINUE FIXING
+                    for(iBreak in 1:nbreaks[s]) {
+                    from <- break_results[iBreak, "left_grid_break_0_based"]
+                    to <- break_results[iBreak, "right_grid_break_0_based"]
+                    hp1 <- fbsoL$gamma_t[, from + 1]
+                    hp2 <- fbsoL$gamma_t[, to + 1]
+                    fromMat_c[iBreak, , s] <-
+                        fromMat_c[iBreak, , s] + hp1 %*% t(hp2)
+                }
+                if (plot_shuffle_haplotype_attempts) {
+                    i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
+                    if (i_core == 1) {
+                        M <- min(20, sampleRange[2]) ## how many to plot
+                        if (iSample == 1) {
+                            fbd_store <- as.list(1:M)
+                        }
+                        if (iSample <= M) {
+                            ## this needs to be R <- fbd_store[[iSample]]$gammaK_t
+                            fbd_store[[iSample]] <- list(gammaK_t = fbsoL[["gamma_t"]])
+                        }
+                        if (iSample == M) {
+                            save(fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
+                            fbd_store <- NULL
                         }
                     }
                 }
-
-
             }
-            return(
-                list(
-                    gammaSum_t = gammaSum_t,
-                    alphaMatSum_t = alphaMatSum_t,
-                    priorSum = priorSum,
-                    hapSum_t = hapSum_t,
-                    fromMat = fromMat
-                )
-            )
+
+
         }
-    )
+        return(
+            list(
+                gammaSum0_tc = gammaSum0_tc,
+                gammaSum1_tc = gammaSum1_tc,
+                alphaMatSum_tc = alphaMatSum_tc,
+                hapSum_tc = hapSum_tc,
+                priorSum_m = priorSum_m,
+                fromMat_c = fromMat_c
+            )
+        )
+    })
 
     check_mclapply_OK(out2, "There has been an error generating the input. Please see error message above")
 
     out <- calculate_updates(
-        out2 = out2, sampleRanges = sampleRanges, K = K, nSNPs = nSNPs, N = N_haps,
+        out2 = out2, sampleRanges = sampleRanges, N = N_haps,
         nGen = nGen, expRate = expRate, minRate = minRate, maxRate = maxRate,
         emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, L = L, grid_distances = grid_distances
     )
 
-    sigmaSum <- out$sigmaSum
-    sigmaSum_unnormalized <- out$sigmaSum_unnormalized
-    priorSum <- out$priorSum
-    alphaMatSum <- t(out$alphaMatSum_t) ## TRANSPOSE-CLEAN
-    gammaSum <- t(out$gammaSum_t) ## TRANSPOSE-CLEAN
-    hapSum <- t(out$hapSum_t) ## TRANSPOSE-CLEAN
+    sigmaSum_m <- out$sigmaSum_m
+    sigmaSum_m_unnormalized <- out$sigmaSum_m_unnormalized
+    priorSum_m <- out$priorSum_m
+    alphaMatSum_tc <- out$alphaMatSum_tc
+    gammaSum_tc <- out$gammaSum_tc
+    hapSum_tc <- out$hapSum_tc
 
     if (nbreaks > 0) {
         ## after iteration, get the switches, and fix!
-        fromMat <- array(0, c(nbreaks, K, K))
+        fromMat_c <- array(0, c(nbreaks, K, K, S))
         for(i in 1:length(sampleRanges)) {
-            fromMat <- fromMat + out2[[i]][["fromMat"]]
+            fromMat_c <- fromMat_c + out2[[i]][["fromMat"]]
         }
     } else {
-        fromMat <- NULL
+        fromMat_c <- NULL
     }
 
 
     return(
         list(
-            gammaSum = gammaSum,
-            sigmaSum = sigmaSum,
-            alphaMatSum = alphaMatSum,
-            priorSum = priorSum,
-            hapSum = hapSum,
-            sigmaSum_unnormalized = sigmaSum_unnormalized,
-            fromMat = fromMat
+            sigmaSum_m = sigmaSum_m,
+            sigmaSum_m_unnormalized = sigmaSum_m_unnormalized,
+            priorSum_m= priorSum_m,
+            alphaMatSum_tc = alphaMatSum_tc,
+            gammaSum_tc = gammaSum_tc,
+            hapSum_tc = hapSum_tc,
+            fromMat_c = fromMat_c
         )
     )
 
