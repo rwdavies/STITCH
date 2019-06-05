@@ -558,7 +558,7 @@ single_reference_iteration <- function(
         alphaHat_t <- array(0, c(K, nGrids))
         betaHat_t <- array(0, c(K, nGrids))
         gamma_t <- array(0, c(K, nGrids))
-        eMatHapSNP_t <- array(0, c(K, nGrids))
+        eMatGrid_t <- array(0, c(K, nGrids))
 
         ## for updating
         gammaSum0_tc <- array(0, c(K, nSNPs, S))
@@ -613,7 +613,7 @@ single_reference_iteration <- function(
                 alphaHat_t = alphaHat_t,
                 betaHat_t = betaHat_t,
                 gamma_t = gamma_t,
-                eMatHapSNP_t = eMatHapSNP_t,
+                eMatGrid_t = eMatGrid_t,
                 grid = grid,
                 Jmax = 10
             )

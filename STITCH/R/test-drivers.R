@@ -762,10 +762,10 @@ make_fb_test_package <- function(
         )
     })
     ## almost certainly want to pre-declare
-    list_of_eMatHap_t <- lapply(0:(S - 1), function(s) {
-        eMatHap_t <- array(1, c(K, nReads))
-        rcpp_make_eMatHap_t(
-            eMatHap_t = eMatHap_t,
+    list_of_eMatRead_t <- lapply(0:(S - 1), function(s) {
+        eMatRead_t <- array(1, c(K, nReads))
+        rcpp_make_eMatRead_t(
+            eMatRead_t = eMatRead_t,
             sampleReads = sampleReads,
             eHapsCurrent_tc = eHapsCurrent_tc,
             s = s,
@@ -774,16 +774,20 @@ make_fb_test_package <- function(
             eMatHapOri_t = array(0, c(1, 1)), ## ugh
             pRgivenH1 = array(0),
             pRgivenH2 = array(0),
-            run_pseudo_haploid = FALSE
+            run_pseudo_haploid = FALSE,
+            prev = 0,
+            suppressOutput = 1,
+            prev_section = "text",
+            next_section = "text"
         )
-        return(eMatHap_t)
+        return(eMatRead_t)
     })
     ##
-    list_of_eMatHapSNP_t <- lapply(0:(S - 1), function(s) {
-        eMatHapSNP_t <- array(1, c(K, nGrids))
-        rcpp_make_eMatHapSNP_t(
-            eMatHapSNP_t = eMatHapSNP_t,
-            eMatHap_t = list_of_eMatHap_t[[s + 1]],
+    list_of_eMatGrid_t <- lapply(0:(S - 1), function(s) {
+        eMatGrid_t <- array(1, c(K, nGrids))
+        rcpp_make_eMatGrid_t(
+            eMatGrid_t = eMatGrid_t,
+            eMatRead_t = list_of_eMatRead_t[[s + 1]],
             H = 1,
             sampleReads = sampleReads,
             hap = 1,
@@ -791,9 +795,13 @@ make_fb_test_package <- function(
             run_fb_grid_offset = 0,
             use_all_reads = TRUE,
             bound = TRUE,
-            maxEmissionMatrixDifference = maxEmissionMatrixDifference
+            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+            prev = 0,
+            suppressOutput = 1,
+            prev_section = "text",
+            next_section = "text"
         )
-        return(eMatHapSNP_t)
+        return(eMatGrid_t)
     })
     ##
     return(
@@ -820,8 +828,8 @@ make_fb_test_package <- function(
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             Jmax_local = Jmax_local,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-            list_of_eMatHap_t = list_of_eMatHap_t,
-            list_of_eMatHapSNP_t = list_of_eMatHapSNP_t
+            list_of_eMatRead_t = list_of_eMatRead_t,
+            list_of_eMatGrid_t = list_of_eMatGrid_t
         )
     )
 }

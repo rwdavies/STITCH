@@ -31,6 +31,10 @@ arma::mat make_gammaEK_t_from_gammaK_t(
     const Rcpp::IntegerVector& grid,
     const int snp_start_1_based,
     const int snp_end_1_based,
+    double& prev,
+    const int suppressOutput,
+    std::string& prev_section,
+    std::string& next_section,
     const int grid_offset = 0
 );
 
@@ -49,7 +53,7 @@ Rcpp::List rcpp_make_fb_snp_offsets(
 void Rcpp_run_forward_haploid(
     arma::mat& alphaHat_t,
     arma::rowvec& c,
-    const arma::mat& eMatHapSNP_t,
+    const arma::mat& eMatGrid_t,
     const arma::cube& alphaMatCurrent_tc,
     const arma::cube& transMatRate_tc_H,
     const arma::mat& priorCurrent_m,
@@ -65,7 +69,7 @@ void Rcpp_run_forward_haploid(
     int k;
     if (run_fb_subset == false) {
         for(k = 0; k < K; k++) {
-            alphaHat_t(k, 0) = priorCurrent_m(k, s) * eMatHapSNP_t(k, 0);
+            alphaHat_t(k, 0) = priorCurrent_m(k, s) * eMatGrid_t(k, 0);
         }
     } else {
         for(k=0; k < K; k++) {
@@ -82,7 +86,7 @@ void Rcpp_run_forward_haploid(
         // so can use the below (uncommented) code to simplify
         // alphaConst = transMatRate_t_H(1, t-1) * arma::sum(alphaHat_t.col(t - 1));
         //
-        alphaHat_t.col(iGrid) = eMatHapSNP_t.col(iGrid) % (		   \
+        alphaHat_t.col(iGrid) = eMatGrid_t.col(iGrid) % (		   \
             transMatRate_tc_H(0, iGrid - 1, s) * alphaHat_t.col(iGrid - 1) + \
             transMatRate_tc_H(1, iGrid - 1, s) * alphaMatCurrent_tc.slice(s).col(iGrid - 1) );
         c(iGrid) = 1 / arma::sum(alphaHat_t.col(iGrid));
@@ -97,16 +101,16 @@ void Rcpp_run_forward_haploid(
 void Rcpp_run_backward_haploid(
     arma::mat& betaHat_t,
     arma::rowvec& c,
-    const arma::mat& eMatHapSNP_t,
+    const arma::mat& eMatGrid_t,
     const arma::cube& alphaMatCurrent_tc,
     const arma::cube& transMatRate_tc_H,
     const int s
 ) {
-    const int nGrids = eMatHapSNP_t.n_cols;
+    const int nGrids = eMatGrid_t.n_cols;
     double x;
     arma::colvec e_times_b;
     for(int iGrid = nGrids - 2; iGrid >= 0; --iGrid) {
-        e_times_b = eMatHapSNP_t.col(iGrid + 1) % betaHat_t.col(iGrid + 1);
+        e_times_b = eMatGrid_t.col(iGrid + 1) % betaHat_t.col(iGrid + 1);
         x = transMatRate_tc_H(1, iGrid, s) * sum(alphaMatCurrent_tc.slice(s).col(iGrid) % e_times_b);
         betaHat_t.col(iGrid) = c(iGrid) * (x + transMatRate_tc_H(0, iGrid, s) * e_times_b);
     }
@@ -118,8 +122,8 @@ void Rcpp_run_backward_haploid(
 
 //' @export
 // [[Rcpp::export]]
-void rcpp_make_eMatHap_t(
-    arma::mat& eMatHap_t,
+void rcpp_make_eMatRead_t(
+    arma::mat& eMatRead_t,
     const Rcpp::List& sampleReads,
     const arma::cube& eHapsCurrent_tc,
     const int s,
@@ -128,9 +132,16 @@ void rcpp_make_eMatHap_t(
     arma::mat& eMatHapOri_t,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
+    double& prev,
+    int suppressOutput,
+    std::string& prev_section,
+    std::string& next_section,
     const bool run_pseudo_haploid = false,
-    const bool rescale_eMatHap_t = true
+    const bool rescale_eMatRead_t = true
 ) {
+    next_section="make eMatRead_t";
+    prev=print_times(prev, suppressOutput, prev_section, next_section);
+    prev_section=next_section;
     //
     // constants
     //
@@ -141,7 +152,7 @@ void rcpp_make_eMatHap_t(
     //
     double pR, pA, eps, x;
     int j, k, J, readSNP, jj, iRead;
-    //arma::mat eMatHap_t = arma::ones(K,nReads);
+    //arma::mat eMatRead_t = arma::ones(K,nReads);
     //
     // now build
     //
@@ -170,31 +181,31 @@ void rcpp_make_eMatHap_t(
                 pA = 1 - eps;
             }
             jj=pRU(j);
-            eMatHap_t.col(iRead) %= ( eHapsCurrent_tc.slice(s).col(jj) * pA + (1 - eHapsCurrent_tc.slice(s).col(jj)) * pR);
+            eMatRead_t.col(iRead) %= ( eHapsCurrent_tc.slice(s).col(jj) * pA + (1 - eHapsCurrent_tc.slice(s).col(jj)) * pR);
             //
             if (run_pseudo_haploid == true) {
                 x = pRgivenH1(iRead) / (pRgivenH1(iRead) + pRgivenH2(iRead));
                 //
                 for(k = 0; k < K; k++) {
                     // inefficient?
-                    eMatHapOri_t(k, iRead) = eMatHap_t(k, iRead);
-                    eMatHap_t(k,iRead) = x * eMatHap_t(k,iRead) + (1-x) * pRgivenH2(iRead);
+                    eMatHapOri_t(k, iRead) = eMatRead_t(k, iRead);
+                    eMatRead_t(k,iRead) = x * eMatRead_t(k,iRead) + (1-x) * pRgivenH2(iRead);
                 }
             }
         }
         //
         // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
         //
-        if (rescale_eMatHap_t) {
+        if (rescale_eMatRead_t) {
             x=0;
             for(k=0; k<=K-1; k++)
-                if(eMatHap_t(k,iRead)>x)
-                    x=eMatHap_t(k,iRead);
+                if(eMatRead_t(k,iRead)>x)
+                    x=eMatRead_t(k,iRead);
             x = x / maxDifferenceBetweenReads;
             // x is the maximum now
             for(k=0; k<=K-1; k++)
-                if(eMatHap_t(k,iRead)<x)
-                    eMatHap_t(k,iRead) = x;
+                if(eMatRead_t(k,iRead)<x)
+                    eMatRead_t(k,iRead) = x;
         }
     }
     return;
@@ -204,13 +215,17 @@ void rcpp_make_eMatHap_t(
 
 //' @export
 // [[Rcpp::export]]
-void rcpp_make_eMatHapSNP_t(
-    arma::mat& eMatHapSNP_t,
-    const arma::mat& eMatHap_t,
+void rcpp_make_eMatGrid_t(
+    arma::mat& eMatGrid_t,
+    const arma::mat& eMatRead_t,
     const Rcpp::IntegerVector& H,
     const Rcpp::List sampleReads,
     const int hap,
     const int nGrids,
+    double& prev,
+    int suppressOutput,
+    std::string& prev_section,
+    std::string& next_section,
     const int run_fb_grid_offset = 0,
     const bool use_all_reads = false,
     const bool bound = false,
@@ -218,9 +233,13 @@ void rcpp_make_eMatHapSNP_t(
     const bool rescale = false
 ) {
     //
+    next_section="Make eMat";
+    prev=print_times(prev, suppressOutput, prev_section, next_section);
+    prev_section=next_section;
+    //    
     int nReads = sampleReads.size(); //
-    const int K = eMatHap_t.n_rows; // traditional K for haplotypes        
-    // arma::mat eMatHapSNP_t = arma::ones(K, nGrids); // why is this called SNP? 
+    const int K = eMatRead_t.n_rows; // traditional K for haplotypes        
+    // arma::mat eMatGrid_t = arma::ones(K, nGrids); // why is this called SNP? 
     int iRead, k, w, readSNP;
     bool proceed;
     //
@@ -239,8 +258,8 @@ void rcpp_make_eMatHapSNP_t(
             Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
             readSNP = as<int>(readData[1]); // leading SNP from read
             w = readSNP - run_fb_grid_offset;
-            eMatHapSNP_t.col(w) %= eMatHap_t.col(iRead);
-            //std::cout << "eMatHap_t.col(iRead) = " << eMatHap_t(0, iRead) << ", " << eMatHap_t(1, iRead) << ", " << eMatHap_t(2, iRead) << ", " << eMatHap_t(3, iRead);
+            eMatGrid_t.col(w) %= eMatRead_t.col(iRead);
+            //std::cout << "eMatRead_t.col(iRead) = " << eMatRead_t(0, iRead) << ", " << eMatRead_t(1, iRead) << ", " << eMatRead_t(2, iRead) << ", " << eMatRead_t(3, iRead);
             //                std::cout << std::endl;                
         }
     }
@@ -250,22 +269,22 @@ void rcpp_make_eMatHapSNP_t(
     if (bound) {
         for(t = 0; t < nGrids; t++) {
             // if this is less than exactly 1 (i.e. there are results here), proceed
-            if (eMatHapSNP_t(0, t) < 1) {
+            if (eMatGrid_t(0, t) < 1) {
                 x = 0;
                 for (k = 0; k < K; k++) {
-                    if (eMatHapSNP_t(k, t) > x) {
-                        x = eMatHapSNP_t(k, t);
+                    if (eMatGrid_t(k, t) > x) {
+                        x = eMatGrid_t(k, t);
                     }
                 }
                 // x is the maximum now
                 rescale_val = 1 / x;        
                 for (k = 0; k < K; k++) {
                     if (rescale) {                    
-                        eMatHapSNP_t(k, t) *= rescale_val;
+                        eMatGrid_t(k, t) *= rescale_val;
                     }
                     d2 = 1 / maxEmissionMatrixDifference;
-                    if(eMatHapSNP_t(k, t) < (d2)) {
-                        eMatHapSNP_t(k, t) = d2;
+                    if(eMatGrid_t(k, t) < (d2)) {
+                        eMatGrid_t(k, t) = d2;
                     }
                 }
             }
@@ -284,7 +303,7 @@ void make_haploid_gammaUpdate_t(
     const Rcpp::List& sampleReads,
     const arma::mat& gamma_t,
     const arma::cube& eHapsCurrent_tc,
-    const arma::mat& eMatHap_t,    
+    const arma::mat& eMatRead_t,    
     const arma::mat& eMatHapOri_t,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
@@ -341,7 +360,7 @@ void make_haploid_gammaUpdate_t(
                 b_col = d3 * (eMatHapOri_t.col(iRead) / y_col);
                 d1_col = a1_col % b_col;
                 d2_col = a2_col % b_col;
-                d_col = gamma_t_col / eMatHap_t.col(iRead);
+                d_col = gamma_t_col / eMatRead_t.col(iRead);
                 gammaSum0_tc.slice(s).col(t) += d_col % (d1_col);
                 gammaSum1_tc.slice(s).col(t) += d_col % (d1_col + d2_col);
             } else {
@@ -362,7 +381,7 @@ void make_haploid_gammaUpdate_t(
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const arma::mat& eMatHap_t1, const arma::mat& eMatHap_t2, const arma::mat& gamma_t1, const arma::mat& gamma_t2, const int K, const arma::ivec& srp) {
+Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const arma::mat& eMatRead_t1, const arma::mat& eMatRead_t2, const arma::mat& gamma_t1, const arma::mat& gamma_t2, const int K, const arma::ivec& srp) {
     // new stuff
     arma::vec pRgivenH1_new = arma::zeros(pRgivenH1.n_elem);
     arma::vec pRgivenH2_new = arma::zeros(pRgivenH2.n_elem);
@@ -379,10 +398,10 @@ Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::
         for(k=0; k < K; k++) {
             pRgivenH1_new(i_read) = pRgivenH1_new(i_read) +      \
                 gamma_t1(k, t) * \
-                (eMatHap_t1(k, i_read) - d1) / x1;
+                (eMatRead_t1(k, i_read) - d1) / x1;
             pRgivenH2_new(i_read) = pRgivenH2_new(i_read) +  \
                 gamma_t2(k, t) * \
-                (eMatHap_t2(k, i_read) - d2) / x2;
+                (eMatRead_t2(k, i_read) - d2) / x2;
         }
     }
     return List::create(
@@ -398,13 +417,13 @@ Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::
 void perform_haploid_per_sample_updates(
     int s,
     arma::mat& betaHat_t,
-    arma::mat& eMatHapSNP_t,
+    arma::mat& eMatGrid_t,
     const Rcpp::List& sampleReads,    
     const arma::cube& eHapsCurrent_tc,
     const arma::cube& alphaMatCurrent_tc,
     const arma::cube& transMatRate_tc_H,
     const arma::mat& priorCurrent_m,    
-    const arma::mat& eMatHap_t,    
+    const arma::mat& eMatRead_t,    
     const arma::mat& eMatHapOri_t,
     arma::mat& gamma_t,
     const bool update_in_place,
@@ -416,10 +435,10 @@ void perform_haploid_per_sample_updates(
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
     const bool run_pseudo_haploid,
-    double prev,
+    double& prev,
     int suppressOutput,
-    std::string prev_section,
-    std::string next_section
+    std::string& prev_section,
+    std::string& next_section
 ) {
     //
     const int nGrids = alphaMatCurrent_tc.n_cols + 1;
@@ -431,7 +450,7 @@ void perform_haploid_per_sample_updates(
     prev=print_times(prev, suppressOutput, prev_section, next_section);
     prev_section=next_section;
     //
-    make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, sampleReads, gamma_t, eHapsCurrent_tc, eMatHap_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid);
+    make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, sampleReads, gamma_t, eHapsCurrent_tc, eMatRead_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid);
     //
     // make jUpdate
     //
@@ -440,9 +459,10 @@ void perform_haploid_per_sample_updates(
     prev_section=next_section;
     //
     for(int iGrid = 0; iGrid < nGrids - 1; iGrid++) {
-        alphaMatSum_tc.slice(s).col(iGrid) += transMatRate_tc_H(1, iGrid, s) * (alphaMatCurrent_tc.slice(s).col(iGrid) % betaHat_t.col(iGrid + 1) % eMatHapSNP_t.col(iGrid + 1));
-        //       jUpdate_t.col(t) += transMatRate_t_H(1, t) * (alphaMat_t.col(t) % betaHat_t.col(t + 1) % eMatHapSNP_t.col(t + 1));
+        alphaMatSum_tc.slice(s).col(iGrid) += transMatRate_tc_H(1, iGrid, s) * (alphaMatCurrent_tc.slice(s).col(iGrid) % betaHat_t.col(iGrid + 1) % eMatGrid_t.col(iGrid + 1));
+        //       jUpdate_t.col(t) += transMatRate_t_H(1, t) * (alphaMat_t.col(t) % betaHat_t.col(t + 1) % eMatGrid_t.col(t + 1));
     }
+    return;
 }
 
 
@@ -487,7 +507,7 @@ Rcpp::List forwardBackwardHaploid(
     arma::mat& alphaHat_t,
     arma::mat& betaHat_t,
     arma::mat& gamma_t,
-    arma::mat& eMatHapSNP_t,
+    arma::mat& eMatGrid_t,
     const double maxDifferenceBetweenReads,
     const double maxEmissionMatrixDifference,
     const int Jmax,
@@ -544,10 +564,10 @@ Rcpp::List forwardBackwardHaploid(
       alphaHat_t = arma::zeros(K, nGrids);
       betaHat_t = arma::zeros(K, nGrids); 
       gamma_t = arma::zeros(K, nGrids);
-      eMatHapSNP_t = arma::ones(K, nGrids);
+      eMatGrid_t = arma::ones(K, nGrids);
   }
   arma::rowvec c = arma::zeros(1, nGrids);
-  arma::mat eMatHap_t = arma::ones(K, nReads);
+  arma::mat eMatRead_t = arma::ones(K, nReads);
   arma::mat eMatHapOri_t;
   // for hapDosage, specifical definition of SNPs
   const int nSNPs_local = snp_end_1_based - snp_start_1_based + 1;
@@ -576,36 +596,22 @@ Rcpp::List forwardBackwardHaploid(
       if ((s > 0) | pass_in_alphaBeta) {
           alphaHat_t.fill(0);
           betaHat_t.fill(0);
-          eMatHap_t.fill(1);
-          eMatHapSNP_t.fill(1);
+          eMatRead_t.fill(1);
+          eMatGrid_t.fill(1);
           if (run_pseudo_haploid) {
               eMatHapOri_t.fill(0);
           }
       }
       //
-      // eMatHap
+      rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid);
       //
-      next_section="Make eMatHap";
-      prev=print_times(prev, suppressOutput, prev_section, next_section);
-      prev_section=next_section;
-      //
-      // define eMatHap to work on the number of reads
-      rcpp_make_eMatHap_t(eMatHap_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid);
-      //
-      // once we have eMatHap, ie probabilities from reads, make eMatHapSNPsfrom this
-      //
-      next_section="Make eMat";
-      prev=print_times(prev, suppressOutput, prev_section, next_section);
-      prev_section=next_section;
-      rcpp_make_eMatHapSNP_t(eMatHapSNP_t, eMatHap_t, 1, sampleReads, 1, nGrids, run_fb_grid_offset, true, true, maxEmissionMatrixDifference, rescale);
-      //
-      // forward recursion
+      rcpp_make_eMatGrid_t(eMatGrid_t, eMatRead_t, 1, sampleReads, 1, nGrids, prev, suppressOutput, prev_section,next_section, run_fb_grid_offset, true, true, maxEmissionMatrixDifference, rescale);
       //
       next_section="Forward recursion";
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
       //
-      Rcpp_run_forward_haploid(alphaHat_t, c, eMatHapSNP_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset);
+      Rcpp_run_forward_haploid(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset);
       //
       // backward recursion
       //
@@ -619,7 +625,7 @@ Rcpp::List forwardBackwardHaploid(
               betaHat_t(k, nGrids - 1) = betaEnd(k);
           }
       }
-      Rcpp_run_backward_haploid(betaHat_t, c, eMatHapSNP_t, alphaMatCurrent_tc, transMatRate_tc_H, s);
+      Rcpp_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, s);
       //
       // make gamma
       //
@@ -644,7 +650,9 @@ Rcpp::List forwardBackwardHaploid(
           // yuck - only with s = 1?
           arma::mat gammaEK_t = make_gammaEK_t_from_gammaK_t(
               gamma_t, K, grid,
-              snp_start_1_based, snp_end_1_based, run_fb_grid_offset
+              snp_start_1_based, snp_end_1_based,
+              prev, suppressOutput, prev_section, next_section,
+              run_fb_grid_offset
           );
           to_return.push_back(gammaEK_t, "gammaEK_t");      
       }
@@ -667,9 +675,9 @@ Rcpp::List forwardBackwardHaploid(
       } else if (!run_fb_subset) {
           //
           perform_haploid_per_sample_updates(
-              s, betaHat_t, eMatHapSNP_t, sampleReads,    
+              s, betaHat_t, eMatGrid_t, sampleReads,    
               eHapsCurrent_tc,  alphaMatCurrent_tc,  transMatRate_tc_H,  priorCurrent_m,    
-              eMatHap_t, eMatHapOri_t, gamma_t, update_in_place,
+              eMatRead_t, eMatHapOri_t, gamma_t, update_in_place,
               gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m,
               pRgivenH1, pRgivenH2, run_pseudo_haploid,
               prev, suppressOutput, prev_section, next_section
@@ -707,8 +715,8 @@ Rcpp::List forwardBackwardHaploid(
   if (return_extra) {
       to_return.push_back(alphaHat_t, "alphaHat_t");
       to_return.push_back(betaHat_t, "betaHat_t");
-      to_return.push_back(eMatHapSNP_t, "eMatHapSNP_t");
-      to_return.push_back(eMatHap_t, "eMatHap_t");
+      to_return.push_back(eMatGrid_t, "eMatGrid_t");
+      to_return.push_back(eMatRead_t, "eMatRead_t");
       to_return.push_back(eMatHapOri_t, "eMatHapOri_t");
   }
   next_section="Done";
@@ -718,7 +726,7 @@ Rcpp::List forwardBackwardHaploid(
 }
 
 
-arma::ivec sample_path_from_alphaHat_t(const arma::mat & alphaHat_t, const arma::mat & transMatRate_t, const arma::mat & eMatHapSNP_t, const arma::mat & alphaMat_t, const int T, const int K, const arma::rowvec & c) {
+arma::ivec sample_path_from_alphaHat_t(const arma::mat & alphaHat_t, const arma::cube & transMatRate_tc, const arma::mat & eMatGrid_t, const arma::cube & alphaMatCurrent_tc, const int T, const int K, const arma::rowvec & c, const int s) {
     //
     arma::ivec sampled_state(T);
     int k, t;
@@ -752,14 +760,14 @@ arma::ivec sample_path_from_alphaHat_t(const arma::mat & alphaHat_t, const arma:
     //for(t = T - 2; t >= 0; t--) {
     for(t = T - 2; t >= 0; t--) {
         prev_state = sampled_state(t + 1);
-        samp_vector.fill(transMatRate_t(1, t) * alphaMat_t(prev_state, t));
-        samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_t(0, t);
+        samp_vector.fill(transMatRate_tc(1, t, s) * alphaMatCurrent_tc(prev_state, t, s));
+        samp_vector(prev_state)=samp_vector(prev_state) + transMatRate_tc(0, t, s);
         samp_vector_sum = 0;
         for(k=0; k<=K-1; k++) {
             samp_vector(k)=samp_vector(k) * alphaHat_t(k, t);
             samp_vector_sum=samp_vector_sum + samp_vector(k);
         }
-        norm = alphaHat_t(prev_state, t + 1) / eMatHapSNP_t(prev_state, t + 1) / c(t + 1);
+        norm = alphaHat_t(prev_state, t + 1) / eMatGrid_t(prev_state, t + 1) / c(t + 1);
         // if ((pow(samp_vector_sum / norm, 2) - 1) > 1e-4) {
         //     std::cout << "BAD COUNT on t=" << t << std::endl;
         //     std::cout << "samp_vector_sum=" << samp_vector_sum << std::endl;
@@ -786,68 +794,78 @@ arma::ivec sample_path_from_alphaHat_t(const arma::mat & alphaHat_t, const arma:
 
 //' @export
 // [[Rcpp::export]]
-arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat & transMatRate_t_H, const arma::mat& alphaMat_t) {
-  //
-  // constants
-  //
-  const int T = eHaps_t.n_cols;
-  const int K = eHaps_t.n_rows; // traditional K for haplotypes
-  //
-  // new variables
-  //
-  int iRead, readSNP, k, k1, t;
-  double alphaConst;
-  arma::mat eMatHapSNP_t = arma::ones(K,T);
-  arma::mat alphaHat_t = arma::zeros(K,T);
-  arma::rowvec c = arma::zeros(1,T);
-  //
-  //
-  // initialize emission matrix from eMatHapSNP_t which is constant
-  //
-  //
-  for(iRead=0; iRead<=nReads-1; iRead++) {
-      if (read_labels(iRead) == 1) {
-          Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
-          readSNP = as<int>(readData[1]); // leading SNP from read
-          for(k=0; k<=K-1; k++) {
-              eMatHapSNP_t(k, readSNP) = eMatHapSNP_t(k, readSNP) *     \
-                  eMatHap_t(k,iRead);
-          }
-      }
-  }
-  //
-  //
-  // forward algorithm
-  //
-  //
-  for(k1=0; k1<=K-1; k1++)
-      alphaHat_t(k1,0) = pi(k1) * eMatHapSNP_t(k1,0);
-  c(0) = 1 / sum(alphaHat_t.col(0));
-  alphaHat_t.col(0) = alphaHat_t.col(0) * c(0);
-  //
-  for(t=1; t<=T-1; t++) {
-      // make the constant
-      alphaConst=0;
-      for(k=0; k<=K-1; k++)
-          alphaConst = alphaConst + alphaHat_t(k,t-1);
-      alphaConst = alphaConst * transMatRate_t_H(1, t-1);
-      //
-      // each entry is emission * (no change * that value + constant)
-      for(k=0; k<=K-1; k++)
-          alphaHat_t(k,t) =  eMatHapSNP_t(k,t) *  \
-              ( transMatRate_t_H(0, t-1) * alphaHat_t(k,t-1) +   \
-                alphaConst * alphaMat_t(k,t-1));
-      //
-      c(t) = 1 / sum(alphaHat_t.col(t));
-      alphaHat_t.col(t) = alphaHat_t.col(t) * c(t);
-  }
-  //
-  //
-  // sample a path
-  //
-  //
-  arma::ivec to_out = sample_path_from_alphaHat_t(alphaHat_t, transMatRate_t_H, eMatHapSNP_t, alphaMat_t, T, K, c);
-  return(to_out);
+arma::ivec rcpp_sample_path(
+    const arma::rowvec read_labels,
+    const arma::mat eMatRead_t,
+    const Rcpp::List& sampleReads,
+    const double maxDifferenceBetweenReads,
+    const int Jmax,
+    const arma::mat& priorCurrent_m,
+    const arma::cube& transMatRate_tc_H,
+    const arma::cube& alphaMatCurrent_tc,
+    const int s
+) {
+    //
+    // cponstants
+    //
+    const int nGrids = alphaMatCurrent_tc.n_cols + 1;
+    const int nReads = sampleReads.size();
+    const int K = alphaMatCurrent_tc.n_rows; // traditional K for haplotypes
+    //
+    // new variables
+    //
+    int iRead, readSNP, k, k1, t;
+    double alphaConst;
+    arma::mat eMatGrid_t = arma::ones(K, nGrids);
+    arma::mat alphaHat_t = arma::zeros(K, nGrids);
+    arma::rowvec c = arma::zeros(1, nGrids);
+    //
+    //
+    // initialize emission matrix from eMatGrid_t which is constant
+    //
+    //
+    for(iRead=0; iRead<=nReads-1; iRead++) {
+        if (read_labels(iRead) == 1) {
+            Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
+            readSNP = as<int>(readData[1]); // leading SNP from read
+            for(k=0; k<=K-1; k++) {
+                eMatGrid_t(k, readSNP) = eMatGrid_t(k, readSNP) * eMatRead_t(k,iRead);
+            }
+        }
+    }
+    //
+    //
+    // forward algorithm
+    //
+    //
+    for(k1=0; k1<=K-1; k1++)
+        alphaHat_t(k1,0) = priorCurrent_m(k1, s) * eMatGrid_t(k1,0);
+    c(0) = 1 / sum(alphaHat_t.col(0));
+    alphaHat_t.col(0) = alphaHat_t.col(0) * c(0);
+    //
+    for(t=1; t<= nGrids-1; t++) {
+        // make the constant
+        alphaConst=0;
+        for(k=0; k<=K-1; k++)
+            alphaConst = alphaConst + alphaHat_t(k,t-1);
+        alphaConst = alphaConst * transMatRate_tc_H(1, t-1, s);
+        //
+        // each entry is emission * (no change * that value + constant)
+        for(k=0; k<=K-1; k++)
+            alphaHat_t(k,t) =  eMatGrid_t(k,t) *                 \
+                ( transMatRate_tc_H(0, t-1, s) * alphaHat_t(k,t-1) +      \
+                  alphaConst * alphaMatCurrent_tc(k,t-1, s));
+        //
+        c(t) = 1 / sum(alphaHat_t.col(t));
+        alphaHat_t.col(t) = alphaHat_t.col(t) * c(t);
+    }
+    //
+    //
+    // sample a path
+    //
+    //
+    arma::ivec to_out = sample_path_from_alphaHat_t(alphaHat_t, transMatRate_tc_H, eMatGrid_t, alphaMatCurrent_tc, nGrids, K, c, s);
+    return(to_out);
 }
 
 
@@ -859,7 +877,7 @@ arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMat
 
 //' @export
 // [[Rcpp::export]]
-arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::List reads_at_SNPs, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t) {
+arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::List reads_at_SNPs, const arma::mat eMatRead_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t) {
   //
   // constants
   //
@@ -894,11 +912,11 @@ arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::
           for(s=0; s <= nSwap - 1; s++) {
               if (swap_mat(s, iRead) == 1) {
                   for(k=0; k<=K-1; k++) {                  
-                      eMatHapSNPSwap_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * eMatHap_t(k, iRead);
+                      eMatHapSNPSwap_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * eMatRead_t(k, iRead);
                   }
               } else {
                   for(k=0; k<=K-1; k++) {                  
-                      eMatHapSNPSwap_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * eMatHap_t(k, iRead);
+                      eMatHapSNPSwap_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * eMatRead_t(k, iRead);
                   }
               }
           }
@@ -942,11 +960,11 @@ arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::
               for(s=0; s <= nSwap - 1; s++) {
                   if (swap_mat(s, iRead) == 1) {                  
                       for(k=0; k<=K-1; k++) {
-                          eMatHapSNPSwap_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * eMatHap_t(k, iRead);
+                          eMatHapSNPSwap_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * eMatRead_t(k, iRead);
                       }
                   } else {
                       for(k=0; k<=K-1; k++) {
-                          eMatHapSNPSwap_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * eMatHap_t(k, iRead);
+                          eMatHapSNPSwap_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * eMatRead_t(k, iRead);
                       }
                   }
               }

@@ -311,3 +311,46 @@ test_that("can make fake reference samples in C++", {
 
 })
 
+
+test_that("can do single reference iteration", {
+
+    ## hmm, need to dummy up a bit
+    ## should be able to do with N=1
+    test_package <- make_fb_test_package(
+        K = 4,
+        nReads = 8,
+        nSNPs = 10,
+        gridWindowSize = 3,
+        S = 2
+    )
+    S <- test_package$S
+    sampleReads <- test_package$sampleReads
+    nSNPs <- test_package$nSNPs
+    nGrids <- test_package$nGrids
+    K <- test_package$K
+    transMatRate_tc_H <- test_package$transMatRate_tc_H
+    alphaMatCurrent_tc <- test_package$alphaMatCurrent_tc
+    eMatHapSNP_t <- test_package$list_of_eMatHapSNP_t[[1]]
+    sigmaCurrent_m <- test_package$sigmaCurrent_m
+    priorCurrent_m <- test_package$priorCurrent_m
+    eHapsCurrent_tc <- test_package$eHapsCurrent_tc
+    grid <- test_package$grid
+    grid_distances <- test_package$grid_distances
+
+    ## dummy up a bit
+    tempdir <- tempfile("tempdir")
+    dir.create(tempdir)
+    N_haps <- 2
+    nCores <- 1
+    reference_bundling_info <- NULL
+    nGen <- 10000
+
+    regionName <- "jimmy"
+    for(iBam in 1:2) {
+        save(sampleReads, file = file_referenceSampleReads(tempdir, iBam, regionName))
+    }
+
+    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen)
+
+
+})

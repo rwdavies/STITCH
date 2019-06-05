@@ -68,6 +68,18 @@ test_that("STITCH can initialize with reference data with three sizes of K vs nu
         outputdir <- make_unique_tempdir()
         ## scenarios are: too few, exactly right amount, too many
         K <- list(n_samples_per_pop * 4, n_samples_per_pop * 2, n_samples_per_pop)[[i_scenario]]
+    library("testthat"); library("STITCH"); library("rrbgen")
+    ##    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "~/proj/STITCH/"
+    setwd(paste0(dir, "/STITCH/R"))
+    a <- dir(pattern = "*R")
+    b <- grep("~", a)
+    if (length(b) > 0) {
+        a <- a[-b]
+    }
+    o <- sapply(a, source)
+    setwd(dir)
+    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
         STITCH(
             chr = data_package$chr,
             bamlist = data_package$bamlist,
