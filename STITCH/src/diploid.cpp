@@ -849,7 +849,7 @@ Rcpp::List forwardBackwardDiploid(
   if (return_genProbs) {
       if (S > 1) {
           // divide by S, here always just add
-          genProbs_t *= 1 / S;
+          genProbs_t *= 1 / double(S);
       }
       to_return.push_back(genProbs_t, "genProbs_t");
   }

@@ -690,7 +690,7 @@ Rcpp::List forwardBackwardHaploid(
   if (return_hapDosage) {
       if (S > 1) {
           // divide by S, here always just add
-          hapDosage *= 1 / S;
+          hapDosage *= 1 / double(S);
       }
       to_return.push_back(hapDosage, "hapDosage");
   }

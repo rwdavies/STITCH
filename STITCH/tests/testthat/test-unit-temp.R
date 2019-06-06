@@ -73,13 +73,16 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         eHapsCurrent_tc = eHapsCurrent_tc,
         method = "diploid",
         return_gamma = TRUE,
+        return_genProbs = TRUE,
         grid = grid,
         suppressOutput = 1
     )
+
     gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
     expect_equal(ncol(gamma_t), nGrids)
     expect_equal(min(gamma_t) >= 0, TRUE)
     expect_equal(max(gamma_t) <= 1, TRUE)
+    expect_equal(sum(fbsoL[[1]]$genProbs_t) > 0, TRUE) ## values greater than 0
 
     pRgivenH1L <- runif(length(sampleReads))
     pRgivenH2L <- runif(length(sampleReads))
@@ -96,15 +99,18 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         method = "pseudoHaploid",
         suppressOutput = 1,
         return_gamma = TRUE,
+        return_hapDosage = TRUE,
         grid = grid
     )
-    print(names(fbsoL))
     ## basic checks
     gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
     expect_equal(ncol(gamma_t), nGrids)
     expect_equal(min(gamma_t) >= 0, TRUE)
     expect_equal(max(gamma_t) <= 1, TRUE)
-
+    expect_equal(sum(fbsoL[[1]]$hapDosage) > 0, TRUE)
+    expect_equal(sum(fbsoL[[1]]$hapDosage < 0) == 0, TRUE) ## no values less than 0
+    expect_equal(sum(1 < fbsoL[[1]]$hapDosage) == 0, TRUE) ## no values less than 0    
+    
 })
 
 

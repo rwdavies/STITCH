@@ -647,7 +647,7 @@ single_reference_iteration <- function(
                     }
                 }
             }
-
+            
         }
         
         return(

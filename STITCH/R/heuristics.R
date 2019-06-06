@@ -4,16 +4,18 @@
 ## sample from other haplotypes to re-copy
 ## across all haplotypes, when this happen, inject noise
 refillSimple <- function(
-    hapSum_t,
-    nGrids,
-    K,
-    gammaSum_t,
+    gammaSum_tc,
+    hapSum_tc,
     N,
     L_grid,
     grid,
     distance_between_check = 5000 ## check every 5000 bp
 ) {
-    nSNPs <- ncol(gammaSum_t)
+    ## 
+    K <- nrow(gammaSum_tc)
+    S <- dim(gammaSum_tc)[3]
+    nGrids <- ncol(hapSum_tc)
+    ##
     a <- floor(L_grid / distance_between_check)
     a <- c(match(unique(a), a))
     if (length(a) == 1) {
@@ -23,55 +25,57 @@ refillSimple <- function(
         region_starts <- a
         region_ends <- c(a[-1] - 1, length(L_grid))
     }
-    avHapSumInBlock <- array(0, c(length(region_starts), K))
-    for(i in 1:length(region_starts)) {
-        n <- region_ends[i] - region_starts[i] + 1
-        avHapSumInBlock[i, ] <- rowSums(hapSum_t[, region_starts[i]:region_ends[i], drop = FALSE]) / n
-    }
-    ## really target haplotypes that basically aren't used    
-    hapFreqMin <- N * min(c(1 / (10 * K), 1 / 100))
-    replaceBlock <- avHapSumInBlock < (hapFreqMin)
-    ## 
-    ## for each k, for each region, fill in
-    ## within each continuous region, fill in with respect to frequencies of all other haplotypes
-    ##
-    k_to_replace <- which(colSums(replaceBlock) > 0)
-    ever_changed <- array(FALSE, ncol(gammaSum_t))
-    for (k in k_to_replace) {
-        ## change into intervals
-        z1 <- replaceBlock[, k]
-        x <- (1:(length(z1)-1))[diff(z1)!=0]
-        start <- c(1,x+1)
-        end <- c(x,length(z1))
-        ## only take "bad" regions
-        start <- start[z1[start]==TRUE]
-        end <- end[z1[end]==TRUE    ]
-        ## OK!
-        if (length(start) > 0) {
-            for(iR in 1:length(start)) {
-                ## now - in each region, get sums of haplotypes
-                p <- colSums(matrix(avHapSumInBlock[start[iR]:end[iR],],ncol=K))
-                p[k] <- 0 ## do not re-sample!
-                p <- p / sum(p)
-                replacement <- sample(K, 1, prob = p)
-                r1 <- region_starts[start[iR]]
-                r2 <- region_ends[end[iR]]
-                snps_to_replace <- ((r1 - 1) <= grid) & (grid <= (r2 - 1))
-                ## now need to get grid as well
-                gammaSum_t[k, snps_to_replace] <- gammaSum_t[replacement, snps_to_replace]
-                ever_changed[snps_to_replace] <- TRUE
+    avHapSumInBlock <- array(0, c(length(region_starts), K, S))
+    ever_changed <- array(FALSE, c(ncol(gammaSum_tc), S))    
+    for(s in 1:S) {
+        for(i in 1:length(region_starts)) {
+            n <- region_ends[i] - region_starts[i] + 1
+            avHapSumInBlock[i, , s] <- rowSums(hapSum_tc[, region_starts[i]:region_ends[i], s, drop = FALSE]) / n
+        }
+        ## really target haplotypes that basically aren't used    
+        hapFreqMin <- N * min(c(1 / (10 * K), 1 / 100))
+        replaceBlock <- avHapSumInBlock[, , s, drop = FALSE] < (hapFreqMin)
+        ## 
+        ## for each k, for each region, fill in
+        ## within each continuous region, fill in with respect to frequencies of all other haplotypes
+        ##
+        k_to_replace <- which(colSums(replaceBlock) > 0)
+        for (k in k_to_replace) {
+            ## change into intervals
+            z1 <- replaceBlock[, k, 1, drop = FALSE] ## yes, 1, not s here
+            x <- (1:(length(z1)-1))[diff(z1)!=0]
+            start <- c(1,x+1)
+            end <- c(x,length(z1))
+            ## only take "bad" regions
+            start <- start[z1[start]==TRUE]
+            end <- end[z1[end]==TRUE    ]
+            ## OK!
+            if (length(start) > 0) {
+                for(iR in 1:length(start)) {
+                    ## now - in each region, get sums of haplotypes
+                    p <- colSums(matrix(avHapSumInBlock[start[iR]:end[iR], , s, drop = FALSE], ncol = K))
+                    p[k] <- 0 ## do not re-sample!
+                    p <- p / sum(p)
+                    replacement <- sample(K, 1, prob = p)
+                    r1 <- region_starts[start[iR]]
+                    r2 <- region_ends[end[iR]]
+                    snps_to_replace <- ((r1 - 1) <= grid) & (grid <= (r2 - 1))
+                    ## now need to get grid as well
+                    gammaSum_tc[k, snps_to_replace, s] <- gammaSum_tc[replacement, snps_to_replace, s]
+                    ever_changed[snps_to_replace, s] <- TRUE
+                }
             }
         }
     }
     print_message(
         paste0(
-            "Refill infrequently used haplotypes - ",
-            round(100 * sum(replaceBlock == TRUE )/ prod(dim(replaceBlock)), 1),
+            "Refill infrequently used haplotypes - on average, ",
+            round(100 * sum(replaceBlock)/ prod(dim(replaceBlock)), 1),
             "% of regions replaced"
     ))
     return(
         list(
-            gammaSum_t = gammaSum_t,
+            gammaSum_tc = gammaSum_tc,
             ever_changed = ever_changed
         )
     )
@@ -167,26 +171,12 @@ determine_switch_order <- function(fromMat, nbreaks, K) {
 }
 
 
-getBetterSwitchesSimple <- function(
-    fromMat,
-    nbreaks,
-    break_results,
-    K,
-    eHapsFuture_t,
-    alphaMatFuture_t,
-    grid,
-    snps_in_grid_1_based,
-    iteration = 1
-) {
-    ## greedy version
-    ## choose, in order, one which means fewest moves
-    switchOrder <- determine_switch_order(fromMat, nbreaks, K) 
-    whichIsBest <- as.integer(apply(switchOrder,1,function(x) sum(x==(1:K)))==K)
-    ##
+
+getTempMat <- function(nbreak, K, switchOrder) {
     ## determine the order of subsequent regions
     ##
     ## now - do the unravelling
-    tempMat <- array(0, c(nbreaks + 1,K))
+    tempMat <- array(0, c(nbreak + 1,K))
     tempMat[1, ] <- 1:K
     currentState <- 1:K
     nextState <- 1:K
@@ -200,57 +190,87 @@ getBetterSwitchesSimple <- function(
             nextState[k] <- tempMat[iBreak + 1, k]
         }
     }
-    ##
-    ## do the shuffling
-    ##
-    print_message(paste0(
-        "Shuffle haplotypes - Iteration ", iteration, " - change ", sum(whichIsBest!=1), " intervals out of ", nbreaks, " considered"
-    ))
-    ## 0-based start and end of the grids with the switches
-    grid_starts <- c(0, break_results[, "left_grid_focal_0_based"] + 1)
-    grid_ends <- c(break_results[, "left_grid_focal_0_based"], ncol(alphaMatFuture_t) - 1)
-    ## do switches around focal points
-    for(iBreak in 1:(nbreaks + 1)) {
-        ## grids, 0-based, can just be a number
-        which_grids <- grid_starts[iBreak]:grid_ends[iBreak] 
-        ## snps, 1-based
-        which_snps <- c(
-            snps_in_grid_1_based[grid_starts[iBreak] + 1, "snps_start"]:
-            snps_in_grid_1_based[grid_ends[iBreak] + 1, "snps_end"]
-        )
-        ## 
-        permL <- tempMat[iBreak, ]
-        eHapsFuture_t[, which_snps] <- eHapsFuture_t[permL, which_snps]
-        alphaMatFuture_t[, which_grids] <- alphaMatFuture_t[permL, which_grids]
-    }
-    ## add in noise around the breaks
-    for(iBreak in 1:nbreaks) {
-        if (whichIsBest[iBreak] == 0) {
-            s <- break_results[iBreak, "left_grid_break_0_based"]
-            e <- (break_results[iBreak, "right_grid_break_0_based"] - 1) ## do not actually include this one
-            which_grids <- s:e
+    return(tempMat)
+}
+
+
+getBetterSwitchesSimple <- function(
+    list_of_fromMat,
+    nbreaks,
+    break_results,
+    eHapsFuture_t,
+    alphaMatFuture_t,
+    grid,
+    snps_in_grid_1_based,
+    iteration = 1
+) {
+    to_run <- which(nbreaks > 0)
+    to_store <- array(0, length(to_run))
+    list_of_whichIsBest <- lapply(1:S, function(x) return(NULL))
+    for(i_s in 1:length(to_run)) {
+        s <- to_run[i_s]
+        fromMat <- list_of_fromMat[[s]]
+        nbreak <- nbreaks[s]
+        ## choose, in order, one which means fewest moves
+        switchOrder <- determine_switch_order(fromMat, nbreaks, K) 
+        whichIsBest <- as.integer(apply(switchOrder,1,function(x) sum(x==(1:K)))==K)
+        to_store[i_s] <- sum(whichIsBest!=1)
+        list_of_whichIsBest[[i_s]]<- whichIsBest
+        tempMat <- getTempMat(nbreak, K, switchOrder)
+        ##
+        ## do the shuffling
+        ##
+        ## 0-based start and end of the grids with the switches
+        grid_starts <- c(0, break_results[, "left_grid_focal_0_based"] + 1)
+        grid_ends <- c(break_results[, "left_grid_focal_0_based"], ncol(alphaMatFuture_tc) - 1)
+        for(iBreak in 1:(nbreak + 1)) {
+            ## grids, 0-based, can just be a number
+            which_grids <- grid_starts[iBreak]:grid_ends[iBreak] 
             ## snps, 1-based
             which_snps <- c(
-                snps_in_grid_1_based[s + 1, "snps_start"]:
-                snps_in_grid_1_based[e + 1, "snps_end"]
+                snps_in_grid_1_based[grid_starts[iBreak] + 1, "snps_start"]:
+                snps_in_grid_1_based[grid_ends[iBreak] + 1, "snps_end"]
             )
-            ##
-            norm_component <- abs(1 - seq(0, 2, length = length(which_snps)))
-            ## fill in with more noise closer to the break
-            for(ii in 1:length(which_snps)) {
-                eHapsFuture_t[, which_snps[ii]] <-
-                    norm_component[ii] * eHapsFuture_t[, which_snps[ii]] +
-                    (1 - norm_component[ii]) * runif(K)
-            }
-            ## just reset these, can be re-determined pretty quickly
-            alphaMatFuture_t[, which_grids + 1] <- matrix(1 / K, nrow = K, ncol = length(which_grids))
+            ## 
+            permL <- tempMat[iBreak, ]
+            eHapsFuture_tc[, which_snps, s] <- eHapsFuture_tc[permL, which_snps, s]
+            alphaMatFuture_tc[, which_grids, s] <- alphaMatFuture_tc[permL, which_grids, s]
         }
+        ## add in noise around the breaks
+        for(iBreak in 1:nbreak) {
+            if (whichIsBest[iBreak] == 0) {
+                s <- break_results[iBreak, "left_grid_break_0_based"]
+                e <- (break_results[iBreak, "right_grid_break_0_based"] - 1) ## do not actually include this one
+                which_grids <- s:e
+                ## snps, 1-based
+                which_snps <- c(
+                    snps_in_grid_1_based[s + 1, "snps_start"]:
+                    snps_in_grid_1_based[e + 1, "snps_end"]
+                )
+                ##
+                norm_component <- abs(1 - seq(0, 2, length = length(which_snps)))
+                ## fill in with more noise closer to the break
+                for(ii in 1:length(which_snps)) {
+                    eHapsFuture_tc[, which_snps[ii], s] <-
+                        norm_component[ii] * eHapsFuture_t[, which_snps[ii]] +
+                        (1 - norm_component[ii]) * runif(K)
+                }
+                ## just reset these, can be re-determined pretty quickly
+                alphaMatFuture_tc[, which_grids + 1, s] <- matrix(1 / K, nrow = K, ncol = length(which_grids))
+            }
+        }
+        ##
     }
+    print_message(paste0(
+        "Shuffle haplotypes - Iteration ", iteration, " - ", 
+        "change on average ", round(sum(to_store) / S, 1), " intervals out of ", sum(nbreaks) / S, " considered"
+    ))
+    
     return(
         list(
-            eHapsFuture_t = eHapsFuture_t,
-            alphaMatFuture_t = alphaMatFuture_t,
-            whichIsBest = whichIsBest
+            eHapsFuture_tc = eHapsFuture_tc,
+            alphaMatFuture_tc = alphaMatFuture_tc,
+            list_of_whichIsBest = list_of_whichIsBest
         )
     )
 }
@@ -641,7 +661,9 @@ plot_attempt_to_find_shuffles <- function(
     regionName,
     iteration,
     whichIsBest = NULL,
-    is_reference = FALSE
+    is_reference = FALSE,
+    s = 1,
+    S = 1
 ) {
     add_grey_background <- function(L_grid) {
         from <- floor(min(L_grid) / 1e6)
@@ -649,6 +671,11 @@ plot_attempt_to_find_shuffles <- function(
         for(f in from:to) {
             abline(v = 1e6 * f, col = "grey")
         }
+    }
+    if (S > 1) {
+        suffix <- ".png"
+    } else {
+        suffix <- paste0(".s.", s, ".png")
     }
     ##
     ## the commented out bit at the bottom assumes starting at 0
@@ -674,7 +701,7 @@ plot_attempt_to_find_shuffles <- function(
     } else {
         ref_text <- ""
     }
-    outname <- file.path(outputdir, "plots", paste0("shuffleHaplotypes", ref_text, ".", iteration, ".",regionName,".png"))
+    outname <- file.path(outputdir, "plots", paste0("shuffleHaplotypes", ref_text, ".", iteration, ".",regionName, suffix))
     ## make a 5 Mbp segment 60 wide. then bound up and down at 20 and 200
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 30, width = width, res = 100, units = "in")
@@ -803,35 +830,56 @@ alpha_col <- function(col, alpha) {
 ## make interim plots of things that might be useful to understand performance
 ## hapSumCurrent_t, regular and log10
 ## alphaMatCurrent_t
-interim_plotter <- function(outputdir, regionName, iteration, L_grid, hapSumCurrent_t, alphaMatCurrent_t, sigmaCurrent, N) {
-    nGrids <- ncol(alphaMatCurrent_t) + 1
-    K <- nrow(alphaMatCurrent_t)
-    plotHapSumCurrent_t(
-        outname = file.path(outputdir, "plots", paste0("hapSum.",regionName,".iteration.",iteration,".jpeg")),
-        L_grid = L_grid,        
-        K = K,
-        hapSumCurrent_t = hapSumCurrent_t,
-        nGrids = nGrids,
-        N = N
-    )
-    plotHapSumCurrent_t_log(
-        L_grid = L_grid,
-        K = K,
-        hapSumCurrent_t = hapSumCurrent_t,
-        nGrids = nGrids,
-        N = N,
-        outputdir = outputdir,
-        regionName = regionName,
-        iteration = iteration
-    )
-    plot_alphaMatCurrent_t(
-        L_grid = L_grid,
-        alphaMatCurrent_t = alphaMatCurrent_t,
-        sigmaCurrent = sigmaCurrent,
-        outputdir = outputdir,
-        iteration = iteration,
-        regionName = regionName
-    )
+interim_plotter <- function(
+    outputdir,
+    regionName,
+    iteration,
+    L_grid,
+    hapSumCurrent_tc,
+    alphaMatCurrent_tc,
+    sigmaCurrentc,
+    N
+) {
+    ## easiest - just break up by S
+    nGrids <- ncol(alphaMatCurrent_tc) + 1
+    K <- nrow(alphaMatCurrent_tc)
+    S <- dim(hapSumCurrent_tc)[3]
+    for(s in 1:S) {
+        plotHapSumCurrent_t(
+            L_grid = L_grid,
+            K = K,
+            hapSumCurrent_t = hapSumCurrent_t[, , s],
+            nGrids = nGrids,
+            N = N,
+            outputdir = outputdir,
+            iteration = iteration,
+            regionName = regionName,
+            s = s,
+            S = S
+        )
+        plotHapSumCurrent_t_log(
+            L_grid = L_grid,
+            K = K,
+            hapSumCurrent_t = hapSumCurrent_t,
+            nGrids = nGrids,
+            N = N,
+            outputdir = outputdir,
+            regionName = regionName,
+            iteration = iteration,
+            s = s,
+            S = S            
+        )
+        plot_alphaMatCurrent_t(
+            L_grid = L_grid,
+            alphaMatCurrent_t = alphaMatCurrent_t,
+            sigmaCurrent = sigmaCurrent,
+            outputdir = outputdir,
+            iteration = iteration,
+            regionName = regionName,
+            s = s,
+            S = S            
+        )
+    }
     return(NULL)
 }
 
@@ -842,9 +890,22 @@ plotHapSumCurrent_t <- function(
     K,
     hapSumCurrent_t,
     nGrids,
-    N
+    N,
+    outputdir,
+    regionName,
+    iteration,
+    s,
+    S
 ) {
-    jpeg(outname, height = 2000, width = 10000, qual = 100)
+    if (S > 1) {
+        suffix <- ".png"
+    } else {
+        suffix <- paste0(".s.", s, ".png")
+    }
+    outname <- file.path(outputdir, "plots", paste0("hapSum.", regionName, ".iteration.", iteration, suffix))
+    ## 
+    width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)    
+    png(outname, height = 10, width = width, res = 100, units = "in")    
     colStore <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
     nCols <- length(colStore)
     sum <- array(0, nGrids)
@@ -877,11 +938,18 @@ plotHapSumCurrent_t_log <- function(
     N,
     outputdir,
     regionName,
-    iteration
+    iteration,
+    s,
+    S
 ) {
+    if (S > 1) {
+        suffix <- ".png"
+    } else {
+        suffix <- paste0(".s.", s, ".png")
+    }
     outname <- file.path(
         outputdir, "plots",
-        paste0("hapSumCurrent.", regionName, ".iteration.", iteration, ".png")
+        paste0("hapSumCurrent.", regionName, ".iteration.", iteration, suffix)
     )
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 10, width = width, res = 100, units = "in")
@@ -908,7 +976,12 @@ plotHapSumCurrent_t_log <- function(
 
 
 
-plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outputdir, iteration, regionName) {
+plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outputdir, iteration, regionName, s, S) {
+    if (S > 1) {
+        suffix <- ".png"
+    } else {
+        suffix <- paste0(".s.", s, ".png")
+    }
     nGrids <- ncol(alphaMatCurrent_t)
     K <- nrow(alphaMatCurrent_t)
     ## two views - proportional, total?
@@ -934,7 +1007,7 @@ plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outp
         }
         outname <- file.path(
             outputdir, "plots",
-            paste0("alphaMatCurrent.", regionName, ".iteration.", iteration, ".", what, ".png")
+            paste0("alphaMatCurrent.", regionName, ".iteration.", iteration, ".", what, suffix)
         )
         width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
         png(outname, height = 10, width = width, res = 100, units = "in")

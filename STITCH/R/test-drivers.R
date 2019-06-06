@@ -761,6 +761,7 @@ make_fb_test_package <- function(
             matrix(x,ncol=1,nrow=length(x))
         )
     })
+    N <- 1
     ## almost certainly want to pre-declare
     list_of_eMatRead_t <- lapply(0:(S - 1), function(s) {
         eMatRead_t <- array(1, c(K, nReads))
@@ -818,6 +819,7 @@ make_fb_test_package <- function(
             nReads = nReads,
             nSNPs = nSNPs,
             L = L,
+            N = N,
             grid = grid,
             grid_distances = grid_distances,
             L_grid = L_grid,
