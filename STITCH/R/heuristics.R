@@ -180,7 +180,7 @@ getTempMat <- function(nbreak, K, switchOrder) {
     tempMat[1, ] <- 1:K
     currentState <- 1:K
     nextState <- 1:K
-    for (iBreak in 1:(nbreaks)) {
+    for (iBreak in 1:(nbreak)) {
         ## how this works - first, start in your current state
         ## next, choose new state from switchOrder. copy that state, then remember where to go next
         currentState <- nextState
@@ -195,8 +195,8 @@ getTempMat <- function(nbreak, K, switchOrder) {
 
 
 getBetterSwitchesSimple <- function(
-    list_of_fromMat,
-    nbreaks,
+    fromMat,
+    nbreak,
     break_results,
     eHapsFuture_t,
     alphaMatFuture_t,
@@ -204,73 +204,70 @@ getBetterSwitchesSimple <- function(
     snps_in_grid_1_based,
     iteration = 1
 ) {
-    to_run <- which(nbreaks > 0)
-    to_store <- array(0, length(to_run))
-    list_of_whichIsBest <- lapply(1:S, function(x) return(NULL))
-    for(i_s in 1:length(to_run)) {
-        s <- to_run[i_s]
-        fromMat <- list_of_fromMat[[s]]
-        nbreak <- nbreaks[s]
-        ## choose, in order, one which means fewest moves
-        switchOrder <- determine_switch_order(fromMat, nbreaks, K) 
-        whichIsBest <- as.integer(apply(switchOrder,1,function(x) sum(x==(1:K)))==K)
-        to_store[i_s] <- sum(whichIsBest!=1)
-        list_of_whichIsBest[[i_s]]<- whichIsBest
-        tempMat <- getTempMat(nbreak, K, switchOrder)
-        ##
-        ## do the shuffling
-        ##
-        ## 0-based start and end of the grids with the switches
-        grid_starts <- c(0, break_results[, "left_grid_focal_0_based"] + 1)
-        grid_ends <- c(break_results[, "left_grid_focal_0_based"], ncol(alphaMatFuture_tc) - 1)
-        for(iBreak in 1:(nbreak + 1)) {
-            ## grids, 0-based, can just be a number
-            which_grids <- grid_starts[iBreak]:grid_ends[iBreak] 
+    ## to_run <- which(nbreaks > 0)
+    ## s <- 1
+    ## S <- length(nbreaks)
+    K <- dim(eHapsFuture_t)[1]
+    ## to_store <- array(0, length(to_run))
+    ## list_of_whichIsBest <- lapply(1:S, function(x) return(NULL))
+    ##for(i_s in 1:length(to_run)) {
+    ## s <- to_run[i_s]
+    ## fromMat <- list_of_fromMat[[s]]
+    ## nbreak <- nbreaks[s]
+    ## choose, in order, one which means fewest moves
+    switchOrder <- determine_switch_order(fromMat, nbreak, K) 
+    whichIsBest <- as.integer(apply(switchOrder,1,function(x) sum(x==(1:K)))==K)
+    ## to_store[i_s] <- sum(whichIsBest!=1)
+    ## list_of_whichIsBest[[i_s]]<- whichIsBest
+    tempMat <- getTempMat(nbreak, K, switchOrder)
+    ##
+    ## do the shuffling
+    ##
+    ## 0-based start and end of the grids with the switches
+    grid_starts <- c(0, break_results[, "left_grid_focal_0_based"] + 1)
+    grid_ends <- c(break_results[, "left_grid_focal_0_based"], ncol(alphaMatFuture_t) - 1)
+    for(iBreak in 1:(nbreak + 1)) {
+        ## grids, 0-based, can just be a number
+        which_grids <- grid_starts[iBreak]:grid_ends[iBreak] 
+        ## snps, 1-based
+        which_snps <- c(
+            snps_in_grid_1_based[grid_starts[iBreak] + 1, "snps_start"]:
+            snps_in_grid_1_based[grid_ends[iBreak] + 1, "snps_end"]
+        )
+        ## 
+        permL <- tempMat[iBreak, ]
+        eHapsFuture_t[, which_snps] <- eHapsFuture_t[permL, which_snps]
+        alphaMatFuture_t[, which_grids] <- alphaMatFuture_t[permL, which_grids]
+    }
+    ## add in noise around the breaks
+    for(iBreak in 1:nbreak) {
+        if (whichIsBest[iBreak] == 0) {
+            s <- break_results[iBreak, "left_grid_break_0_based"]
+            e <- (break_results[iBreak, "right_grid_break_0_based"] - 1) ## do not actually include this one
+            which_grids <- s:e
             ## snps, 1-based
             which_snps <- c(
-                snps_in_grid_1_based[grid_starts[iBreak] + 1, "snps_start"]:
-                snps_in_grid_1_based[grid_ends[iBreak] + 1, "snps_end"]
+                snps_in_grid_1_based[s + 1, "snps_start"]:
+                snps_in_grid_1_based[e + 1, "snps_end"]
             )
-            ## 
-            permL <- tempMat[iBreak, ]
-            eHapsFuture_tc[, which_snps, s] <- eHapsFuture_tc[permL, which_snps, s]
-            alphaMatFuture_tc[, which_grids, s] <- alphaMatFuture_tc[permL, which_grids, s]
-        }
-        ## add in noise around the breaks
-        for(iBreak in 1:nbreak) {
-            if (whichIsBest[iBreak] == 0) {
-                s <- break_results[iBreak, "left_grid_break_0_based"]
-                e <- (break_results[iBreak, "right_grid_break_0_based"] - 1) ## do not actually include this one
-                which_grids <- s:e
-                ## snps, 1-based
-                which_snps <- c(
-                    snps_in_grid_1_based[s + 1, "snps_start"]:
-                    snps_in_grid_1_based[e + 1, "snps_end"]
-                )
-                ##
-                norm_component <- abs(1 - seq(0, 2, length = length(which_snps)))
-                ## fill in with more noise closer to the break
-                for(ii in 1:length(which_snps)) {
-                    eHapsFuture_tc[, which_snps[ii], s] <-
-                        norm_component[ii] * eHapsFuture_t[, which_snps[ii]] +
-                        (1 - norm_component[ii]) * runif(K)
-                }
-                ## just reset these, can be re-determined pretty quickly
-                alphaMatFuture_tc[, which_grids + 1, s] <- matrix(1 / K, nrow = K, ncol = length(which_grids))
+            ##
+            norm_component <- abs(1 - seq(0, 2, length = length(which_snps)))
+            ## fill in with more noise closer to the break
+            for(ii in 1:length(which_snps)) {
+                eHapsFuture_t[, which_snps[ii]] <-
+                    norm_component[ii] * eHapsFuture_t[, which_snps[ii]] +
+                    (1 - norm_component[ii]) * runif(K)
             }
+                ## just reset these, can be re-determined pretty quickly
+            alphaMatFuture_t[, which_grids + 1] <- matrix(1 / K, nrow = K, ncol = length(which_grids))
         }
-        ##
     }
-    print_message(paste0(
-        "Shuffle haplotypes - Iteration ", iteration, " - ", 
-        "change on average ", round(sum(to_store) / S, 1), " intervals out of ", sum(nbreaks) / S, " considered"
-    ))
-    
+    ##
     return(
         list(
-            eHapsFuture_tc = eHapsFuture_tc,
-            alphaMatFuture_tc = alphaMatFuture_tc,
-            list_of_whichIsBest = list_of_whichIsBest
+            eHapsFuture_t = eHapsFuture_t,
+            alphaMatFuture_t = alphaMatFuture_t,
+            whichIsBest = whichIsBest
         )
     )
 }
@@ -1040,12 +1037,29 @@ apply_better_switches_if_appropriate <- function(
     list_of_whichIsBest <- lapply(NA, S)
     for(s in 1:S) {
         if (nbreaks[s] > 0) {
-            out <- getBetterSwitchesSimple(fromMat = list_of_fromMat[[s]], nbreaks = nbreaks[s], break_results = list_of_break_results[[s]], K = K, eHapsFuture_t = eHapsCurrent_tc[, , s], alphaMatFuture_t = alphaMatCurrent_tc[, , s], grid = grid, iteration = iteration, snps_in_grid_1_based = snps_in_grid_1_based)
+            out <- getBetterSwitchesSimple(
+                fromMat = list_of_fromMat[[s]],
+                nbreak = nbreaks[s],
+                break_results = list_of_break_results[[s]],
+                K = K,
+                eHapsFuture_t = eHapsCurrent_tc[, , s],
+                alphaMatFuture_t = alphaMatCurrent_tc[, , s],
+                grid = grid,
+                iteration = iteration,
+                snps_in_grid_1_based = snps_in_grid_1_based
+            )
             eHapsCurrent_tc[, , s] <- out$eHapsFuture_t
             alphaMatCurrent_tc[, , s] <- out$alphaMatFuture_t
             list_of_whichIsBest[[s]] <- out$whichIsBest
             rm(out)
         }
+    }
+    if (sum(nbreaks) > 0) {
+        to_store <- sapply(list_of_whichIsBest, function(whichIsBest) sum(whichIsBest!=1, na.rm = TRUE))
+        print_message(paste0(
+            "Shuffle haplotypes - Iteration ", iteration, " - ", 
+            "change on average ", round(sum(to_store) / S, 1), " intervals out of ", sum(nbreaks) / S, " considered"
+        ))
     }
     if (plot_shuffle_haplotype_attempts && sum(nbreaks) > 0) {
         stop("fix plotting")

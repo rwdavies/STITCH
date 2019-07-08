@@ -28,11 +28,14 @@ test_that("can determine switches", {
 
 test_that("can run getBetterSwitchesSimple with / without grid", {
 
+    ## dont worry about s here
     K <- 4
+    ##    S <- 3
     nSNPs <- 100
     set.seed(2342)
     L <- sort(sample(10000, 100))
-
+    gridWindowSize <- NA
+    
     for(gridWindowSize in c(NA, 500)) {
 
         out <- assign_positions_to_grid(L = L, gridWindowSize = gridWindowSize)
@@ -42,8 +45,8 @@ test_that("can run getBetterSwitchesSimple with / without grid", {
         nGrids <- out$nGrids
         snps_in_grid_1_based <- out$snps_in_grid_1_based
         
-        eHapsFuture_t <- matrix(runif(K * nSNPs), nrow = K, ncol = nSNPs)
-        alphaMatFuture_t <- matrix(runif(K * (nGrids - 1)), nrow = K, ncol = nGrids - 1)
+        eHapsFuture_t <- array(runif(K * nSNPs), c(K, nSNPs))
+        alphaMatFuture_t <- array(runif(K * (nGrids - 1)), c(K, nGrids - 1))
         
         ## I think these are grids but are they 1 or 0 based
         break_results <- cbind(
@@ -56,10 +59,10 @@ test_that("can run getBetterSwitchesSimple with / without grid", {
             break_results <- rbind(break_results, c(40, 43, 44, 50))
         }
         break_results <- break_results[order(break_results[, 2]), ]        
-        nbreaks <- nrow(break_results)
+        nbreak <- nrow(break_results)
 
         ## from -> to
-        fromMat <- array(0, c(nbreaks, K, K))
+        fromMat <- array(0, c(nbreak, K, K))
         ## make wacky!
         for(k in 1:K) {
             fromMat[, k, c(K, 1:(K - 1))[k]] <- 1
@@ -67,9 +70,8 @@ test_that("can run getBetterSwitchesSimple with / without grid", {
 
         out <- getBetterSwitchesSimple(
             fromMat = fromMat,
-            nbreaks = nbreaks,
+            nbreak = nbreak,
             break_results = break_results,
-            K = K,
             eHapsFuture_t = eHapsFuture_t,
             alphaMatFuture_t = alphaMatFuture_t,
             grid = grid,
@@ -142,6 +144,7 @@ test_that("can define breaks on tiny region", {
     nGen <- 100
     minRate <- 0.1
     maxRate <- 100
+    S <- 3
 
     for(gridWindowSize in c(NA, 10000)) {
 
@@ -154,15 +157,15 @@ test_that("can define breaks on tiny region", {
         for(i in 1:2) {
         
             if (i == 1) {
-                sigmaSum_unnormalized <- runif(nGrids - 1)
+                sigmaSum_m_unnormalized <- array(runif(S * (nGrids - 1)), c(nGrids - 1, S))
             } else {
-                sigmaSum_unnormalized <- rep(0.8, nGrids - 1)
+                sigmaSum_m_unnormalized <- array(0.8, c(nGrids - 1, S))
             }
             
             define_and_save_breaks_to_consider(
                 tempdir = tempdir,
                 regionName = regionName,
-                sigmaSum_unnormalized = sigmaSum_unnormalized,
+                sigmaSum_m_unnormalized = sigmaSum_m_unnormalized,
                 L_grid = L_grid,
                 grid_distances = grid_distances,
                 nGrids = nGrids,

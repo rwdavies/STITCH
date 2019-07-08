@@ -3917,42 +3917,9 @@ completeSampleIteration <- function(
     ## do haplotype shuffling
     ##
     if (sum(nbreaks) > 0) {
-        ## 
-        out <- getBetterSwitchesSimple(
-            list_of_fromMat = list_of_fromMat,
-            nbreaks = nbreaks,
-            break_results = break_results,
-            K = K,
-            eHapsFuture_t = gammaSum_tc,
-            alphaMatFuture_t = alphaMatSum_tc,
-            grid = grid,
-            iteration = iteration,
-            snps_in_grid_1_based = snps_in_grid_1_based
-        )
-        gammaSum_tc <- out$eHapsFuture_t
-        alphaMatSum_tc <- out$alphaMatFuture_t
-        list_of_whichIsBest <- out$list_of_whichisbest
-        rm(out)
-        if (plot_shuffle_haplotype_attempts) {
-            load(file = file_fbdStore(tempdir, regionName, iteration)) ## to load fbdStore
-            to_run <- which(nbreaks > 0)
-            for(i_s in 1:length(to_run)) {
-                s <- to_run[i_s]
-                plot_attempt_to_find_shuffles(
-                    grid_distances = grid_distances,
-                    L_grid = L_grid,
-                    fbd_store = fbd_store,
-                    tempdir = tempdir,
-                    outputdir = outputdir,
-                    regionName = regionName,
-                    iteration = iteration,
-                    whichIsBest = list_of_whichIsBest[[s]],
-                    is_reference = FALSE,
-                    s = s,
-                    S = S
-                )
-            }
-        }
+        apply_better_switches_if_appropriate(list_of_fromMat = list_of_fromMat, nbreaks = nbreaks, list_of_break_results = list_of_break_results, eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, grid = grid, iteration = iteration, snps_in_grid_1_based = snps_in_grid_1_based, tempdir = tempdir, regionName = regionName, grid_distances = grid_distances, L_grid = L_grid, outputdir = outputdir)
+        eHapsCurrent_tc <- out$eHapsCurrent_tc
+        alphaMatCurrent_tc <- out$alphaMatCurrent_tc
     }
     
     ##
