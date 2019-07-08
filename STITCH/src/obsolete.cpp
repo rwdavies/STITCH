@@ -98,3 +98,131 @@
 //                                    Rcpp::Named("read_labels") = read_labels
 //                                    )));
 // }
+
+
+//    //' @export
+//    // [[Rcpp::export]]
+// arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::List reads_at_SNPs, const arma::mat eMatRead_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t) {
+//   //
+//   // constants
+//   //
+//   const int nSwap = swap_mat.n_rows;
+//   const int T = eHaps_t.n_cols;
+//   const int K = eHaps_t.n_rows; // traditional K for haplotypes
+//   //
+//   // new variables
+//   //
+//   int iRead, readSNP, k, t, s, i;
+//   double alphaConst_hap1, alphaConst_hap2, c_hap1, c_hap2;
+//   arma::mat eMatHapSNPSwap_hap1 = arma::ones(nSwap, K);
+//   arma::mat eMatHapSNPSwap_hap2 = arma::ones(nSwap, K);  
+//   arma::mat alphaHatSwapPresent_hap1 = arma::zeros(nSwap, K);
+//   arma::mat alphaHatSwapPresent_hap2 = arma::zeros(nSwap, K);  
+//   arma::mat alphaHatSwapFuture_hap1 = arma::zeros(nSwap, K);
+//   arma::mat alphaHatSwapFuture_hap2 = arma::zeros(nSwap, K);    
+//   arma::mat cFinal = arma::zeros(nSwap, 2);
+//   //
+//   //
+//   //
+//   //
+//   //
+//   Rcpp::NumericVector reads_at_SNP = as<Rcpp::NumericVector>(reads_at_SNPs[0]);
+//   eMatHapSNPSwap_hap1.fill(1);
+//   eMatHapSNPSwap_hap2.fill(1);    
+//   if (reads_at_SNP(0) >= 0) {
+//       for(i = 0; i < reads_at_SNP.size(); i++) {
+//           iRead = reads_at_SNP(i);
+//           Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
+//           readSNP = as<int>(readData[1]); // leading SNP from read
+//           for(s=0; s <= nSwap - 1; s++) {
+//               if (swap_mat(s, iRead) == 1) {
+//                   for(k=0; k<=K-1; k++) {                  
+//                       eMatHapSNPSwap_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * eMatRead_t(k, iRead);
+//                   }
+//               } else {
+//                   for(k=0; k<=K-1; k++) {                  
+//                       eMatHapSNPSwap_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * eMatRead_t(k, iRead);
+//                   }
+//               }
+//           }
+//       }
+//   }
+//   //
+//   // rest of initialization
+//   //
+//   for(s=0; s <= nSwap - 1; s++) {
+//       for(k=0; k <= K-1; k++) {
+//           alphaHatSwapFuture_hap1(s, k) = pi(k) * eMatHapSNPSwap_hap1(s, k);
+//           alphaHatSwapFuture_hap2(s, k) = pi(k) * eMatHapSNPSwap_hap2(s, k);          
+//       }
+//       c_hap1 = 1 / sum(alphaHatSwapFuture_hap1.row(s));
+//       c_hap2 = 1 / sum(alphaHatSwapFuture_hap2.row(s));      
+//       alphaHatSwapFuture_hap1.row(s) = alphaHatSwapFuture_hap1.row(s) * c_hap1;
+//       alphaHatSwapFuture_hap2.row(s) = alphaHatSwapFuture_hap2.row(s) * c_hap2;      
+//       cFinal(s, 0) = cFinal(s, 0) + log(c_hap1);
+//       cFinal(s, 1) = cFinal(s, 1) + log(c_hap2);      
+//   }
+//   //
+//   //
+//   //
+//   for(t=1; t<=T-1; t++) {
+//       //std::cout << "SNP t= " << t << "\n";          
+//       // re-set Present one, can ignore future, is overridden
+//       alphaHatSwapPresent_hap1 = alphaHatSwapFuture_hap1;
+//       alphaHatSwapPresent_hap2 = alphaHatSwapFuture_hap2;      
+//       //
+//       // calculate effect of reads, if relevant
+//       //
+//       //std::cout << "read part\n";        
+//       Rcpp::NumericVector reads_at_SNP = as<Rcpp::NumericVector>(reads_at_SNPs[t]);
+//       eMatHapSNPSwap_hap1.fill(1);
+//       eMatHapSNPSwap_hap2.fill(1);      
+//       if (reads_at_SNP(0) >= 0) {
+//           for(i = 0; i < reads_at_SNP.size(); i++) {
+//               iRead = reads_at_SNP(i);
+//               Rcpp::List readData = as<Rcpp::List>(sampleReads[iRead]);
+//               readSNP = as<int>(readData[1]); // leading SNP from read
+//               for(s=0; s <= nSwap - 1; s++) {
+//                   if (swap_mat(s, iRead) == 1) {                  
+//                       for(k=0; k<=K-1; k++) {
+//                           eMatHapSNPSwap_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * eMatRead_t(k, iRead);
+//                       }
+//                   } else {
+//                       for(k=0; k<=K-1; k++) {
+//                           eMatHapSNPSwap_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * eMatRead_t(k, iRead);
+//                       }
+//                   }
+//               }
+//           }
+//       }
+//       //
+//       // now apply
+//       //
+//       //std::cout << "apply\n";              
+//       for(s=0; s<=nSwap - 1; s++) {
+//           alphaConst_hap1 = sum(alphaHatSwapPresent_hap1.row(s)) * transMatRate_t(1, t-1);
+//           alphaConst_hap2 = sum(alphaHatSwapPresent_hap2.row(s)) * transMatRate_t(1, t-1);
+//           for(k=0; k<=K-1; k++) {
+//               alphaHatSwapFuture_hap1(s, k) = eMatHapSNPSwap_hap1(s, k) * \
+//                   ( transMatRate_t(0, t-1) * alphaHatSwapPresent_hap1(s, k) + \
+//                     alphaConst_hap1 * alphaMat_t(k,t-1));
+//               alphaHatSwapFuture_hap2(s, k) = eMatHapSNPSwap_hap2(s, k) * \
+//                   ( transMatRate_t(0, t-1) * alphaHatSwapPresent_hap2(s, k) + \
+//                     alphaConst_hap2 * alphaMat_t(k,t-1));
+//           }
+//           c_hap1 = 1 / sum(alphaHatSwapFuture_hap1.row(s));
+//           c_hap2 = 1 / sum(alphaHatSwapFuture_hap2.row(s));      
+//           alphaHatSwapFuture_hap1.row(s) = alphaHatSwapFuture_hap1.row(s) * c_hap1;
+//           alphaHatSwapFuture_hap2.row(s) = alphaHatSwapFuture_hap2.row(s) * c_hap2;      
+//           cFinal(s, 0) = cFinal(s, 0) + log(c_hap1);
+//           cFinal(s, 1) = cFinal(s, 1) + log(c_hap2);      
+//           //std::cout << "s=" << s << "\n";
+//           //std::cout << "c_hap1=" << c_hap1 << "\n";
+//           //std::cout << "c_hap2=" << c_hap2 << "\n";
+//       }
+//   }
+//   //
+//   //
+//   return(cFinal);
+// }
+

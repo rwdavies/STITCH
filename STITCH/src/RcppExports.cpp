@@ -532,27 +532,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpp_calculate_many_likelihoods
-arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::List reads_at_SNPs, const arma::mat eMatRead_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t);
-RcppExport SEXP _STITCH_rcpp_calculate_many_likelihoods(SEXP swap_matSEXP, SEXP reads_at_SNPsSEXP, SEXP eMatRead_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat >::type swap_mat(swap_matSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List >::type reads_at_SNPs(reads_at_SNPsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat >::type eMatRead_t(eMatRead_tSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
-    Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type pi(piSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t(transMatRate_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_many_likelihoods(swap_mat, reads_at_SNPs, eMatRead_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rcpp_make_smoothed_rate
 Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigmaSum_unnormalized, const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const Rcpp::IntegerVector& grid_distances, const int nGrids, const int shuffle_bin_radius, const bool verbose);
 RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigmaSum_unnormalizedSEXP, SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP grid_distancesSEXP, SEXP nGridsSEXP, SEXP shuffle_bin_radiusSEXP, SEXP verboseSEXP) {
@@ -644,7 +623,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 38},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},
-    {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 7},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
     {"_STITCH_test_eHaps_options", (DL_FUNC) &_STITCH_test_eHaps_options, 8},

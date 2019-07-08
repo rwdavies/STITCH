@@ -59,67 +59,70 @@ test_that("can do pseudoHaploid updates in C++", {
 
 test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
 
-    test_package <- make_fb_test_package(
-        K = 4,
-        nReads = 8,
-        nSNPs = 10,
-        gridWindowSize = 3,
-        S = 2
-    )
-    S <- test_package$S
-    sampleReads <- test_package$sampleReads
-    nSNPs <- test_package$nSNPs
-    nGrids <- test_package$nGrids
-    K <- test_package$K
-    transMatRate_tc_H <- test_package$transMatRate_tc_H
-    transMatRate_tc_D <- test_package$transMatRate_tc_D    
-    alphaMatCurrent_tc <- test_package$alphaMatCurrent_tc
-    eMatGrid_t <- test_package$list_of_eMatGrid_t[[1]]
-    priorCurrent_m <- test_package$priorCurrent_m
-    eHapsCurrent_tc <- test_package$eHapsCurrent_tc
-    grid <- test_package$grid
+    for(gridWindowSize in c(NA, 3)) {
+        test_package <- make_fb_test_package(
+            K = 4,
+            nReads = 8,
+            nSNPs = 10,
+            gridWindowSize = gridWindowSize,
+            S = 2
+        )
+        S <- test_package$S
+        sampleReads <- test_package$sampleReads
+        nSNPs <- test_package$nSNPs
+        nGrids <- test_package$nGrids
+        K <- test_package$K
+        transMatRate_tc_H <- test_package$transMatRate_tc_H
+        transMatRate_tc_D <- test_package$transMatRate_tc_D    
+        alphaMatCurrent_tc <- test_package$alphaMatCurrent_tc
+        eMatGrid_t <- test_package$list_of_eMatGrid_t[[1]]
+        priorCurrent_m <- test_package$priorCurrent_m
+        eHapsCurrent_tc <- test_package$eHapsCurrent_tc
+        grid <- test_package$grid
+        
+        ## run through R function
+        fbsoL <- run_forward_backwards(
+            sampleReads = sampleReads,
+            priorCurrent_m = priorCurrent_m,
+            transMatRate_tc_D = transMatRate_tc_D,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            method = "diploid",
+            return_gamma = TRUE,
+            grid = grid,
+            suppressOutput = 1
+        )
+        gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
+        expect_equal(ncol(gamma_t), nGrids)
+        expect_equal(min(gamma_t) >= 0, TRUE)
+        expect_equal(max(gamma_t) <= 1, TRUE)
+        
+        pRgivenH1L <- runif(length(sampleReads))
+        pRgivenH2L <- runif(length(sampleReads))
+        
+        ## run through R function
+        fbsoL <- run_forward_backwards(
+            sampleReads = sampleReads,
+            priorCurrent_m = priorCurrent_m,
+            transMatRate_tc_H = transMatRate_tc_H,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            pRgivenH1 = pRgivenH1L,
+            pRgivenH2 = pRgivenH2L,
+            method = "pseudoHaploid",
+            suppressOutput = 1,
+            return_gamma = TRUE,
+            grid = grid
+        )
+        print(names(fbsoL))
+        ## basic checks
+        gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
+        expect_equal(ncol(gamma_t), nGrids)
+        expect_equal(min(gamma_t) >= 0, TRUE)
+        expect_equal(max(gamma_t) <= 1, TRUE)
 
-    ## run through R function
-    fbsoL <- run_forward_backwards(
-        sampleReads = sampleReads,
-        priorCurrent_m = priorCurrent_m,
-        transMatRate_tc_D = transMatRate_tc_D,
-        alphaMatCurrent_tc = alphaMatCurrent_tc,
-        eHapsCurrent_tc = eHapsCurrent_tc,
-        method = "diploid",
-        return_gamma = TRUE,
-        grid = grid,
-        suppressOutput = 1
-    )
-    gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
-    expect_equal(ncol(gamma_t), nGrids)
-    expect_equal(min(gamma_t) >= 0, TRUE)
-    expect_equal(max(gamma_t) <= 1, TRUE)
-
-    pRgivenH1L <- runif(length(sampleReads))
-    pRgivenH2L <- runif(length(sampleReads))
-
-    ## run through R function
-    fbsoL <- run_forward_backwards(
-        sampleReads = sampleReads,
-        priorCurrent_m = priorCurrent_m,
-        transMatRate_tc_H = transMatRate_tc_H,
-        alphaMatCurrent_tc = alphaMatCurrent_tc,
-        eHapsCurrent_tc = eHapsCurrent_tc,
-        pRgivenH1 = pRgivenH1L,
-        pRgivenH2 = pRgivenH2L,
-        method = "pseudoHaploid",
-        suppressOutput = 1,
-        return_gamma = TRUE,
-        grid = grid
-    )
-    print(names(fbsoL))
-    ## basic checks
-    gamma_t <- fbsoL[[1]]$list_of_gamma_t[[1]]
-    expect_equal(ncol(gamma_t), nGrids)
-    expect_equal(min(gamma_t) >= 0, TRUE)
-    expect_equal(max(gamma_t) <= 1, TRUE)
-
+    }
+    
 })
 
 

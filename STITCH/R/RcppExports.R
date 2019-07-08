@@ -142,11 +142,6 @@ rcpp_sample_path <- function(read_labels, eMatRead_t, sampleReads, maxDifference
 }
 
 #' @export
-rcpp_calculate_many_likelihoods <- function(swap_mat, reads_at_SNPs, eMatRead_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t) {
-    .Call('_STITCH_rcpp_calculate_many_likelihoods', PACKAGE = 'STITCH', swap_mat, reads_at_SNPs, eMatRead_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t)
-}
-
-#' @export
 rcpp_make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius, verbose = FALSE) {
     .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius, verbose)
 }
