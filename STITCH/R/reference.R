@@ -40,7 +40,8 @@ get_and_initialize_from_reference <- function(
     L_grid,
     plot_shuffle_haplotype_attempts,
     shuffle_bin_radius,
-    snps_in_grid_1_based
+    snps_in_grid_1_based,
+    plotHapSumDuringIterations
 ) {
 
     print_message("Begin initializing paramters using reference haplotypes")
@@ -160,7 +161,7 @@ get_and_initialize_from_reference <- function(
                 sigmaCurrent_m = sigmaCurrent_m,
                 priorCurrent_m = priorCurrent_m,
                 reference_iterations = reference_iterations,
-                N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, grid = grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, outputdir = outputdir)
+                N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, grid = grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, outputdir = outputdir, plotHapSumDuringIterations = plotHapSumDuringIterations)
             eHapsCurrent_tc <- out$eHapsCurrent_tc
             alphaMatCurrent_tc <- out$alphaMatCurrent_tc
             hapSumCurrent_tc <- out$hapSumCurrent_tc
@@ -452,7 +453,8 @@ run_EM_on_reference_sample_reads <- function(
     plot_shuffle_haplotype_attempts,
     shuffle_bin_radius,
     snps_in_grid_1_based,
-    outputdir
+    outputdir,
+    plotHapSumDuringIterations
 ) {
 
     ## note - for haplotype shuffling
