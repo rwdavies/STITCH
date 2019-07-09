@@ -608,14 +608,15 @@ single_reference_iteration <- function(
                 gammaSum1_tc = gammaSum1_tc,
                 alphaMatSum_tc = alphaMatSum_tc,
                 hapSum_tc = hapSum_tc,
-                priorSum_m= priorSum_m,
+                priorSum_m = priorSum_m,
                 pass_in_alphaBeta = TRUE,
                 alphaHat_t = alphaHat_t,
                 betaHat_t = betaHat_t,
                 gamma_t = gamma_t,
                 eMatGrid_t = eMatGrid_t,
                 grid = grid,
-                Jmax = 10
+                Jmax = 10,
+                prev_list_of_alphaBetaBlocks = list()
             )
 
             for(s in 1:S) {

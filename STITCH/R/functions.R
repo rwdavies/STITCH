@@ -506,8 +506,7 @@ STITCH <- function(
     blocks_for_output <- determine_snp_and_grid_blocks_for_output(
         grid = grid,
         start_and_end_minus_buffer = start_and_end_minus_buffer,
-        outputSNPBlockSize = outputSNPBlockSize,
-        verbose = TRUE
+        outputSNPBlockSize = outputSNPBlockSize
     )
 
 
@@ -5023,7 +5022,7 @@ print_message <- function(x, include_mem = FALSE) {
     } else {
         mem <- ""
     }
-    print(
+    message(
         paste0(
             "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", mem, x
         )
@@ -5281,8 +5280,7 @@ downsample_snapped_sampleReads <- function(
 determine_snp_and_grid_blocks_for_output <- function(
     grid,
     start_and_end_minus_buffer,
-    outputSNPBlockSize = 1000,
-    verbose = FALSE
+    outputSNPBlockSize = 1000
 ) {
     to_out <- array(NA, c(ceiling(length(grid) / outputSNPBlockSize) + 1, 4))
     ## yay! mixture of 0 and 1 based indexing
@@ -5344,9 +5342,7 @@ determine_snp_and_grid_blocks_for_output <- function(
             " grids"
         )
     }
-    if (verbose) {
-        print_message(mess)
-    }
+    print_message(mess)
     return(to_out)
 }
 
