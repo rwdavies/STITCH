@@ -719,6 +719,7 @@ Rcpp::List forwardBackwardDiploid(
     int snp_end_1_based = -1,
     const Rcpp::IntegerVector grid = 0, // end of things needed for genProbs and dosage
     const bool return_gamma = false, // full gamma, K * K rows
+    const bool return_gammaK = false,
     const bool return_extra = false, // whether to return stuff useful for debugging
     const bool update_in_place = false, // update directly into output variables
     const bool pass_in_alphaBeta = false, // whether to pass in pre-made alphaHat, betaHat
@@ -815,7 +816,7 @@ Rcpp::List forwardBackwardDiploid(
       //
       make_diploid_gamma(gamma_t, alphaHat_t, betaHat_t, c, prev, suppressOutput, prev_section, next_section);
       if (return_gamma) {
-          list_of_gamma_t.push_back(gamma_t, "gamma_t");      
+          list_of_gamma_t.push_back(gamma_t, "gamma_t");
       }
       //
       if (return_genProbs) {
@@ -851,6 +852,11 @@ Rcpp::List forwardBackwardDiploid(
           //
           rcpp_make_diploid_jUpdate(alphaMatSum_tc, s, alphaHat_t, betaHat_t, transMatRate_tc_D, alphaMatCurrent_tc, eMatGrid_t, prev, suppressOutput, prev_section, next_section);
           //
+      }
+      if (return_gammaK) {
+          if (s == (S - 1)) {
+              to_return.push_back(gammaK_t, "gammaK_t");
+          }
       }
       //arma::imat sampled_path_diploid_t;
       //if (return_a_sampled_path) {

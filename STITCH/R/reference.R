@@ -479,6 +479,7 @@ run_EM_on_reference_sample_reads <- function(
         eHapsCurrent_tc <- out$gammaSum_tc
         alphaMatCurrent_tc <- out$alphaMatSum_tc
         hapSumCurrent_tc <- out$hapSum_tc
+        sigmaCurrent_m <- out$sigmaSum_m
         sigmaSum_m_unnormalized <- out$sigmaSum_m_unnormalized
         priorCurrent_m <- out$priorSum_m
         list_of_fromMat <- out$list_of_fromMat
@@ -491,6 +492,21 @@ run_EM_on_reference_sample_reads <- function(
             apply_better_switches_if_appropriate(list_of_fromMat = list_of_fromMat, nbreaks = nbreaks, list_of_break_results = list_of_break_results, eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, grid = grid, iteration = iteration, snps_in_grid_1_based = snps_in_grid_1_based, tempdir = tempdir, regionName = regionName, grid_distances = grid_distances, L_grid = L_grid, outputdir = outputdir)
             eHapsCurrent_tc <- out$eHapsCurrent_tc
             alphaMatCurrent_tc <- out$alphaMatCurrent_tc
+        }
+
+        if (plotHapSumDuringIterations) {
+            ## these are the new values
+            interim_plotter(
+                outputdir = outputdir,
+                regionName = regionName,
+                iteration = iteration,
+                L_grid = L_grid,
+                hapSumCurrent_tc = hapSumCurrent_tc,
+                alphaMatCurrent_tc = alphaMatCurrent_tc,
+                sigmaCurrent_m = sigmaCurrent_m,
+                N = N,
+                is_reference = TRUE
+            )
         }
 
     }

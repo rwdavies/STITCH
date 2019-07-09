@@ -7,10 +7,10 @@ make_and_write_output_file <- function(
     blocks_for_output,
     allAlphaBetaBlocks,
     reference_panel_SNPs,
-    priorCurrent,    
-    sigmaCurrent,
-    alphaMatCurrent_t,
-    eHapsCurrent_t,
+    priorCurrent_m,
+    sigmaCurrent_m,
+    alphaMatCurrent_tc,
+    eHapsCurrent_tc,
     N,
     method,
     sampleNames,
@@ -35,6 +35,7 @@ make_and_write_output_file <- function(
     output_haplotype_dosages
 ) {
 
+    
     print_message("Begin making and writing output file")
     to_use_output_filename <- get_output_filename(
         output_filename = output_filename,
@@ -88,8 +89,8 @@ make_and_write_output_file <- function(
 
     sampleRanges <- getSampleRange(N, nCores)    
     ## write blocks
-    transMatRate_t_H <- get_transMatRate(method = "diploid-inbred", sigmaCurrent = sigmaCurrent)
-    transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent = sigmaCurrent)    
+    transMatRate_tc_H <- get_transMatRate_m(method = "diploid-inbred", sigmaCurrent_m = sigmaCurrent_m)
+    transMatRate_tc_D <- get_transMatRate_m(method = "diploid", sigmaCurrent_m = sigmaCurrent_m)
     info <- array(NA, nSNPs)
     hwe <- array(NA, nSNPs)
     hweCount_total <- array(NA, c(nSNPs, 3))    
@@ -101,7 +102,8 @@ make_and_write_output_file <- function(
     }
 
     print_message("Loop over and write output file")
-    print_i_output_block <- round(seq(1, nrow(blocks_for_output), length.out = 10))    
+    print_i_output_block <- round(seq(1, nrow(blocks_for_output), length.out = 10))
+    
     for(i_output_block in 1:nrow(blocks_for_output)) {
 
         ## print out no more than 10 messages
@@ -126,9 +128,9 @@ make_and_write_output_file <- function(
         if (first_grid_in_region < last_grid_in_region) {
             grids_to_use <- first_grid_in_region:(last_grid_in_region - 1)
             ## what? is this right?
-            alphaMatCurrentLocal_t <- alphaMatCurrent_t[, 1 + grids_to_use, drop = FALSE]
-            transMatRateLocal_t_H <- transMatRate_t_H[, 1 + grids_to_use, drop = FALSE]
-            transMatRateLocal_t_D <- transMatRate_t_D[, 1 + grids_to_use, drop = FALSE]            
+            alphaMatCurrentLocal_tc <- alphaMatCurrent_tc[, 1 + grids_to_use, , drop = FALSE]
+            transMatRateLocal_tc_H <- transMatRate_tc_H[, 1 + grids_to_use, , drop = FALSE]
+            transMatRateLocal_tc_D <- transMatRate_tc_D[, 1 + grids_to_use, , drop = FALSE]            
         }
         
         ##
@@ -141,10 +143,10 @@ make_and_write_output_file <- function(
             bundling_info = bundling_info,
             K = K,
             allAlphaBetaBlocks = allAlphaBetaBlocks,
-            alphaMatCurrentLocal_t = alphaMatCurrentLocal_t,
-            eHapsCurrent_t = eHapsCurrent_t,
-            transMatRateLocal_t_H = transMatRateLocal_t_H,
-            transMatRateLocal_t_D = transMatRateLocal_t_D,
+            alphaMatCurrentLocal_tc = alphaMatCurrentLocal_tc,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            transMatRateLocal_tc_H = transMatRateLocal_tc_H,
+            transMatRateLocal_tc_D = transMatRateLocal_tc_D,
             first_grid_in_region = first_grid_in_region,
             last_grid_in_region = last_grid_in_region,
             i_output_block = i_output_block,
@@ -332,10 +334,10 @@ per_core_get_results <- function(
     bundling_info,
     K,
     allAlphaBetaBlocks,
-    alphaMatCurrentLocal_t,
-    eHapsCurrent_t,
-    transMatRateLocal_t_H,
-    transMatRateLocal_t_D,    
+    alphaMatCurrentLocal_tc,
+    eHapsCurrent_tc,
+    transMatRateLocal_tc_H,
+    transMatRateLocal_tc_D,    
     first_grid_in_region,
     last_grid_in_region,    
     i_output_block,
@@ -363,6 +365,9 @@ per_core_get_results <- function(
     
     ## load sample
     ## load pRgivenH1
+    K <- dim(eHapsCurrent_tc)[1]        
+    nSNPs <- dim(eHapsCurrent_tc)[2]
+    S <- dim(eHapsCurrent_tc)[3]
     who_to_run <- sampleRange[1]:sampleRange[2]
     N_core <- sampleRange[2] - sampleRange[1] + 1 ## number in this core
     hweCount <- array(0, c(nSNPsInOutputBlock, 3))
@@ -442,32 +447,56 @@ per_core_get_results <- function(
             ## but anyway, make valid output
             abSmall <- alphaBetaBlocks ## how long is this?
             fbsoL <- lapply(1:length(abSmall), function(i) {
-                a <- abSmall[[i]]$alphaHatBlocks_t
-                b <- abSmall[[i]]$betaHatBlocks_t
-                gamma_t <- a[, i_output_block, drop = FALSE] * b[, i_output_block, drop = FALSE]
-                gamma_t <- gamma_t / sum(gamma_t) ## don't have c here
-                if (method == "diploid") {
-                    ## argh - wait, how is this working?
-                    genProbs_t <- rcpp_calculate_fbd_dosage(
-                        eHapsCurrent_t = eHapsCurrent_t,
-                        gamma_t = gamma_t,
-                        grid = grid,
-                        snp_start_1_based = first_snp_in_region,
-                        snp_end_1_based = last_snp_in_region,
-                        grid_offset = first_grid_in_region
-                    )
-                    gammaK_t <- collapse_diploid_gamma(gamma_t, T, K)
-                } else {
-                    gammaK_t <- gamma_t
-                    genProbs_t <- NA
+                hapDosage <- array(0, nSNPs)
+                genProbs_t <- array(0, c(3, nSNPs))                
+                for(s in 1:S) {
+                    a <- abSmall[[i]]$list_of_alphaHatBlocks_t[[s]]
+                    b <- abSmall[[i]]$list_of_betaHatBlocks_t[[s]]
+                    gamma_t <- a[, i_output_block, drop = FALSE] * b[, i_output_block, drop = FALSE]
+                    gamma_t <- gamma_t / sum(gamma_t) ## don't have c here
+                    if (method == "diploid") {
+                        ## argh - wait, how is this working?
+                        rcpp_calculate_fbd_dosage(
+                            genProbs_t = genProbs_t,
+                            eHapsCurrent_tc = eHapsCurrent_tc,
+                            s = s,
+                            gamma_t = gamma_t,
+                            grid = grid,
+                            snp_start_1_based = first_snp_in_region,
+                            snp_end_1_based = last_snp_in_region,
+                            grid_offset = first_grid_in_region
+                        )
+                        gammaK_t <- collapse_diploid_gamma(gamma_t, T, K) ## OK as only for haplotype dosages
+                    } else if ((method == "pseudoHaploid") | (method == "diploid-inbred")) {
+                        rcpp_calculate_hapDosage(
+                            hapDosage = hapDosage,
+                            eHapsCurrent_tc = eHapsCurrent_tc,
+                            s = s,
+                            gamma_t = gamma_t,
+                            grid = grid,
+                            snp_start_1_based = first_snp_in_region,
+                            snp_end_1_based = last_snp_in_region,
+                            grid_offset = first_grid_in_region
+                        )
+                        gammaK_t <- gamma_t
+                    }
                 }
+                genProbs_t <- genProbs_t / S
+                hapDosage <- hapDosage / S
+                ## 
                 gammaEK_t <-  make_gammaEK_t_from_gammaK_t(
                     gammaK_t, K, grid, 
                     snp_start_1_based = first_snp_in_region,
                     snp_end_1_based = last_snp_in_region,
                     grid_offset = first_grid_in_region
                 )
-                return(list(gamma_t = gamma_t, genProbs_t = genProbs_t, gammaEK_t = gammaEK_t))
+                return(
+                    list(
+                        genProbs_t = genProbs_t,
+                        gammaEK_t = gammaEK_t,
+                        hapDosage = hapDosage
+                    )
+                )
             })
             
         } else {    
@@ -477,13 +506,12 @@ per_core_get_results <- function(
                 pRgivenH1 = pRgivenH1[which_reads],
                 pRgivenH2 = pRgivenH2[which_reads],
                 method = method,
-                K = K,
-                priorCurrent = array(-1, K), ## irrelevant here
-                alphaMatCurrent_t = alphaMatCurrentLocal_t,
-                eHapsCurrent_t = eHapsCurrent_t,
-                transMatRate_t_H = transMatRateLocal_t_H,
-                transMatRate_t_D = transMatRateLocal_t_D, 
-                alphaBetaBlock = alphaBetaBlocks, ## dammit singular vs plural
+                priorCurrent_m = array(-1, c(K, S)), ## irrelevant here
+                alphaMatCurrent_tc = alphaMatCurrentLocal_tc,
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                transMatRate_tc_H = transMatRateLocal_tc_H,
+                transMatRate_tc_D = transMatRateLocal_tc_D, 
+                list_of_alphaBetaBlocks = alphaBetaBlocks, ## yes this is the right input
                 i_snp_block_for_alpha_beta = i_output_block,
                 run_fb_grid_offset = first_grid_in_region,
                 run_fb_subset = TRUE,
@@ -497,18 +525,13 @@ per_core_get_results <- function(
                 snp_start_1_based = first_snp_in_region,
                 snp_end_1_based = last_snp_in_region,
                 output_haplotype_dosages = output_haplotype_dosages ## whether to return states
-            )$fbsoL
+            )
             
         }
 
         gp_t <- calculate_gp_t_from_fbsoL(
-            eHapsCurrent_t = eHapsCurrent_t,            
-            grid = grid,
-            method = method,
             fbsoL = fbsoL,
-            snp_start_1_based = first_snp_in_region,
-            snp_end_1_based = last_snp_in_region,
-            grid_offset_0_based = first_grid_in_region
+            method = method
         )
 
         if (iSample %in% highCovInLow) {

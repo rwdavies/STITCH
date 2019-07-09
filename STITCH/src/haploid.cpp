@@ -529,6 +529,7 @@ Rcpp::List forwardBackwardHaploid(
     const int run_fb_grid_offset = 0, // this is 0-based
     const bool return_extra = false,
     const bool return_gamma = false,
+    const bool return_gammaK = false,    
     const bool return_hapDosage = true,
     const bool update_in_place = false,
     const bool pass_in_alphaBeta = false, // whether to pass in pre-made alphaHat, betaHat
@@ -693,6 +694,11 @@ Rcpp::List forwardBackwardHaploid(
               pRgivenH1, pRgivenH2, run_pseudo_haploid,
               prev, suppressOutput, prev_section, next_section
           );
+      }
+      if (return_gammaK) {
+          if (s == (S - 1)) {
+              to_return.push_back(gamma_t, "gammaK_t"); // equivalent
+          }
       }
   }
   next_section="Done";

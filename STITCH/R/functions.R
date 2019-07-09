@@ -619,9 +619,9 @@ STITCH <- function(
                     regionName = regionName,
                     iteration = iteration,
                     L_grid = L_grid,
-                    hapSumCurrent_t = hapSumCurrent_t,
-                    alphaMatCurrent_t = alphaMatCurrent_t,
-                    sigmaCurrent = sigmaCurrent,
+                    hapSumCurrent_tc = hapSumCurrent_tc,
+                    alphaMatCurrent_tc = alphaMatCurrent_tc,
+                    sigmaCurrent_m = sigmaCurrent_m,
                     N = N
                 )
             }
@@ -651,10 +651,10 @@ STITCH <- function(
         blocks_for_output = blocks_for_output,
         allAlphaBetaBlocks = allAlphaBetaBlocks,
         reference_panel_SNPs = reference_panel_SNPs,
-        priorCurrent = priorCurrent,
-        sigmaCurrent = sigmaCurrent,
-        alphaMatCurrent_t = alphaMatCurrent_t,
-        eHapsCurrent_t = eHapsCurrent_t,
+        priorCurrent_m = priorCurrent_m,
+        sigmaCurrent_m = sigmaCurrent_m,
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        eHapsCurrent_tc = eHapsCurrent_tc,
         N = N,
         method = method,
         sampleNames = sampleNames,
@@ -748,9 +748,9 @@ STITCH <- function(
     ##
     print_message("Save RData objects to disk")
     save(
-        eHapsCurrent_t, alphaMatCurrent_t,
-        sigmaCurrent, priorCurrent,
-        hapSumCurrent_t,
+        eHapsCurrent_tc, alphaMatCurrent_tc,
+        sigmaCurrent_m, priorCurrent_m,
+        hapSumCurrent_tc,
         alleleCount,
         estimatedAlleleFrequency,
         pos, gen, L,
@@ -779,22 +779,9 @@ STITCH <- function(
             outputdir = outputdir, hwe = hwe, regionName = regionName
         )
         ##
-        ## plot hapProbs sum - should tell what states are being used
-        ##
-        print_message("Make HapSum plot")
-        outname <- file.path(outputdir, "plots", paste0("hapProbs.run.",regionName,".jpg"))
-        plotHapSumCurrent_t(
-            outname = outname,
-            L_grid = L_grid,
-            K = K,
-            hapSumCurrent_t = hapSumCurrent_t,
-            nGrids = nGrids,
-            N = N
-        )
-        ##
         ## plot estimated AF against real 0.1X pileups (get r2 as well)
         ##
-        if(sum(passQC)>1) {
+        if(sum(passQC) > 1) {
             print_message("Make estimated against real")
             plotEstimatedAgainstReal(
                 outputdir = outputdir,alleleCount=alleleCount,
@@ -802,6 +789,20 @@ STITCH <- function(
                 which=passQC,chr=chr,regionName=regionName
             )
         }
+        ##
+        ## plot hapProbs, alphaMat, etc
+        ##
+        interim_plotter(
+            outputdir = outputdir,
+            regionName = regionName,
+            iteration = NA,
+            L_grid = L_grid,
+            hapSumCurrent_tc = hapSumCurrent_tc,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            sigmaCurrent_m = sigmaCurrent_m,
+            N = N,
+            final_iteration = TRUE
+        )
     }
 
 
@@ -1300,7 +1301,7 @@ initialize_parameters <- function(
     if (reference_haplotype_file == "") {
         ##
         to_out <- list(
-            eHapsCurrent_tc = eHapsCurrent_t,
+            eHapsCurrent_tc = eHapsCurrent_tc,
             alphaMatCurrent_tc = alphaMatCurrent_tc,
             hapSumCurrent_tc = hapSumCurrent_tc,
             sigmaCurrent_m = sigmaCurrent_m,
@@ -2920,6 +2921,7 @@ run_forward_backwards <- function(
     return_genProbs = FALSE,
     return_hapDosage = FALSE,
     return_gamma = FALSE,
+    return_gammaK = FALSE,
     return_extra = FALSE,
     update_in_place = FALSE,
     gammaSum0_tc = array(0, c(1, 1, 1)),
@@ -3025,6 +3027,7 @@ run_forward_backwards <- function(
                 pRgivenH2 = pRgivenH2L,
                 run_pseudo_haploid = TRUE,
                 return_gamma = return_gamma,
+                return_gammaK = return_gammaK,                
                 prev_list_of_alphaBetaBlocks = list_of_alphaBetaBlocks[[iNor]],
                 i_snp_block_for_alpha_beta = i_snp_block_for_alpha_beta - 1,
                 run_fb_subset = run_fb_subset,
@@ -3070,6 +3073,7 @@ run_forward_backwards <- function(
             model = -1, ## irrelevant for haploid
             run_pseudo_haploid = FALSE,
             return_gamma = return_gamma,
+            return_gammaK = return_gammaK,            
             run_fb_subset = run_fb_subset,
             prev_list_of_alphaBetaBlocks = list_of_alphaBetaBlocks[[iNor]],
             i_snp_block_for_alpha_beta = i_snp_block_for_alpha_beta - 1,
@@ -3120,7 +3124,8 @@ run_forward_backwards <- function(
             snp_end_1_based = snp_end_1_based,
             grid = grid,
             return_extra = return_extra,
-            return_gamma = return_gamma,            
+            return_gamma = return_gamma,
+            return_gammaK = return_gammaK,
             update_in_place = update_in_place,
             gammaSum0_tc = gammaSum0_tc,
             gammaSum1_tc = gammaSum1_tc,
@@ -3287,21 +3292,23 @@ within_EM_per_sample_heuristics <- function(
     ## do read splitting if the correct iteration
     ##
     if (split_iteration) {
+        ## 
+        ## with multiple eHaps, this makes a lot less sense
+        ## not sure this does much anyway
+        ## for now, just do over final s in S
+        ## so S = 1, this reverts to original method
+        ## 
         if (method == "pseudoHaploid") {
             gammaK_t <- fbsoL[[1]][["gammaK_t"]] + fbsoL[[2]][["gammaK_t"]]
         } else {
             gammaK_t <- fbsoL[[1]][["gammaK_t"]]
         }
-        ## 
-        stop("AM HERE - generate gammaK_t as needed (is this right?) (can I move into cpp)")
-        stop("do I really want to disable...")
+        ##
         out <- findRecombinedReadsPerSample(
             gammaK_t = fbsoL[[1]]$gammaK_t,
-            eHapsCurrent_t = eHapsCurrent_t,
-            K = K,
+            eHapsCurrent_t = eHapsCurrent_tc[, , s],
             L = L,
             iSample = iSample,
-            verbose = FALSE,
             sampleReads = sampleReads,
             tempdir = tempdir,
             regionName = regionName,
@@ -3468,9 +3475,11 @@ subset_of_complete_iteration <- function(
     if (split_iteration) {
         readsSplit <- array(0, N)
         readsTotal <- array(0, N)
+        return_gammaK <- TRUE
     } else {
         readsSplit <- NULL
         readsTotal <- NULL
+        return_gammaK <- FALSE
     }
 
     if (sum(nbreaks) > 0) {
@@ -3588,13 +3597,14 @@ subset_of_complete_iteration <- function(
             alphaHat_t = alphaHat_t,
             betaHat_t = betaHat_t,
             gamma_t = gamma_t,
-            eMatGrid_t = eMatGrid_t
+            eMatGrid_t = eMatGrid_t,
+            return_gammaK = return_gammaK 
         )
 
         ## kind of like
         if (iteration == niterations) {
             if (useTempdirWhileWriting) {
-                alphaBetaBlocks <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
+                alphaBetaBlocks <- lapply(fbsoL, function(x) x[["list_of_alphaBetaBlocks"]])
                 save(alphaBetaBlocks, file = file_alphaBetaBlocks(tempdir, iSample, regionName), compress = FALSE)
                 if (length(bundling_info) > 0) {
                     ## bundle here
@@ -3610,7 +3620,7 @@ subset_of_complete_iteration <- function(
                     }
                 }
             } else {
-                allAlphaBetaBlocks[[iiSample]] <- lapply(fbsoL, function(x) x[["alphaBetaBlocks"]])
+                allAlphaBetaBlocks[[iiSample]] <- lapply(fbsoL, function(x) x[["list_of_alphaBetaBlocks"]])
             }
         }
 
@@ -4829,57 +4839,6 @@ split_a_read <- function(
 
 
 
-findRecombinedReadsPerSample <- function(
-    gammaK_t,
-    eHapsCurrent_t,
-    K,
-    L,
-    iSample,
-    sampleReads,
-    tempdir,
-    regionName,
-    grid,
-    verbose=FALSE
-) {
-    ## needs a full run
-    ## only do for some - need at least 3 SNPs to consider
-    w <- get_reads_worse_than_50_50(
-        sampleReads = sampleReads,
-        eHapsCurrent_t = eHapsCurrent_t,
-        K = K
-    )
-    w <- w[w != 1 & w != length(w)]
-    count <- 0
-    if (length(w) > 0) {
-        for (w1 in w) {
-            out <- split_a_read(
-                sampleReads = sampleReads,
-                read_to_split = w1,
-                gammaK_t = gammaK_t,
-                L = L,
-                eHapsCurrent_t = eHapsCurrent_t,
-                K = K,
-                grid = grid
-            )
-            sampleReads <- out$sampleReads
-            count <- count + as.integer(out$did_split)
-        } # end of loop on reads
-        sampleReads <- sampleReads[order(unlist(lapply(sampleReads,function(x) x[[2]])))]
-        save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
-        if (verbose) {
-            print_message(paste0(
-                "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
-            ))
-        }
-    }
-    return(
-        list(
-            readsSplit = count,
-            readsTotal = length(sampleReads)
-        )
-    )
-}
-
 
 pseudoHaploid_update_9 <- function(
     pRgivenH1,
@@ -5022,7 +4981,7 @@ print_message <- function(x, include_mem = FALSE) {
     } else {
         mem <- ""
     }
-    message(
+    print(
         paste0(
             "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", mem, x
         )
@@ -5364,14 +5323,15 @@ reorder_alphaBetaBlocks <- function(single_iteration_results, sampleRanges, N, K
         }
     }
     ## also want hapSum
-    hapSum_t <- array(0, c(K, nGrids))
+    S <- dim(single_iteration_results[[1]]$hapSum_tc)[3]
+    hapSum_tc <- array(0, c(K, nGrids, S))
     ## sum and sum
     for(i in 1:length(sampleRanges)) {
-        hapSum_t <- hapSum_t + single_iteration_results[[i]]$hapSum_t
+        hapSum_tc <- hapSum_tc + single_iteration_results[[i]]$hapSum_tc
     }
     list(
         allAlphaBetaBlocks = allAlphaBetaBlocks,
-        hapSum_t = hapSum_t
+        hapSum_tc = hapSum_tc
     )
 }
 

@@ -834,8 +834,10 @@ interim_plotter <- function(
     L_grid,
     hapSumCurrent_tc,
     alphaMatCurrent_tc,
-    sigmaCurrentc,
-    N
+    sigmaCurrent_m,
+    N,
+    final_iteration = FALSE,
+    is_reference = FALSE
 ) {
     ## easiest - just break up by S
     nGrids <- ncol(alphaMatCurrent_tc) + 1
@@ -845,39 +847,64 @@ interim_plotter <- function(
         plotHapSumCurrent_t(
             L_grid = L_grid,
             K = K,
-            hapSumCurrent_t = hapSumCurrent_t[, , s],
+            hapSumCurrent_t = hapSumCurrent_tc[, , s],
             nGrids = nGrids,
             N = N,
             outputdir = outputdir,
             iteration = iteration,
             regionName = regionName,
             s = s,
-            S = S
+            S = S,
+            final_iteration = final_iteration,
+            is_reference = is_reference
         )
         plotHapSumCurrent_t_log(
             L_grid = L_grid,
             K = K,
-            hapSumCurrent_t = hapSumCurrent_t,
+            hapSumCurrent_t = hapSumCurrent_tc[, , s],
             nGrids = nGrids,
             N = N,
             outputdir = outputdir,
             regionName = regionName,
             iteration = iteration,
             s = s,
-            S = S            
+            S = S,
+            final_iteration = final_iteration,
+            is_reference = is_reference            
         )
-        plot_alphaMatCurrent_t(
+        plotAlphaMatCurrent_t(
             L_grid = L_grid,
-            alphaMatCurrent_t = alphaMatCurrent_t,
-            sigmaCurrent = sigmaCurrent,
+            alphaMatCurrent_t = alphaMatCurrent_tc[, , s],
+            sigmaCurrent = sigmaCurrent_m[, s],
             outputdir = outputdir,
             iteration = iteration,
             regionName = regionName,
             s = s,
-            S = S            
+            S = S,
+            final_iteration = final_iteration,
+            is_reference = is_reference            
         )
     }
     return(NULL)
+}
+
+
+interim_plot_name <- function(name, regionName, outputdir, s, S, iteration, final_iteration, is_reference, what = "") {
+    if (final_iteration) {
+        it_name <- ""
+    } else {
+        it_name <- paste0(".iteration.", iteration)
+    }
+    if (S > 1) {
+        suffix <- ".png"
+    } else {
+        suffix <- paste0(".s.", s, ".png")
+    }
+    if (is_reference) {
+        name <- paste0("ref.", name)
+    }
+    outname <- file.path(outputdir, "plots", paste0(name, ".", regionName, it_name, what, suffix))
+    return(outname)
 }
 
 ## plot hapSumCurrent along genome
@@ -892,14 +919,12 @@ plotHapSumCurrent_t <- function(
     regionName,
     iteration,
     s,
-    S
+    S,
+    final_iteration,
+    is_reference
 ) {
-    if (S > 1) {
-        suffix <- ".png"
-    } else {
-        suffix <- paste0(".s.", s, ".png")
-    }
-    outname <- file.path(outputdir, "plots", paste0("hapSum.", regionName, ".iteration.", iteration, suffix))
+    ##
+    outname <- interim_plot_name("hapSum", regionName, outputdir, s, S, iteration, final_iteration, is_reference)
     ## 
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)    
     png(outname, height = 10, width = width, res = 100, units = "in")    
@@ -937,17 +962,12 @@ plotHapSumCurrent_t_log <- function(
     regionName,
     iteration,
     s,
-    S
+    S,
+    final_iteration,
+    is_reference
 ) {
-    if (S > 1) {
-        suffix <- ".png"
-    } else {
-        suffix <- paste0(".s.", s, ".png")
-    }
-    outname <- file.path(
-        outputdir, "plots",
-        paste0("hapSumCurrent.", regionName, ".iteration.", iteration, suffix)
-    )
+    outname <- interim_plot_name("hapSum_log", regionName, outputdir, s, S, iteration, final_iteration, is_reference)
+    ## 
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 10, width = width, res = 100, units = "in")
     main <- "log10 of average haplotype usage vs physical position"
@@ -973,7 +993,7 @@ plotHapSumCurrent_t_log <- function(
 
 
 
-plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outputdir, iteration, regionName, s, S) {
+plotAlphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outputdir, iteration, regionName, s, S, final_iteration, is_reference) {
     if (S > 1) {
         suffix <- ".png"
     } else {
@@ -1002,10 +1022,7 @@ plot_alphaMatCurrent_t <- function(L_grid, alphaMatCurrent_t, sigmaCurrent, outp
             fbd_store <- list(list(gammaK_t = alphaMatCurrent_t))
             what <- "all"
         }
-        outname <- file.path(
-            outputdir, "plots",
-            paste0("alphaMatCurrent.", regionName, ".iteration.", iteration, ".", what, suffix)
-        )
+        outname <- interim_plot_name("alphaMat", regionName, outputdir, s, S, iteration, final_iteration, is_reference, what)
         width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
         png(outname, height = 10, width = width, res = 100, units = "in")
         plot_fbd_store(fbd_store, xleft, xright, xlim, main = main)
@@ -1074,3 +1091,54 @@ apply_better_switches_if_appropriate <- function(
         )
     )
 }
+
+
+findRecombinedReadsPerSample <- function(
+    gammaK_t,
+    eHapsCurrent_t,
+    K,
+    L,
+    iSample,
+    sampleReads,
+    tempdir,
+    regionName,
+    grid
+) {
+    K <- dim(eHapsCurrent_t)[1]
+    ## needs a full run
+    ## only do for some - need at least 3 SNPs to consider
+    w <- get_reads_worse_than_50_50(
+        sampleReads = sampleReads,
+        eHapsCurrent_t = eHapsCurrent_t,
+        K = K
+    )
+    w <- w[w != 1 & w != length(w)]
+    count <- 0
+    if (length(w) > 0) {
+        for (w1 in w) {
+            out <- split_a_read(
+                sampleReads = sampleReads,
+                read_to_split = w1,
+                gammaK_t = gammaK_t,
+                L = L,
+                eHapsCurrent_t = eHapsCurrent_t,
+                K = K,
+                grid = grid
+            )
+            sampleReads <- out$sampleReads
+            count <- count + as.integer(out$did_split)
+        } # end of loop on reads
+        sampleReads <- sampleReads[order(unlist(lapply(sampleReads,function(x) x[[2]])))]
+        save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
+        print_message(paste0(
+            "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
+        ))
+    }
+    return(
+        list(
+            readsSplit = count,
+            readsTotal = length(sampleReads)
+        )
+    )
+}
+
