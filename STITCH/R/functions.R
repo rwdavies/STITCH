@@ -2907,6 +2907,7 @@ run_forward_backwards <- function(
     pseudoHaploidModel = 9,
     run_fb_subset = FALSE,
     alphaBetaBlock = NULL,
+    list_of_alphaBetaBlocks = as.list(c(1, 2)),
     run_fb_grid_offset = 0,
     suppressOutput = as.integer(1),
     generate_fb_snp_offsets = FALSE,
@@ -2990,6 +2991,7 @@ run_forward_backwards <- function(
             )
         })
     }
+
 
     fbsoL <- as.list(1:nor)
 
@@ -3106,8 +3108,8 @@ run_forward_backwards <- function(
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             suppressOutput = suppressOutput,
             run_fb_subset = run_fb_subset,
-            alphaStart = alphaBetaBlock[[1]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
-            betaEnd = alphaBetaBlock[[1]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
+            prev_list_of_alphaBetaBlocks = list_of_alphaBetaBlocks[[1]],
+            i_snp_block_for_alpha_beta = i_snp_block_for_alpha_beta - 1,
             run_fb_grid_offset = run_fb_grid_offset,
             blocks_for_output = blocks_for_output,
             generate_fb_snp_offsets = generate_fb_snp_offsets,
@@ -3128,6 +3130,8 @@ run_forward_backwards <- function(
             output_haplotype_dosages = output_haplotype_dosages,
             rescale_eMatGrid_t = rescale_eMatGrid_t
         )
+        ## alphaStart = alphaBetaBlock[[1]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
+        ## betaEnd = alphaBetaBlock[[1]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
     }
 
     return(fbsoL)

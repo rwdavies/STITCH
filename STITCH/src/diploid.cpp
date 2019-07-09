@@ -704,19 +704,19 @@ Rcpp::List forwardBackwardDiploid(
     const int suppressOutput,
     const arma::mat& blocks_for_output,
     arma::cube& gammaSum0_tc,
-    arma::cube& gammaSum1_tc,    
+    arma::cube& gammaSum1_tc,
     arma::cube& alphaMatSum_tc,
     arma::cube& hapSum_tc,
     arma::mat& priorSum_m,
+    const Rcpp::List& prev_list_of_alphaBetaBlocks,
+    const int i_snp_block_for_alpha_beta = 0,
     const bool generate_fb_snp_offsets = false,
-    const Rcpp::NumericVector alphaStart = 0,
-    const Rcpp::NumericVector betaEnd = 0,
     const bool return_a_sampled_path = false,
     const bool run_fb_subset = false,
     const int run_fb_grid_offset = 0, // this is 0-based
     const bool return_genProbs = false, // the below are needed if we want genProbs. dosage trivial
-    const int snp_start_1_based = -1,
-    const int snp_end_1_based = -1,
+    int snp_start_1_based = -1,
+    int snp_end_1_based = -1,
     const Rcpp::IntegerVector grid = 0, // end of things needed for genProbs and dosage
     const bool return_gamma = false, // full gamma, K * K rows
     const bool return_extra = false, // whether to return stuff useful for debugging
@@ -739,6 +739,11 @@ Rcpp::List forwardBackwardDiploid(
   const int KK = K * K;
   const int S = eHapsCurrent_tc.n_slices;
   const int nReads = sampleReads.size();
+  if (snp_start_1_based == -1) {
+      snp_start_1_based = 1;
+      snp_end_1_based = nSNPs;
+  }
+  const int nSNPs_local = snp_end_1_based - snp_start_1_based + 1; 
   //
   // new variables
   //
@@ -754,10 +759,13 @@ Rcpp::List forwardBackwardDiploid(
   arma::vec alphaTemp1 = arma::zeros(nGrids);
   arma::vec alphaTemp2 = arma::zeros(nGrids);
   arma::mat eMatRead_t = arma::ones(K, nReads);
-  arma::mat genProbs_t = arma::zeros(3, nSNPs);  
+  arma::mat genProbs_t = arma::zeros(3, nSNPs_local);  
   //
   // variables working on full space
+  Rcpp::NumericVector alphaStart, betaEnd;
+  arma::mat alphaHatBlocks_t, betaHatBlocks_t;
   Rcpp::List alphaBetaBlocks;
+  Rcpp::List list_of_alphaBetaBlocks;
   Rcpp::List to_return;
   Rcpp::List list_of_gamma_t;  
   if (!update_in_place) {
@@ -788,6 +796,14 @@ Rcpp::List forwardBackwardDiploid(
           eMatRead_t.fill(1);
           eMatGrid_t.fill(1);
       }
+      if (run_fb_subset) {
+          // extract object from list_of_alphaBetaBlocks
+          alphaBetaBlocks = as<Rcpp::List>(prev_list_of_alphaBetaBlocks[s]);
+          alphaHatBlocks_t = as<arma::mat>(alphaBetaBlocks["alphaHatBlocks_t"]);
+          betaHatBlocks_t = as<arma::mat>(alphaBetaBlocks["betaHatBlocks_t"]);
+          alphaStart = alphaHatBlocks_t.col(i_snp_block_for_alpha_beta);
+          betaEnd = betaHatBlocks_t.col(i_snp_block_for_alpha_beta);
+      }
       //
       rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapPH_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section);
       //
@@ -808,7 +824,7 @@ Rcpp::List forwardBackwardDiploid(
       }
       // make outputs here
       if (generate_fb_snp_offsets) {
-          alphaBetaBlocks = rcpp_make_fb_snp_offsets(alphaHat_t, betaHat_t, blocks_for_output);
+          list_of_alphaBetaBlocks.push_back(rcpp_make_fb_snp_offsets(alphaHat_t, betaHat_t, blocks_for_output), "alphaBetaBlocks");
       }
       //
       // make collapsed gamma here (when is this wanted)
@@ -856,6 +872,17 @@ Rcpp::List forwardBackwardDiploid(
   if (output_haplotype_dosages) {
       to_return.push_back(gammaEK_t, "gammaEK_t");
   }
+  if (return_gamma) {
+      to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
+  }
+  // rest largely for debugging
+  if (return_extra) {
+      to_return.push_back(alphaHat_t, "alphaHat_t");
+      to_return.push_back(betaHat_t, "betaHat_t");
+      to_return.push_back(eMatRead_t, "eMatRead_t");      
+      to_return.push_back(eMatGrid_t, "eMatGrid_t");
+      to_return.push_back(c, "c");
+  }
   if (run_fb_subset) {
       // have already added genProbs hopefully?
       return(to_return);
@@ -868,18 +895,7 @@ Rcpp::List forwardBackwardDiploid(
       to_return.push_back(priorSum_m, "priorSum_m");      
   }
   if (generate_fb_snp_offsets) {
-      to_return.push_back(alphaBetaBlocks, "alphaBetaBlocks");
-  }
-  // rest largely for debugging
-  if (return_extra) {
-      to_return.push_back(alphaHat_t, "alphaHat_t");
-      to_return.push_back(betaHat_t, "betaHat_t");
-      to_return.push_back(eMatRead_t, "eMatRead_t");      
-      to_return.push_back(eMatGrid_t, "eMatGrid_t");
-      to_return.push_back(c, "c");
-  }
-  if (return_gamma) {
-      to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
+      to_return.push_back(list_of_alphaBetaBlocks, "list_of_alphaBetaBlocks");
   }
   // deprecated?
   //if (return_a_sampled_path) {
