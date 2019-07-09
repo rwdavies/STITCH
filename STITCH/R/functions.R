@@ -506,7 +506,8 @@ STITCH <- function(
     blocks_for_output <- determine_snp_and_grid_blocks_for_output(
         grid = grid,
         start_and_end_minus_buffer = start_and_end_minus_buffer,
-        outputSNPBlockSize = outputSNPBlockSize
+        outputSNPBlockSize = outputSNPBlockSize,
+        verbose = TRUE
     )
 
 
@@ -3025,13 +3026,14 @@ run_forward_backwards <- function(
                 pRgivenH2 = pRgivenH2L,
                 run_pseudo_haploid = TRUE,
                 return_gamma = return_gamma,
-                alphaStart = alphaBetaBlock[[iNor]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
-                betaEnd = alphaBetaBlock[[iNor]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
+                prev_list_of_alphaBetaBlocks = list_of_alphaBetaBlocks[[iNor]],
+                i_snp_block_for_alpha_beta = i_snp_block_for_alpha_beta - 1,
                 run_fb_subset = run_fb_subset,
                 run_fb_grid_offset = run_fb_grid_offset,
                 blocks_for_output = blocks_for_output,
                 generate_fb_snp_offsets = generate_fb_snp_offsets,
                 return_extra = return_extra,
+                return_hapDosage = return_hapDosage,
                 update_in_place = update_in_place,
                 gammaSum0_tc = gammaSum0_tc,
                 gammaSum1_tc = gammaSum1_tc,
@@ -3070,8 +3072,8 @@ run_forward_backwards <- function(
             run_pseudo_haploid = FALSE,
             return_gamma = return_gamma,
             run_fb_subset = run_fb_subset,
-            alphaStart = alphaBetaBlock[[iNor]]$alphaHatBlocks_t[, i_snp_block_for_alpha_beta],
-            betaEnd = alphaBetaBlock[[iNor]]$betaHatBlocks_t[, i_snp_block_for_alpha_beta],
+            prev_list_of_alphaBetaBlocks = list_of_alphaBetaBlocks[[iNor]],
+            i_snp_block_for_alpha_beta = i_snp_block_for_alpha_beta - 1,
             run_fb_grid_offset = run_fb_grid_offset,
             blocks_for_output = blocks_for_output,
             generate_fb_snp_offsets = generate_fb_snp_offsets,
@@ -3332,16 +3334,8 @@ within_EM_per_sample_heuristics <- function(
 ## calculate output
 calculate_gp_t_from_fbsoL <- function(
     fbsoL,
-    method,
-    snp_start_1_based = NA,
-    snp_end_1_based = NA,
-    grid_offset_0_based = 0
+    method
 ) {
-    if (is.na(snp_start_1_based)) {
-        snp_start_1_based <- 1
-        snp_end_1_based <- length(grid)
-    }
-    nSNPs <- snp_end_1_based - snp_start_1_based + 1
     if (method == "diploid") {
         ## should have previously been created
         if (!("genProbs_t" %in% names(fbsoL[[1]]))) {
@@ -3351,13 +3345,14 @@ calculate_gp_t_from_fbsoL <- function(
     } else if (method == "diploid-inbred") {
         ## this is a diploid organisms, so output genotypes appropriately
         ## there are only two posteriors here!
-        gp_t <- array(0, c(3, nSNPs))
+        hapDosage <- fbsoL[[1]]$hapDosage
+        gp_t <- array(0, c(3, length(hapDosage)))
         gp_t[1, ] <- hapDosage
         gp_t[3, ] <- 1 - gp_t[1, ]
     } else if (method == "pseudoHaploid") {
-        gp_t <- array(0, c(3, nSNPs))
         g10 <- fbsoL[[1]]$hapDosage ## colSums(fbsoL[[1]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
         g20 <- fbsoL[[2]]$hapDosage ## colSums(fbsoL[[2]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
+        gp_t <- array(0, c(3, length(g10)))
         gp_t[1, ] <- g10 * g20
         gp_t[2, ] <- g10 * (1 - g20) + (1 - g10) * g20
         gp_t[3, ] <- (1 - g10) * (1 - g20)
@@ -5286,7 +5281,8 @@ downsample_snapped_sampleReads <- function(
 determine_snp_and_grid_blocks_for_output <- function(
     grid,
     start_and_end_minus_buffer,
-    outputSNPBlockSize = 1000
+    outputSNPBlockSize = 1000,
+    verbose = FALSE
 ) {
     to_out <- array(NA, c(ceiling(length(grid) / outputSNPBlockSize) + 1, 4))
     ## yay! mixture of 0 and 1 based indexing
@@ -5348,7 +5344,9 @@ determine_snp_and_grid_blocks_for_output <- function(
             " grids"
         )
     }
-    print_message(mess)
+    if (verbose) {
+        print_message(mess)
+    }
     return(to_out)
 }
 

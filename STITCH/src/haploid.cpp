@@ -522,9 +522,9 @@ Rcpp::List forwardBackwardHaploid(
     const arma::vec& pRgivenH2,
     const bool run_pseudo_haploid,
     const arma::mat& blocks_for_output,
+    const Rcpp::List& prev_list_of_alphaBetaBlocks,
+    const int i_snp_block_for_alpha_beta = 0,
     const bool generate_fb_snp_offsets = false,
-    const Rcpp::NumericVector alphaStart = 0,
-    const Rcpp::NumericVector betaEnd = 0,
     const bool run_fb_subset = false,
     const int run_fb_grid_offset = 0, // this is 0-based
     const bool return_extra = false,
@@ -585,9 +585,13 @@ Rcpp::List forwardBackwardHaploid(
   // variables for transition matrix and initialization
   // int variables and such
   int iGrid, k, s;
-  Rcpp::List alphaBetaBlocks;
   Rcpp::List to_return;
   Rcpp::List list_of_gamma_t;
+  //  
+  Rcpp::NumericVector alphaStart, betaEnd;
+  arma::mat alphaHatBlocks_t, betaHatBlocks_t;
+  Rcpp::List alphaBetaBlocks;
+  Rcpp::List list_of_alphaBetaBlocks;
   //
   // everything works on s here
   //
@@ -601,6 +605,13 @@ Rcpp::List forwardBackwardHaploid(
           if (run_pseudo_haploid) {
               eMatHapOri_t.fill(0);
           }
+      }
+      if (run_fb_subset) {
+          alphaBetaBlocks = as<Rcpp::List>(prev_list_of_alphaBetaBlocks[s]);
+          alphaHatBlocks_t = as<arma::mat>(alphaBetaBlocks["alphaHatBlocks_t"]);
+          betaHatBlocks_t = as<arma::mat>(alphaBetaBlocks["betaHatBlocks_t"]);
+          alphaStart = alphaHatBlocks_t.col(i_snp_block_for_alpha_beta);
+          betaEnd = betaHatBlocks_t.col(i_snp_block_for_alpha_beta);
       }
       //
       rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid);
@@ -671,7 +682,7 @@ Rcpp::List forwardBackwardHaploid(
       // normal (do updates)
       if (generate_fb_snp_offsets) {
           // will need to modify
-          alphaBetaBlocks = rcpp_make_fb_snp_offsets(alphaHat_t, betaHat_t, blocks_for_output);
+          list_of_alphaBetaBlocks.push_back(rcpp_make_fb_snp_offsets(alphaHat_t, betaHat_t, blocks_for_output), "alphaBetaBlocks");          
       } else if (!run_fb_subset) {
           //
           perform_haploid_per_sample_updates(
@@ -696,7 +707,7 @@ Rcpp::List forwardBackwardHaploid(
   }
   //
   if (generate_fb_snp_offsets) {
-      to_return.push_back(alphaBetaBlocks, "alphaBetaBlocks");
+      to_return.push_back(list_of_alphaBetaBlocks, "list_of_alphaBetaBlocks");
   }
   if (run_fb_subset | generate_fb_snp_offsets) {
       return(to_return);

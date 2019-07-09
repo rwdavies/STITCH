@@ -63,8 +63,8 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
 
             method <- "diploid"
             
-            for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {            
-                
+            for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {
+
                 if (method == "pseudoHaploid") {
                     pRgivenH1 <- runif(length(sampleReads))
                     pRgivenH2 <- runif(length(sampleReads))
@@ -83,6 +83,7 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     blocks_for_output = blocks_for_output,
                     generate_fb_snp_offsets = TRUE,
                     return_genProbs = TRUE, ## might not be for all methods
+                    return_hapDosage = TRUE,
                     return_gamma = TRUE,
                     return_extra = TRUE,                    
                     grid = grid,
@@ -96,7 +97,6 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                 }
                 gp_t_all <- calculate_gp_t_from_fbsoL(
                     fbsoL = fbsoL1,
-                    grid = grid,
                     method = method
                 )
                 list_of_alphaBetaBlocks <- lapply(fbsoL1, function(x) x$list_of_alphaBetaBlocks)
@@ -146,6 +146,7 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                         suppressOutput = 1,
                         i_snp_block_for_alpha_beta = i_output_block,
                         return_genProbs = TRUE, ## might not be for all methods
+                        return_hapDosage = TRUE,                        
                         return_gamma = TRUE,
                         return_extra = TRUE,
                         grid = grid,
@@ -156,9 +157,9 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     
                     if (output_haplotype_dosages) {
                         if (method == "pseudoHaploid") {
-                            gammaEK_t_local <- out2[[1]][["gammaEK_t"]] + out2[[2]][["gammaEK_t"]]
+                            gammaEK_t_local <- fbsoL2[[1]][["gammaEK_t"]] + fbsoL2[[2]][["gammaEK_t"]]
                         } else {
-                            gammaEK_t_local <- out2[[1]][["gammaEK_t"]]
+                            gammaEK_t_local <- fbsoL2[[1]][["gammaEK_t"]]
                         }
                     }
 
@@ -179,10 +180,7 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
 
                     gp_t_local <- calculate_gp_t_from_fbsoL( 
                         fbsoL = fbsoL2,
-                        method = method,                        
-                        snp_start_1_based = first_snp_in_region,
-                        snp_end_1_based = last_snp_in_region,
-                        grid_offset_0_based = first_grid_in_region
+                        method = method
                     )
                     
                     for(iNor in 1:length(fbsoL1)) {
