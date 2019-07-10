@@ -447,82 +447,19 @@ per_core_get_results <- function(
 
         if (first_grid_in_region == last_grid_in_region) {
 
-            ## only 1 grid being imputed (rare!)
-            ## also, imputation more or less meaningless
-            ## but anyway, make valid output
-            abSmall <- alphaBetaBlocks ## how long is this?
-            fbsoL <- lapply(1:length(abSmall), function(i) {
-                hapDosage <- array(0, nSNPsInOutputBlock)
-                genProbs_t <- array(0, c(3, nSNPsInOutputBlock))
-                for(s in 1:S) {
-                    a <- abSmall[[i]][[s]]$alphaHatBlocks_t
-                    b <- abSmall[[i]][[s]]$betaHatBlocks_t                    
-                    gamma_t <- a[, i_output_block, drop = FALSE] * b[, i_output_block, drop = FALSE]
-                    gamma_t <- gamma_t / sum(gamma_t) ## don't have c here
-                    if (method == "diploid") {
-                        ## argh - wait, how is this working?
-                        rcpp_calculate_fbd_dosage(
-                            genProbs_t = genProbs_t,
-                            eHapsCurrent_tc = eHapsCurrent_tc,
-                            s = s - 1, ## 0-based
-                            gamma_t = gamma_t,
-                            grid = grid,
-                            snp_start_1_based = first_snp_in_region,
-                            snp_end_1_based = last_snp_in_region,
-                            grid_offset = first_grid_in_region,
-                            prev = 0,
-                            suppressOutput = 1,
-                            prev_section = "wer",
-                            next_section = "wer"
-                        )
-                        gammaK_t <- array(0, c(K, nSNPs)) ## only relevant for S=1
-                        collapse_diploid_gamma(
-                            gamma_t = gamma_t,
-                            gammaK_t = gammaK_t,
-                            prev = 0,
-                            suppressOutput = 1,
-                            prev_section = "wer",
-                            next_section = "wer"
-                        )
-                    } else if ((method == "pseudoHaploid") | (method == "diploid-inbred")) {
-                        rcpp_calculate_hapDosage(
-                            hapDosage = hapDosage,
-                            eHapsCurrent_tc = eHapsCurrent_tc,
-                            s = s - 1,
-                            gamma_t = gamma_t,
-                            grid = grid,
-                            snp_start_1_based = first_snp_in_region,
-                            snp_end_1_based = last_snp_in_region,
-                            grid_offset = first_grid_in_region,
-                            prev = 0,
-                            suppressOutput = 1,
-                            prev_section = "wer",
-                            next_section = "wer"
-                        )
-                        gammaK_t <- gamma_t
-                    }
-                }
-                genProbs_t <- genProbs_t / S
-                hapDosage <- hapDosage / S
-                ## 
-                gammaEK_t <-  make_gammaEK_t_from_gammaK_t(
-                    gammaK_t, K, grid, 
-                    snp_start_1_based = first_snp_in_region,
-                    snp_end_1_based = last_snp_in_region,
-                    grid_offset = first_grid_in_region,
-                    prev = 0,
-                    suppressOutput = 1,
-                    prev_section = "wer",
-                    next_section = "wer"
-                )
-                return(
-                    list(
-                        genProbs_t = genProbs_t,
-                        gammaEK_t = gammaEK_t,
-                        hapDosage = hapDosage
-                    )
-                )
-            })
+            fbsoL <- make_fbsoL_for_single_grid(
+                alphaBetaBlocks = alphaBetaBlocks,
+                nSNPsInOutputBlock = nSNPsInOutputBlock,
+                S = S,
+                K = K,
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                grid = grid,
+                first_snp_in_region = first_snp_in_region,
+                last_snp_in_region = last_snp_in_region,
+                first_grid_in_region = first_grid_in_region,
+                i_output_block = i_output_block,
+                method = method
+            )
             
         } else {    
 
@@ -1277,3 +1214,94 @@ determine_starts_ends_whats_for_sampleReads <- function(sampleReads, blocks_in_v
     return(list(starts = starts, ends = ends, whats = whats))
 }
 
+
+
+make_fbsoL_for_single_grid <- function(
+    alphaBetaBlocks,
+    nSNPsInOutputBlock,
+    S,
+    K,
+    eHapsCurrent_tc,
+    grid,
+    first_snp_in_region,
+    last_snp_in_region,
+    first_grid_in_region,
+    i_output_block,
+    method
+) {
+    ## only 1 grid being imputed (rare!)
+    ## also, imputation more or less meaningless
+    ## but anyway, make valid output
+    abSmall <- alphaBetaBlocks ## how long is this?
+    fbsoL <- lapply(1:length(abSmall), function(i) {
+        hapDosage <- array(0, c(1, nSNPsInOutputBlock))
+        list_of_hapDosage <- list()
+        genProbs_t <- array(0, c(3, nSNPsInOutputBlock))
+        for(s in 1:S) {
+            a <- abSmall[[i]][[s]]$alphaHatBlocks_t
+            b <- abSmall[[i]][[s]]$betaHatBlocks_t                    
+            gamma_t <- a[, i_output_block, drop = FALSE] * b[, i_output_block, drop = FALSE]
+            gamma_t <- gamma_t / sum(gamma_t) ## don't have c here
+            if (method == "diploid") {
+                ## argh - wait, how is this working?
+                rcpp_calculate_fbd_dosage(
+                    genProbs_t = genProbs_t,
+                    eHapsCurrent_tc = eHapsCurrent_tc,
+                    s = s - 1, ## 0-based
+                    gamma_t = gamma_t,
+                    grid = grid,
+                    snp_start_1_based = first_snp_in_region,
+                    snp_end_1_based = last_snp_in_region,
+                    grid_offset = first_grid_in_region,
+                    prev = 0,
+                    suppressOutput = 1,
+                    prev_section = "wer",
+                    next_section = "wer"
+                )
+                gammaK_t <- array(0, c(K, nSNPsInOutputBlock)) ## only relevant for S=1
+                collapse_diploid_gamma(
+                    gamma_t = gamma_t,
+                    gammaK_t = gammaK_t,
+                    prev = 0,
+                    suppressOutput = 1,
+                    prev_section = "wer",
+                    next_section = "wer"
+                )
+            } else if ((method == "pseudoHaploid") | (method == "diploid-inbred")) {
+                hapDosage_local <- rcpp_calculate_hapDosage(
+                    eHapsCurrent_tc = eHapsCurrent_tc,
+                    s = s - 1,
+                    gamma_t = gamma_t,
+                    grid = grid,
+                    snp_start_1_based = first_snp_in_region,
+                    snp_end_1_based = last_snp_in_region,
+                    run_fb_grid_offset = first_grid_in_region
+                )
+                list_of_hapDosage[[s]] <- hapDosage_local
+                hapDosage <- hapDosage + hapDosage_local
+                gammaK_t <- gamma_t
+            }
+        }
+        genProbs_t <- genProbs_t / S
+        hapDosage <- hapDosage / S
+        ## 
+        gammaEK_t <-  make_gammaEK_t_from_gammaK_t(
+            gammaK_t, K, grid, 
+            snp_start_1_based = first_snp_in_region,
+            snp_end_1_based = last_snp_in_region,
+            grid_offset = first_grid_in_region,
+            prev = 0,
+            suppressOutput = 1,
+            prev_section = "wer",
+            next_section = "wer"
+        )
+        return(
+            list(
+                genProbs_t = genProbs_t,
+                gammaEK_t = gammaEK_t,
+                hapDosage = hapDosage,
+                list_of_hapDosage = list_of_hapDosage
+            )
+        )
+    })
+}

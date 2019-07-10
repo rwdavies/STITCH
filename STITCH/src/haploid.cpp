@@ -437,6 +437,9 @@ void perform_haploid_per_sample_updates(
 
 //  calculate, multiply by 1/s, add to hapDosage
 //  steal from rcpp_calculate_fbd_dosage(
+
+//' @export
+// [[Rcpp::export]]
 arma::rowvec rcpp_calculate_hapDosage(
     const arma::cube& eHapsCurrent_tc,
     const int s,

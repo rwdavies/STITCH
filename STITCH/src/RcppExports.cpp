@@ -448,6 +448,23 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// rcpp_calculate_hapDosage
+arma::rowvec rcpp_calculate_hapDosage(const arma::cube& eHapsCurrent_tc, const int s, const arma::mat& gamma_t, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, const int run_fb_grid_offset);
+RcppExport SEXP _STITCH_rcpp_calculate_hapDosage(SEXP eHapsCurrent_tcSEXP, SEXP sSEXP, SEXP gamma_tSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP run_fb_grid_offsetSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid(gridSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_hapDosage(eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, run_fb_grid_offset));
+    return rcpp_result_gen;
+END_RCPP
+}
 // pseudoHaploid_update_model_9
 Rcpp::List pseudoHaploid_update_model_9(const arma::mat& pRgivenH1_m, const arma::mat& pRgivenH2_m, const Rcpp::List& list_of_eMatRead_t1, const Rcpp::List& list_of_eMatRead_t2, const Rcpp::List& list_of_gamma_t1, const Rcpp::List& list_of_gamma_t2, const int K, const arma::ivec& srp);
 RcppExport SEXP _STITCH_pseudoHaploid_update_model_9(SEXP pRgivenH1_mSEXP, SEXP pRgivenH2_mSEXP, SEXP list_of_eMatRead_t1SEXP, SEXP list_of_eMatRead_t2SEXP, SEXP list_of_gamma_t1SEXP, SEXP list_of_gamma_t2SEXP, SEXP KSEXP, SEXP srpSEXP) {
@@ -622,6 +639,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_eMatRead_t", (DL_FUNC) &_STITCH_rcpp_make_eMatRead_t, 15},
     {"_STITCH_rcpp_make_eMatGrid_t", (DL_FUNC) &_STITCH_rcpp_make_eMatGrid_t, 15},
     {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 11},
+    {"_STITCH_rcpp_calculate_hapDosage", (DL_FUNC) &_STITCH_rcpp_calculate_hapDosage, 7},
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 39},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},

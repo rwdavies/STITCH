@@ -127,6 +127,11 @@ make_haploid_gammaUpdate_t <- function(s, gammaSum0_tc, gammaSum1_tc, sampleRead
 }
 
 #' @export
+rcpp_calculate_hapDosage <- function(eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, run_fb_grid_offset = 0L) {
+    .Call('_STITCH_rcpp_calculate_hapDosage', PACKAGE = 'STITCH', eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, run_fb_grid_offset)
+}
+
+#' @export
 pseudoHaploid_update_model_9 <- function(pRgivenH1_m, pRgivenH2_m, list_of_eMatRead_t1, list_of_eMatRead_t2, list_of_gamma_t1, list_of_gamma_t2, K, srp) {
     .Call('_STITCH_pseudoHaploid_update_model_9', PACKAGE = 'STITCH', pRgivenH1_m, pRgivenH2_m, list_of_eMatRead_t1, list_of_eMatRead_t2, list_of_gamma_t1, list_of_gamma_t2, K, srp)
 }
