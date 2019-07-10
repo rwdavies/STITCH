@@ -173,16 +173,6 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     ## then pass through!
                     ## save(fbsoL1, fbsoL2, file = "~/temp.RData")
 
-                    ## ##
-                    ## print(list_of_alphaBetaBlocks[[1]][[3]]$alphaHatBlocks_t[, 1])
-                    ## print("What it definitely is")
-                    ## print(fbsoL1[[1]]$alphaHat_t[, 1 + first_grid_in_region:last_grid_in_region, drop = FALSE])
-                    ## print("What seems to have been used")
-                    ## print(fbsoL2[[1]]$alphaHat_t) ## so this is not as expected (for s=4) - why
-                    
-                    ##stop("FFFFFFFFF")
-                    ##load("~/temp.RData")
-
                     gp_t_local <- calculate_gp_t_from_fbsoL( 
                         fbsoL = fbsoL2,
                         method = method

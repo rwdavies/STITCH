@@ -3375,17 +3375,25 @@ calculate_gp_t_from_fbsoL <- function(
     } else if (method == "diploid-inbred") {
         ## this is a diploid organisms, so output genotypes appropriately
         ## there are only two posteriors here!
-        hapDosage <- fbsoL[[1]]$hapDosage
-        gp_t <- array(0, c(3, length(hapDosage)))
-        gp_t[1, ] <- 1 - hapDosage
-        gp_t[3, ] <- hapDosage
+        S <- length(fbsoL[[1]]$list_of_hapDosage)        
+        gp_t <- array(0, c(3, length(fbsoL[[1]]$list_of_hapDosage[[1]])))
+        for(s in 1:S) {
+            hapDosage <- fbsoL[[1]]$list_of_hapDosage[[s]]
+            gp_t[1, ] <- gp_t[1, ] + (1 - hapDosage)
+            gp_t[3, ] <- gp_t[3, ] + hapDosage
+        }
+        gp_t <- gp_t / S
     } else if (method == "pseudoHaploid") {
-        g10 <- fbsoL[[1]]$hapDosage ## colSums(fbsoL[[1]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
-        g20 <- fbsoL[[2]]$hapDosage ## colSums(fbsoL[[2]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
-        gp_t <- array(0, c(3, length(g10)))
-        gp_t[1, ] <- g10 * g20
-        gp_t[2, ] <- g10 * (1 - g20) + (1 - g10) * g20
-        gp_t[3, ] <- (1 - g10) * (1 - g20)
+        S <- length(fbsoL[[1]]$list_of_hapDosage)        
+        gp_t <- array(0, c(3, length(fbsoL[[1]]$list_of_hapDosage[[1]])))
+        for(s in 1:S) {
+            g10 <- fbsoL[[1]]$list_of_hapDosage[[s]]
+            g20 <- fbsoL[[2]]$list_of_hapDosage[[s]]
+            gp_t[1, ] <- gp_t[1, ] + (1 - g10) * (1 - g20)
+            gp_t[2, ] <- gp_t[2, ] + g10 * (1 - g20) + (1 - g10) * g20
+            gp_t[3, ] <- gp_t[3, ] + g10 * g20
+        }
+        gp_t <- gp_t / S
     }
     r <- sum(gp_t[, 1])
     if ((r < 0.9) | (1.1 < r)) {
@@ -4132,7 +4140,7 @@ calculate_updates <- function(
     x2 <- exp(-nGen * maxRate * dl/100/1000000) # upper
     ##
     for(s in 1:S) {
-        sigmaSum_m[, s] <- colSums(alphaMatSum_tc[, , s]) / N / 2
+        sigmaSum_m[, s] <- colSums(alphaMatSum_tc[, , s, drop = FALSE], dims = 1) / N / 2
         sigmaSum_m[, s]<- exp(-sigmaSum_m[, s])
         which <- is.na(sigmaSum_m[, s])
         if (sum(which) > 0) {
@@ -4171,7 +4179,7 @@ calculate_updates <- function(
     ## normalize so each column has sum 1
     for(s in 1:S) {
         alphaMatSum_tc[, , s] <-
-            alphaMatSum_tc[, , s] / rep(colSums(alphaMatSum_tc[, , s]), each = K)
+            alphaMatSum_tc[, , s] / rep(colSums(alphaMatSum_tc[, , s, drop = FALSE]), each = K)
     }
 
     ## now reset columns below threshold to value to make to sum to 1
@@ -4179,7 +4187,7 @@ calculate_updates <- function(
     ## if this happens, reset the averages of those columns
     ## to keep each column having sum 1, with minimum entry the thresold value
     for(s in 1:S) {
-        how_many_cols_below_0 <- colSums(alphaMatSum_tc[, , s] == 0)
+        how_many_cols_below_0 <- colSums(alphaMatSum_tc[, , s, drop = FALSE] == 0)
         if (sum(how_many_cols_below_0) > 0) {
             ## for columns with an entry below 0
             ## each 0 entry becomes threshold
@@ -4931,20 +4939,19 @@ pseudoHaploidUpdate <- function(
     ##
     if(pseudoHaploidModel==7 | pseudoHaploidModel==9) {
         ##
-        ## 
+        ##
         out <- pseudoHaploid_update_model_9(
             pRgivenH1_m = pRgivenH1_m,
             pRgivenH2_m = pRgivenH2_m,
-            list_of_eMatRead_t1 = fbsoL[[1]]$eMatRead_t,
-            list_of_eMatRead_t2 = fbsoL[[2]]$eMatRead_t,            
+            list_of_eMatRead_t1 = fbsoL[[1]]$list_of_eMatRead_t,
+            list_of_eMatRead_t2 = fbsoL[[2]]$list_of_eMatRead_t,            
             list_of_gamma_t1 = fbsoL[[1]]$list_of_gamma_t,
             list_of_gamma_t2 = fbsoL[[2]]$list_of_gamma_t,
             K = K,
-            S = S,
             srp = srp
         )
-        pRgivenH1 <- out$pRgivenH1
-        pRgivenH2 <- out$pRgivenH2
+        pRgivenH1_m <- out$pRgivenH1_m
+        pRgivenH2_m <- out$pRgivenH2_m
         ## bound above below
         pRgivenH1_m[pRgivenH1_m < 0.001]=0.001
         pRgivenH2_m[pRgivenH2_m < 0.001]=0.001
@@ -4968,8 +4975,8 @@ pseudoHaploidUpdate <- function(
     ## }
     return(
         list(
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m
         )
     )
 }

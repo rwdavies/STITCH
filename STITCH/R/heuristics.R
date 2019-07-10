@@ -844,10 +844,14 @@ interim_plotter <- function(
     K <- nrow(alphaMatCurrent_tc)
     S <- dim(hapSumCurrent_tc)[3]
     for(s in 1:S) {
+        alphaMatCurrent_t <- array(0, c(K, nGrids - 1))
+        alphaMatCurrent_t[] <- alphaMatCurrent_tc[, , s]
+        hapSumCurrent_t <- array(0, c(K, nGrids))
+        hapSumCurrent_t[] <- hapSumCurrent_tc[, , s]
         plotHapSumCurrent_t(
             L_grid = L_grid,
             K = K,
-            hapSumCurrent_t = hapSumCurrent_tc[, , s],
+            hapSumCurrent_t = hapSumCurrent_t,
             nGrids = nGrids,
             N = N,
             outputdir = outputdir,
@@ -861,7 +865,7 @@ interim_plotter <- function(
         plotHapSumCurrent_t_log(
             L_grid = L_grid,
             K = K,
-            hapSumCurrent_t = hapSumCurrent_tc[, , s],
+            hapSumCurrent_t = hapSumCurrent_t,
             nGrids = nGrids,
             N = N,
             outputdir = outputdir,
@@ -872,8 +876,6 @@ interim_plotter <- function(
             final_iteration = final_iteration,
             is_reference = is_reference            
         )
-        alphaMatCurrent_t <- array(0, c(K, nGrids - 1))
-        alphaMatCurrent_t[] <- alphaMatCurrent_tc[, , s]
         plotAlphaMatCurrent_t(
             L_grid = L_grid,
             alphaMatCurrent_t = alphaMatCurrent_t,
@@ -943,7 +945,7 @@ plotHapSumCurrent_t <- function(
     x <- c(L_grid[1], L_grid, L_grid[length(L_grid):1])
     m <- array(0, c(nGrids, K + 1))
     for(i in 1:K) {
-        m[, i + 1] <- m[, i] + hapSumCurrent_t[i, ] / N
+        m[, i + 1] <- m[, i] + hapSumCurrent_t[i, , drop = FALSE] / N
     }
     for(i in K:1) {
         polygon(

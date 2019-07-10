@@ -437,8 +437,7 @@ void perform_haploid_per_sample_updates(
 
 //  calculate, multiply by 1/s, add to hapDosage
 //  steal from rcpp_calculate_fbd_dosage(
-void rcpp_calculate_hapDosage(
-    arma::rowvec& hapDosage,
+arma::rowvec rcpp_calculate_hapDosage(
     const arma::cube& eHapsCurrent_tc,
     const int s,
     const arma::mat& gamma_t,
@@ -449,6 +448,7 @@ void rcpp_calculate_hapDosage(
 ) {
     //
     const int nSNPs = snp_end_1_based - snp_start_1_based + 1;
+    arma::rowvec hapDosage = arma::zeros(1, nSNPs);
     int iSNP, t, cur_grid;
     arma::colvec gamma_t_col;
     int prev_grid = -1;
@@ -461,7 +461,7 @@ void rcpp_calculate_hapDosage(
         }
         hapDosage(iSNP) += arma::sum(eHapsCurrent_tc.slice(s).col(t) % gamma_t_col);
     }
-    return;
+    return(hapDosage);
 }
 
 
@@ -594,6 +594,7 @@ Rcpp::List forwardBackwardHaploid(
   // for hapDosage, specifical definition of SNPs
   const int nSNPs_local = snp_end_1_based - snp_start_1_based + 1;
   arma::rowvec hapDosage = arma::zeros(1, nSNPs_local);
+  arma::rowvec hapDosage_local = arma::zeros(1, nSNPs_local);  
   if (run_pseudo_haploid) {
       eMatHapOri_t = arma::zeros(K, nReads);
   }
@@ -615,6 +616,7 @@ Rcpp::List forwardBackwardHaploid(
   Rcpp::List alphaBetaBlocks;
   Rcpp::List list_of_alphaBetaBlocks;
   Rcpp::List list_of_eMatRead_t;
+  Rcpp::List list_of_hapDosage;
   arma::vec pRgivenH1(nReads);
   arma::vec pRgivenH2(nReads);
   //
@@ -683,7 +685,7 @@ Rcpp::List forwardBackwardHaploid(
           gamma_t.col(iGrid) *= g_temp;
       }
       //
-      if (return_gamma) {
+      if (return_gamma | run_pseudo_haploid) {
           list_of_gamma_t.push_back(gamma_t, "gamma_t");      
       }
       //
@@ -703,7 +705,11 @@ Rcpp::List forwardBackwardHaploid(
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
       //
-      rcpp_calculate_hapDosage(hapDosage, eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, run_fb_grid_offset);
+      hapDosage_local = rcpp_calculate_hapDosage(eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, run_fb_grid_offset);
+      hapDosage = hapDosage + hapDosage_local;
+      if (return_hapDosage) {
+          list_of_hapDosage.push_back(hapDosage_local);
+      }
       //
       // if not fb subset, do updates
       //
@@ -742,6 +748,9 @@ Rcpp::List forwardBackwardHaploid(
   next_section="Done";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
+  if (return_gamma | run_pseudo_haploid) {
+      to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
+  }
   if (run_pseudo_haploid) {
       to_return.push_back(eMatRead_t, "eMatRead_t");
       to_return.push_back(list_of_eMatRead_t , "list_of_eMatRead_t");
@@ -752,6 +761,7 @@ Rcpp::List forwardBackwardHaploid(
           hapDosage *= 1 / double(S);
       }
       to_return.push_back(hapDosage, "hapDosage");
+      to_return.push_back(list_of_hapDosage, "list_of_hapDosage");
   }
   //
   if (generate_fb_snp_offsets) {
@@ -759,9 +769,6 @@ Rcpp::List forwardBackwardHaploid(
   }
   if (run_fb_subset | generate_fb_snp_offsets) {
       return(to_return);
-  }
-  if (return_gamma) {
-      to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
   }
   //
   if (!update_in_place) {

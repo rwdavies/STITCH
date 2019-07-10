@@ -131,6 +131,10 @@ make_and_write_output_file <- function(
             alphaMatCurrentLocal_tc <- alphaMatCurrent_tc[, 1 + grids_to_use, , drop = FALSE]
             transMatRateLocal_tc_H <- transMatRate_tc_H[, 1 + grids_to_use, , drop = FALSE]
             transMatRateLocal_tc_D <- transMatRate_tc_D[, 1 + grids_to_use, , drop = FALSE]            
+        } else {
+            alphaMatCurrentLocal_tc <- NULL
+            transMatRateLocal_tc_H <- NULL
+            transMatRateLocal_tc_D <- NULL
         }
         
         ##
@@ -266,7 +270,7 @@ make_and_write_output_file <- function(
                 append = TRUE,
                 nThread = nCores
             )
-            
+
         } else if (output_format == "bgen") {
 
             var_info <- make_var_info(pos, c(first_snp_in_region, last_snp_in_region))
@@ -442,16 +446,17 @@ per_core_get_results <- function(
         }
 
         if (first_grid_in_region == last_grid_in_region) {
+
             ## only 1 grid being imputed (rare!)
             ## also, imputation more or less meaningless
             ## but anyway, make valid output
             abSmall <- alphaBetaBlocks ## how long is this?
             fbsoL <- lapply(1:length(abSmall), function(i) {
-                hapDosage <- array(0, nSNPs)
-                genProbs_t <- array(0, c(3, nSNPs))                
+                hapDosage <- array(0, nSNPsInOutputBlock)
+                genProbs_t <- array(0, c(3, nSNPsInOutputBlock))
                 for(s in 1:S) {
-                    a <- abSmall[[i]]$list_of_alphaHatBlocks_t[[s]]
-                    b <- abSmall[[i]]$list_of_betaHatBlocks_t[[s]]
+                    a <- abSmall[[i]][[s]]$alphaHatBlocks_t
+                    b <- abSmall[[i]][[s]]$betaHatBlocks_t                    
                     gamma_t <- a[, i_output_block, drop = FALSE] * b[, i_output_block, drop = FALSE]
                     gamma_t <- gamma_t / sum(gamma_t) ## don't have c here
                     if (method == "diploid") {
@@ -459,24 +464,40 @@ per_core_get_results <- function(
                         rcpp_calculate_fbd_dosage(
                             genProbs_t = genProbs_t,
                             eHapsCurrent_tc = eHapsCurrent_tc,
-                            s = s,
+                            s = s - 1, ## 0-based
                             gamma_t = gamma_t,
                             grid = grid,
                             snp_start_1_based = first_snp_in_region,
                             snp_end_1_based = last_snp_in_region,
-                            grid_offset = first_grid_in_region
+                            grid_offset = first_grid_in_region,
+                            prev = 0,
+                            suppressOutput = 1,
+                            prev_section = "wer",
+                            next_section = "wer"
                         )
-                        gammaK_t <- collapse_diploid_gamma(gamma_t, T, K) ## OK as only for haplotype dosages
+                        gammaK_t <- array(0, c(K, nSNPs)) ## only relevant for S=1
+                        collapse_diploid_gamma(
+                            gamma_t = gamma_t,
+                            gammaK_t = gammaK_t,
+                            prev = 0,
+                            suppressOutput = 1,
+                            prev_section = "wer",
+                            next_section = "wer"
+                        )
                     } else if ((method == "pseudoHaploid") | (method == "diploid-inbred")) {
                         rcpp_calculate_hapDosage(
                             hapDosage = hapDosage,
                             eHapsCurrent_tc = eHapsCurrent_tc,
-                            s = s,
+                            s = s - 1,
                             gamma_t = gamma_t,
                             grid = grid,
                             snp_start_1_based = first_snp_in_region,
                             snp_end_1_based = last_snp_in_region,
-                            grid_offset = first_grid_in_region
+                            grid_offset = first_grid_in_region,
+                            prev = 0,
+                            suppressOutput = 1,
+                            prev_section = "wer",
+                            next_section = "wer"
                         )
                         gammaK_t <- gamma_t
                     }
@@ -488,7 +509,11 @@ per_core_get_results <- function(
                     gammaK_t, K, grid, 
                     snp_start_1_based = first_snp_in_region,
                     snp_end_1_based = last_snp_in_region,
-                    grid_offset = first_grid_in_region
+                    grid_offset = first_grid_in_region,
+                    prev = 0,
+                    suppressOutput = 1,
+                    prev_section = "wer",
+                    next_section = "wer"
                 )
                 return(
                     list(
