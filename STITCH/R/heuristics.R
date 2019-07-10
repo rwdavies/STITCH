@@ -981,6 +981,9 @@ plotHapSumCurrent_t_log <- function(
     sum <- array(0, nGrids)
     xlim <- range(L_grid) / 1e6    
     ylim <- c(log10(max(1, min(hapSumCurrent_t))), log10(max(hapSumCurrent_t)))
+    if (sum(hapSumCurrent_t) == 0) {
+        stop("Something has done wrong and an ampty hapSumCurrent_t has been passed to plotHapSumCurrent_t_log")
+    }
     plot(x = 0, y = 0, xlim = xlim, ylim = ylim, axes = FALSE, main = main, xlab = "Physical position (Mbp)", ylab = "log10 Haplotype usage")
     axis(1)
     axis(2)

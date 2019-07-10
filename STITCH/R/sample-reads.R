@@ -22,14 +22,14 @@ get_sampleProbs_from_dir_for_sample <- function(
             load(file)
         }
         sampleProbs <- bundledSampleProbs[[iP]]
-        pRgivenH1 <- sampleProbs$pRgivenH1
-        pRgivenH2 <- sampleProbs$pRgivenH2
+        pRgivenH1_m <- sampleProbs$pRgivenH1_m
+        pRgivenH2_m <- sampleProbs$pRgivenH2_m
         srp <- sampleProbs$srp
     }
     return(
         list(
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m,
             srp = srp,
             bundledSampleProbs = bundledSampleProbs
         )

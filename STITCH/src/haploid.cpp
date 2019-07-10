@@ -379,36 +379,6 @@ void make_haploid_gammaUpdate_t(
 
 
 
-//' @export
-// [[Rcpp::export]]
-Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const arma::mat& eMatRead_t1, const arma::mat& eMatRead_t2, const arma::mat& gamma_t1, const arma::mat& gamma_t2, const int K, const arma::ivec& srp) {
-    // new stuff
-    arma::vec pRgivenH1_new = arma::zeros(pRgivenH1.n_elem);
-    arma::vec pRgivenH2_new = arma::zeros(pRgivenH2.n_elem);
-    int k, t;
-    double d1, d2, x1, x2;
-    //
-    for(std::size_t i_read=0; i_read < srp.n_elem; i_read++) {
-        t = srp(i_read);
-        x2 = pRgivenH2(i_read) / \
-            (pRgivenH1(i_read) + pRgivenH2(i_read));
-        x1 = 1 - x2;
-        d1 = x2 * pRgivenH2(i_read);
-        d2 = x1 * pRgivenH1(i_read);
-        for(k=0; k < K; k++) {
-            pRgivenH1_new(i_read) = pRgivenH1_new(i_read) +      \
-                gamma_t1(k, t) * \
-                (eMatRead_t1(k, i_read) - d1) / x1;
-            pRgivenH2_new(i_read) = pRgivenH2_new(i_read) +  \
-                gamma_t2(k, t) * \
-                (eMatRead_t2(k, i_read) - d2) / x2;
-        }
-    }
-    return List::create(
-        Rcpp::Named("pRgivenH1_new") = pRgivenH1_new,
-        Rcpp::Named("pRgivenH2_new") = pRgivenH2_new
-                        );
-}
     
 
 
@@ -430,7 +400,6 @@ void perform_haploid_per_sample_updates(
     arma::cube& gammaSum0_tc,
     arma::cube& gammaSum1_tc,
     arma::cube& alphaMatSum_tc,
-    arma::cube& hapSum_tc,
     arma::mat& priorSum_m,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
@@ -443,7 +412,6 @@ void perform_haploid_per_sample_updates(
     //
     const int nGrids = alphaMatCurrent_tc.n_cols + 1;
     //
-    hapSum_tc.slice(s) += gamma_t;
     priorSum_m.col(s) += gamma_t.col(0);
     //
     next_section="Gamma update";
@@ -495,7 +463,60 @@ void rcpp_calculate_hapDosage(
     }
     return;
 }
+
+
+
+
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::List pseudoHaploid_update_model_9(
+    const arma::mat& pRgivenH1_m,
+    const arma::mat& pRgivenH2_m,
+    const Rcpp::List& list_of_eMatRead_t1,
+    const Rcpp::List& list_of_eMatRead_t2,
+    const Rcpp::List& list_of_gamma_t1,
+    const Rcpp::List& list_of_gamma_t2,
+    const int K,
+    const arma::ivec& srp
+) {
+    // new stuff
+    const int S = pRgivenH1_m.n_cols;
+    //
+    arma::mat pRgivenH1_m_new = arma::zeros(pRgivenH1_m.n_rows, S);
+    arma::mat pRgivenH2_m_new = arma::zeros(pRgivenH2_m.n_rows, S);
+    int k, t, s;
+    double d1, d2, x1, x2;
+    arma::mat gamma_t1, gamma_t2, eMatRead_t1, eMatRead_t2;
+    //
+    for(s = 0; s < S; s++) {
+        //
+        gamma_t1 = as<arma::mat>(list_of_gamma_t1[s]);
+        gamma_t2 = as<arma::mat>(list_of_gamma_t2[s]);
+        eMatRead_t1 = as<arma::mat>(list_of_eMatRead_t1[s]);
+        eMatRead_t2 = as<arma::mat>(list_of_eMatRead_t2[s]);        
+        //
+        for(std::size_t i_read=0; i_read < srp.n_elem; i_read++) {
+            t = srp(i_read);
+            x2 = pRgivenH2_m(i_read, s) / \
+                 (pRgivenH1_m(i_read, s) + pRgivenH2_m(i_read, s));
+            x1 = 1 - x2;
+            d1 = x2 * pRgivenH2_m(i_read, s);
+            d2 = x1 * pRgivenH1_m(i_read, s);
+            for(k=0; k < K; k++) {
+                pRgivenH1_m_new(i_read, s) += gamma_t1(k, t) * (eMatRead_t1(k, i_read) - d1) / x1;
+                pRgivenH2_m_new(i_read, s) += gamma_t2(k, t) * (eMatRead_t2(k, i_read) - d2) / x2;
+            }
+        }
+    }
+    return List::create(
+        Rcpp::Named("pRgivenH1_m_new") = pRgivenH1_m_new,
+        Rcpp::Named("pRgivenH2_m_new") = pRgivenH2_m_new
+    );
+}
     
+
+
 //' @export
 // [[Rcpp::export]]
 Rcpp::List forwardBackwardHaploid(
@@ -518,8 +539,8 @@ Rcpp::List forwardBackwardHaploid(
     arma::cube& alphaMatSum_tc,
     arma::cube& hapSum_tc,
     arma::mat& priorSum_m,
-    const arma::vec& pRgivenH1,
-    const arma::vec& pRgivenH2,
+    const arma::mat& pRgivenH1_m,
+    const arma::mat& pRgivenH2_m,
     const bool run_pseudo_haploid,
     const arma::mat& blocks_for_output,
     const Rcpp::List& prev_list_of_alphaBetaBlocks,
@@ -593,6 +614,9 @@ Rcpp::List forwardBackwardHaploid(
   arma::mat alphaHatBlocks_t, betaHatBlocks_t;
   Rcpp::List alphaBetaBlocks;
   Rcpp::List list_of_alphaBetaBlocks;
+  Rcpp::List list_of_eMatRead_t;
+  arma::vec pRgivenH1(nReads);
+  arma::vec pRgivenH2(nReads);
   //
   // everything works on s here
   //
@@ -613,6 +637,12 @@ Rcpp::List forwardBackwardHaploid(
           betaHatBlocks_t = as<arma::mat>(alphaBetaBlocks["betaHatBlocks_t"]);
           alphaStart = alphaHatBlocks_t.col(i_snp_block_for_alpha_beta);
           betaEnd = betaHatBlocks_t.col(i_snp_block_for_alpha_beta);
+      }
+      if (run_pseudo_haploid) {
+          for(int iRead = 0; iRead < nReads; iRead++) {
+              pRgivenH1(iRead) = pRgivenH1_m(iRead, s);
+              pRgivenH2(iRead) = pRgivenH2_m(iRead, s);
+          }
       }
       //
       rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid);
@@ -683,27 +713,39 @@ Rcpp::List forwardBackwardHaploid(
       // normal (do updates)
       if (generate_fb_snp_offsets) {
           // will need to modify
-          list_of_alphaBetaBlocks.push_back(rcpp_make_fb_snp_offsets(alphaHat_t, betaHat_t, blocks_for_output), "alphaBetaBlocks");          
-      } else if (!run_fb_subset) {
-          //
-          perform_haploid_per_sample_updates(
-              s, betaHat_t, eMatGrid_t, sampleReads,    
-              eHapsCurrent_tc,  alphaMatCurrent_tc,  transMatRate_tc_H,  priorCurrent_m,    
-              eMatRead_t, eMatHapOri_t, gamma_t, update_in_place,
-              gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m,
-              pRgivenH1, pRgivenH2, run_pseudo_haploid,
-              prev, suppressOutput, prev_section, next_section
-          );
+          list_of_alphaBetaBlocks.push_back(rcpp_make_fb_snp_offsets(alphaHat_t, betaHat_t, blocks_for_output), "alphaBetaBlocks");
+      }
+      if (!run_fb_subset) {
+          // hapSum here
+          hapSum_tc.slice(s) += gamma_t;          
+          if (!generate_fb_snp_offsets) {
+              //
+              perform_haploid_per_sample_updates(
+                  s, betaHat_t, eMatGrid_t, sampleReads,    
+                  eHapsCurrent_tc,  alphaMatCurrent_tc,  transMatRate_tc_H,  priorCurrent_m,    
+                  eMatRead_t, eMatHapOri_t, gamma_t, update_in_place,
+                  gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, priorSum_m,
+                  pRgivenH1, pRgivenH2, run_pseudo_haploid,
+                  prev, suppressOutput, prev_section, next_section
+              );
+          }
       }
       if (return_gammaK) {
           if (s == (S - 1)) {
               to_return.push_back(gamma_t, "gammaK_t"); // equivalent
           }
       }
+      if (run_pseudo_haploid & !run_fb_subset & !generate_fb_snp_offsets) {
+          list_of_eMatRead_t.push_back(eMatRead_t, "eMatRead_t");
+      }
   }
   next_section="Done";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
+  if (run_pseudo_haploid) {
+      to_return.push_back(eMatRead_t, "eMatRead_t");
+      to_return.push_back(list_of_eMatRead_t , "list_of_eMatRead_t");
+  }
   if (return_hapDosage) {
       if (S > 1) {
           // divide by S, here always just add

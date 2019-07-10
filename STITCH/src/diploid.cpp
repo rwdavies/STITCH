@@ -838,19 +838,26 @@ Rcpp::List forwardBackwardDiploid(
           }
       }
       //
-      // optional, end early
+      //
       //
       if (!run_fb_subset) {
           //
-          next_section="Update hapSum and prior";
+          next_section="Update hapSum";
           prev=print_times(prev, suppressOutput, prev_section, next_section);
           prev_section=next_section;
+          //
           hapSum_tc.slice(s) += gammaK_t;
-          priorSum_m.col(s) += gammaK_t.col(0);
-          //
-          calculate_diploid_gammaUpdate(gammaSum0_tc, gammaSum1_tc, s, sampleReads, gamma_t, eHapsCurrent_tc, eMatRead_t, prev, suppressOutput, prev_section, next_section);
-          //
-          rcpp_make_diploid_jUpdate(alphaMatSum_tc, s, alphaHat_t, betaHat_t, transMatRate_tc_D, alphaMatCurrent_tc, eMatGrid_t, prev, suppressOutput, prev_section, next_section);
+          if (!generate_fb_snp_offsets) {
+              next_section="Update prior, gamma, jUpdate";
+              prev=print_times(prev, suppressOutput, prev_section, next_section);
+              prev_section=next_section;
+              //
+              priorSum_m.col(s) += gammaK_t.col(0);
+              //
+              calculate_diploid_gammaUpdate(gammaSum0_tc, gammaSum1_tc, s, sampleReads, gamma_t, eHapsCurrent_tc, eMatRead_t, prev, suppressOutput, prev_section, next_section);
+              //
+              rcpp_make_diploid_jUpdate(alphaMatSum_tc, s, alphaHat_t, betaHat_t, transMatRate_tc_D, alphaMatCurrent_tc, eMatGrid_t, prev, suppressOutput, prev_section, next_section);
+          }
           //
       }
       if (return_gammaK) {

@@ -147,7 +147,8 @@ test_that("STITCH diploid works with completely split reads", {
     for(output_format in c("bgvcf", "bgen")) {
 
         set.seed(99)        
-        outputdir <- make_unique_tempdir()        
+        outputdir <- make_unique_tempdir()
+        output_filename <- paste0("jjj", extension[output_format])        
         STITCH(
             chr = data_package$chr,
             bamlist = data_package$bamlist,
@@ -158,14 +159,14 @@ test_that("STITCH diploid works with completely split reads", {
             nGen = 100,
             output_format = output_format,
             nCores = 3,
-            readAware = FALSE
+            readAware = FALSE,
+            output_filename = output_filename
         )
 
         check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            file = file.path(outputdir, output_filename),            
             data_package,
             output_format,
-            which_snps = NULL,
             tol = 0.2,
             min_info = 0.84 ## fluke so much poorer performance 3.6.0
         )

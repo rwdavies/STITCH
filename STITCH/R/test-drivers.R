@@ -229,7 +229,7 @@ make_acceptance_test_data_package <- function(
 ) {
 
     if (length(n_reads) == 1) {
-        n_reads <- rep(n_reads, n_samples)
+        n_reads <- rep(round(n_reads), n_samples)
     }
 
     if (is.null(reads_span_n_snps))

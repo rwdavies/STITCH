@@ -87,6 +87,42 @@ test_that("STITCH can initialize with reference data", {
 })
 
 
+test_that("STITCH can initialize with reference data for S > 1", {
+
+    for(output_format in c("bgvcf", "bgen")) {
+
+        outputdir <- make_unique_tempdir()
+        set.seed(478)
+
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            reference_haplotype_file = refpack$reference_haplotype_file,
+            reference_legend_file = refpack$reference_legend_file,
+            K = 2,
+            S = 3,
+            nGen = 100,
+            nCores = 1,
+            output_format = output_format
+        )
+
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 0.2
+        )
+
+    }
+
+
+})
+
+
 test_that("STITCH can initialize with reference data with three sizes of K vs number of haps", {
 
     ## these are diploid

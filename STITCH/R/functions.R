@@ -547,6 +547,7 @@ STITCH <- function(
     if (method == "pseudoHaploid") {
         out <- initialize_readProbs(
             N = N,
+            S = S,
             nCores = nCores,
             pseudoHaploidModel = pseudoHaploidModel,
             tempdir = tempdir,
@@ -792,6 +793,7 @@ STITCH <- function(
         ##
         ## plot hapProbs, alphaMat, etc
         ##
+        print_message("Make other plots")
         interim_plotter(
             outputdir = outputdir,
             regionName = regionName,
@@ -804,9 +806,6 @@ STITCH <- function(
             final_iteration = TRUE
         )
     }
-
-
-
 
     ##
     ## clean up and terminate
@@ -983,10 +982,14 @@ remove_buffer_from_variables <- function(
     ## for now, save everything that intersected
     to_keep <- unique(grid[inRegion2L]) + 1
     ##
-    priorCurrent_m <- array(0, c(dim(hapSumCurrent_tc)[1], dim(hapSumCurrent_tc)[3]))
-    for(s in 1:ncol(priorCurrent_m)) {
-        priorCurrent_m[, s] <- hapSumCurrent_tc[, 1, s]
-        priorCurrent_m[, s] <- priorCurrent_m[, s] / sum(priorCurrent_m[, s])
+    if (!is.null(hapSumCurrent_tc)) {
+        priorCurrent_m <- array(0, c(dim(hapSumCurrent_tc)[1], dim(hapSumCurrent_tc)[3]))
+        for(s in 1:dim(hapSumCurrent_tc)[3]) {
+            priorCurrent_m[, s] <- hapSumCurrent_tc[, 1, s]
+            priorCurrent_m[, s] <- priorCurrent_m[, s] / sum(priorCurrent_m[, s])
+        }
+    } else {
+        priorCurrent_m <- NULL
     }
     ##
     hapSumCurrent_tc <- hapSumCurrent_tc[, to_keep, , drop = FALSE]
@@ -2806,6 +2809,7 @@ get_bundling_position_information <- function(
 # if pseudoHaploid, do this, before csi
 initialize_readProbs <- function(
     N,
+    S,
     nCores,
     pseudoHaploidModel,
     tempdir,
@@ -2835,14 +2839,15 @@ initialize_readProbs <- function(
             out <- get_default_hapProbs(
                 pseudoHaploidModel,
                 sampleReads,
+                S,
                 initial_min_hapProb,
                 initial_max_hapProb
             )
-            pRgivenH1 <- out$pRgivenH1
-            pRgivenH2 <- out$pRgivenH2
+            pRgivenH1_m <- out$pRgivenH1_m
+            pRgivenH2_m <- out$pRgivenH2_m
             srp <- out$srp
             save(
-                pRgivenH1, pRgivenH2, srp,
+                pRgivenH1_m, pRgivenH2_m, srp,
                 file = file_sampleProbs(tempdir, iSample, regionName)
             )
             if (length(bundling_info) > 0) {
@@ -2871,19 +2876,21 @@ initialize_readProbs <- function(
 
 
 get_default_hapProbs <- function(
-  pseudoHaploidModel,
-  sampleReads,
-  initial_min_hapProb = 0.4,
-  initial_max_hapProb = 0.6
+    pseudoHaploidModel,
+    sampleReads,
+    S,
+    initial_min_hapProb = 0.4,
+    initial_max_hapProb = 0.6
 ) {
     a1 <- initial_min_hapProb
     b1 <- initial_max_hapProb
-    pRgivenH1=a1+(b1-a1)*runif(length(sampleReads))
-    pRgivenH2=a1+(b1-a1)*runif(length(sampleReads))
+    nReads <- length(sampleReads)    
+    pRgivenH1_m <- a1 + (b1 - a1) * array(runif(nReads * S), c(nReads, S))
+    pRgivenH2_m <- a1 + (b1 - a1) * array(runif(nReads * S), c(nReads, S))
     srp <- unlist(lapply(sampleReads,function(x) x[[2]]))
     return(list(
-        pRgivenH1 = pRgivenH1,
-        pRgivenH2 = pRgivenH2,
+        pRgivenH1_m = pRgivenH1_m,
+        pRgivenH2_m = pRgivenH2_m,
         srp = srp
     ))
 }
@@ -2910,8 +2917,8 @@ run_forward_backwards <- function(
     highCovInLow = NULL,
     Jmax = 10,
     nor = NULL,
-    pRgivenH1 = NULL,
-    pRgivenH2 = NULL,
+    pRgivenH1_m = NULL,
+    pRgivenH2_m = NULL,
     srp = NULL,
     pseudoHaploidModel = 9,
     run_fb_subset = FALSE,
@@ -3008,12 +3015,12 @@ run_forward_backwards <- function(
     if (method == "pseudoHaploid") {
         for (iNor in 1:nor) {
             if (iNor==1) {
-                pRgivenH1L <- pRgivenH1
-                pRgivenH2L <- pRgivenH2
+                pRgivenH1L_m <- pRgivenH1_m
+                pRgivenH2L_m <- pRgivenH2_m
             }
             if (iNor==2) {
-                pRgivenH1L <- pRgivenH2
-                pRgivenH2L <- pRgivenH1
+                pRgivenH1L_m <- pRgivenH2_m
+                pRgivenH2L_m <- pRgivenH1_m
             }
 
             fbsoL[[iNor]] <- forwardBackwardHaploid(
@@ -3031,8 +3038,8 @@ run_forward_backwards <- function(
                 Jmax = Jmax_local,
                 suppressOutput = suppressOutput,
                 model = as.integer(pseudoHaploidModel),
-                pRgivenH1 = pRgivenH1L,
-                pRgivenH2 = pRgivenH2L,
+                pRgivenH1_m = pRgivenH1L_m,
+                pRgivenH2_m = pRgivenH2L_m,
                 run_pseudo_haploid = TRUE,
                 return_gamma = return_gamma,
                 return_gammaK = return_gammaK,                
@@ -3073,8 +3080,8 @@ run_forward_backwards <- function(
             gamma_t = gamma_t,
             eMatGrid_t = eMatGrid_t,
             Jmax = Jmax_local,
-            pRgivenH1 = as.double(0),
-            pRgivenH2 = as.double(0),
+            pRgivenH1 = array(0, c(1, 1)),
+            pRgivenH2 = array(0, c(1, 1)),
             maxDifferenceBetweenReads = as.double(maxDifferenceBetweenReads),
             maxEmissionMatrixDifference = as.double(maxEmissionMatrixDifference),
             suppressOutput = suppressOutput,
@@ -3176,8 +3183,8 @@ within_EM_per_sample_heuristics <- function(
     break_results,
     list_of_fromMat,
     srp,
-    pRgivenH1,
-    pRgivenH2,
+    pRgivenH1_m,
+    pRgivenH2_m,
     nSNPs,
     maxDifferenceBetweenReads,
     maxEmissionMatrixDifference,
@@ -3241,6 +3248,7 @@ within_EM_per_sample_heuristics <- function(
     ## now - consider whether to re-start - ie fix gammas
     ##
     if(iteration %in% restartIterations) {
+        ## I believe this is disabled
         out <- restartSample(
             sampleReads = sampleReads, srp = srp, pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, fbsoL=fbsoL, nSNPs = nSNPs,eHapsCurrent_t=eHapsCurrent_t,sigmaCurrent=sigmaCurrent,alphaMatCurrent_t=alphaMatCurrent_t,Jmax=Jmax,priorCurrent=priorCurrent,maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,outputdir=outputdir,iteration = iteration,restartIterations = restartIterations, method = method
         )
@@ -3251,14 +3259,22 @@ within_EM_per_sample_heuristics <- function(
     ## update pseudo diploid probabilities - unless final iteration
     ##
     if (method == "pseudoHaploid") {
+        ## calculation has been moved to cpp
         ## will need to revisit
         if (iteration != niterations) {
-            r <- pseudoHaploidUpdate(pRgivenH1 = pRgivenH1, pRgivenH2=pRgivenH2,fbsoL=fbsoL,pseudoHaploidModel=pseudoHaploidModel,srp=srp, K = K)
-            pRgivenH1 <- r$pRgivenH1
-            pRgivenH2 <- r$pRgivenH2
+            out <- pseudoHaploidUpdate(
+                pRgivenH1_m = pRgivenH1_m,
+                pRgivenH2_m = pRgivenH2_m,
+                fbsoL = fbsoL,
+                pseudoHaploidModel = pseudoHaploidModel,
+                srp = srp,
+                K = K
+            )
+            pRgivenH1_m <- out$pRgivenH1_m
+            pRgivenH2_m <- out$pRgivenH2_m
         }
         save(
-            srp, pRgivenH1, pRgivenH2,
+            srp, pRgivenH1_m, pRgivenH2_m,
             file = file_sampleProbs(tempdir, iSample, regionName)
         )
         ##
@@ -3361,8 +3377,8 @@ calculate_gp_t_from_fbsoL <- function(
         ## there are only two posteriors here!
         hapDosage <- fbsoL[[1]]$hapDosage
         gp_t <- array(0, c(3, length(hapDosage)))
-        gp_t[1, ] <- hapDosage
-        gp_t[3, ] <- 1 - gp_t[1, ]
+        gp_t[1, ] <- 1 - hapDosage
+        gp_t[3, ] <- hapDosage
     } else if (method == "pseudoHaploid") {
         g10 <- fbsoL[[1]]$hapDosage ## colSums(fbsoL[[1]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
         g20 <- fbsoL[[2]]$hapDosage ## colSums(fbsoL[[2]]$gamma_t[, w, drop = FALSE] * (1-eHapsCurrent_t[, w2, drop = FALSE]))
@@ -3517,8 +3533,8 @@ subset_of_complete_iteration <- function(
         nor <- 2
     }
     best_K_for_sample <- 1:K ##
-    pRgivenH1 <- NULL
-    pRgivenH2 <- NULL
+    pRgivenH1_m <- NULL
+    pRgivenH2_m <- NULL
     srp <- NULL
     bundledSampleProbs <- NULL
     fbd_store <- NULL ## for plotting shuffle haplotype itetself
@@ -3563,8 +3579,8 @@ subset_of_complete_iteration <- function(
                 bundling_info = bundling_info,
                 bundledSampleProbs = bundledSampleProbs
             )
-            pRgivenH1 <- out$pRgivenH1
-            pRgivenH2 <- out$pRgivenH2
+            pRgivenH1_m <- out$pRgivenH1_m
+            pRgivenH2_m <- out$pRgivenH2_m
             srp <- out$srp
             bundledSampleProbs <- out$bundledSampleProbs
         }
@@ -3587,8 +3603,8 @@ subset_of_complete_iteration <- function(
             highCovInLow = highCovInLow,
             Jmax = Jmax,
             nor = nor,
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m,
             srp = srp,
             pseudoHaploidModel = pseudoHaploidModel,
             blocks_for_output = blocks_for_output,
@@ -3653,8 +3669,8 @@ subset_of_complete_iteration <- function(
             break_results = break_results,
             list_of_fromMat = list_of_fromMat,
             srp = srp,
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m,
             nSNPs = nSNPs,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
@@ -3690,7 +3706,7 @@ subset_of_complete_iteration <- function(
     }
 
     if (method == "pseudoHaploid") {
-        hapSum_t <- hapSum_t / 2
+        hapSum_tc <- hapSum_tc / 2
     }
 
     return(
@@ -4083,11 +4099,11 @@ calculate_updates <- function(
 
     ## sum and sum
     for(i in 1:length(sampleRanges)) {
-        gammaSum0_tc <- out2[[i]][["gammaSum0_tc"]]
-        gammaSum1_tc <- out2[[i]][["gammaSum1_tc"]]
-        alphaMatSum_tc <- out2[[i]][["alphaMatSum_tc"]]
-        hapSum_tc <- out2[[i]][["hapSum_tc"]]
-        priorSum_m <- out2[[i]][["priorSum_m"]]
+        gammaSum0_tc <- gammaSum0_tc + out2[[i]][["gammaSum0_tc"]]
+        gammaSum1_tc <- gammaSum1_tc + out2[[i]][["gammaSum1_tc"]]
+        alphaMatSum_tc <- alphaMatSum_tc + out2[[i]][["alphaMatSum_tc"]]
+        hapSum_tc <- hapSum_tc + out2[[i]][["hapSum_tc"]]
+        priorSum_m <- priorSum_m + out2[[i]][["priorSum_m"]]
     }
 
     ## normalize prior
@@ -4348,11 +4364,10 @@ restartSample <- function(sampleReads, srp, pRgivenH1, pRgivenH2,fbsoL, nSNPs,eH
 
 
 
-pseudoHaploidFindRegion=function(srp,pRgivenH1,pRgivenH2)
-{
-  # in this function, we define underperforming regions
-  #srp,pRgivenH1,pRgivenH2
-  # define an underperforming region as a set of >100 SNPs with av <0.0001 difference
+pseudoHaploidFindRegion <- function(srp,pRgivenH1,pRgivenH2) {
+    ## in this function, we define underperforming regions
+    ##srp,pRgivenH1,pRgivenH2
+    ## define an underperforming region as a set of >100 SNPs with av <0.0001 difference
     n=100 # region to check over
     n2=100 # when a region is smaller than this, remove it
     x=abs(pRgivenH1-pRgivenH2)
@@ -4363,11 +4378,6 @@ pseudoHaploidFindRegion=function(srp,pRgivenH1,pRgivenH2)
     z=array(FALSE,length(pRgivenH1))
     z[c(array(FALSE,n-1),w)]=TRUE
     z[c(w,array(FALSE,n-1))]=TRUE
-    #z=array(FALSE,length(pRgivenH1))
-    #z[1000:1200]=TRUE
-    #z[1250:1600]=TRUE
-    #z[1670:1800]=TRUE
-    #z[3000:3500]=TRUE
     start=c(1,(1:length(z))[diff(z)!=0]+1)
     end=c((1:length(z))[diff(z)!=0],length(pRgivenH1))
     state=z[start]
@@ -4848,30 +4858,39 @@ split_a_read <- function(
 
 
 
-pseudoHaploid_update_9 <- function(
-    pRgivenH1,
-    pRgivenH2,
-    eMatRead_t1,
-    eMatRead_t2,
-    gamma_t1,
-    gamma_t2,
+R_pseudoHaploid_update_9 <- function(
+    pRgivenH1_m,
+    pRgivenH2_m,
+    list_of_eMatRead_t1,
+    list_of_eMatRead_t2,
+    list_of_gamma_t1,
+    list_of_gamma_t2,
     K,
     srp
 ) {
-    x1 <- pRgivenH1 / (pRgivenH1 + pRgivenH2)
-    x2 <- pRgivenH2 / (pRgivenH1 + pRgivenH2)
-    y1 <- eMatRead_t1
-    for(k in 1:K)
-        y1[k, ] <- (y1[k, ] - x2 * pRgivenH2) / x1
-    y2 <- eMatRead_t2
-    for(k in 1:K)
-        y2[k, ] <- (y2[k, ] - x1 * pRgivenH1) / x2
-    pRgivenH1 <- colSums(gamma_t1[, srp + 1] * y1)
-    pRgivenH2 <- colSums(gamma_t2[, srp + 1] * y2)
+    nReads <- nrow(pRgivenH1_m)
+    S <- ncol(pRgivenH1_m)
+    pRgivenH1_m_new <- array(0, c(nReads, S))
+    pRgivenH2_m_new <- array(0, c(nReads, S))    
+    for(s in 1:S) {
+        pRgivenH1 <- pRgivenH1_m[, s]
+        pRgivenH2 <- pRgivenH2_m[, s]        
+        x1 <- pRgivenH1 / (pRgivenH1 + pRgivenH2)
+        x2 <- pRgivenH2 / (pRgivenH1 + pRgivenH2)
+        y1 <- list_of_eMatRead_t1[[s]]
+        for(k in 1:K) {
+            y1[k, ] <- (y1[k, ] - x2 * pRgivenH2) / x1
+        }
+        y2 <- list_of_eMatRead_t2[[s]]
+        for(k in 1:K)
+            y2[k, ] <- (y2[k, ] - x1 * pRgivenH1) / x2
+        pRgivenH1_m_new[, s] <- colSums(list_of_gamma_t1[[s]][, srp + 1] * y1)
+        pRgivenH2_m_new[, s] <- colSums(list_of_gamma_t2[[s]][, srp + 1] * y2)
+    }
     return(
         list(
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2
+            pRgivenH1_m_new = pRgivenH1_m_new,
+            pRgivenH2_m_new = pRgivenH2_m_new
         )
     )
 }
@@ -4879,8 +4898,8 @@ pseudoHaploid_update_9 <- function(
 
 
 pseudoHaploidUpdate <- function(
-    pRgivenH1,
-    pRgivenH2,
+    pRgivenH1_m,
+    pRgivenH2_m,
     fbsoL,
     pseudoHaploidModel,
     srp,
@@ -4911,40 +4930,48 @@ pseudoHaploidUpdate <- function(
     ## MODEL 3, 7 - try to predict which haplotype it came from
     ##
     if(pseudoHaploidModel==7 | pseudoHaploidModel==9) {
+        ##
+        ## 
         out <- pseudoHaploid_update_model_9(
-            pRgivenH1 = pRgivenH1,
-            pRgivenH2 = pRgivenH2,
-            eMatHap_t1 = fbsoL[[1]]$eMatHap_t,
-            eMatHap_t2 = fbsoL[[2]]$eMatHap_t,
-            gamma_t1 = fbsoL[[1]]$gamma_t,
-            gamma_t2 = fbsoL[[2]]$gamma_t,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m,
+            list_of_eMatRead_t1 = fbsoL[[1]]$eMatRead_t,
+            list_of_eMatRead_t2 = fbsoL[[2]]$eMatRead_t,            
+            list_of_gamma_t1 = fbsoL[[1]]$list_of_gamma_t,
+            list_of_gamma_t2 = fbsoL[[2]]$list_of_gamma_t,
             K = K,
+            S = S,
             srp = srp
         )
         pRgivenH1 <- out$pRgivenH1
         pRgivenH2 <- out$pRgivenH2
         ## bound above below
-        pRgivenH1[pRgivenH1<0.001]=0.001
-        pRgivenH2[pRgivenH2<0.001]=0.001
-        pRgivenH1[pRgivenH1>0.999]=0.999
-        pRgivenH2[pRgivenH2>0.999]=0.999
+        pRgivenH1_m[pRgivenH1_m < 0.001]=0.001
+        pRgivenH2_m[pRgivenH2_m < 0.001]=0.001
+        pRgivenH1_m[pRgivenH1_m > 0.999]=0.999
+        pRgivenH2_m[pRgivenH2_m > 0.999]=0.999
     }
     ##
     ## MODEL 8
     ##
-    if(pseudoHaploidModel==8 | pseudoHaploidModel==10) {
-        x=pRgivenH1/(pRgivenH1+pRgivenH2)
-        ## get eMatHap without the second part
-        y1=fbsoL[[1]]$eMatHapOri # shouldn't change 1 or 2
-        pRgivenH1=rowSums(fbsoL[[1]]$gamma[srp+1,] * y1)
-        pRgivenH2=rowSums(fbsoL[[2]]$gamma[srp+1,] * y1)
-        ## bound above below
-        pRgivenH1[pRgivenH1<0.001]=0.001
-        pRgivenH2[pRgivenH2<0.001]=0.001
-        pRgivenH1[pRgivenH1>0.999]=0.999
-        pRgivenH2[pRgivenH2>0.999]=0.999
-    }
-    return(list(pRgivenH1=pRgivenH1,pRgivenH2=pRgivenH2))
+    ## if(pseudoHaploidModel==8 | pseudoHaploidModel==10) {
+    ##     x=pRgivenH1/(pRgivenH1+pRgivenH2)
+    ##     ## get eMatHap without the second part
+    ##     y1=fbsoL[[1]]$eMatHapOri # shouldn't change 1 or 2
+    ##     pRgivenH1=rowSums(fbsoL[[1]]$gamma[srp+1,] * y1)
+    ##     pRgivenH2=rowSums(fbsoL[[2]]$gamma[srp+1,] * y1)
+    ##     ## bound above below
+    ##     pRgivenH1[pRgivenH1<0.001]=0.001
+    ##     pRgivenH2[pRgivenH2<0.001]=0.001
+    ##     pRgivenH1[pRgivenH1>0.999]=0.999
+    ##     pRgivenH2[pRgivenH2>0.999]=0.999
+    ## }
+    return(
+        list(
+            pRgivenH1 = pRgivenH1,
+            pRgivenH2 = pRgivenH2
+        )
+    )
 }
 
 

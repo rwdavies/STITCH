@@ -3,56 +3,51 @@ test_that("can do pseudoHaploid updates in C++", {
     ## note - with random numbers, below is kind of weird
     ## but just need to confirm equivalency
     srp <- c(0, 7, 9) # 0-based
-    n_reads <- length(srp)
+    nReads <- length(srp)
     K <- 4
-    T <- 10
+    nSNPs <- 10
+    S <- 2
     set.seed(1)
-    pRgivenH1 <- runif(n_reads)
-    pRgivenH2 <- runif(n_reads)
-    fbsoL <- list(
-        list(eMatRead = matrix(runif(K * n_reads), nrow = n_reads)),
-        list(eMatRead = matrix(runif(K * n_reads), nrow = n_reads))
-    )
-    for(iNor in 1:2) {
-        fbsoL[[iNor]]$gamma <- matrix(runif(K * T), nrow = T)
-        fbsoL[[iNor]]$eMatRead_t <- t(fbsoL[[iNor]]$eMatRead)
-        fbsoL[[iNor]]$gamma_t <- t(fbsoL[[iNor]]$gamma)
-    }
+    pRgivenH1_m <- array(runif(nReads * S), c(nReads, S))
+    pRgivenH2_m <- array(runif(nReads * S), c(nReads, S))
+    
+    fbsoL <- lapply(1:2, function(iNor) {
+        list_of_gamma_t <- lapply(1:S, function(s) { array(runif(K * nSNPs), c(K, nSNPs)) })
+        list_of_eMatRead_t <- lapply(1:S, function(s) { array(runif(K * nReads), c(K, nReads)) })
+        return(
+            list(
+                list_of_gamma_t = list_of_gamma_t,
+                list_of_eMatRead_t = list_of_eMatRead_t
+            )
+        )
+    })
 
-    ## model 9 - original configuration
-    x <- pRgivenH1/(pRgivenH1+pRgivenH2)
-    y1 <- (fbsoL[[1]]$eMatRead - (1-x) * pRgivenH2) / x
-    y2 <- (fbsoL[[2]]$eMatRead - x * pRgivenH1) / (1 - x)
-    pRgivenH1_new <- rowSums(fbsoL[[1]]$gamma[srp + 1,] * y1)
-    pRgivenH2_new <- rowSums(fbsoL[[2]]$gamma[srp + 1,] * y2)
-
-    out1 <- pseudoHaploid_update_9(
-        pRgivenH1 = pRgivenH1,
-        pRgivenH2 = pRgivenH2,
-        eMatRead_t1 = fbsoL[[1]]$eMatRead_t,
-        eMatRead_t2 = fbsoL[[2]]$eMatRead_t,
-        gamma_t1 = fbsoL[[1]]$gamma_t,
-        gamma_t2 = fbsoL[[2]]$gamma_t,
+    ## R version
+    outR <- R_pseudoHaploid_update_9(
+        pRgivenH1_m = pRgivenH1_m,
+        pRgivenH2_m = pRgivenH2_m,
+        list_of_eMatRead_t1 = fbsoL[[1]]$list_of_eMatRead_t,
+        list_of_eMatRead_t2 = fbsoL[[2]]$list_of_eMatRead_t,
+        list_of_gamma_t1 = fbsoL[[1]]$list_of_gamma_t,
+        list_of_gamma_t2 = fbsoL[[2]]$list_of_gamma_t,
         K = K,
         srp = srp
     )
 
-    out2 <- pseudoHaploid_update_model_9(
-        pRgivenH1 = pRgivenH1,
-        pRgivenH2 = pRgivenH2,
-        eMatRead_t1 = fbsoL[[1]]$eMatRead_t,
-        eMatRead_t2 = fbsoL[[2]]$eMatRead_t,
-        gamma_t1 = fbsoL[[1]]$gamma_t,
-        gamma_t2 = fbsoL[[2]]$gamma_t,
+    ## in cpp
+    outCPP <- pseudoHaploid_update_model_9(
+        pRgivenH1_m = pRgivenH1_m,
+        pRgivenH2_m = pRgivenH2_m,
+        list_of_eMatRead_t1 = fbsoL[[1]]$list_of_eMatRead_t,
+        list_of_eMatRead_t2 = fbsoL[[2]]$list_of_eMatRead_t,
+        list_of_gamma_t1 = fbsoL[[1]]$list_of_gamma_t,
+        list_of_gamma_t2 = fbsoL[[2]]$list_of_gamma_t,
         K = K,
         srp = srp
     )
 
-    expect_equal(sum(abs(out1$pRgivenH1 - pRgivenH1_new)), 0)
-    expect_equal(sum(abs(out1$pRgivenH2 - pRgivenH2_new)), 0)
-    expect_equal(sum(abs(out2$pRgivenH1 - pRgivenH1_new)), 0)
-    expect_equal(sum(abs(out2$pRgivenH2 - pRgivenH2_new)), 0)
-
+    expect_equal(sum(abs(outR$pRgivenH1_m - outCPP$pRgivenH1_m)), 0)
+    expect_equal(sum(abs(outR$pRgivenH2_m - outCPP$pRgivenH2_m)), 0)    
 
 })
 
@@ -96,9 +91,10 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
         expect_equal(ncol(gamma_t), nGrids)
         expect_equal(min(gamma_t) >= 0, TRUE)
         expect_equal(max(gamma_t) <= 1, TRUE)
-        
-        pRgivenH1L <- runif(length(sampleReads))
-        pRgivenH2L <- runif(length(sampleReads))
+
+        out <- get_default_hapProbs(pseudoHaploidModel = 9, sampleReads = sampleReads, S = S)
+        pRgivenH1L_m <- out$pRgivenH1_m
+        pRgivenH2L_m <- out$pRgivenH2_m
         
         ## run through R function
         fbsoL <- run_forward_backwards(
@@ -107,8 +103,8 @@ test_that("forwardBackwardDiploid and forwardBackwardHaploid work", {
             transMatRate_tc_H = transMatRate_tc_H,
             alphaMatCurrent_tc = alphaMatCurrent_tc,
             eHapsCurrent_tc = eHapsCurrent_tc,
-            pRgivenH1 = pRgivenH1L,
-            pRgivenH2 = pRgivenH2L,
+            pRgivenH1_m = pRgivenH1L_m,
+            pRgivenH2_m = pRgivenH2L_m,
             method = "pseudoHaploid",
             suppressOutput = 1,
             return_gamma = TRUE,

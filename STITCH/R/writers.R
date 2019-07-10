@@ -389,8 +389,8 @@ per_core_get_results <- function(
         )
         vcf_matrix_to_out <- NULL
     }
-    pRgivenH1 <- NULL
-    pRgivenH2 <- NULL
+    pRgivenH1_m<- NULL
+    pRgivenH2_m<- NULL
 
     for (iiSample in 1:(length(who_to_run))) {
         
@@ -426,8 +426,8 @@ per_core_get_results <- function(
                 bundling_info = bundling_info,
                 bundledSampleProbs = bundledSampleProbs
             )
-            pRgivenH1 <- out$pRgivenH1
-            pRgivenH2 <- out$pRgivenH2
+            pRgivenH1_m <- out$pRgivenH1_m
+            pRgivenH2_m <- out$pRgivenH2_m
             srp <- out$srp
             bundledSampleProbs <- out$bundledSampleProbs
         }
@@ -503,8 +503,8 @@ per_core_get_results <- function(
 
             fbsoL <- run_forward_backwards(
                 sampleReads = sampleReads[which_reads],
-                pRgivenH1 = pRgivenH1[which_reads],
-                pRgivenH2 = pRgivenH2[which_reads],
+                pRgivenH1_m = pRgivenH1_m[which_reads, , drop = FALSE],
+                pRgivenH2_m = pRgivenH2_m[which_reads, , drop = FALSE],
                 method = method,
                 priorCurrent_m = array(-1, c(K, S)), ## irrelevant here
                 alphaMatCurrent_tc = alphaMatCurrentLocal_tc,

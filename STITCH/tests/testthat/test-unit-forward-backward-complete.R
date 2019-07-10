@@ -66,14 +66,19 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
             for (method in c("diploid", "pseudoHaploid", "diploid-inbred")) {
 
                 if (method == "pseudoHaploid") {
-                    pRgivenH1 <- runif(length(sampleReads))
-                    pRgivenH2 <- runif(length(sampleReads))
+                    out <- get_default_hapProbs(
+                        pseudoHaploidModel = 9,
+                        sampleReads = sampleReads,
+                        S = S
+                    )
+                    pRgivenH1_m <- out$pRgivenH1_m
+                    pRgivenH2_m <- out$pRgivenH2_m
                 }
 
                 fbsoL1 <- run_forward_backwards(
                     sampleReads = sampleReads,
-                    pRgivenH1 = pRgivenH1,
-                    pRgivenH2 = pRgivenH2,            
+                    pRgivenH1_m = pRgivenH1_m,
+                    pRgivenH2_m = pRgivenH2_m,
                     method = method,
                     priorCurrent_m = priorCurrent_m,
                     alphaMatCurrent_tc = alphaMatCurrent_tc,
@@ -132,8 +137,8 @@ test_that("can run forwardBackward, then re-run using list of forward and backwa
                     list_of_alphaBetaBlocks <- lapply(fbsoL1, function(x) x[["list_of_alphaBetaBlocks"]])
                     fbsoL2 <- run_forward_backwards(
                         sampleReads = sampleReads[whichReads],
-                        pRgivenH1 = pRgivenH1[whichReads],
-                        pRgivenH2 = pRgivenH2[whichReads],            
+                        pRgivenH1_m = pRgivenH1_m[whichReads, , drop = FALSE],
+                        pRgivenH2_m = pRgivenH2_m[whichReads, , drop = FALSE],
                         method = method,
                         priorCurrent_m = priorCurrent_m,
                         alphaMatCurrent_tc = alphaMatCurrentLocal_tc,
