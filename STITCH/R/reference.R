@@ -141,18 +141,18 @@ get_and_initialize_from_reference <- function(
             ## get new cols each time!
             cols_to_replace <- sample_haps_to_use(reference_haps, K)
             reference_haps_t <- t(reference_haps[, cols_to_replace])
-            ## add some noise
+            ## make off from 0
             e <- 0.01
             reference_haps_t[reference_haps_t == 0] <- e
             reference_haps_t[reference_haps_t == 1] <- (1 - e)
+            ## add some ACTUAL noise. biggest problem is if they are exactly the same - then cannot EM
+            reference_haps_t <- 0.95 * reference_haps_t + 0.05 * array(runif(prod(dim(reference_haps_t))), dim(reference_haps_t))
             ##
             eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t[, reference_panel_SNPs]
-            ## make the other positions have more noise
-            n1 <- sum(!reference_panel_SNPs)
             ## these do not matter for now
             eHapsCurrent_tc[, !reference_panel_SNPs, s] <- 0.5
         }
-
+        
         if (reference_iterations > 0) {
             out <- run_EM_on_reference_sample_reads(
                 eHapsCurrent_tc = eHapsCurrent_tc,
@@ -186,6 +186,8 @@ get_and_initialize_from_reference <- function(
         
     }
     print_message("Done initializing paramters using reference haplotypes")
+
+
     return(
         list(
             eHapsCurrent_tc = eHapsCurrent_tc,
@@ -506,7 +508,7 @@ run_EM_on_reference_sample_reads <- function(
                 hapSumCurrent_tc = hapSumCurrent_tc,
                 alphaMatCurrent_tc = alphaMatCurrent_tc,
                 sigmaCurrent_m = sigmaCurrent_m,
-                N = N,
+                N = N_haps,
                 is_reference = TRUE
             )
         }

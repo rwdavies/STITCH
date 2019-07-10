@@ -47,6 +47,7 @@ test_that("simple diploid method can work", {
         genfile = data_package$genfile,
         outputdir = outputdir,
         K = 2,
+        S = 2,
         nGen = 100,
         nCores = 1
     )

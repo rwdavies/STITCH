@@ -104,6 +104,9 @@ test_that("STITCH can initialize with reference data with three sizes of K vs nu
     for(i_scenario in 1:3) {
 
         outputdir <- make_unique_tempdir()
+        plotHapSumDuringIterations <- FALSE
+        ## outputdir <- paste0("~/temp.scenario", i_scenario, "/"); plotHapSumDuringIterations <- TRUE
+        
         ## scenarios are: too few, exactly right amount, too many
         K <- list(n_samples_per_pop * 4, n_samples_per_pop * 2, n_samples_per_pop)[[i_scenario]]
         STITCH(
@@ -118,7 +121,8 @@ test_that("STITCH can initialize with reference data with three sizes of K vs nu
             S = 2,
             nGen = 100,
             nCores = 1,
-            output_format = output_format
+            output_format = output_format,
+            plotHapSumDuringIterations = plotHapSumDuringIterations
         )
 
         check_output_against_phase(
@@ -387,7 +391,6 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
         regionStart <- 3
         regionEnd <- 4
         buffer <- 1
-
         STITCH(
             chr = data_packageX$chr,
             bamlist = data_packageX$bamlist,
@@ -403,7 +406,8 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
             regionStart = regionStart,
             regionEnd = regionEnd,
             buffer = buffer,
-            output_format = output_format
+            output_format = output_format,
+            genfile = data_packageX$genfile
         )
 
         regionName <- paste0(data_packageX$chr, ".", regionStart, ".", regionEnd)

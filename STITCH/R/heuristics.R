@@ -872,9 +872,11 @@ interim_plotter <- function(
             final_iteration = final_iteration,
             is_reference = is_reference            
         )
+        alphaMatCurrent_t <- array(0, c(K, nGrids - 1))
+        alphaMatCurrent_t[] <- alphaMatCurrent_tc[, , s]
         plotAlphaMatCurrent_t(
             L_grid = L_grid,
-            alphaMatCurrent_t = alphaMatCurrent_tc[, , s],
+            alphaMatCurrent_t = alphaMatCurrent_t,
             sigmaCurrent = sigmaCurrent_m[, s],
             outputdir = outputdir,
             iteration = iteration,
@@ -902,6 +904,9 @@ interim_plot_name <- function(name, regionName, outputdir, s, S, iteration, fina
     }
     if (is_reference) {
         name <- paste0("ref.", name)
+    }
+    if (nchar(what) > 0) {
+        what <- paste0(".", what)
     }
     outname <- file.path(outputdir, "plots", paste0(name, ".", regionName, it_name, what, suffix))
     return(outname)

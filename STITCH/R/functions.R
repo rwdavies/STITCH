@@ -695,9 +695,9 @@ STITCH <- function(
         ## first, save (with buffer) to disk
         ##
         save(
-            eHapsCurrent_t, alphaMatCurrent_t,
-            sigmaCurrent, priorCurrent,
-            hapSumCurrent_t,
+            eHapsCurrent_tc, alphaMatCurrent_tc,
+            sigmaCurrent_m, priorCurrent_m,
+            hapSumCurrent_tc,
             alleleCount,
             estimatedAlleleFrequency,
             pos, gen, L,
@@ -714,7 +714,7 @@ STITCH <- function(
         ##
         ## next, remove buffer
         ##
-        out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent_t = alphaMatCurrent_t, sigmaCurrent = sigmaCurrent, eHapsCurrent_t = eHapsCurrent_t, hapSumCurrent_t = hapSumCurrent_t, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize, hwe = hwe, hweCount = hweCount, info = info, passQC = passQC, estimatedAlleleFrequency = estimatedAlleleFrequency, ref_alleleCount = ref_alleleCount)
+        out <- remove_buffer_from_variables(L = L,  regionStart = regionStart, regionEnd = regionEnd, pos = pos, gen = gen, phase = phase, alleleCount =  alleleCount, highCovInLow = highCovInLow, gen_imp = gen_imp, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, eHapsCurrent_tc = eHapsCurrent_tc, hapSumCurrent_tc = hapSumCurrent_tc, grid = grid, grid_distances = grid_distances, L_grid = L_grid, nGrids = nGrids, gridWindowSize = gridWindowSize, hwe = hwe, hweCount = hweCount, info = info, passQC = passQC, estimatedAlleleFrequency = estimatedAlleleFrequency, ref_alleleCount = ref_alleleCount)
         pos <- out$pos
         gen <- out$gen
         phase <- out$phase
@@ -723,11 +723,11 @@ STITCH <- function(
         ref_alleleCount <- out$ref_alleleCount
         L <- out$L
         nSNPs <- out$nSNPs
-        alphaMatCurrent_t <- out$alphaMatCurrent_t
-        sigmaCurrent <- out$sigmaCurrent
-        eHapsCurrent_t <- out$eHapsCurrent_t
-        hapSumCurrent_t <- out$hapSumCurrent_t
-        priorCurrent <- out$priorCurrent
+        alphaMatCurrent_tc <- out$alphaMatCurrent_tc
+        sigmaCurrent_m <- out$sigmaCurrent_m
+        eHapsCurrent_tc <- out$eHapsCurrent_tc
+        hapSumCurrent_tc <- out$hapSumCurrent_tc
+        priorCurrent_m <- out$priorCurrent_m
         grid <- out$grid
         grid_distances <- out$grid_distances
         L_grid <- out$L_grid
@@ -939,10 +939,10 @@ remove_buffer_from_variables <- function(
     ref_alleleCount = NA,
     highCovInLow = NULL,
     gen_imp = NULL,
-    alphaMatCurrent_t = NULL,
-    sigmaCurrent = NULL,
-    eHapsCurrent_t = NULL,
-    hapSumCurrent_t = NULL,
+    alphaMatCurrent_tc = NULL,
+    sigmaCurrent_m = NULL,
+    eHapsCurrent_tc = NULL,
+    hapSumCurrent_tc = NULL,
     info = NULL,
     hwe = NULL,
     estimatedAlleleFrequency = NULL,
@@ -960,8 +960,9 @@ remove_buffer_from_variables <- function(
     passQC = NULL,
     verbose = TRUE
 ) {
-    if (verbose)
+    if (verbose) {
         print_message("Remove buffer region from output")
+    }
     ## determine where the region is
     inRegion2 <- regionStart <= L & L <= regionEnd
     inRegion2L <- which(inRegion2)
@@ -981,15 +982,21 @@ remove_buffer_from_variables <- function(
     ## hmm, there is no perfect answer here
     ## for now, save everything that intersected
     to_keep <- unique(grid[inRegion2L]) + 1
-    hapSumCurrent_t <- hapSumCurrent_t[, to_keep, drop = FALSE]
+    ##
+    priorCurrent_m <- array(0, c(dim(hapSumCurrent_tc)[1], dim(hapSumCurrent_tc)[3]))
+    for(s in 1:ncol(priorCurrent_m)) {
+        priorCurrent_m[, s] <- hapSumCurrent_tc[, 1, s]
+        priorCurrent_m[, s] <- priorCurrent_m[, s] / sum(priorCurrent_m[, s])
+    }
+    ##
+    hapSumCurrent_tc <- hapSumCurrent_tc[, to_keep, , drop = FALSE]
     ## now for these there is one fewer point
     to_keep <- to_keep[-length(to_keep)]
-    alphaMatCurrent_t <- alphaMatCurrent_t[, to_keep, drop = FALSE]
-    sigmaCurrent <- sigmaCurrent[to_keep]
+    alphaMatCurrent_tc <- alphaMatCurrent_tc[, to_keep, , drop = FALSE]
+    sigmaCurrent_m <- sigmaCurrent_m[to_keep, , drop = FALSE]
     ##
     ##
-    eHapsCurrent_t <- eHapsCurrent_t[, inRegion2]
-    priorCurrent <- hapSumCurrent_t[, 1] / sum(hapSumCurrent_t[, 1])
+    eHapsCurrent_tc <- eHapsCurrent_tc[, inRegion2, ]
     ##
     hwe <- hwe[inRegion2]
     hweCount <- hweCount[inRegion2, , drop = FALSE]
@@ -1022,11 +1029,11 @@ remove_buffer_from_variables <- function(
             ref_alleleCount = ref_alleleCount,
             L = L,
             nSNPs = nSNPs,
-            alphaMatCurrent_t = alphaMatCurrent_t,
-            sigmaCurrent = sigmaCurrent,
-            eHapsCurrent_t = eHapsCurrent_t,
-            hapSumCurrent_t = hapSumCurrent_t,
-            priorCurrent = priorCurrent,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            sigmaCurrent_m = sigmaCurrent_m,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            hapSumCurrent_tc = hapSumCurrent_tc,
+            priorCurrent_m = priorCurrent_m,
             info = info,
             hwe = hwe,
             hweCount = hweCount,
@@ -4982,7 +4989,7 @@ print_message <- function(x, include_mem = FALSE) {
     } else {
         mem <- ""
     }
-    print(
+    message(
         paste0(
             "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", mem, x
         )
