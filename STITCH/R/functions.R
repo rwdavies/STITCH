@@ -3180,7 +3180,7 @@ within_EM_per_sample_heuristics <- function(
     grid,
     nor,
     nbreaks,
-    break_results,
+    list_of_break_results,
     list_of_fromMat,
     srp,
     pRgivenH1_m,
@@ -3217,13 +3217,18 @@ within_EM_per_sample_heuristics <- function(
     ##
     for(s in 1:S) {
         if (nbreaks[s] > 0) {
+            if (iSample == 1) {
+                save(list_of_break_results, list_of_fromMat, fbsoL, file = "~/temp.RData")
+                print("REMOVE ME")
+            }
+            break_results <- list_of_break_results[[s]]
             for(iBreak in 1:nbreaks[s]) {
                 from <- break_results[iBreak, "left_grid_break_0_based"]
                 to <- break_results[iBreak, "right_grid_break_0_based"]
-                hp1 <- fbsoL$gamma_t[, from + 1]
-                hp2 <- fbsoL$gamma_t[, to + 1]
-                list_of_fromMat[[s]][iBreak, ] <-
-                    list_of_fromMat[[s]][iBreak, ] + hp1 %*% t(hp2)
+                hp1 <- fbsoL$gammaK_t[, from + 1]
+                hp2 <- fbsoL$gammaK_t[, to + 1]
+                list_of_fromMat[[s]][iBreak, , ] <-
+                    list_of_fromMat[[s]][iBreak, , ] + hp1 %*% t(hp2)
             }
             if (plot_shuffle_haplotype_attempts) {
                 i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
@@ -3515,9 +3520,10 @@ subset_of_complete_iteration <- function(
     }
 
     if (sum(nbreaks) > 0) {
-        list_of_fromMat <- lapply(nbreaks, function(nbreak) {
-            array(0, c(nbreak, K, K))
+        list_of_fromMat <- lapply(1:S, function(s) {
+            return(array(0, c(nbreaks[s], K, K)))
         })
+        return_gammaK <- TRUE ## need this!
     } else {
         list_of_fromMat <- NULL
     }
@@ -3674,7 +3680,7 @@ subset_of_complete_iteration <- function(
             grid = grid,
             nor = nor,
             nbreaks = nbreaks,
-            break_results = break_results,
+            list_of_break_results = list_of_break_results,
             list_of_fromMat = list_of_fromMat,
             srp = srp,
             pRgivenH1_m = pRgivenH1_m,
@@ -3707,7 +3713,7 @@ subset_of_complete_iteration <- function(
         readsTotal <- out$readsTotal
         readsSplit <- out$readsSplit
         restartMatrixList <- out$restartMatrixList
-        fromMat <- out$fromMat
+        list_of_fromMat <- out$list_of_fromMat
         fbd_store <- out$fbd_store
         sampledPathList <- out$sampledPathList
 

@@ -131,7 +131,7 @@ test_that("can smooth rate", {
 
 test_that("can define breaks on tiny region", {
 
-    set.seed(10)
+    set.seed(11)
     tempdir <- tempdir()
     regionName <- "blargh"
     L <- sort(sample(1000000, 500))

@@ -768,7 +768,8 @@ Rcpp::List forwardBackwardDiploid(
   Rcpp::List alphaBetaBlocks;
   Rcpp::List list_of_alphaBetaBlocks;
   Rcpp::List to_return;
-  Rcpp::List list_of_gamma_t;  
+  Rcpp::List list_of_gamma_t; 
+  Rcpp::List list_of_gammaK_t;
   if (!update_in_place) {
       gammaSum0_tc = arma::zeros(K, nSNPs, S);
       gammaSum1_tc = arma::zeros(K, nSNPs, S);      
@@ -861,9 +862,7 @@ Rcpp::List forwardBackwardDiploid(
           //
       }
       if (return_gammaK) {
-          if (s == (S - 1)) {
-              to_return.push_back(gammaK_t, "gammaK_t");
-          }
+          list_of_gammaK_t.push_back(gammaK_t);
       }
       //arma::imat sampled_path_diploid_t;
       //if (return_a_sampled_path) {
@@ -887,6 +886,9 @@ Rcpp::List forwardBackwardDiploid(
   }
   if (return_gamma) {
       to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
+  }
+  if (return_gammaK) {
+      to_return.push_back(list_of_gammaK_t, "list_of_gammaK_t");
   }
   // rest largely for debugging
   if (return_extra) {

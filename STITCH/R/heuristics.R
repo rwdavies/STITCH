@@ -1068,7 +1068,6 @@ apply_better_switches_if_appropriate <- function(
                 fromMat = list_of_fromMat[[s]],
                 nbreak = nbreaks[s],
                 break_results = list_of_break_results[[s]],
-                K = K,
                 eHapsFuture_t = eHapsCurrent_tc[, , s],
                 alphaMatFuture_t = alphaMatCurrent_tc[, , s],
                 grid = grid,

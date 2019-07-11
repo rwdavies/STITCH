@@ -613,6 +613,7 @@ Rcpp::List forwardBackwardHaploid(
   int iGrid, k, s;
   Rcpp::List to_return;
   Rcpp::List list_of_gamma_t;
+  Rcpp::List list_of_gammaK_t;  
   //  
   Rcpp::NumericVector alphaStart, betaEnd;
   arma::mat alphaHatBlocks_t, betaHatBlocks_t;
@@ -740,9 +741,7 @@ Rcpp::List forwardBackwardHaploid(
           }
       }
       if (return_gammaK) {
-          if (s == (S - 1)) {
-              to_return.push_back(gamma_t, "gammaK_t"); // equivalent
-          }
+          list_of_gammaK_t.push_back(gamma_t);
       }
       if (run_pseudo_haploid & !run_fb_subset & !generate_fb_snp_offsets) {
           list_of_eMatRead_t.push_back(eMatRead_t, "eMatRead_t");
@@ -753,6 +752,9 @@ Rcpp::List forwardBackwardHaploid(
   prev_section=next_section;
   if (return_gamma | run_pseudo_haploid) {
       to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
+  }
+  if (return_gammaK) {
+    to_return.push_back(list_of_gammaK_t, "list_of_gammaK_t");
   }
   if (run_pseudo_haploid) {
       to_return.push_back(eMatRead_t, "eMatRead_t");

@@ -28,7 +28,8 @@ fi
 
 source "${script_dir}/what_to_benchmark.sh"
 
-for i_version in $(seq 0 $((${#version_list[@]} - 1)))
+#for i_version in $(seq 0 $((${#version_list[@]} - 1)))
+for i_version in $(seq 4 7)
 do
     version=${version_list[$i_version]}
     extra=${extra_list[$i_version]}

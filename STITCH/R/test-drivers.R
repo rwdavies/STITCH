@@ -835,3 +835,17 @@ make_fb_test_package <- function(
         )
     )
 }
+
+
+random_R_version_checker <- function() {
+    minor1 <- as.numeric(strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1])
+    minor2 <- as.numeric(strsplit(R.version$minor, ".", fixed = TRUE)[[1]][2])    
+    if (as.numeric(R.version$major) == 3) {
+        if (minor1 <= 5) {
+            return(1)
+        } else {
+            return(2)
+        }
+    }
+}
+
