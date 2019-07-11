@@ -141,8 +141,8 @@ STITCH <- function(
     reference_iterations = 40,
     reference_shuffleHaplotypeIterations = c(4, 8, 12, 16),
     output_filename = NULL,
-    initial_min_hapProb = 0.4,
-    initial_max_hapProb = 0.6,
+    initial_min_hapProb = 0.2,
+    initial_max_hapProb = 0.8,
     regenerateInputWithDefaultValues = FALSE,
     plotHapSumDuringIterations = FALSE,
     plot_shuffle_haplotype_attempts = FALSE,
@@ -2879,8 +2879,8 @@ get_default_hapProbs <- function(
     pseudoHaploidModel,
     sampleReads,
     S,
-    initial_min_hapProb = 0.4,
-    initial_max_hapProb = 0.6
+    initial_min_hapProb = 0.2,
+    initial_max_hapProb = 0.8
 ) {
     a1 <- initial_min_hapProb
     b1 <- initial_max_hapProb
@@ -3217,10 +3217,6 @@ within_EM_per_sample_heuristics <- function(
     ##
     for(s in 1:S) {
         if (nbreaks[s] > 0) {
-            if (iSample == 1) {
-                save(list_of_break_results, list_of_fromMat, fbsoL, file = "~/temp.RData")
-                print("REMOVE ME")
-            }
             break_results <- list_of_break_results[[s]]
             for(iBreak in 1:nbreaks[s]) {
                 from <- break_results[iBreak, "left_grid_break_0_based"]
@@ -4909,7 +4905,41 @@ R_pseudoHaploid_update_9 <- function(
     )
 }
 
-
+bound_pRgivenH <- function(pRgivenH1_m, pRgivenH2_m, e = 0.001) {
+    for(j in 1:2) {
+        if (j == 1) {
+            c1 <- (pRgivenH1_m < e)
+            c2 <- (pRgivenH2_m < e)
+            re <- e
+        } else {
+            c1 <- (1 - e) < pRgivenH1_m
+            c2 <- (1 - e) < pRgivenH2_m
+            re <- 1 - e
+        }
+        b <- which(c1 & c2, arr.ind = TRUE)
+        if (nrow(b) > 0) {
+            s <- (pRgivenH1_m[b] + pRgivenH2_m[b]) / e
+            pRgivenH1_m[b] <- pRgivenH1_m[b] / s
+            pRgivenH2_m[b] <- pRgivenH2_m[b] / s
+            if (j == 2) {
+                pRgivenH1_m[b] <- 1 - pRgivenH1_m[b]
+                pRgivenH2_m[b] <- 1 - pRgivenH2_m[b]                
+            }
+            ## rest
+            pRgivenH1_m[c1 & !c2] <- re
+            pRgivenH2_m[!c1 & c2] <- re
+        } else {
+            pRgivenH1_m[c1] <- re
+            pRgivenH2_m[c2] <- re
+        }
+    }
+    return(
+        list(
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m
+        )
+    )
+}
 
 pseudoHaploidUpdate <- function(
     pRgivenH1_m,
@@ -4956,13 +4986,13 @@ pseudoHaploidUpdate <- function(
             K = K,
             srp = srp
         )
+        out <- bound_pRgivenH(
+            pRgivenH1_m = out$pRgivenH1_m,
+            pRgivenH2_m = out$pRgivenH2_m,
+            e = 0.001
+        )
         pRgivenH1_m <- out$pRgivenH1_m
         pRgivenH2_m <- out$pRgivenH2_m
-        ## bound above below
-        pRgivenH1_m[pRgivenH1_m < 0.001]=0.001
-        pRgivenH2_m[pRgivenH2_m < 0.001]=0.001
-        pRgivenH1_m[pRgivenH1_m > 0.999]=0.999
-        pRgivenH2_m[pRgivenH2_m > 0.999]=0.999
     }
     ##
     ## MODEL 8

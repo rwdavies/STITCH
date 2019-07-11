@@ -1,7 +1,7 @@
 ## edge cases with very few SNPs
 
 n_snps <- 5
-n_reads <- 20
+n_reads <- 30
 reads_span_n_snps <- 2
 phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
 phasemaster[2, ] <- c(1, 0)
@@ -9,7 +9,7 @@ phasemaster[4, ] <- c(1, 0)
 L_few <- 6:10
 data_packages_few <- lapply(c(FALSE, TRUE), function(samples_are_inbred) {
     make_acceptance_test_data_package(
-        n_samples = 10,
+        n_samples = 20,
         n_snps = n_snps,
         n_reads = n_reads,
         seed = 3,
@@ -60,7 +60,7 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
     for(output_haplotype_dosages in c(FALSE, TRUE)) {
         for(output_format in c("bgvcf", "bgen")) {
 
-            for(method in get_available_methods()) {
+            for(method in setdiff(get_available_methods(), "pseudoHaploid")) {
 
                 if (output_haplotype_dosages) {
                     Ss <- 1
@@ -80,7 +80,6 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
                         }
 
                         outputdir <- make_unique_tempdir()
-
                         if (method == "diploid-inbred") {
                             data_package_few <- data_packages_few[["inbred"]]
                         } else {
@@ -109,12 +108,12 @@ test_that("STITCH works with very few SNPs in central region and buffer", {
                             refillIterations = 4
                         )
                         check_output_against_phase(
-                            file =  file.path(outputdir, output_filename),
+                            file = file.path(outputdir, output_filename),
                             data_package = data_package_few,
                             output_format,
                             which_snps = which((regionStart <= L_few) & (L_few<= regionEnd)),
                             tol = 0.2,
-                            min_info = 0.95
+                            min_info = 0.80
                         )
                         
                     }
