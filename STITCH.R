@@ -20,6 +20,12 @@ option_list <- list(
         help = "How many founder / mosaic haplotypes to use"
     ), 
     make_option(
+        "--S",
+        type = "integer",
+        help = "How many sets of founder / mosaic haplotypes to use [default 1] ",
+        default = 1
+    ), 
+    make_option(
         "--nGen",
         type = "double",
         help = "Number of generations since founding or mixing. Note that the algorithm is relatively robust to this. Use nGen = 4 * Ne / K if unsure"
@@ -434,8 +440,8 @@ option_list <- list(
     make_option(
         "--output_haplotype_dosages",
         type = "logical",
-        help = "Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus [default FALSE        ] ",
-        default = FALSE        
+        help = "Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus [default FALSE] ",
+        default = FALSE
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -445,6 +451,7 @@ STITCH(
     chr = opt$chr,
     posfile = opt$posfile,
     K = opt$K,
+    S = opt$S,
     nGen = opt$nGen,
     outputdir = opt$outputdir,
     tempdir = opt$tempdir,
