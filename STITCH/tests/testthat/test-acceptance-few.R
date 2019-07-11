@@ -23,6 +23,7 @@ data_packages_few <- lapply(c(FALSE, TRUE), function(samples_are_inbred) {
 })
 names(data_packages_few) <- c("outbred", "inbred")
 extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
+data_package_few <- data_packages_few[["outbred"]]
 
 
 ## fail if no SNPs to impute
