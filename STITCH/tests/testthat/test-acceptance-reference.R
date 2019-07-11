@@ -465,7 +465,7 @@ test_that("STITCH can impute with reference panels with only 1 iteration if the 
 
     n_snps <- 20
     chr <- 10
-    set.seed(5)
+    set.seed(6)
     refpack <- make_reference_package(
         n_snps = n_snps,
         n_samples_per_pop = 1,
@@ -510,7 +510,7 @@ test_that("STITCH can impute with reference panels with only 1 iteration if the 
             output_format,
             which_snps = NULL,
             tol = 0.3,
-            min_info = 0.90
+            min_info = 0.75
         )
 
     }
