@@ -2,7 +2,7 @@ if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/Google Drive/STITCH/"
+    dir <- "~/proj/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
     b <- grep("~", a)
@@ -38,13 +38,21 @@ data_package <- make_acceptance_test_data_package(
     reads_span_n_snps = reads_span_n_snps,
     phasemaster = phasemaster
 )
-
+data_package_inbred <- make_acceptance_test_data_package(
+    n_samples = 10,
+    n_snps = n_snps,
+    n_reads = n_reads,
+    seed = 3,
+    chr = "chr5",
+    K = 2,
+    reads_span_n_snps = reads_span_n_snps,
+    phasemaster = phasemaster,
+    samples_are_inbred = TRUE
+)
 
 test_that("STITCH can generate input in VCF format", {
 
     outputdir <- make_unique_tempdir()    
-
-    sink("/dev/null")
 
     set.seed(10)
     n_snps <- 5
@@ -147,71 +155,103 @@ test_that("STITCH diploid can write to bgen", {
 test_that("STITCH can write out haplotype probabilities", {
 
     set.seed(10)
-    method <- "diploid"
-    
-    for(K in c(2, 3)) {
 
-        outputdir <- make_unique_tempdir()        
-        STITCH(
-            chr = data_package$chr,
-            bamlist = data_package$bamlist,
-            posfile = data_package$posfile,
-            genfile = data_package$genfile,        
-            outputdir = outputdir,
-            K = K,
-            nGen = 100,
-            nCores = 1,
-            output_format = "bgvcf",
-            output_haplotype_dosages = TRUE,
-            method = method
-        )
+    for(method in get_available_methods()) {
 
-        ## includes checking that the sum is correct
-        check_output_against_phase(
-            file = file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
-            data_package,
-            output_format,
-            which_snps = NULL,
-            tol = 0.2,
-            min_info = 0.85
-        )
-
-        ## check format line exists
-        format_line <- system(paste0("gunzip -c ", shQuote(file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz"))), " | grep 'ID=HD'"), intern = TRUE)
-        expect_equal(length(format_line), 1)
-        ## check format line has proper K
-        expect_equal(as.numeric(strsplit(strsplit(format_line, "Number=")[[1]][2], ",")[[1]][1]), K)
-
-        file <- file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz"))
-        vcf <- read.table(file)
-        load(file.path(outputdir, "RData", "EM.all.chr5.RData"))
-        transMatRate_t_H <- get_transMatRate(method = "diploid-inbred", sigmaCurrent = sigmaCurrent)
-        transMatRate_t_D <- get_transMatRate(method = "diploid", sigmaCurrent = sigmaCurrent)    
-        for(i_sample in 1:10) {
-            ## run fbd normally, check OK
-            load(file.path(outputdir, "input", paste0("sample.", i_sample, ".input.chr5.RData")))            
-            q <- sapply(strsplit(as.character(vcf[, 9 + i_sample]), ":"), I)[4, ]
-            q_t <- sapply(strsplit(q, ","), as.numeric)
-            ## now, re-do
-            fbsoL <- run_forward_backwards(
-                sampleReads = sampleReads,
-                method = method,
-                K = K,
-                priorCurrent = priorCurrent,
-                alphaMatCurrent_t = alphaMatCurrent_t,
-                eHapsCurrent_t = eHapsCurrent_t,
-                transMatRate_t_H = transMatRate_t_H,
-                transMatRate_t_D = transMatRate_t_D, 
-                Jmax = 10,
-                maxDifferenceBetweenReads = 1000,
-                maxEmissionMatrixDifference = 1e6,
-                output_haplotype_dosages = TRUE,
-                grid = grid
-            )$fbsoL
-            ## check result
-            expect_equal(max(abs(q_t - fbsoL[[1]]$gammaEK_t * 2)) > 1e-3, FALSE)
+        if (method == "diploid-inbred") {
+            data_packageL <- data_package_inbred
+        } else {
+            data_packageL <- data_package
         }
+        
+        for(K in c(2, 3)) {
 
+            outputdir <- make_unique_tempdir()        
+            STITCH(
+                chr = data_packageL$chr,
+                bamlist = data_packageL$bamlist,
+                posfile = data_packageL$posfile,
+                genfile = data_packageL$genfile,        
+                outputdir = outputdir,
+                K = K,
+                nGen = 100,
+                nCores = 1,
+                output_format = "bgvcf",
+                output_haplotype_dosages = TRUE,
+                method = method,
+                niterations = 10,
+                shuffleHaplotypeIterations = NA,
+                refillIterations = NA,
+                splitReadIterations = NA,
+                tempdir = outputdir,
+                keepTempDir = TRUE
+            )
+            
+            ## includes checking that the sum is correct
+            check_output_against_phase(
+                file = file.path(outputdir, paste0("stitch.", data_packageL$chr, ".vcf.gz")),
+                data_packageL,
+                output_format,
+                which_snps = NULL,
+                tol = 0.2,
+                min_info = 0.85
+            )
+
+            ## hmm, not sure how robust!
+            tempdir <- file.path(outputdir, dir(outputdir)[nchar(dir(outputdir)) == 10])
+            
+            ## check format line exists
+            format_line <- system(paste0("gunzip -c ", shQuote(file.path(outputdir, paste0("stitch.", data_packageL$chr, ".vcf.gz"))), " | grep 'ID=HD'"), intern = TRUE)
+            expect_equal(length(format_line), 1)
+            ## check format line has proper K
+            expect_equal(as.numeric(strsplit(strsplit(format_line, "Number=")[[1]][2], ",")[[1]][1]), K)
+            
+            file <- file.path(outputdir, paste0("stitch.", data_packageL$chr, ".vcf.gz"))
+            vcf <- read.table(file)
+            load(file.path(outputdir, "RData", "EM.all.chr5.RData"))
+            transMatRate_tc_H <- get_transMatRate_m(method = "diploid-inbred", sigmaCurrent = sigmaCurrent_m)
+            transMatRate_tc_D <- get_transMatRate_m(method = "diploid", sigmaCurrent = sigmaCurrent_m)
+            for(i_sample in 1:10) {
+                ## run fbd normally, check OK
+                load(file.path(outputdir, "input", paste0("sample.", i_sample, ".input.chr5.RData")))
+                if (method == "pseudoHaploid") {
+                    load(file.path(tempdir, paste0("sampleProbs.", i_sample, ".input.chr5.RData")))
+                } else {
+                    pRgivenH1_m <- NULL                    
+                    pRgivenH2_m <- NULL
+                }
+                q <- sapply(strsplit(as.character(vcf[, 9 + i_sample]), ":"), I)[4, ]
+                q_t <- sapply(strsplit(q, ","), as.numeric)
+                ## now, re-do
+                fbsoL <- run_forward_backwards(
+                    sampleReads = sampleReads,
+                    method = method,
+                    priorCurrent_m = priorCurrent_m,
+                    alphaMatCurrent_t = alphaMatCurrent_tc,
+                    eHapsCurrent_tc = eHapsCurrent_tc,
+                    transMatRate_tc_H = transMatRate_tc_H,
+                    transMatRate_tc_D = transMatRate_tc_D, 
+                    output_haplotype_dosages = TRUE,
+                    grid = grid,
+                    pRgivenH1_m = pRgivenH1_m,
+                    pRgivenH2_m = pRgivenH2_m,
+                    return_genProbs = TRUE,
+                    return_hapDosage = TRUE
+                )
+                gp_t <- calculate_gp_t_from_fbsoL(
+                    fbsoL = fbsoL,
+                    method = method
+                )
+                ## check result
+                if (method == "pseudoHaploid") {
+                    q_t_here <- fbsoL[[1]]$gammaEK_t + fbsoL[[2]]$gammaEK_t
+                } else {
+                    q_t_here <- fbsoL[[1]]$gammaEK_t * 2
+                }
+                expect_equal(max(abs(q_t - q_t_here)) > 1e-3, FALSE)
+            }
+
+        }
     }
     
 })

@@ -22,7 +22,36 @@ data_packages_few <- lapply(c(FALSE, TRUE), function(samples_are_inbred) {
     )
 })
 names(data_packages_few) <- c("outbred", "inbred")
+extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
 
+
+## fail if no SNPs to impute
+test_that("STITCH throws an error when no SNPs in region to impute, or if fewer than 2 SNPs to impute", {
+
+    for(i in 1:2) {
+        outputdir <- make_unique_tempdir()        
+        expect_error(
+            STITCH(
+                chr = data_package_few$chr,
+                bamlist = data_package_few$bamlist,
+                posfile = data_package_few$posfile,
+                genfile = data_package_few$genfile,
+                outputdir = outputdir,
+                K = 2,
+                nGen = 100,
+                nCores = 1,
+                regionStart = c(11, 10)[i],
+                regionEnd = c(100, 100)[i],
+                buffer = c(5, 0)[i]
+            ),
+            c(
+                "There are no SNPs to impute", 
+                "There are fewer than 2 SNPs to impute, i.e. there is 1 SNP to impute. In this case, imputation is really just genotyping. STITCH could support genotyping but does not, and note that this kind of defeats the point of imputation. Please use your favourite genotyper e.g. GATK to genotype these SNPs. If you strongly disagree please file a bug report and this can be re-examined"
+            )[i]
+        )
+    }
+
+})
 
 ## OK if no SNPs in left buffer, 1 in central, 1 in left buffer
 test_that("STITCH works with very few SNPs in central region and buffer", {

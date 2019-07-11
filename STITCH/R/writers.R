@@ -633,7 +633,6 @@ outputInputInVCFFunction <- function(
     N,
     nCores,
     regionName,
-    environment,
     sampleNames,
     outputBlockSize,
     bundling_info,
@@ -708,19 +707,19 @@ outputInputInVCFFunction <- function(
     ## loop over samples - write to disk!
     ##
     print_message("Prepare data to use to build vcf from input")
-    if (environment == "server") {
-        out2 <- mclapply(x3,mc.cores=nCores,FUN=f, N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, bundling_info = bundling_info, vcf.piece_unique = vcf.piece_unique)
-    }
-    if (environment == "cluster") {
-        cl <- makeCluster(nCores, type = "FORK")
-        out2 <- parLapply(cl, x3, fun=f,N = N, outputBlockSize = outputBlockSize, tempdir = tempdir, regionName = regionName, nSNPs = nSNPs, bundling_info = bundling_info, vcf.piece_unique = vcf.piece_unique)
-        stopCluster(cl)
-    }
-    error_check <- sapply(out2, class) == "try-error"
-    if (sum(error_check) > 0) {
-        print_message(out2[[which(error_check)[1]]])
-        stop("There has been an error generating the input. Please see error message above")
-    }
+    out2 <- mclapply(
+        x3,
+        mc.cores = nCores,
+        FUN = f,
+        N = N,
+        outputBlockSize = outputBlockSize,
+        tempdir = tempdir,
+        regionName = regionName,
+        nSNPs = nSNPs,
+        bundling_info = bundling_info,
+        vcf.piece_unique = vcf.piece_unique
+    )
+    check_mclapply_OK(out2)
     ##
     ##
     ## step 2 - build the VCF itself

@@ -448,33 +448,6 @@ test_that("STITCH with generateInputOnly actually only generates input", {
 
 
 
-## fail if no SNPs to impute
-test_that("STITCH throws an error when no SNPs in region to impute, or if fewer than 2 SNPs to impute", {
-
-    for(i in 1:2) {
-        outputdir <- make_unique_tempdir()        
-        expect_error(
-            STITCH(
-                chr = data_package_few$chr,
-                bamlist = data_package_few$bamlist,
-                posfile = data_package_few$posfile,
-                genfile = data_package_few$genfile,
-                outputdir = outputdir,
-                K = 2,
-                nGen = 100,
-                nCores = 1,
-                regionStart = c(11, 10)[i],
-                regionEnd = c(100, 100)[i],
-                buffer = c(5, 0)[i]
-            ),
-            c(
-                "There are no SNPs to impute", 
-                "There are fewer than 2 SNPs to impute, i.e. there is 1 SNP to impute. In this case, imputation is really just genotyping. STITCH could support genotyping but does not, and note that this kind of defeats the point of imputation. Please use your favourite genotyper e.g. GATK to genotype these SNPs. If you strongly disagree please file a bug report and this can be re-examined"
-            )[i]
-        )
-    }
-
-})
 
 
 test_that("STITCH can get sample names from a file", {
@@ -636,7 +609,7 @@ test_that("STITCH can generate interim plots", {
         ## only care about plumbing and making plots
         d <- dir(file.path(outputdir, "plots"))
         expect_equal(length(grep(paste0("hapSum.", chr, ".iteration."), d)), niterations - 1)
-        expect_equal(length(grep(paste0("alphaMatCurrent.", chr, ".iteration."), d)), 2 * (niterations - 1))
+        expect_equal(length(grep(paste0("alphaMat.", chr, ".iteration."), d)), 2 * (niterations - 1))
 
     }
 
