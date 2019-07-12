@@ -459,44 +459,6 @@ run_EM_on_reference_sample_reads <- function(
     plotHapSumDuringIterations
 ) {
 
-    save(
-    eHapsCurrent_tc,
-    alphaMatCurrent_tc,
-    hapSumCurrent_tc,
-    sigmaCurrent_m,
-    priorCurrent_m,
-    reference_iterations,
-    N_haps,
-    nCores,
-    reference_bundling_info,
-    tempdir,
-    regionName,
-    nSNPs,
-    nGrids,
-    L,
-    nGen,
-    emissionThreshold,
-    alphaMatThreshold,
-    expRate,
-    minRate,
-    maxRate,
-    pseudoHaploidModel,
-    reference_phred,
-    grid_distances,
-    reference_shuffleHaplotypeIterations,
-    L_grid,
-    grid,
-    plot_shuffle_haplotype_attempts,
-    shuffle_bin_radius,
-    snps_in_grid_1_based,
-    outputdir,
-    plotHapSumDuringIterations,
-    file = "~/temp.RData")
-    stop("WER")
-    load("~/temp.RData")
-plotHapSumDuringIterations <- TRUE   
-
-    
     ## note - for haplotype shuffling
     ## after   (iteration - 1), find the spots to examine
     ## during  (iteration - 0), examine the shuffling
