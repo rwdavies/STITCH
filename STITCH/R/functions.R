@@ -611,7 +611,7 @@ STITCH <- function(
                     hapSumCurrent_tc, eHapsCurrent_tc, alphaMatCurrent_tc, sigmaCurrent_m ,priorCurrent_m, eHapsFuture_tc, alphaMatFuture_tc , sigmaFuture_m, priorFuture_m,
                     file = file.path(outputdir, "RData", paste0("interim.",regionName,".iteration",iteration,".RData"))
                 )
-p            }
+            }
             ## plot interim plots to understand performance better
             if (plotHapSumDuringIterations) {
                 interim_plotter(
@@ -5102,7 +5102,7 @@ snap_reads_to_grid <- function(
         x2 <- mean(allSampleReadsStats[, 2])
         y <- nrow(allSampleReadsStats)
         print_message(paste0(
-            "Warning - When assigning reads to grids, ",
+            "Note - When assigning reads to grids, ",
             sum(allSampleReadsStats[, 1] > 0), " out of ", y, " ",
             "samples had reads removed, with on average (across all samples) ",
             round(x1, 3), " / ", round(x2, 3), " ",
