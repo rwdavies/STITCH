@@ -3326,7 +3326,7 @@ within_EM_per_sample_heuristics <- function(
         ## so S = 1, this reverts to original method
         ## 
         if (method == "pseudoHaploid") {
-            gammaK_t <- fbsoL[[1]][["list_of_gammaK_t"]][[S]] + fbsoL[[2]][["gammaK_t"]][[S]]
+            gammaK_t <- fbsoL[[1]][["list_of_gammaK_t"]][[S]] + fbsoL[[2]][["list_of_gammaK_t"]][[S]]
         } else {
             gammaK_t <- fbsoL[[1]][["list_of_gammaK_t"]][[S]]
         }
@@ -3597,7 +3597,7 @@ subset_of_complete_iteration <- function(
             srp <- out$srp
             bundledSampleProbs <- out$bundledSampleProbs
         }
-        
+
         fbsoL <- run_forward_backwards(
             sampleReads = sampleReads,
             method = method,
@@ -3976,7 +3976,8 @@ completeSampleIteration <- function(
             grid_distances = grid_distances,
             L_grid = L_grid,
             outputdir = outputdir,
-            is_reference = FALSE
+            is_reference = FALSE,
+            plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts
         )
         gammaSum_tc <- out$eHapsCurrent_tc
         alphaMatSum_tc <- out$alphaMatCurrent_tc
@@ -4866,6 +4867,33 @@ bound_pRgivenH <- function(pRgivenH1_m, pRgivenH2_m, e = 0.001) {
         }
         b <- which(c1 & c2, arr.ind = TRUE)
         if (nrow(b) > 0) {
+            ## some are too low - now - to prevent really low, add e * e, or (1 -e) * (1 - e)
+            ## to them
+            if (j == 1) {
+                pRgivenH1_m[b] <- pRgivenH1_m[b] + e * e
+                pRgivenH2_m[b] <- pRgivenH2_m[b] + e * e                
+            } else {
+                pRgivenH1_m[b] <- pRgivenH1_m[b] - e * e
+                pRgivenH2_m[b] <- pRgivenH2_m[b] - e * e                
+            }
+        }
+        if (j == 1) {
+            c1 <- (pRgivenH1_m < e)
+            c2 <- (pRgivenH2_m < e)
+        } else {
+            c1 <- (1 - e) < pRgivenH1_m
+            c2 <- (1 - e) < pRgivenH2_m
+        }
+        b <- which(c1 & c2, arr.ind = TRUE)
+        ## now - same as before
+        if (nrow(b) > 0) {
+            if (j == 1) {
+                pRgivenH1_m[b][pRgivenH1_m[b] == 0] <- e * e
+                pRgivenH2_m[b][pRgivenH2_m[b] == 0] <- e * e
+            } else {
+                pRgivenH1_m[b][pRgivenH1_m[b] == 1] <- 1 - e * e
+                pRgivenH2_m[b][pRgivenH2_m[b] == 1] <- 1 - e * e
+            }
             s <- (pRgivenH1_m[b] + pRgivenH2_m[b]) / e
             pRgivenH1_m[b] <- pRgivenH1_m[b] / s
             pRgivenH2_m[b] <- pRgivenH2_m[b] / s
@@ -4924,6 +4952,7 @@ pseudoHaploidUpdate <- function(
     if(pseudoHaploidModel==7 | pseudoHaploidModel==9) {
         ##
         ##
+
         out <- pseudoHaploid_update_model_9(
             pRgivenH1_m = pRgivenH1_m,
             pRgivenH2_m = pRgivenH2_m,
@@ -4934,6 +4963,7 @@ pseudoHaploidUpdate <- function(
             K = K,
             srp = srp
         )
+        
         out <- bound_pRgivenH(
             pRgivenH1_m = out$pRgivenH1_m,
             pRgivenH2_m = out$pRgivenH2_m,

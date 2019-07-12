@@ -1056,7 +1056,8 @@ apply_better_switches_if_appropriate <- function(
     grid_distances,
     L_grid,
     outputdir,
-    is_reference
+    is_reference,
+    plot_shuffle_haplotype_attempts
 ) {
     ## only do for s that suit it
     K <- dim(eHapsCurrent_tc)[1]

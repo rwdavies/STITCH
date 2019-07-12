@@ -173,7 +173,7 @@ bundle_inputs_after_generation <- function(
             } else if (what == "sampleProbs") {
                 file <- file_sampleProbs(dir, iBam, regionName)
                 load(file = file)
-                return(list(pRgivenH1 = pRgivenH1, pRgivenH2 = pRgivenH2, srp = srp))
+                return(list(pRgivenH1_m = pRgivenH1_m, pRgivenH2_m= pRgivenH2_m, srp = srp))
             } else if (what == "referenceSampleReads") {
                 file <- file_referenceSampleReads(dir, iBam, regionName)
                 load(file = file)

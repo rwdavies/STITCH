@@ -368,14 +368,14 @@ option_list <- list(
     make_option(
         "--initial_min_hapProb",
         type = "double",
-        help = "Initial lower bound for probability read comes from haplotype. Double bounded between 0 and 1 [default 0.4] ",
-        default = 0.4
+        help = "Initial lower bound for probability read comes from haplotype. Double bounded between 0 and 1 [default 0.2] ",
+        default = 0.2
     ), 
     make_option(
         "--initial_max_hapProb",
         type = "double",
-        help = "Initial upper bound for probability read comes from haplotype. Double bounded between 0 and 1 [default 0.6] ",
-        default = 0.6
+        help = "Initial upper bound for probability read comes from haplotype. Double bounded between 0 and 1 [default 0.8] ",
+        default = 0.8
     ), 
     make_option(
         "--regenerateInputWithDefaultValues",
