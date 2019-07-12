@@ -1,7 +1,7 @@
 if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
-    ##    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
     dir <- "~/proj/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")

@@ -566,7 +566,6 @@ STITCH <- function(
     ## run EM algorithm here
     ##
     print_message_and_save_time(outputdir, regionName, "Start EM", "startEM")
-
     print_message(paste0("Number of samples: ", N))
     print_message(paste0("Number of SNPs: ", nSNPs))
     if (nGrids != nSNPs) {
@@ -612,7 +611,7 @@ STITCH <- function(
                     hapSumCurrent_tc, eHapsCurrent_tc, alphaMatCurrent_tc, sigmaCurrent_m ,priorCurrent_m, eHapsFuture_tc, alphaMatFuture_tc , sigmaFuture_m, priorFuture_m,
                     file = file.path(outputdir, "RData", paste0("interim.",regionName,".iteration",iteration,".RData"))
                 )
-            }
+p            }
             ## plot interim plots to understand performance better
             if (plotHapSumDuringIterations) {
                 interim_plotter(
@@ -3202,7 +3201,7 @@ within_EM_per_sample_heuristics <- function(
     samples_with_phase,
     i_core,
     sampleRange,
-    fbd_store,
+    list_of_fbd_store,
     plot_shuffle_haplotype_attempts,
     grid_distances,
     return_a_sampled_path,
@@ -3215,33 +3214,36 @@ within_EM_per_sample_heuristics <- function(
     K <- dim(eHapsCurrent_tc)[1]
     S <- dim(eHapsCurrent_tc)[3]
     ##
-    for(s in 1:S) {
-        if (nbreaks[s] > 0) {
-            break_results <- list_of_break_results[[s]]
-            for(iBreak in 1:nbreaks[s]) {
-                from <- break_results[iBreak, "left_grid_break_0_based"]
-                to <- break_results[iBreak, "right_grid_break_0_based"]
-                hp1 <- fbsoL$gammaK_t[, from + 1]
-                hp2 <- fbsoL$gammaK_t[, to + 1]
+    for(s in which(nbreaks > 0)) {
+        break_results <- list_of_break_results[[s]]
+        for(iBreak in 1:nbreaks[s]) {
+            from <- break_results[iBreak, "left_grid_break_0_based"]
+            to <- break_results[iBreak, "right_grid_break_0_based"]
+            for(iNor in 1:length(fbsoL)) {
+                hp1 <- fbsoL[[1]]$list_of_gammaK[[s]][, from + 1]
+                hp2 <- fbsoL[[1]]$list_of_gammaK[[s]][, to + 1]
                 list_of_fromMat[[s]][iBreak, , ] <-
                     list_of_fromMat[[s]][iBreak, , ] + hp1 %*% t(hp2)
             }
-            if (plot_shuffle_haplotype_attempts) {
-                i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
-                if (i_core == 1) {
-                    M <- min(20, sampleRange[2]) ## how many to plot
-                    if (iSample == 1) {
-                        fbd_store <- as.list(1:M)
-                    }
-                    if (iSample <= M) {
-                        ## this needs to be R <- fbd_store[[iSample]]$gammaK_t
-                        fbd_store[[iSample]] <- list(gammaK_t = fbsoL[["gamma_t"]])
-                    }
-                    if (iSample == M) {
-                        save(fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
-                        fbd_store <- NULL
-                    }
-                }
+        }
+        if (plot_shuffle_haplotype_attempts & (i_core == 1)) {
+            M <- min(20, sampleRange[2]) ## how many to plot
+            ## initialize if first sample, and first time we've seen s
+            if (iSample == 1 & (s == min(which(nbreaks > 0)))) {
+                list_of_fbd_store <- lapply(1:S, function(s) {
+                    return(as.list(1:M))
+                })
+            }
+            if (iSample <= M) {
+                ## so now we have list_of_gammaK_t
+                ## will have to re-format later
+                list_of_fbd_store[[s]][[iSample]] <- list(gammaK_t = fbsoL[[1]][["list_of_gammaK_t"]][[s]])
+                ## this needs to be R <- fbd_store[[iSample]]$gammaK_t
+                ## fbd_store[[iSample]] <- list(gammaK_t = fbsoL[["gammaK_t"]])
+            }
+            if (iSample == M & s == max(which(nbreaks > 0))) {
+                save(list_of_fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
+                list_of_fbd_store <- NULL
             }
         }
     }
@@ -3324,20 +3326,21 @@ within_EM_per_sample_heuristics <- function(
         ## so S = 1, this reverts to original method
         ## 
         if (method == "pseudoHaploid") {
-            gammaK_t <- fbsoL[[1]][["gammaK_t"]] + fbsoL[[2]][["gammaK_t"]]
+            gammaK_t <- fbsoL[[1]][["list_of_gammaK_t"]][[S]] + fbsoL[[2]][["gammaK_t"]][[S]]
         } else {
-            gammaK_t <- fbsoL[[1]][["gammaK_t"]]
+            gammaK_t <- fbsoL[[1]][["list_of_gammaK_t"]][[S]]
         }
         ##
         out <- findRecombinedReadsPerSample(
-            gammaK_t = fbsoL[[1]]$gammaK_t,
-            eHapsCurrent_t = eHapsCurrent_tc[, , s],
+            gammaK_t = gammaK_t,
+            eHapsCurrent_t = eHapsCurrent_tc[, , S],
             L = L,
             iSample = iSample,
             sampleReads = sampleReads,
             tempdir = tempdir,
             regionName = regionName,
-            grid = grid
+            grid = grid,
+            verbose = FALSE
         )
         readsTotal[iSample] <- out$readsTotal
         readsSplit[iSample] <- out$readsSplit
@@ -3352,7 +3355,7 @@ within_EM_per_sample_heuristics <- function(
             readsSplit = readsSplit,
             restartMatrixList = restartMatrixList,
             list_of_fromMat = list_of_fromMat,
-            fbd_store = fbd_store,
+            list_of_fbd_store = list_of_fbd_store,
             sampledPathList = sampledPathList
         )
     )
@@ -3547,7 +3550,7 @@ subset_of_complete_iteration <- function(
     pRgivenH2_m <- NULL
     srp <- NULL
     bundledSampleProbs <- NULL
-    fbd_store <- NULL ## for plotting shuffle haplotype itetself
+    list_of_fbd_store <- NULL ## for plotting shuffle haplotype itetself
 
     ## on this iteration, sample paths
     if (iteration %in% minimizeSwitchingIterations) {
@@ -3698,7 +3701,7 @@ subset_of_complete_iteration <- function(
             samples_with_phase = samples_with_phase,
             i_core = i_core,
             sampleRange = sampleRange,
-            fbd_store = fbd_store,
+            list_of_fbd_store = list_of_fbd_store,
             plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
             grid_distances = grid_distances,
             return_a_sampled_path = return_a_sampled_path,
@@ -3710,7 +3713,7 @@ subset_of_complete_iteration <- function(
         readsSplit <- out$readsSplit
         restartMatrixList <- out$restartMatrixList
         list_of_fromMat <- out$list_of_fromMat
-        fbd_store <- out$fbd_store
+        list_of_fbd_store <- out$list_of_fbd_store
         sampledPathList <- out$sampledPathList
 
     }
@@ -3924,7 +3927,7 @@ completeSampleIteration <- function(
     restartMatrixList <- out$restartMatrixList
     readsTotal <- out$readsTotal
     readsSplit <- out$readsSplit
-    list_of_fromMat <- out$list_of_romMat
+    list_of_fromMat <- out$list_of_fromMat
     rm(out)
     
     if(split_iteration) {
@@ -3959,9 +3962,25 @@ completeSampleIteration <- function(
     ## do haplotype shuffling
     ##
     if (sum(nbreaks) > 0) {
-        apply_better_switches_if_appropriate(list_of_fromMat = list_of_fromMat, nbreaks = nbreaks, list_of_break_results = list_of_break_results, eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, grid = grid, iteration = iteration, snps_in_grid_1_based = snps_in_grid_1_based, tempdir = tempdir, regionName = regionName, grid_distances = grid_distances, L_grid = L_grid, outputdir = outputdir)
-        eHapsCurrent_tc <- out$eHapsCurrent_tc
-        alphaMatCurrent_tc <- out$alphaMatCurrent_tc
+        out <- apply_better_switches_if_appropriate(
+            list_of_fromMat = list_of_fromMat,
+            nbreaks = nbreaks,
+            list_of_break_results = list_of_break_results,
+            eHapsCurrent_tc = gammaSum_tc,
+            alphaMatCurrent_tc = alphaMatSum_tc,
+            grid = grid,
+            iteration = iteration,
+            snps_in_grid_1_based = snps_in_grid_1_based,
+            tempdir = tempdir,
+            regionName = regionName,
+            grid_distances = grid_distances,
+            L_grid = L_grid,
+            outputdir = outputdir,
+            is_reference = FALSE
+        )
+        gammaSum_tc <- out$eHapsCurrent_tc
+        alphaMatSum_tc <- out$alphaMatCurrent_tc
+        rm(out)
     }
     
     ##
@@ -4044,8 +4063,9 @@ calculate_misc_updates <- function(
             nbreak <- nbreaks[s]
             fromMat <- array(0, c(nbreak, K, K))            
             for(i in 1:length(sampleRanges)) {
-                fromMat_c <- fromMat_c + out2[[i]][["list_of_fromMat"]][[s]]
+                fromMat <- fromMat + out2[[i]][["list_of_fromMat"]][[s]]
             }
+            return(fromMat)
         })
     } else {
         list_of_fromMat <- NULL
@@ -4790,78 +4810,6 @@ get_reads_worse_than_50_50 <- function(sampleReads, eHapsCurrent_t, K) {
 
 
 
-split_a_read <- function(
-    sampleReads,
-    read_to_split,
-    gammaK_t,
-    L,
-    eHapsCurrent_t,
-    K,
-    grid
-) {
-
-    did_split <- FALSE
-    sampleRead <- sampleReads[[read_to_split]]
-
-    ## get the likely for and after states
-    ## by checking, a few reads up and downstream, what changes
-    ## note - probably want to change this to per-base, not per-read!
-    startRead <- max(1, read_to_split - 10)
-    endRead <- min(length(sampleReads), read_to_split + 10)
-    ##
-    startGammaGrid <- sampleReads[[startRead]][[2]] + 1
-    endGammaGrid <- sampleReads[[endRead]][[2]] + 1
-
-    change <- apply(gammaK_t[, c(startGammaGrid, endGammaGrid)], 1, diff)
-    ## from is the one that drops the most
-    ## to is the one that gains the most
-    from <- which.min(change)
-    to <- which.max(change)
-
-    ## try a break between all SNPs - take the best one
-    y <- eHapsCurrent_t[, sampleRead[[4]] + 1]
-
-    bqProbs <- convertScaledBQtoProbs(sampleRead[[3]])
-    g1 <- bqProbs[, 2] * y[from, ] +
-          bqProbs[, 1] * (1 - y[from, ])
-    g2 <- bqProbs[, 2] * y[to, ] +
-          bqProbs[, 1] * (1 - y[to, ])
-
-    ## sum probabilities
-    ## best split is between SNPs
-    z <- sapply(1:(sampleRead[[1]]),function(a) {
-        x1 <- sum(g1[1:a])
-        x2 <- sum(g2[(a+1):(sampleRead[[1]] + 1)])
-        sum(x1 + x2)
-    })
-    best_split <- which.max(z) ## between this and + 1
-
-    u <- log(
-        split_function(eHapsCurrent_t, sampleRead, K)[ K + 1]
-    )
-
-    if (max(z)>u) {
-        new_read_1 <- get_sampleRead_from_SNP_i_to_SNP_j(
-            sampleRead, 1, best_split, L, grid
-        )
-        new_read_2 <- get_sampleRead_from_SNP_i_to_SNP_j(
-            sampleRead, best_split + 1, sampleRead[[1]] + 1, L, grid
-        )
-        sampleReads[[read_to_split]] <- new_read_1
-        sampleReads <- append(
-            sampleReads,
-            list(new_read_2)
-        )
-        did_split <- TRUE
-    }
-
-    return(
-        list(
-            sampleReads = sampleReads,
-            did_split = did_split
-        )
-    )
-}
 
 
 

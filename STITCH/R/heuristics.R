@@ -669,7 +669,7 @@ plot_attempt_to_find_shuffles <- function(
             abline(v = 1e6 * f, col = "grey")
         }
     }
-    if (S > 1) {
+    if (S == 1) {
         suffix <- ".png"
     } else {
         suffix <- paste0(".s.", s, ".png")
@@ -1055,13 +1055,14 @@ apply_better_switches_if_appropriate <- function(
     regionName,
     grid_distances,
     L_grid,
-    outputdir
+    outputdir,
+    is_reference
 ) {
     ## only do for s that suit it
     K <- dim(eHapsCurrent_tc)[1]
     S <- dim(eHapsCurrent_tc)[3]
     ## 
-    list_of_whichIsBest <- lapply(NA, S)
+    list_of_whichIsBest <- lapply(1:S, function(s) return(NA))
     for(s in 1:S) {
         if (nbreaks[s] > 0) {
             out <- getBetterSwitchesSimple(
@@ -1088,10 +1089,13 @@ apply_better_switches_if_appropriate <- function(
         ))
     }
     if (plot_shuffle_haplotype_attempts && sum(nbreaks) > 0) {
-        stop("fix plotting")
         ## a single run, everything inside
         load(file = file_fbdStore(tempdir, regionName, iteration)) ## to load fbdStore
-        plot_attempt_to_find_shuffles(grid_distances = grid_distances, L_grid = L_grid, fbd_store = fbd_store, tempdir = tempdir, outputdir = outputdir, regionName = regionName, iteration = iteration, list_of_whichIsBest = list_of_whichIsBest, is_reference = TRUE)
+        for(s in 1:S) {
+            if (nbreaks[s] > 0) {
+                plot_attempt_to_find_shuffles(grid_distances = grid_distances, L_grid = L_grid, fbd_store = list_of_fbd_store[[s]], tempdir = tempdir, outputdir = outputdir, regionName = regionName, iteration = iteration, whichIsBest = list_of_whichIsBest[[s]], is_reference = is_reference, s = s, S = S)
+            }
+        }
     }
     return(
         list(
@@ -1111,7 +1115,8 @@ findRecombinedReadsPerSample <- function(
     sampleReads,
     tempdir,
     regionName,
-    grid
+    grid,
+    verbose = TRUE
 ) {
     K <- dim(eHapsCurrent_t)[1]
     ## needs a full run
@@ -1139,9 +1144,11 @@ findRecombinedReadsPerSample <- function(
         } # end of loop on reads
         sampleReads <- sampleReads[order(unlist(lapply(sampleReads,function(x) x[[2]])))]
         save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
-        print_message(paste0(
-            "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
-        ))
+        if (verbose) {
+            print_message(paste0(
+                "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
+            ))
+        }
     }
     return(
         list(
@@ -1151,3 +1158,76 @@ findRecombinedReadsPerSample <- function(
     )
 }
 
+
+split_a_read <- function(
+    sampleReads,
+    read_to_split,
+    gammaK_t,
+    L,
+    eHapsCurrent_t,
+    K,
+    grid
+) {
+
+    did_split <- FALSE
+    sampleRead <- sampleReads[[read_to_split]]
+
+    ## get the likely for and after states
+    ## by checking, a few reads up and downstream, what changes
+    ## note - probably want to change this to per-base, not per-read!
+    startRead <- max(1, read_to_split - 10)
+    endRead <- min(length(sampleReads), read_to_split + 10)
+    ##
+    startGammaGrid <- sampleReads[[startRead]][[2]] + 1
+    endGammaGrid <- sampleReads[[endRead]][[2]] + 1
+
+    change <- apply(gammaK_t[, c(startGammaGrid, endGammaGrid)], 1, diff)
+    ## from is the one that drops the most
+    ## to is the one that gains the most
+    from <- which.min(change)
+    to <- which.max(change)
+
+    ## try a break between all SNPs - take the best one
+    y <- eHapsCurrent_t[, sampleRead[[4]] + 1]
+
+    bqProbs <- convertScaledBQtoProbs(sampleRead[[3]])
+    g1 <- bqProbs[, 2] * y[from, ] +
+          bqProbs[, 1] * (1 - y[from, ])
+    g2 <- bqProbs[, 2] * y[to, ] +
+          bqProbs[, 1] * (1 - y[to, ])
+
+    ## sum probabilities
+    ## best split is between SNPs
+    z <- sapply(1:(sampleRead[[1]]),function(a) {
+        x1 <- sum(g1[1:a])
+        x2 <- sum(g2[(a+1):(sampleRead[[1]] + 1)])
+        sum(x1 + x2)
+    })
+    best_split <- which.max(z) ## between this and + 1
+
+    u <- log(
+        split_function(eHapsCurrent_t, sampleRead, K)[ K + 1]
+    )
+
+    if (max(z)>u) {
+        new_read_1 <- get_sampleRead_from_SNP_i_to_SNP_j(
+            sampleRead, 1, best_split, L, grid
+        )
+        new_read_2 <- get_sampleRead_from_SNP_i_to_SNP_j(
+            sampleRead, best_split + 1, sampleRead[[1]] + 1, L, grid
+        )
+        sampleReads[[read_to_split]] <- new_read_1
+        sampleReads <- append(
+            sampleReads,
+            list(new_read_2)
+        )
+        did_split <- TRUE
+    }
+
+    return(
+        list(
+            sampleReads = sampleReads,
+            did_split = did_split
+        )
+    )
+}
