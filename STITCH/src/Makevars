@@ -13,6 +13,8 @@ CXX=$(shell "R CMD config CXX")
 CPPFLAGS=$(shell "R CMD config CPPFLAGS")
 LDFLAGS=$(shell "R CMD config LDFLAGS")
 
+## 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
+
 SeqLib:
 	(cd SeqLib && \
 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \

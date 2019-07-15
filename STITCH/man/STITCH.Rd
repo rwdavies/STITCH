@@ -4,13 +4,14 @@
 \alias{STITCH}
 \title{Sequencing To Imputation Through Constructing Haplotypes}
 \usage{
-STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
-  cramlist = "", sampleNames_file = "", reference = "",
-  genfile = "", method = "diploid", output_format = "bgvcf",
-  B_bit_prob = 16, outputInputInVCFFormat = FALSE,
-  downsampleToCov = 50, downsampleFraction = 1, readAware = TRUE,
-  chrStart = NA, chrEnd = NA, regionStart = NA, regionEnd = NA,
-  buffer = NA, maxDifferenceBetweenReads = 1000,
+STITCH(chr, nGen, posfile, K, S = 1, outputdir, nStarts, tempdir = NA,
+  bamlist = "", cramlist = "", sampleNames_file = "",
+  reference = "", genfile = "", method = "diploid",
+  output_format = "bgvcf", B_bit_prob = 16,
+  outputInputInVCFFormat = FALSE, downsampleToCov = 50,
+  downsampleFraction = 1, readAware = TRUE, chrStart = NA,
+  chrEnd = NA, regionStart = NA, regionEnd = NA, buffer = NA,
+  maxDifferenceBetweenReads = 1000,
   maxEmissionMatrixDifference = 1e+10, alphaMatThreshold = 1e-04,
   emissionThreshold = 1e-04, iSizeUpperLimit = as.integer(600),
   bqFilter = as.integer(17), niterations = 40,
@@ -29,8 +30,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
   reference_sample_file = "", reference_populations = NA,
   reference_phred = 20, reference_iterations = 40,
   reference_shuffleHaplotypeIterations = c(4, 8, 12, 16),
-  output_filename = NULL, initial_min_hapProb = 0.4,
-  initial_max_hapProb = 0.6, regenerateInputWithDefaultValues = FALSE,
+  output_filename = NULL, initial_min_hapProb = 0.2,
+  initial_max_hapProb = 0.8, regenerateInputWithDefaultValues = FALSE,
   plotHapSumDuringIterations = FALSE,
   plot_shuffle_haplotype_attempts = FALSE, plotAfterImputation = TRUE,
   save_sampleReadsInfo = FALSE, gridWindowSize = NA,
@@ -46,6 +47,8 @@ STITCH(chr, nGen, posfile, K, outputdir, tempdir = NA, bamlist = "",
 \item{posfile}{Where to find file with positions to run. File is tab seperated with no header, one row per SNP, with col 1 = chromosome, col 2 = physical position (sorted from smallest to largest), col 3 = reference base, col 4 = alternate base. Bases are capitalized. Example first row: 1<tab>1000<tab>A<tab>G<tab>}
 
 \item{K}{How many founder / mosaic haplotypes to use}
+
+\item{S}{How many sets of founder / mosaic haplotypes to use}
 
 \item{outputdir}{What output directory to use}
 

@@ -36,7 +36,7 @@ validate_output_filename <- function(
     } else {
         stop("internal error")
     }
-    min_chars <- (nchar(extension))        
+    min_chars <- (nchar(extension))
     if (is.null(output_filename) == FALSE) {
         err_msg <- paste0("output_filename must have at least ", min_chars + 1, " characters and end with ", extension, ", and you have supplied:", output_filename)
         if (nchar(output_filename) < min_chars) {
@@ -435,6 +435,19 @@ validate_K <- function(K) {
     return(NULL)
 }
 
+validate_S <- function(S) {
+    if (is.numeric(S) == FALSE) {
+        stop(paste0("S must be numeric but class(S)=", class(S)))
+    }
+    if (round(S) != S) {
+        stop(paste0("S must be an integer but you have selected S = ", S))
+    }
+    if (S < 1) {
+        stop(paste0("S must be an integer greater than 0 S = ", S))
+    }
+    return(NULL)
+}
+
 validate_K_subset <- function(method, K, K_subset) {
     if (method == "diploid_subset") {
         if (is.na(K_subset)) {
@@ -646,7 +659,7 @@ validate_region_to_impute_when_using_regionStart <- function(L, regionStart, reg
                 nCentralSNPs <- s
         }
         if (i == 3) {
-            s <- sum( (regionEnd < L) & (L <= (regionEnd + buffer))) ## right region            
+            s <- sum( (regionEnd < L) & (L <= (regionEnd + buffer))) ## right region
             x <- paste0(regionEnd, " < position <= ", regionEnd + buffer)
         }
         print_message(
@@ -670,10 +683,13 @@ validate_region_to_impute_when_using_regionStart <- function(L, regionStart, reg
 
 ## basically, for now, can only do if vcf
 ## ? no other resctrictions?
-validate_output_haplotype_dosages <- function(output_haplotype_dosages, output_format) {
+validate_output_haplotype_dosages <- function(output_haplotype_dosages, output_format, S) {
     if (output_haplotype_dosages) {
         if (output_format != "bgvcf") {
             stop("Currently, can only output ancestral haplotype dosages with bgvcf")
+        }
+        if (S > 1) {
+            stop("Currently output haplotypes can only be output with S=1")
         }
     }
     return(NULL)

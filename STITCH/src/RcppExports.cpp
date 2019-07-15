@@ -90,110 +90,140 @@ BEGIN_RCPP
 END_RCPP
 }
 // collapse_diploid_gamma
-arma::mat collapse_diploid_gamma(const arma::mat& gamma_t, const int T, const int K);
-RcppExport SEXP _STITCH_collapse_diploid_gamma(SEXP gamma_tSEXP, SEXP TSEXP, SEXP KSEXP) {
+void collapse_diploid_gamma(arma::mat& gamma_t, arma::mat& gammaK_t, double& prev, const int suppressOutput, std::string& prev_section, std::string& next_section);
+RcppExport SEXP _STITCH_collapse_diploid_gamma(SEXP gamma_tSEXP, SEXP gammaK_tSEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
-    Rcpp::traits::input_parameter< const int >::type T(TSEXP);
-    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
-    rcpp_result_gen = Rcpp::wrap(collapse_diploid_gamma(gamma_t, T, K));
-    return rcpp_result_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type gammaK_t(gammaK_tSEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
+    collapse_diploid_gamma(gamma_t, gammaK_t, prev, suppressOutput, prev_section, next_section);
+    return R_NilValue;
 END_RCPP
 }
-// rcpp_make_and_bound_eMat_t
-arma::mat rcpp_make_and_bound_eMat_t(const arma::mat& eMatHap_t, const Rcpp::List& sampleReads, const int& nReads, const int& K, const int& T, const double& maxEmissionMatrixDifference, const int run_fb_grid_offset, const bool rescale_eMat_t);
-RcppExport SEXP _STITCH_rcpp_make_and_bound_eMat_t(SEXP eMatHap_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP KSEXP, SEXP TSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP run_fb_grid_offsetSEXP, SEXP rescale_eMat_tSEXP) {
+// rcpp_make_and_bound_eMatGrid_diploid_t
+void rcpp_make_and_bound_eMatGrid_diploid_t(arma::mat& eMatGrid_t, const arma::mat& eMatRead_t, const Rcpp::List& sampleReads, const double& maxEmissionMatrixDifference, double& prev, const int suppressOutput, std::string& prev_section, std::string& next_section, const int run_fb_grid_offset, const bool rescale_eMatGrid_t);
+RcppExport SEXP _STITCH_rcpp_make_and_bound_eMatGrid_diploid_t(SEXP eMatGrid_tSEXP, SEXP eMatRead_tSEXP, SEXP sampleReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP, SEXP run_fb_grid_offsetSEXP, SEXP rescale_eMatGrid_tSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHap_t(eMatHap_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatRead_t(eMatRead_tSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const int& >::type T(TSEXP);
     Rcpp::traits::input_parameter< const double& >::type maxEmissionMatrixDifference(maxEmissionMatrixDifferenceSEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
     Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rescale_eMat_t(rescale_eMat_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_and_bound_eMat_t(eMatHap_t, sampleReads, nReads, K, T, maxEmissionMatrixDifference, run_fb_grid_offset, rescale_eMat_t));
-    return rcpp_result_gen;
+    Rcpp::traits::input_parameter< const bool >::type rescale_eMatGrid_t(rescale_eMatGrid_tSEXP);
+    rcpp_make_and_bound_eMatGrid_diploid_t(eMatGrid_t, eMatRead_t, sampleReads, maxEmissionMatrixDifference, prev, suppressOutput, prev_section, next_section, run_fb_grid_offset, rescale_eMatGrid_t);
+    return R_NilValue;
 END_RCPP
 }
 // sample_diploid_path
-arma::imat sample_diploid_path(const arma::mat& alphaHat_t, const arma::mat& transMatRate_t_D, const arma::mat& eMat_t, const arma::mat& alphaMat_t, const int T, const int K, const arma::rowvec& c);
-RcppExport SEXP _STITCH_sample_diploid_path(SEXP alphaHat_tSEXP, SEXP transMatRate_t_DSEXP, SEXP eMat_tSEXP, SEXP alphaMat_tSEXP, SEXP TSEXP, SEXP KSEXP, SEXP cSEXP) {
+arma::imat sample_diploid_path(const arma::mat& alphaHat_t, const arma::mat& transMatRate_t_D, const arma::mat& eMatGrid_t, const arma::mat& alphaMat_t, const int T, const int K, const arma::rowvec& c);
+RcppExport SEXP _STITCH_sample_diploid_path(SEXP alphaHat_tSEXP, SEXP transMatRate_t_DSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMat_tSEXP, SEXP TSEXP, SEXP KSEXP, SEXP cSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_D(transMatRate_t_DSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMat_t(eMat_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
     Rcpp::traits::input_parameter< const int >::type T(TSEXP);
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
     Rcpp::traits::input_parameter< const arma::rowvec& >::type c(cSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_diploid_path(alphaHat_t, transMatRate_t_D, eMat_t, alphaMat_t, T, K, c));
+    rcpp_result_gen = Rcpp::wrap(sample_diploid_path(alphaHat_t, transMatRate_t_D, eMatGrid_t, alphaMat_t, T, K, c));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_make_diploid_jUpdate
-void rcpp_make_diploid_jUpdate(arma::mat& jUpdate_t, const int K, const int T, const arma::mat& alphaHat_t, const arma::mat& betaHat_t, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eMat_t);
-RcppExport SEXP _STITCH_rcpp_make_diploid_jUpdate(SEXP jUpdate_tSEXP, SEXP KSEXP, SEXP TSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eMat_tSEXP) {
+void rcpp_make_diploid_jUpdate(arma::cube& alphaMatSum_tc, int s, const arma::mat& alphaHat_t, const arma::mat& betaHat_t, const arma::cube& transMatRate_tc_D, const arma::cube& alphaMatCurrent_tc, const arma::mat& eMatGrid_t, double& prev, const int suppressOutput, std::string& prev_section, std::string& next_section);
+RcppExport SEXP _STITCH_rcpp_make_diploid_jUpdate(SEXP alphaMatSum_tcSEXP, SEXP sSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP transMatRate_tc_DSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP eMatGrid_tSEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat& >::type jUpdate_t(jUpdate_tSEXP);
-    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type alphaMatSum_tc(alphaMatSum_tcSEXP);
+    Rcpp::traits::input_parameter< int >::type s(sSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type betaHat_t(betaHat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_D(transMatRate_t_DSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMat_t(eMat_tSEXP);
-    rcpp_make_diploid_jUpdate(jUpdate_t, K, T, alphaHat_t, betaHat_t, transMatRate_t_D, alphaMat_t, eMat_t);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_D(transMatRate_tc_DSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
+    rcpp_make_diploid_jUpdate(alphaMatSum_tc, s, alphaHat_t, betaHat_t, transMatRate_tc_D, alphaMatCurrent_tc, eMatGrid_t, prev, suppressOutput, prev_section, next_section);
+    return R_NilValue;
+END_RCPP
+}
+// rcpp_calculate_fbd_dosage
+void rcpp_calculate_fbd_dosage(arma::mat& genProbs_t, const arma::cube& eHapsCurrent_tc, int s, const arma::mat& gamma_t, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, double& prev, const int suppressOutput, std::string& prev_section, std::string& next_section, const int grid_offset);
+RcppExport SEXP _STITCH_rcpp_calculate_fbd_dosage(SEXP genProbs_tSEXP, SEXP eHapsCurrent_tcSEXP, SEXP sSEXP, SEXP gamma_tSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP, SEXP grid_offsetSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type genProbs_t(genProbs_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< int >::type s(sSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid(gridSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
+    Rcpp::traits::input_parameter< const int >::type grid_offset(grid_offsetSEXP);
+    rcpp_calculate_fbd_dosage(genProbs_t, eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, prev, suppressOutput, prev_section, next_section, grid_offset);
     return R_NilValue;
 END_RCPP
 }
 // forwardBackwardDiploid
-Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec& pi, const arma::mat& transMatRate_t_D, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages, const bool rescale_eMat_t);
-RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_DSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP, SEXP rescale_eMat_tSEXP) {
+Rcpp::List forwardBackwardDiploid(const Rcpp::List& sampleReads, const arma::cube& eHapsCurrent_tc, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_D, const arma::mat& priorCurrent_m, arma::mat& alphaHat_t, arma::mat& betaHat_t, arma::mat& gamma_t, arma::mat& eMatGrid_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const arma::mat& blocks_for_output, arma::cube& gammaSum0_tc, arma::cube& gammaSum1_tc, arma::cube& alphaMatSum_tc, arma::cube& hapSum_tc, arma::mat& priorSum_m, const Rcpp::List& prev_list_of_alphaBetaBlocks, const int i_snp_block_for_alpha_beta, const bool generate_fb_snp_offsets, const bool return_a_sampled_path, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_genProbs, int snp_start_1_based, int snp_end_1_based, const Rcpp::IntegerVector grid, const bool return_gamma, const bool return_gammaK, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages, const bool rescale_eMatGrid_t);
+RcppExport SEXP _STITCH_forwardBackwardDiploid(SEXP sampleReadsSEXP, SEXP eHapsCurrent_tcSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_DSEXP, SEXP priorCurrent_mSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP gamma_tSEXP, SEXP eMatGrid_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP blocks_for_outputSEXP, SEXP gammaSum0_tcSEXP, SEXP gammaSum1_tcSEXP, SEXP alphaMatSum_tcSEXP, SEXP hapSum_tcSEXP, SEXP priorSum_mSEXP, SEXP prev_list_of_alphaBetaBlocksSEXP, SEXP i_snp_block_for_alpha_betaSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP return_a_sampled_pathSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_genProbsSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP return_gammaSEXP, SEXP return_gammaKSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP, SEXP rescale_eMatGrid_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type pi(piSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_D(transMatRate_t_DSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_D(transMatRate_tc_DSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type priorCurrent_m(priorCurrent_mSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type betaHat_t(betaHat_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
     Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
     Rcpp::traits::input_parameter< const double >::type maxEmissionMatrixDifference(maxEmissionMatrixDifferenceSEXP);
     Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
     Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type blocks_for_output(blocks_for_outputSEXP);
-    Rcpp::traits::input_parameter< arma::cube& >::type gammaUpdate_t(gammaUpdate_tSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type jUpdate_t(jUpdate_tSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type hapSum_t(hapSum_tSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector& >::type priorSum(priorSumSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum0_tc(gammaSum0_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum1_tc(gammaSum1_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type alphaMatSum_tc(alphaMatSum_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type hapSum_tc(hapSum_tcSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type priorSum_m(priorSum_mSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prev_list_of_alphaBetaBlocks(prev_list_of_alphaBetaBlocksSEXP);
+    Rcpp::traits::input_parameter< const int >::type i_snp_block_for_alpha_beta(i_snp_block_for_alpha_betaSEXP);
     Rcpp::traits::input_parameter< const bool >::type generate_fb_snp_offsets(generate_fb_snp_offsetsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type alphaStart(alphaStartSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type betaEnd(betaEndSEXP);
     Rcpp::traits::input_parameter< const bool >::type return_a_sampled_path(return_a_sampled_pathSEXP);
     Rcpp::traits::input_parameter< const bool >::type run_fb_subset(run_fb_subsetSEXP);
     Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type return_genProbs(return_genProbsSEXP);
-    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
-    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< int >::type snp_end_1_based(snp_end_1_basedSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type grid(gridSEXP);
     Rcpp::traits::input_parameter< const bool >::type return_gamma(return_gammaSEXP);
+    Rcpp::traits::input_parameter< const bool >::type return_gammaK(return_gammaKSEXP);
     Rcpp::traits::input_parameter< const bool >::type return_extra(return_extraSEXP);
     Rcpp::traits::input_parameter< const bool >::type update_in_place(update_in_placeSEXP);
     Rcpp::traits::input_parameter< const bool >::type pass_in_alphaBeta(pass_in_alphaBetaSEXP);
     Rcpp::traits::input_parameter< const bool >::type output_haplotype_dosages(output_haplotype_dosagesSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rescale_eMat_t(rescale_eMat_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, nReads, pi, transMatRate_t_D, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, generate_fb_snp_offsets, alphaStart, betaEnd, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, rescale_eMat_t));
+    Rcpp::traits::input_parameter< const bool >::type rescale_eMatGrid_t(rescale_eMatGrid_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(forwardBackwardDiploid(sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_D, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta, generate_fb_snp_offsets, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_gammaK, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, rescale_eMatGrid_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -276,22 +306,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpp_calculate_fbd_dosage
-arma::mat rcpp_calculate_fbd_dosage(const arma::mat& eHapsCurrent_t, const arma::mat& gamma_t, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, const int grid_offset);
-RcppExport SEXP _STITCH_rcpp_calculate_fbd_dosage(SEXP eHapsCurrent_tSEXP, SEXP gamma_tSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP grid_offsetSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHapsCurrent_t(eHapsCurrent_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid(gridSEXP);
-    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
-    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
-    Rcpp::traits::input_parameter< const int >::type grid_offset(grid_offsetSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_fbd_dosage(eHapsCurrent_t, gamma_t, grid, snp_start_1_based, snp_end_1_based, grid_offset));
-    return rcpp_result_gen;
-END_RCPP
-}
 // cpp_read_reassign
 List cpp_read_reassign(const arma::ivec& ord, const arma::ivec& qnameInteger_ord, const Rcpp::CharacterVector& qname, const Rcpp::CharacterVector& strand, const Rcpp::List& sampleReadsRaw, const arma::ivec& readStart_ord, const arma::ivec& readEnd_ord, const arma::ivec& readStart, const arma::ivec& readEnd, int iSizeUpperLimit, bool save_sampleReadsInfo);
 RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP qnameSEXP, SEXP strandSEXP, SEXP sampleReadsRawSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP iSizeUpperLimitSEXP, SEXP save_sampleReadsInfoSEXP) {
@@ -314,8 +328,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // make_gammaEK_t_from_gammaK_t
-arma::mat make_gammaEK_t_from_gammaK_t(const arma::mat& gammaK_t, const int K, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, const int grid_offset);
-RcppExport SEXP _STITCH_make_gammaEK_t_from_gammaK_t(SEXP gammaK_tSEXP, SEXP KSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP grid_offsetSEXP) {
+arma::mat make_gammaEK_t_from_gammaK_t(const arma::mat& gammaK_t, const int K, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, double& prev, const int suppressOutput, std::string& prev_section, std::string& next_section, const int grid_offset);
+RcppExport SEXP _STITCH_make_gammaEK_t_from_gammaK_t(SEXP gammaK_tSEXP, SEXP KSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP, SEXP grid_offsetSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -324,225 +338,216 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid(gridSEXP);
     Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
     Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
     Rcpp::traits::input_parameter< const int >::type grid_offset(grid_offsetSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_gammaEK_t_from_gammaK_t(gammaK_t, K, grid, snp_start_1_based, snp_end_1_based, grid_offset));
+    rcpp_result_gen = Rcpp::wrap(make_gammaEK_t_from_gammaK_t(gammaK_t, K, grid, snp_start_1_based, snp_end_1_based, prev, suppressOutput, prev_section, next_section, grid_offset));
     return rcpp_result_gen;
 END_RCPP
 }
 // Rcpp_run_forward_haploid
-void Rcpp_run_forward_haploid(arma::mat& alphaHat_t, arma::rowvec& c, const arma::mat& eMatHapSNP_t, const arma::mat& alphaMat_t, const arma::mat& transMatRate_t_H, const int& T, const int& K, const arma::vec pi, const Rcpp::NumericVector alphaStart, bool run_fb_subset);
-RcppExport SEXP _STITCH_Rcpp_run_forward_haploid(SEXP alphaHat_tSEXP, SEXP cSEXP, SEXP eMatHapSNP_tSEXP, SEXP alphaMat_tSEXP, SEXP transMatRate_t_HSEXP, SEXP TSEXP, SEXP KSEXP, SEXP piSEXP, SEXP alphaStartSEXP, SEXP run_fb_subsetSEXP) {
+void Rcpp_run_forward_haploid(arma::mat& alphaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_H, const arma::mat& priorCurrent_m, const int s, const Rcpp::NumericVector alphaStart, bool run_fb_subset);
+RcppExport SEXP _STITCH_Rcpp_run_forward_haploid(SEXP alphaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP priorCurrent_mSEXP, SEXP sSEXP, SEXP alphaStartSEXP, SEXP run_fb_subsetSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
     Rcpp::traits::input_parameter< arma::rowvec& >::type c(cSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHapSNP_t(eMatHapSNP_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_H(transMatRate_t_HSEXP);
-    Rcpp::traits::input_parameter< const int& >::type T(TSEXP);
-    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type pi(piSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_H(transMatRate_tc_HSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type priorCurrent_m(priorCurrent_mSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type alphaStart(alphaStartSEXP);
     Rcpp::traits::input_parameter< bool >::type run_fb_subset(run_fb_subsetSEXP);
-    Rcpp_run_forward_haploid(alphaHat_t, c, eMatHapSNP_t, alphaMat_t, transMatRate_t_H, T, K, pi, alphaStart, run_fb_subset);
+    Rcpp_run_forward_haploid(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset);
     return R_NilValue;
 END_RCPP
 }
 // Rcpp_run_backward_haploid
-void Rcpp_run_backward_haploid(arma::mat& betaHat_t, arma::rowvec& c, const arma::mat& eMatHapSNP_t, const arma::mat& alphaMat_t, const arma::mat& transMatRate_t_H);
-RcppExport SEXP _STITCH_Rcpp_run_backward_haploid(SEXP betaHat_tSEXP, SEXP cSEXP, SEXP eMatHapSNP_tSEXP, SEXP alphaMat_tSEXP, SEXP transMatRate_t_HSEXP) {
+void Rcpp_run_backward_haploid(arma::mat& betaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_H, const int s);
+RcppExport SEXP _STITCH_Rcpp_run_backward_haploid(SEXP betaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat& >::type betaHat_t(betaHat_tSEXP);
     Rcpp::traits::input_parameter< arma::rowvec& >::type c(cSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHapSNP_t(eMatHapSNP_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_H(transMatRate_t_HSEXP);
-    Rcpp_run_backward_haploid(betaHat_t, c, eMatHapSNP_t, alphaMat_t, transMatRate_t_H);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_H(transMatRate_tc_HSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
+    Rcpp_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, s);
     return R_NilValue;
 END_RCPP
 }
-// rcpp_make_eMatHap_t
-arma::mat rcpp_make_eMatHap_t(const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid, const bool rescale_eMatHap_t);
-RcppExport SEXP _STITCH_rcpp_make_eMatHap_t(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP, SEXP rescale_eMatHap_tSEXP) {
+// rcpp_make_eMatRead_t
+void rcpp_make_eMatRead_t(arma::mat& eMatRead_t, const Rcpp::List& sampleReads, const arma::cube& eHapsCurrent_tc, const int s, const double maxDifferenceBetweenReads, const int Jmax, arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, double& prev, int suppressOutput, std::string& prev_section, std::string& next_section, const bool run_pseudo_haploid, const bool rescale_eMatRead_t);
+RcppExport SEXP _STITCH_rcpp_make_eMatRead_t(SEXP eMatRead_tSEXP, SEXP sampleReadsSEXP, SEXP eHapsCurrent_tcSEXP, SEXP sSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP, SEXP run_pseudo_haploidSEXP, SEXP rescale_eMatRead_tSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type eMatRead_t(eMatRead_tSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
     Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
     Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type eMatHapOri_t(eMatHapOri_tSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH1(pRgivenH1SEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH2(pRgivenH2SEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
     Rcpp::traits::input_parameter< const bool >::type run_pseudo_haploid(run_pseudo_haploidSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rescale_eMatHap_t(rescale_eMatHap_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_eMatHap_t(sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid, rescale_eMatHap_t));
-    return rcpp_result_gen;
+    Rcpp::traits::input_parameter< const bool >::type rescale_eMatRead_t(rescale_eMatRead_tSEXP);
+    rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid, rescale_eMatRead_t);
+    return R_NilValue;
 END_RCPP
 }
-// rcpp_make_eMatHapSNP_t
-arma::mat rcpp_make_eMatHapSNP_t(const arma::mat& eMatHap_t, const Rcpp::IntegerVector& H, const Rcpp::List sampleReads, const int hap, const int nGrids, const int run_fb_grid_offset, const bool use_all_reads, const bool bound, const double maxEmissionMatrixDifference, const bool rescale);
-RcppExport SEXP _STITCH_rcpp_make_eMatHapSNP_t(SEXP eMatHap_tSEXP, SEXP HSEXP, SEXP sampleReadsSEXP, SEXP hapSEXP, SEXP nGridsSEXP, SEXP run_fb_grid_offsetSEXP, SEXP use_all_readsSEXP, SEXP boundSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP rescaleSEXP) {
+// rcpp_make_eMatGrid_t
+void rcpp_make_eMatGrid_t(arma::mat& eMatGrid_t, const arma::mat& eMatRead_t, const Rcpp::IntegerVector& H, const Rcpp::List sampleReads, const int hap, const int nGrids, double& prev, int suppressOutput, std::string& prev_section, std::string& next_section, const int run_fb_grid_offset, const bool use_all_reads, const bool bound, const double maxEmissionMatrixDifference, const bool rescale);
+RcppExport SEXP _STITCH_rcpp_make_eMatGrid_t(SEXP eMatGrid_tSEXP, SEXP eMatRead_tSEXP, SEXP HSEXP, SEXP sampleReadsSEXP, SEXP hapSEXP, SEXP nGridsSEXP, SEXP prevSEXP, SEXP suppressOutputSEXP, SEXP prev_sectionSEXP, SEXP next_sectionSEXP, SEXP run_fb_grid_offsetSEXP, SEXP use_all_readsSEXP, SEXP boundSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP rescaleSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHap_t(eMatHap_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatRead_t(eMatRead_tSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type H(HSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List >::type sampleReads(sampleReadsSEXP);
     Rcpp::traits::input_parameter< const int >::type hap(hapSEXP);
     Rcpp::traits::input_parameter< const int >::type nGrids(nGridsSEXP);
+    Rcpp::traits::input_parameter< double& >::type prev(prevSEXP);
+    Rcpp::traits::input_parameter< int >::type suppressOutput(suppressOutputSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type prev_section(prev_sectionSEXP);
+    Rcpp::traits::input_parameter< std::string& >::type next_section(next_sectionSEXP);
     Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type use_all_reads(use_all_readsSEXP);
     Rcpp::traits::input_parameter< const bool >::type bound(boundSEXP);
     Rcpp::traits::input_parameter< const double >::type maxEmissionMatrixDifference(maxEmissionMatrixDifferenceSEXP);
     Rcpp::traits::input_parameter< const bool >::type rescale(rescaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_eMatHapSNP_t(eMatHap_t, H, sampleReads, hap, nGrids, run_fb_grid_offset, use_all_reads, bound, maxEmissionMatrixDifference, rescale));
-    return rcpp_result_gen;
+    rcpp_make_eMatGrid_t(eMatGrid_t, eMatRead_t, H, sampleReads, hap, nGrids, prev, suppressOutput, prev_section, next_section, run_fb_grid_offset, use_all_reads, bound, maxEmissionMatrixDifference, rescale);
+    return R_NilValue;
 END_RCPP
 }
 // make_haploid_gammaUpdate_t
-void make_haploid_gammaUpdate_t(arma::cube& gammaUpdate_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& gamma_t, const arma::mat& eHapsCurrent_t, const arma::mat& eMatHap_t, const arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid);
-RcppExport SEXP _STITCH_make_haploid_gammaUpdate_t(SEXP gammaUpdate_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP gamma_tSEXP, SEXP eHapsCurrent_tSEXP, SEXP eMatHap_tSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP) {
+void make_haploid_gammaUpdate_t(int s, arma::cube& gammaSum0_tc, arma::cube& gammaSum1_tc, const Rcpp::List& sampleReads, const arma::mat& gamma_t, const arma::cube& eHapsCurrent_tc, const arma::mat& eMatRead_t, const arma::mat& eMatHapOri_t, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid);
+RcppExport SEXP _STITCH_make_haploid_gammaUpdate_t(SEXP sSEXP, SEXP gammaSum0_tcSEXP, SEXP gammaSum1_tcSEXP, SEXP sampleReadsSEXP, SEXP gamma_tSEXP, SEXP eHapsCurrent_tcSEXP, SEXP eMatRead_tSEXP, SEXP eMatHapOri_tSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::cube& >::type gammaUpdate_t(gammaUpdate_tSEXP);
+    Rcpp::traits::input_parameter< int >::type s(sSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum0_tc(gammaSum0_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum1_tc(gammaSum1_tcSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHapsCurrent_t(eHapsCurrent_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHap_t(eMatHap_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatRead_t(eMatRead_tSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type eMatHapOri_t(eMatHapOri_tSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH1(pRgivenH1SEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH2(pRgivenH2SEXP);
     Rcpp::traits::input_parameter< const bool >::type run_pseudo_haploid(run_pseudo_haploidSEXP);
-    make_haploid_gammaUpdate_t(gammaUpdate_t, sampleReads, nReads, gamma_t, eHapsCurrent_t, eMatHap_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid);
+    make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, sampleReads, gamma_t, eHapsCurrent_tc, eMatRead_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid);
     return R_NilValue;
 END_RCPP
 }
-// pseudoHaploid_update_model_9
-Rcpp::List pseudoHaploid_update_model_9(const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const arma::mat& eMatHap_t1, const arma::mat& eMatHap_t2, const arma::mat& gamma_t1, const arma::mat& gamma_t2, const int K, const arma::ivec& srp);
-RcppExport SEXP _STITCH_pseudoHaploid_update_model_9(SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP eMatHap_t1SEXP, SEXP eMatHap_t2SEXP, SEXP gamma_t1SEXP, SEXP gamma_t2SEXP, SEXP KSEXP, SEXP srpSEXP) {
+// rcpp_calculate_hapDosage
+arma::rowvec rcpp_calculate_hapDosage(const arma::cube& eHapsCurrent_tc, const int s, const arma::mat& gamma_t, const Rcpp::IntegerVector& grid, const int snp_start_1_based, const int snp_end_1_based, const int run_fb_grid_offset);
+RcppExport SEXP _STITCH_rcpp_calculate_hapDosage(SEXP eHapsCurrent_tcSEXP, SEXP sSEXP, SEXP gamma_tSEXP, SEXP gridSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP run_fb_grid_offsetSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH1(pRgivenH1SEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH2(pRgivenH2SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHap_t1(eMatHap_t1SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eMatHap_t2(eMatHap_t2SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t1(gamma_t1SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t2(gamma_t2SEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid(gridSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_hapDosage(eHapsCurrent_tc, s, gamma_t, grid, snp_start_1_based, snp_end_1_based, run_fb_grid_offset));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pseudoHaploid_update_model_9
+Rcpp::List pseudoHaploid_update_model_9(const arma::mat& pRgivenH1_m, const arma::mat& pRgivenH2_m, const Rcpp::List& list_of_eMatRead_t1, const Rcpp::List& list_of_eMatRead_t2, const Rcpp::List& list_of_gamma_t1, const Rcpp::List& list_of_gamma_t2, const int K, const arma::ivec& srp);
+RcppExport SEXP _STITCH_pseudoHaploid_update_model_9(SEXP pRgivenH1_mSEXP, SEXP pRgivenH2_mSEXP, SEXP list_of_eMatRead_t1SEXP, SEXP list_of_eMatRead_t2SEXP, SEXP list_of_gamma_t1SEXP, SEXP list_of_gamma_t2SEXP, SEXP KSEXP, SEXP srpSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type pRgivenH1_m(pRgivenH1_mSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pRgivenH2_m(pRgivenH2_mSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type list_of_eMatRead_t1(list_of_eMatRead_t1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type list_of_eMatRead_t2(list_of_eMatRead_t2SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type list_of_gamma_t1(list_of_gamma_t1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type list_of_gamma_t2(list_of_gamma_t2SEXP);
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
     Rcpp::traits::input_parameter< const arma::ivec& >::type srp(srpSEXP);
-    rcpp_result_gen = Rcpp::wrap(pseudoHaploid_update_model_9(pRgivenH1, pRgivenH2, eMatHap_t1, eMatHap_t2, gamma_t1, gamma_t2, K, srp));
+    rcpp_result_gen = Rcpp::wrap(pseudoHaploid_update_model_9(pRgivenH1_m, pRgivenH2_m, list_of_eMatRead_t1, list_of_eMatRead_t2, list_of_gamma_t1, list_of_gamma_t2, K, srp));
     return rcpp_result_gen;
 END_RCPP
 }
 // forwardBackwardHaploid
-Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const int nReads, const arma::vec pi, const arma::mat& transMatRate_t_H, const arma::mat& alphaMat_t, const arma::mat& eHaps_t, arma::mat& alphaHat_t, arma::mat& betaHat_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const int model, arma::cube& gammaUpdate_t, arma::mat& jUpdate_t, arma::mat& hapSum_t, Rcpp::NumericVector& priorSum, const arma::vec& pRgivenH1, const arma::vec& pRgivenH2, const bool run_pseudo_haploid, const arma::mat& blocks_for_output, const bool generate_fb_snp_offsets, const Rcpp::NumericVector alphaStart, const Rcpp::NumericVector betaEnd, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_extra, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages, const int snp_start_1_based, const int snp_end_1_based, const Rcpp::IntegerVector grid, const bool rescale);
-RcppExport SEXP _STITCH_forwardBackwardHaploid(SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP piSEXP, SEXP transMatRate_t_HSEXP, SEXP alphaMat_tSEXP, SEXP eHaps_tSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP modelSEXP, SEXP gammaUpdate_tSEXP, SEXP jUpdate_tSEXP, SEXP hapSum_tSEXP, SEXP priorSumSEXP, SEXP pRgivenH1SEXP, SEXP pRgivenH2SEXP, SEXP run_pseudo_haploidSEXP, SEXP blocks_for_outputSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP alphaStartSEXP, SEXP betaEndSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_extraSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP rescaleSEXP) {
+Rcpp::List forwardBackwardHaploid(const Rcpp::List& sampleReads, const arma::cube& eHapsCurrent_tc, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_H, const arma::mat& priorCurrent_m, arma::mat& alphaHat_t, arma::mat& betaHat_t, arma::mat& gamma_t, arma::mat& eMatGrid_t, const double maxDifferenceBetweenReads, const double maxEmissionMatrixDifference, const int Jmax, const int suppressOutput, const int model, arma::cube& gammaSum0_tc, arma::cube& gammaSum1_tc, arma::cube& alphaMatSum_tc, arma::cube& hapSum_tc, arma::mat& priorSum_m, const arma::mat& pRgivenH1_m, const arma::mat& pRgivenH2_m, const bool run_pseudo_haploid, const arma::mat& blocks_for_output, const Rcpp::List& prev_list_of_alphaBetaBlocks, const int i_snp_block_for_alpha_beta, const bool generate_fb_snp_offsets, const bool run_fb_subset, const int run_fb_grid_offset, const bool return_extra, const bool return_gamma, const bool return_gammaK, const bool return_hapDosage, const bool update_in_place, const bool pass_in_alphaBeta, const bool output_haplotype_dosages, int snp_start_1_based, int snp_end_1_based, const Rcpp::IntegerVector grid, const bool rescale);
+RcppExport SEXP _STITCH_forwardBackwardHaploid(SEXP sampleReadsSEXP, SEXP eHapsCurrent_tcSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP priorCurrent_mSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP gamma_tSEXP, SEXP eMatGrid_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP maxEmissionMatrixDifferenceSEXP, SEXP JmaxSEXP, SEXP suppressOutputSEXP, SEXP modelSEXP, SEXP gammaSum0_tcSEXP, SEXP gammaSum1_tcSEXP, SEXP alphaMatSum_tcSEXP, SEXP hapSum_tcSEXP, SEXP priorSum_mSEXP, SEXP pRgivenH1_mSEXP, SEXP pRgivenH2_mSEXP, SEXP run_pseudo_haploidSEXP, SEXP blocks_for_outputSEXP, SEXP prev_list_of_alphaBetaBlocksSEXP, SEXP i_snp_block_for_alpha_betaSEXP, SEXP generate_fb_snp_offsetsSEXP, SEXP run_fb_subsetSEXP, SEXP run_fb_grid_offsetSEXP, SEXP return_extraSEXP, SEXP return_gammaSEXP, SEXP return_gammaKSEXP, SEXP return_hapDosageSEXP, SEXP update_in_placeSEXP, SEXP pass_in_alphaBetaSEXP, SEXP output_haplotype_dosagesSEXP, SEXP snp_start_1_basedSEXP, SEXP snp_end_1_basedSEXP, SEXP gridSEXP, SEXP rescaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type pi(piSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_H(transMatRate_t_HSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type eHapsCurrent_tc(eHapsCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_H(transMatRate_tc_HSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type priorCurrent_m(priorCurrent_mSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type betaHat_t(betaHat_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
     Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
     Rcpp::traits::input_parameter< const double >::type maxEmissionMatrixDifference(maxEmissionMatrixDifferenceSEXP);
     Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
     Rcpp::traits::input_parameter< const int >::type suppressOutput(suppressOutputSEXP);
     Rcpp::traits::input_parameter< const int >::type model(modelSEXP);
-    Rcpp::traits::input_parameter< arma::cube& >::type gammaUpdate_t(gammaUpdate_tSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type jUpdate_t(jUpdate_tSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type hapSum_t(hapSum_tSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector& >::type priorSum(priorSumSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH1(pRgivenH1SEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type pRgivenH2(pRgivenH2SEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum0_tc(gammaSum0_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type gammaSum1_tc(gammaSum1_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type alphaMatSum_tc(alphaMatSum_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type hapSum_tc(hapSum_tcSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type priorSum_m(priorSum_mSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pRgivenH1_m(pRgivenH1_mSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pRgivenH2_m(pRgivenH2_mSEXP);
     Rcpp::traits::input_parameter< const bool >::type run_pseudo_haploid(run_pseudo_haploidSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type blocks_for_output(blocks_for_outputSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prev_list_of_alphaBetaBlocks(prev_list_of_alphaBetaBlocksSEXP);
+    Rcpp::traits::input_parameter< const int >::type i_snp_block_for_alpha_beta(i_snp_block_for_alpha_betaSEXP);
     Rcpp::traits::input_parameter< const bool >::type generate_fb_snp_offsets(generate_fb_snp_offsetsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type alphaStart(alphaStartSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type betaEnd(betaEndSEXP);
     Rcpp::traits::input_parameter< const bool >::type run_fb_subset(run_fb_subsetSEXP);
     Rcpp::traits::input_parameter< const int >::type run_fb_grid_offset(run_fb_grid_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type return_extra(return_extraSEXP);
+    Rcpp::traits::input_parameter< const bool >::type return_gamma(return_gammaSEXP);
+    Rcpp::traits::input_parameter< const bool >::type return_gammaK(return_gammaKSEXP);
+    Rcpp::traits::input_parameter< const bool >::type return_hapDosage(return_hapDosageSEXP);
     Rcpp::traits::input_parameter< const bool >::type update_in_place(update_in_placeSEXP);
     Rcpp::traits::input_parameter< const bool >::type pass_in_alphaBeta(pass_in_alphaBetaSEXP);
     Rcpp::traits::input_parameter< const bool >::type output_haplotype_dosages(output_haplotype_dosagesSEXP);
-    Rcpp::traits::input_parameter< const int >::type snp_start_1_based(snp_start_1_basedSEXP);
-    Rcpp::traits::input_parameter< const int >::type snp_end_1_based(snp_end_1_basedSEXP);
+    Rcpp::traits::input_parameter< int >::type snp_start_1_based(snp_start_1_basedSEXP);
+    Rcpp::traits::input_parameter< int >::type snp_end_1_based(snp_end_1_basedSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type grid(gridSEXP);
     Rcpp::traits::input_parameter< const bool >::type rescale(rescaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(forwardBackwardHaploid(sampleReads, nReads, pi, transMatRate_t_H, alphaMat_t, eHaps_t, alphaHat_t, betaHat_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaUpdate_t, jUpdate_t, hapSum_t, priorSum, pRgivenH1, pRgivenH2, run_pseudo_haploid, blocks_for_output, generate_fb_snp_offsets, alphaStart, betaEnd, run_fb_subset, run_fb_grid_offset, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, snp_start_1_based, snp_end_1_based, grid, rescale));
+    rcpp_result_gen = Rcpp::wrap(forwardBackwardHaploid(sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, pRgivenH1_m, pRgivenH2_m, run_pseudo_haploid, blocks_for_output, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta, generate_fb_snp_offsets, run_fb_subset, run_fb_grid_offset, return_extra, return_gamma, return_gammaK, return_hapDosage, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, snp_start_1_based, snp_end_1_based, grid, rescale));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_sample_path
-arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t_H, const arma::mat& alphaMat_t);
-RcppExport SEXP _STITCH_rcpp_sample_path(SEXP read_labelsSEXP, SEXP eMatHap_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP piSEXP, SEXP transMatRate_t_HSEXP, SEXP alphaMat_tSEXP) {
+arma::ivec rcpp_sample_path(const arma::rowvec read_labels, const arma::mat eMatRead_t, const Rcpp::List& sampleReads, const double maxDifferenceBetweenReads, const int Jmax, const arma::mat& priorCurrent_m, const arma::cube& transMatRate_tc_H, const arma::cube& alphaMatCurrent_tc, const int s);
+RcppExport SEXP _STITCH_rcpp_sample_path(SEXP read_labelsSEXP, SEXP eMatRead_tSEXP, SEXP sampleReadsSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP priorCurrent_mSEXP, SEXP transMatRate_tc_HSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::rowvec >::type read_labels(read_labelsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat >::type eMatHap_t(eMatHap_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type eMatRead_t(eMatRead_tSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
     Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
     Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type pi(piSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t_H(transMatRate_t_HSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_sample_path(read_labels, eMatHap_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t_H, alphaMat_t));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_sample_multiple_paths
-Rcpp::List rcpp_sample_multiple_paths(const int n_starts, const int n_its, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t, const arma::ivec& srp, const arma::ivec& sum_dosage_vec);
-RcppExport SEXP _STITCH_rcpp_sample_multiple_paths(SEXP n_startsSEXP, SEXP n_itsSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP, SEXP srpSEXP, SEXP sum_dosage_vecSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type n_starts(n_startsSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_its(n_itsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
-    Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type pi(piSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t(transMatRate_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    Rcpp::traits::input_parameter< const arma::ivec& >::type srp(srpSEXP);
-    Rcpp::traits::input_parameter< const arma::ivec& >::type sum_dosage_vec(sum_dosage_vecSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_sample_multiple_paths(n_starts, n_its, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t, srp, sum_dosage_vec));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_calculate_many_likelihoods
-arma::mat rcpp_calculate_many_likelihoods(const arma::mat swap_mat, const Rcpp::List reads_at_SNPs, const arma::mat eMatHap_t, const Rcpp::List& sampleReads, const int nReads, const arma::mat& eHaps_t, const double maxDifferenceBetweenReads, const int Jmax, const arma::vec pi, const arma::mat& transMatRate_t, const arma::mat& alphaMat_t);
-RcppExport SEXP _STITCH_rcpp_calculate_many_likelihoods(SEXP swap_matSEXP, SEXP reads_at_SNPsSEXP, SEXP eMatHap_tSEXP, SEXP sampleReadsSEXP, SEXP nReadsSEXP, SEXP eHaps_tSEXP, SEXP maxDifferenceBetweenReadsSEXP, SEXP JmaxSEXP, SEXP piSEXP, SEXP transMatRate_tSEXP, SEXP alphaMat_tSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat >::type swap_mat(swap_matSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List >::type reads_at_SNPs(reads_at_SNPsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat >::type eMatHap_t(eMatHap_tSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReads(sampleReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nReads(nReadsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_t(eHaps_tSEXP);
-    Rcpp::traits::input_parameter< const double >::type maxDifferenceBetweenReads(maxDifferenceBetweenReadsSEXP);
-    Rcpp::traits::input_parameter< const int >::type Jmax(JmaxSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type pi(piSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type transMatRate_t(transMatRate_tSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type alphaMat_t(alphaMat_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_calculate_many_likelihoods(swap_mat, reads_at_SNPs, eMatHap_t, sampleReads, nReads, eHaps_t, maxDifferenceBetweenReads, Jmax, pi, transMatRate_t, alphaMat_t));
+    Rcpp::traits::input_parameter< const arma::mat& >::type priorCurrent_m(priorCurrent_mSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_H(transMatRate_tc_HSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_sample_path(read_labels, eMatRead_t, sampleReads, maxDifferenceBetweenReads, Jmax, priorCurrent_m, transMatRate_tc_H, alphaMatCurrent_tc, s));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -574,6 +579,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_eHaps_options
+arma::rowvec test_eHaps_options(const arma::cube& cube_eHaps_t, const Rcpp::List& list_of_eHaps_t, const arma::mat& gamma_t, const arma::mat& eHaps_input, const std::string option, const int nSNPs, const int K, const int S);
+RcppExport SEXP _STITCH_test_eHaps_options(SEXP cube_eHaps_tSEXP, SEXP list_of_eHaps_tSEXP, SEXP gamma_tSEXP, SEXP eHaps_inputSEXP, SEXP optionSEXP, SEXP nSNPsSEXP, SEXP KSEXP, SEXP SSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::cube& >::type cube_eHaps_t(cube_eHaps_tSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type list_of_eHaps_t(list_of_eHaps_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eHaps_input(eHaps_inputSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type option(optionSEXP);
+    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int >::type S(SSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_eHaps_options(cube_eHaps_t, list_of_eHaps_t, gamma_t, eHaps_input, option, nSNPs, K, S));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_make_column_of_vcf
 Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const bool use_read_proportions, const bool use_state_probabilities, const arma::mat& read_proportions, const arma::mat& q_t);
 RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP use_state_probabilitiesSEXP, SEXP read_proportionsSEXP, SEXP q_tSEXP) {
@@ -597,32 +620,32 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_cpp_deal_with_soft_clipped_bases", (DL_FUNC) &_STITCH_cpp_deal_with_soft_clipped_bases, 5},
     {"_STITCH_get_sample_data_from_SeqLib", (DL_FUNC) &_STITCH_get_sample_data_from_SeqLib, 3},
     {"_STITCH_get_sampleReadsRaw_from_SeqLib", (DL_FUNC) &_STITCH_get_sampleReadsRaw_from_SeqLib, 11},
-    {"_STITCH_collapse_diploid_gamma", (DL_FUNC) &_STITCH_collapse_diploid_gamma, 3},
-    {"_STITCH_rcpp_make_and_bound_eMat_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMat_t, 8},
+    {"_STITCH_collapse_diploid_gamma", (DL_FUNC) &_STITCH_collapse_diploid_gamma, 6},
+    {"_STITCH_rcpp_make_and_bound_eMatGrid_diploid_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMatGrid_diploid_t, 10},
     {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
-    {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 8},
-    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 33},
+    {"_STITCH_rcpp_make_diploid_jUpdate", (DL_FUNC) &_STITCH_rcpp_make_diploid_jUpdate, 11},
+    {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 12},
+    {"_STITCH_forwardBackwardDiploid", (DL_FUNC) &_STITCH_forwardBackwardDiploid, 36},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},
     {"_STITCH_increment2N", (DL_FUNC) &_STITCH_increment2N, 4},
     {"_STITCH_ram_test", (DL_FUNC) &_STITCH_ram_test, 4},
     {"_STITCH_get_min_from_position", (DL_FUNC) &_STITCH_get_min_from_position, 5},
     {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
-    {"_STITCH_rcpp_calculate_fbd_dosage", (DL_FUNC) &_STITCH_rcpp_calculate_fbd_dosage, 6},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 11},
-    {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 6},
-    {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
-    {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 5},
-    {"_STITCH_rcpp_make_eMatHap_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHap_t, 10},
-    {"_STITCH_rcpp_make_eMatHapSNP_t", (DL_FUNC) &_STITCH_rcpp_make_eMatHapSNP_t, 10},
-    {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 10},
+    {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 10},
+    {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 9},
+    {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 6},
+    {"_STITCH_rcpp_make_eMatRead_t", (DL_FUNC) &_STITCH_rcpp_make_eMatRead_t, 15},
+    {"_STITCH_rcpp_make_eMatGrid_t", (DL_FUNC) &_STITCH_rcpp_make_eMatGrid_t, 15},
+    {"_STITCH_make_haploid_gammaUpdate_t", (DL_FUNC) &_STITCH_make_haploid_gammaUpdate_t, 11},
+    {"_STITCH_rcpp_calculate_hapDosage", (DL_FUNC) &_STITCH_rcpp_calculate_hapDosage, 7},
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},
-    {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 34},
-    {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 10},
-    {"_STITCH_rcpp_sample_multiple_paths", (DL_FUNC) &_STITCH_rcpp_sample_multiple_paths, 12},
-    {"_STITCH_rcpp_calculate_many_likelihoods", (DL_FUNC) &_STITCH_rcpp_calculate_many_likelihoods, 11},
+    {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 39},
+    {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 7},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_test_eHaps_options", (DL_FUNC) &_STITCH_test_eHaps_options, 8},
     {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 5},
     {NULL, NULL, 0}
 };

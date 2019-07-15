@@ -18,7 +18,7 @@ if (1 == 0) {
 n_samples <- 20
 n_snps <- 20
 K <- 4
-reads_span_n_snps <- 2
+reads_span_n_snps <- 4
 chr <- 1
 n_reads <- 5 / (reads_span_n_snps / n_snps) ## want about 5X / sample
 extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")

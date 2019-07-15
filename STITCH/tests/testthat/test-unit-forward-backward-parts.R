@@ -12,12 +12,12 @@ test_that("R and c++ run forward haploid algorithms are the same", {
     nSNPs <- test_package$nSNPs
     nGrids <- test_package$nGrids
     K <- test_package$K
-    transMatRate_t_H <- test_package$transMatRate_t_H
-    alphaMatCurrent_t <- test_package$alphaMatCurrent_t
-    eMatHapSNP_t <- test_package$eMatHapSNP_t
-    priorCurrent <- test_package$priorCurrent
+    transMatRate_tc_H <- test_package$transMatRate_tc_H
+    alphaMatCurrent_tc <- test_package$alphaMatCurrent_tc
+    eMatGrid_t <- test_package$list_of_eMatGrid_t[[1]]
+    priorCurrent_m <- test_package$priorCurrent_m
 
-    ## 
+    ##
     ## c++ - pass by reference
     ##
     alphaHat_t <- array(0, c(K, nGrids))
@@ -25,28 +25,27 @@ test_that("R and c++ run forward haploid algorithms are the same", {
     Rcpp_run_forward_haploid(
         alphaHat_t = alphaHat_t,
         c = c,
-        eMatHapSNP_t = eMatHapSNP_t,
-        alphaMat_t = alphaMatCurrent_t,
-        transMatRate_t_H = transMatRate_t_H,
-        T = nGrids,
-        K = K,
-        pi = priorCurrent,
-        alphaStart = array(0, 100),
+        eMatGrid_t = eMatGrid_t,
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        transMatRate_tc_H = transMatRate_tc_H,
+        priorCurrent_m = priorCurrent_m,
+        s = 0, ## 0-based
+        alphaStart = array(0, 1),
         run_fb_subset = FALSE
     )
 
-    ## 
+    ##
     ## R (returns alphaHat_t, c)
-    ## 
+    ##
     out_R <- R_run_forward_haploid(
         alphaHat_t = array(0, c(K, nGrids)),
         c = array(0, nGrids),
-        eMatHapSNP_t = eMatHapSNP_t,
-        alphaMat_t = alphaMatCurrent_t,
-        transMatRate_t_H = transMatRate_t_H,
+        eMatGrid_t = eMatGrid_t,
+        alphaMat_t = alphaMatCurrent_tc[, , 1],
+        transMatRate_t_H = transMatRate_tc_H[, , 1],
         T = nGrids,
         K = K,
-        pi = priorCurrent,
+        pi = priorCurrent_m[, 1],
         alphaStart = 0,
         run_fb_subset = FALSE
     )
@@ -58,26 +57,27 @@ test_that("R and c++ run forward haploid algorithms are the same", {
     ## second part, test backward algorithms
     ##
 
-    ## 
+    ##
     ## R (returns alphaHat_t, c)
     ##
     betaHat_t <- array(0, c(K, nGrids))
     Rcpp_run_backward_haploid(
         betaHat_t = betaHat_t,
         c = c,
-        eMatHapSNP_t = eMatHapSNP_t,
-        alphaMat_t = alphaMatCurrent_t,    
-        transMatRate_t_H = transMatRate_t_H
+        eMatGrid_t = eMatGrid_t,
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        transMatRate_tc_H = transMatRate_tc_H,
+        s = 0
     )
-    
+
     out_R2 <- R_run_backward_haploid(
         betaHat_t = array(0, c(K, nGrids)),
         c = out_R$c,
-        eMatHapSNP_t = eMatHapSNP_t,
-        alphaMat_t = alphaMatCurrent_t,    
-        transMatRate_t_H = transMatRate_t_H
+        eMatGrid_t = eMatGrid_t,
+        alphaMat_t = alphaMatCurrent_tc[, , 1],
+        transMatRate_t_H = transMatRate_tc_H[, , 1]
     )
-    
+
     expect_equal(betaHat_t, out_R2$betaHat_t)
 
 })

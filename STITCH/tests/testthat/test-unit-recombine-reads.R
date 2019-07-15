@@ -166,12 +166,20 @@ test_that("correctly split a bad read", {
     new_read_2 <- get_sampleRead_from_SNP_i_to_SNP_j(
         sampleRead, 3, 4, L, grid
     )
-    new_read_2[[2]] <- 3
-    
-    expect_equal(
-        sampleReads[[4]], ## this test involves a sample call - is still fine with >=R3.6.0new_
-        new_read_2
-    )
+
+    if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
+        new_read_2[[2]] <- 3
+        ## >= 3.6.0
+        expect_equal(
+            sampleReads[[4]], ## this test involves a sample call - is still fine with >=R3.6.0new_
+            new_read_2
+        )
+    } else {
+        expect_equal(
+            sampleReads[[3]], ## this test involves a sample call - is still fine with >=R3.6.0new_
+            new_read_2
+        )
+    }
 
 })
 
@@ -250,8 +258,12 @@ test_that("correctly split a bad read with grid mode", {
             sampleRead, 1, 2, L, grid
         )
     )
-    
-    set.seed(4) ## not the same seed as above - is second call
+
+    if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
+        set.seed(4) ## not the same seed as above - is second call
+    } else {
+        set.seed(1)
+    }
     new_read_2 <- get_sampleRead_from_SNP_i_to_SNP_j(
         sampleRead, 3, 4, L, grid
     )    

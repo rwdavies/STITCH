@@ -1,3 +1,5 @@
+* v1.6.0
+	* Introduce new variable S as the number of sets of parameters results are averaged over
 * v1.5.7
 	* Push CC through to htslib to robustify against compilation issues 
 * v1.5.6

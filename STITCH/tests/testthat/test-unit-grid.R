@@ -61,6 +61,7 @@ test_that("removal of buffer from grid makes sense", {
     regionEnd <- 16
     buffer <- 5
     K <- 4
+    S <- 3
 
     for(gridWindowSize in c(NA, 1, 3)) {
         
@@ -69,7 +70,7 @@ test_that("removal of buffer from grid makes sense", {
             gridWindowSize = gridWindowSize
         )
     
-        alphaMatCurrent_t <- array(0, c(K, out$nGrids))
+        alphaMatCurrent_tc <- array(0, c(K, out$nGrids, S))
         
         out <- remove_buffer_from_variables(
             L = L,
@@ -77,7 +78,7 @@ test_that("removal of buffer from grid makes sense", {
             regionEnd = regionEnd,
             grid = out$grid,
             grid_distances = out$grid_distances,
-            alphaMatCurrent_t = alphaMatCurrent_t,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
             L_grid = out$L_grid,
             nGrids = out$nGrids,
             gridWindowSize = gridWindowSize,
@@ -91,7 +92,7 @@ test_that("removal of buffer from grid makes sense", {
                 expect_equal(out$nGrids, 5)
                 expect_equal(out$grid_distances, rep(gridWindowSize, 4)) ## no spacing
                 expect_equal(out$L_grid, 4.5 + 3 * 0:4)
-                expect_equal(ncol(out$alphaMatCurrent_t), 4)
+                expect_equal(ncol(out$alphaMatCurrent_tc), 4)
             }
         }
         
@@ -103,110 +104,8 @@ test_that("removal of buffer from grid makes sense", {
 
 
 
-test_that("can use grid, and calculate gp_t", {
-
-    n_snps <- 10 ## set to 10000 to check times better
-    K <- 20
-
-    phasemaster <- matrix(
-        c(rep(0, n_snps), rep(1, n_snps)),
-        ncol = K
-    )
-    data_package <- make_acceptance_test_data_package(
-        n_samples = 1,
-        n_snps = n_snps,
-        n_reads = n_snps * 2,
-        seed = 2,
-        chr = 10,
-        K = K,
-        phasemaster = phasemaster,
-        reads_span_n_snps = 3,
-        n_cores = 1
-    )
-
-    regionName <- "region-name"
-    loadBamAndConvert(
-        iBam = 1,
-        L = data_package$L,
-        pos = data_package$pos,
-        nSNPs = data_package$nSNPs,
-        bam_files = data_package$bam_files,
-        N = 1,
-        sampleNames = data_package$sample_names,
-        inputdir = tempdir(),
-        regionName = regionName,
-        tempdir = tempdir(),
-        chr = data_package$chr,
-        chrStart = 1,
-        chrEnd = max(data_package$pos[, 2]) + 100
-    )
-
-    load(file_sampleReads(tempdir(), 1, regionName))
-    L <- data_package$pos[, 2]
-    eHaps <- array(runif(n_snps * K), c(n_snps, K))
-
-    ## for now, based on physical position?
-    gridWindowSize <- 3
-    out <- assign_positions_to_grid(L, gridWindowSize)
-    grid <- out$grid
-    nGrids <- out$nGrids
-    sigma <- runif(nGrids - 1)
-    alphaMat <- array(runif((nGrids - 1) * K), c(nGrids - 1, K))
-    x <- sigma
-    transMatRate <- cbind(x ** 2, x * (1 - x), (1 - x) ** 2)
-    pi <- runif(K) / K
-
-    ## also, update?
-    sampleReads <- snap_sampleReads_to_grid(sampleReads, grid)
-
-    transMatRate_t_D <- get_transMatRate(
-        method = "diploid",
-        sigmaCurrent = sigma
-    )
-
-    out <- run_forward_backwards(
-        sampleReads = sampleReads,
-        priorCurrent = pi,
-        transMatRate_t_D = transMatRate_t_D,
-        alphaMatCurrent_t = t(alphaMat),
-        eHapsCurrent_t = t(eHaps),
-        method = "diploid",
-        return_genProbs = TRUE,
-        grid = grid
-    )$fbsoL[[1]]
-
-    gammaK_t <- out[["gammaK_t"]]
-    expect_equal(ncol(gammaK_t), nGrids)
-    expect_equal(min(gammaK_t) >= 0, TRUE)
-    expect_equal(max(gammaK_t) <= 1, TRUE)    
-
-    pRgivenH1L <- runif(length(sampleReads))
-    pRgivenH2L <- runif(length(sampleReads))
-
-    transMatRate_t_H <- get_transMatRate(
-        method = "pseudoHaploid",
-        sigmaCurrent = sigma
-    )
-
-    for(method in c("pseudoHaploid", "diploid-inbred")) {
-        out <- run_forward_backwards(
-            sampleReads = sampleReads,
-            priorCurrent = pi,
-            transMatRate_t_H = transMatRate_t_H,
-            alphaMatCurrent_t = t(alphaMat),
-            eHapsCurrent_t = t(eHaps),
-            pRgivenH1 = pRgivenH1L,
-            pRgivenH2 = pRgivenH2L,
-            method = method
-        )$fbsoL[[1]]
-        
-        expect_equal(ncol(out$gamma_t), nGrids)
-        expect_equal(min(out$gamma_t) >= 0, TRUE)
-        expect_equal(max(out$gamma_t) <= 1, TRUE)
-    }
-        
-})
-
+## test_that("can use grid, and calculate gp_t", {
+## this is deprecated, and used in test-unit-cpp
 
 
 test_that("can downsample for gridding appropriately", {

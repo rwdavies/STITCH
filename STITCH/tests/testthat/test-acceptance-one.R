@@ -1,3 +1,21 @@
+if (1 == 0) {
+    
+    library("testthat"); library("STITCH"); library("rrbgen")
+    ##    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "~/proj/STITCH/"
+    setwd(paste0(dir, "/STITCH/R"))
+    a <- dir(pattern = "*R")
+    b <- grep("~", a)
+    if (length(b) > 0) {
+        a <- a[-b]
+    }
+    o <- sapply(a, source)
+    setwd(dir)
+    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+
+}
+
+
 ## one single test, useful for basic acceptance tests
 test_that("simple diploid method can work", {
 
@@ -29,6 +47,7 @@ test_that("simple diploid method can work", {
         genfile = data_package$genfile,
         outputdir = outputdir,
         K = 2,
+        S = 2,
         nGen = 100,
         nCores = 1
     )

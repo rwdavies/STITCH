@@ -184,65 +184,6 @@ Rcpp::List rcpp_make_fb_snp_offsets(
 
 
 
-//' @export
-// [[Rcpp::export]]
-arma::mat rcpp_calculate_fbd_dosage(
-    const arma::mat& eHapsCurrent_t,
-    const arma::mat& gamma_t,
-    const Rcpp::IntegerVector& grid,
-    const int snp_start_1_based,
-    const int snp_end_1_based,
-    const int grid_offset = 0
-) {
-    // basically, copy and paste, either using grid or not
-    const int nSNPs = snp_end_1_based - snp_start_1_based + 1;
-    const int K = eHapsCurrent_t.n_rows;
-    arma::mat genProbs_t = arma::zeros(3, nSNPs);
-    //arma::vec dosage = arma::zeros(nSNPs);
-    // new
-    int iSNP, t, k1, k2, kk, K_times_k1, cur_grid;
-    double a, b, one_minus_b, g, one_minus_a, g0, g1, g2;
-    arma::colvec eHapsCurrent_t_col, gamma_t_col, one_minus_eHapsCurrent_t_col;
-    int prev_grid = -1;
-    // i_t is index from 0 to nSNPs + 1, controls where things go
-    // t is the index in the whole set of SNPs
-    // tt is the index in the grid
-    /// grid_offset refers to in what grids we are running
-    for(iSNP = 0; iSNP < nSNPs; iSNP++) {
-        g0 = 0;
-        g1 = 0;
-        g2 = 0;
-        t = iSNP + snp_start_1_based - 1;
-        cur_grid = grid(t) - grid_offset;
-        if (cur_grid > prev_grid) {
-            gamma_t_col = gamma_t.col(cur_grid);
-            prev_grid = cur_grid;
-        }
-        eHapsCurrent_t_col = eHapsCurrent_t.col(t);
-        one_minus_eHapsCurrent_t_col = 1 - eHapsCurrent_t_col;
-        for(k1 = 0; k1 <K; k1++) {
-            a = eHapsCurrent_t_col(k1);
-            one_minus_a = one_minus_eHapsCurrent_t_col(k1);
-            K_times_k1 = K * k1;
-            for(k2 = 0; k2 < K; k2++) {
-                kk = K_times_k1 + k2; // does not matter which way I do this
-                g = gamma_t_col(kk);
-                b = eHapsCurrent_t_col(k2);
-                one_minus_b = one_minus_eHapsCurrent_t_col(k2);
-                g0 += g * one_minus_a * one_minus_b;
-                g1 += g * (a * one_minus_b + one_minus_a * b);
-                g2 += g * a * b;
-            }
-        }
-        genProbs_t(0, iSNP) = g0;
-        genProbs_t(1, iSNP) = g1;
-        genProbs_t(2, iSNP) = g2;        
-        //for(j=1;j<=2;j++) {
-        //    dosage(i_t) = dosage(i_t) + j * genProbs_t(j, i_t);
-        //}
-    }
-    return(genProbs_t);
-}
 
 
 
@@ -416,8 +357,15 @@ arma::mat make_gammaEK_t_from_gammaK_t(
     const Rcpp::IntegerVector& grid,
     const int snp_start_1_based,
     const int snp_end_1_based,
+    double& prev,
+    const int suppressOutput,
+    std::string& prev_section,
+    std::string& next_section,
     const int grid_offset = 0
 ) {
+    next_section="make gammaEK_t from gammaK_t";
+    prev=print_times(prev, suppressOutput, prev_section, next_section);
+    prev_section=next_section;
     const int nSNPs = snp_end_1_based - snp_start_1_based + 1;
     arma::mat gammaEK_t = arma::zeros(K, nSNPs);
     int t;

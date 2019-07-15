@@ -57,6 +57,40 @@ test_that("STITCH pseudoHaploid works under default parameters", {
 })
 
 
+test_that("STITCH pseudoHaploid works under default parameters for S > 1", {
+
+    output_format <- "bgvcf"
+    S <- 2
+    
+    outputdir <- make_unique_tempdir()
+    set.seed(66)
+
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,                
+        outputdir = outputdir,
+        K = 2,
+        S = 2,
+        nGen = 100,
+        nCores = 1,
+        method = "pseudoHaploid",
+        output_format = output_format
+    )
+    
+    check_output_against_phase(
+        file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+        data_package,
+        output_format,
+        which_snps = NULL,
+        tol = 0.5,
+        min_info = 0.6
+    )
+    
+})
+
+
 test_that("STITCH pseudoHaploid works with outputSNPBlockSize", {
 
     for(output_format in c("bgvcf", "bgen")) {
