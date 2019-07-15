@@ -10,6 +10,7 @@
 
 ### Optional
 
+* **S**  Integer, how many instances of the founder / mosaic haplotypes to average results over.
 * **method** How to run imputation, either diploid or pseudoHaploid, the former being more accurate but having quadratic time complexity in K and the later being less accurate but having linear time complexity in K.
 * **switchModelIteration** When selected, the iteration to switch from pseudoHaploid to diploid. Note that one EM iteration is defined as first using the parameters to estimate hidden phase, and secondly to use hidden phase to update parameters. So a choice of 39 with iterations = 40 would means 38 complete pseudo-haploid iterations, a 39th iteration of both estimating hidden phase and updating parameters, and a 40th iteration of updating hidden phase, and from this estimating dosages (parameter updates on the 40th iteration have no influence on dosages). Therefore, we say that a choice of 39 gives 38 pseudo-haploid iterations and 2 diploid iterations
 * **genfile** Path to gen file with high coverage results. Empty for no genfile. File has a header row with a name for each sample, matching what is found in the bam file. Each subject is then a tab seperated column, with 0 = hom ref, 1 = het, 2 = hom alt and NA indicating missing genotype, with rows corresponding to rows of the posfile. Note therefore this file has one more row than posfile which has no header

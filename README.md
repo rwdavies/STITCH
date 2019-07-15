@@ -1,13 +1,13 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.5.7__**
-Release date: April 17, 2019
+**__Current Version: 1.6.0__**
+Release date: July 15, 2019
 
 [![Build Status](https://travis-ci.org/rwdavies/STITCH.svg)](https://travis-ci.org/rwdavies/STITCH)
 
 Changes in latest version
 
-1. Push CC through to htslib to robustify against compilation issues 
+1. Introduce new variable S as the number of sets of parameters results are averaged over
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -25,8 +25,8 @@ git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
 cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.5.7/STITCH_1.5.7.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.5.7.tar.gz
+wget https://github.com/rwdavies/stitch/releases/download/1.6.0/STITCH_1.6.0.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.6.0.tar.gz
 ```
 
 A quick test on real data can be performed using 
@@ -130,3 +130,5 @@ A fuller description is given the supplement of the paper given in the [citation
 K is the number of ancestral haplotypes in the model. Larger K allows for more accurate imputation for large samples and coverages, but takes longer and accuracy may suffer with lower coverage. It is usually wise to try a few values of K and assess performance using either external validation, or the distribution of quality scores (e.g. mean / median INFO score). It is likely wise to choose K that both gives you the best performance (accuracy, correlation or quality score distribution) within computational constraints, while also ensuring K is not too large given your sequencing coverage (e.g. try to ensure that each ancestral haplotype gets at least a certain average X of coverage, say 10X, given your number of samples and average depth). 
 
 nGen controls recombination rate between the sequenced samples and the ancestral haplotypes. It is probably fine to set it to 4 * Ne / K given some estimate of effective population size Ne. If you think your population can reasonably approximated as having been founded some number of generations ago / reduced to 2*K that many generations ago, use that generation time estimate. STITCH should be fairly robust to misspecifications of this parameter. 
+
+S controls the number of sets of ancestral haplotypes used. For instances where imputation confirms well to the model, S should have limited effect. For instances where imputation results are more modest, for example wild populations, increasing S should improve overall accuracy, with an approximately linear effect on run time.
