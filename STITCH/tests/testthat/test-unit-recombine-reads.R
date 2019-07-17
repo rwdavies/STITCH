@@ -141,6 +141,8 @@ test_that("correctly split a bad read", {
     out <- get_default_hapProbs(pseudoHaploidModel = 9, sampleReads = sampleReads, S = S)
     pRgivenH1_m <- out$pRgivenH1_m
     pRgivenH2_m <- out$pRgivenH2_m
+    pRgivenH1_m[] <- 0.9
+    pRgivenH2_m[] <- 0.4    
     srp <- out$srp
 
     tempdir <- tempdir()
@@ -165,6 +167,8 @@ test_that("correctly split a bad read", {
     expect_equal(out$readsTotal, 4)
 
     load(file_sampleReads(tempdir, iSample, regionName))
+    load(file_sampleProbs(tempdir, iSample, regionName))
+    
     ## trust get_sampleRead_from_SNP_i_to_SNP_j function
     ## as it is unit tested above
     set.seed(1)
@@ -174,7 +178,7 @@ test_that("correctly split a bad read", {
             sampleRead, 1, 2, L, grid
         )
     )
-    
+
     ## do not bother setting seed - is second sample call
     new_read_2 <- get_sampleRead_from_SNP_i_to_SNP_j(
         sampleRead, 3, 4, L, grid
@@ -183,7 +187,7 @@ test_that("correctly split a bad read", {
     if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
         new_read_2[[2]] <- 3
         ## >= 3.6.0
-        print(sampleReads[[4]])
+        print(sampleReads)
         print(new_read_2)
         expect_equal(
             sampleReads[[4]], ## this test involves a sample call - is still fine with >=R3.6.0new_
@@ -196,6 +200,10 @@ test_that("correctly split a bad read", {
         )
     }
 
+    expect_equal(srp, sapply(sampleReads, function(x) x[[2]]))
+    expect_equal(nrow(pRgivenH1_m), length(sampleReads))
+    expect_equal(nrow(pRgivenH2_m), length(sampleReads))    
+    
 })
 
 
