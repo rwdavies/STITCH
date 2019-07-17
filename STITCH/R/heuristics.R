@@ -1164,9 +1164,9 @@ findRecombinedReadsPerSample <- function(
         }
         if (method == "pseudoHaploid") {
             ## randomize those of split reads
-            srp <- srp[new_order]
-            pRgivenH1_m <- pRgivenH1_m[new_order, , drop = FALSE]
-            pRgivenH2_m <- pRgivenH2_m[new_order, , drop = FALSE]
+            srp <- srp[new_order, ]
+            pRgivenH1_m <- pRgivenH1_m[new_order, ]
+            pRgivenH2_m <- pRgivenH2_m[new_order, ]
             save(
                 srp, pRgivenH1_m, pRgivenH2_m,
                 file = file_sampleProbs(tempdir, iSample, regionName)
