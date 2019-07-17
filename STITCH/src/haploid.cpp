@@ -561,7 +561,7 @@ Rcpp::List forwardBackwardHaploid(
     int snp_start_1_based = -1,
     int snp_end_1_based = -1,
     const Rcpp::IntegerVector grid = 0,
-    const bool rescale = false
+    const bool rescale_eMatGrid_t = false
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -653,7 +653,7 @@ Rcpp::List forwardBackwardHaploid(
       //
       rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid);
       //
-      rcpp_make_eMatGrid_t(eMatGrid_t, eMatRead_t, 1, sampleReads, 1, nGrids, prev, suppressOutput, prev_section,next_section, run_fb_grid_offset, true, true, maxEmissionMatrixDifference, rescale);
+      rcpp_make_eMatGrid_t(eMatGrid_t, eMatRead_t, 1, sampleReads, 1, nGrids, prev, suppressOutput, prev_section,next_section, run_fb_grid_offset, true, true, maxEmissionMatrixDifference, rescale_eMatGrid_t);
       //
       next_section="Forward recursion";
       prev=print_times(prev, suppressOutput, prev_section, next_section);

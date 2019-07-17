@@ -3060,7 +3060,8 @@ run_forward_backwards <- function(
                 snp_start_1_based = snp_start_1_based,
                 snp_end_1_based = snp_end_1_based,
                 grid = grid,
-                output_haplotype_dosages = output_haplotype_dosages
+                output_haplotype_dosages = output_haplotype_dosages,
+                rescale_eMatGrid_t = rescale_eMatGrid_t
             )
             fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t
         }
@@ -3105,7 +3106,8 @@ run_forward_backwards <- function(
             snp_start_1_based = snp_start_1_based,
             snp_end_1_based = snp_end_1_based,
             grid = grid,
-            output_haplotype_dosages = output_haplotype_dosages
+            output_haplotype_dosages = output_haplotype_dosages,
+            rescale_eMatGrid_t = rescale_eMatGrid_t
         )
         fbsoL[[iNor]]$gammaK_t <- fbsoL[[iNor]]$gamma_t
     }
