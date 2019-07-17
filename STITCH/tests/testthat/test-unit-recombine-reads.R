@@ -107,6 +107,8 @@ test_that("correctly split a bad read", {
     grid_distances <- out$grid_distances
     L_grid <- out$L_grid
     nGrids <- out$nGrids
+    S <- 1
+    s <- 1
 
     
     eHapsCurrent_t <- rbind(rep(0.001, nSNPs), rep(0.999, nSNPs))
@@ -133,6 +135,13 @@ test_that("correctly split a bad read", {
     )
     expect_equal(w, 2)
 
+    out <- get_default_hapProbs(pseudoHaploidModel = 9, sampleReads = sampleReads, S = S)
+    pRgivenH1_m <- out$pRgivenH1_m
+    pRgivenH2_m <- out$pRgivenH2_m
+    pRgivenH1_m[] <- 0.9
+    pRgivenH2_m[] <- 0.4
+    srp <- out$srp
+    
     set.seed(1)
 
     tempdir <- tempdir()
@@ -145,7 +154,11 @@ test_that("correctly split a bad read", {
         sampleReads = sampleReads,
         tempdir = tempdir,
         regionName = regionName,
-        grid = grid
+        grid = grid,
+        method = "pseudoHaploid",
+        pRgivenH1_m = pRgivenH1_m,
+        pRgivenH2_m = pRgivenH2_m,
+        srp = srp
     )
     
     expect_equal(out$readsSplit, 1)
@@ -166,7 +179,11 @@ test_that("correctly split a bad read", {
     new_read_2 <- get_sampleRead_from_SNP_i_to_SNP_j(
         sampleRead, 3, 4, L, grid
     )
-
+    
+    load(file = file_sampleProbs(tempdir, iSample, regionName))
+    expect_equal(nrow(pRgivenH1_m), 4)
+    expect_equal(nrow(pRgivenH2_m), 4)
+    expect_equal(length(srp), 4)
     if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
         new_read_2[[2]] <- 3
         ## >= 3.6.0
@@ -180,6 +197,8 @@ test_that("correctly split a bad read", {
             new_read_2
         )
     }
+        
+
 
 })
 
