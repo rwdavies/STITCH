@@ -3486,27 +3486,20 @@ subset_of_complete_iteration <- function(
 
     ## decide if to re-generate
     pass_in_alphaBeta <- TRUE
-    if (pass_in_alphaBeta) {
-        if (method == "diploid") {
-            alphaHat_t <- array(0, c(K * K, nGrids))
-            betaHat_t <- array(0, c(K * K, nGrids))
-            gamma_t <- array(0, c(K * K, nGrids))
-            eMatGrid_t <- array(0, c(K * K, nGrids))
-        } else if ((method == "diploid-inbred") | (method == "pseudoHaploid")) {
-            alphaHat_t <- array(0, c(K, nGrids))
-            betaHat_t <- array(0, c(K, nGrids))
-            gamma_t <- array(0, c(K, nGrids))
-            eMatGrid_t <- array(0, c(K, nGrids))            
-        } else {
-            stop("bad method")
-        }
+    if (method == "diploid") {
+        alphaHat_t <- array(0, c(K * K, nGrids))
+        betaHat_t <- array(0, c(K * K, nGrids))
+        gamma_t <- array(0, c(K * K, nGrids))
+        eMatGrid_t <- array(0, c(K * K, nGrids))
+    } else if ((method == "diploid-inbred") | (method == "pseudoHaploid")) {
+        alphaHat_t <- array(0, c(K, nGrids))
+        betaHat_t <- array(0, c(K, nGrids))
+        gamma_t <- array(0, c(K, nGrids))
+        eMatGrid_t <- array(0, c(K, nGrids))            
     } else {
-        alphaHat_t <- array(0, c(1, 1))
-        betaHat_t <- array(0, c(1, 1))
-        gamma_t <- array(0, c(1, 1))
-        eMatGrid_t <- array(0, c(1, 1))
+        stop("bad method")
     }
-
+    
     ##
     ## other things sometimes needed
     ##
