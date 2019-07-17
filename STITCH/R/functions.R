@@ -3342,7 +3342,9 @@ within_EM_per_sample_heuristics <- function(
             tempdir = tempdir,
             regionName = regionName,
             grid = grid,
-            verbose = FALSE
+            verbose = FALSE,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m
         )
         readsTotal[iSample] <- out$readsTotal
         readsSplit[iSample] <- out$readsSplit

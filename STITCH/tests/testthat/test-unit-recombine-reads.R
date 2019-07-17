@@ -7,6 +7,7 @@ test_that("can split a read", {
         matrix(c(10, 10, -10, -10), ncol = 1),
         matrix(c(0, 1, 2, 3), ncol = 1)
     )
+    
     set.seed(1)
     out <- get_sampleRead_from_SNP_i_to_SNP_j(
         sampleRead,
@@ -99,6 +100,7 @@ test_that("correctly split a bad read", {
     iSample <- 1
     regionName <- "a_region"
     K <- 2
+    S <- 1
     nSNPs <- 4
     L <- 1:nSNPs
     gridWindowSize <- NA
@@ -135,7 +137,14 @@ test_that("correctly split a bad read", {
 
     set.seed(1)
 
+    method <- "pseudoHaploid"
+    out <- get_default_hapProbs(pseudoHaploidModel = 9, sampleReads = sampleReads, S = S)
+    pRgivenH1_m <- out$pRgivenH1_m
+    pRgivenH2_m <- out$pRgivenH2_m
+    srp <- out$srp
+
     tempdir <- tempdir()
+    
     out <- findRecombinedReadsPerSample(
         gammaK_t = gammaK_t,
         eHapsCurrent_t = eHapsCurrent_t,
@@ -145,7 +154,11 @@ test_that("correctly split a bad read", {
         sampleReads = sampleReads,
         tempdir = tempdir,
         regionName = regionName,
-        grid = grid
+        grid = grid,
+        method = method,
+        pRgivenH1_m = pRgivenH1_m,
+        pRgivenH2_m = pRgivenH2_m,
+        srp = srp
     )
     
     expect_equal(out$readsSplit, 1)
@@ -170,6 +183,8 @@ test_that("correctly split a bad read", {
     if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
         new_read_2[[2]] <- 3
         ## >= 3.6.0
+        print(sampleReads[[4]])
+        print(new_read_2)
         expect_equal(
             sampleReads[[4]], ## this test involves a sample call - is still fine with >=R3.6.0new_
             new_read_2
