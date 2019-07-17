@@ -1117,7 +1117,11 @@ findRecombinedReadsPerSample <- function(
     tempdir,
     regionName,
     grid,
-    verbose = TRUE
+    verbose = TRUE,
+    method = "diploid",
+    pRgivenH1_m = NULL,
+    pRgivenH2_m = NULL,
+    srp = NULL
 ) {
     K <- dim(eHapsCurrent_t)[1]
     ## needs a full run
@@ -1138,18 +1142,36 @@ findRecombinedReadsPerSample <- function(
                 L = L,
                 eHapsCurrent_t = eHapsCurrent_t,
                 K = K,
-                grid = grid
+                grid = grid,
+                method = method,
+                pRgivenH1_m = pRgivenH1_m,
+                pRgivenH2_m = pRgivenH2_m,
+                srp = srp
             )
             sampleReads <- out$sampleReads
+            pRgivenH1_m <- out$pRgivenH1_m
+            pRgivenH2_m <- out$pRgivenH2_m
+            srp <- srp
             count <- count + as.integer(out$did_split)
         } # end of loop on reads
-        sampleReads <- sampleReads[order(unlist(lapply(sampleReads,function(x) x[[2]])))]
+        new_order <- order(unlist(lapply(sampleReads,function(x) x[[2]])))        
+        sampleReads <- sampleReads[new_order]
         save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
         if (verbose) {
             print_message(paste0(
                 "sample ", iSample, " readsSplit ", count, " readsTotal ", length(sampleReads)
             ))
         }
+        if (method == "pseudoHaploid") {
+            ## randomize those of split reads
+            srp <- srp[new_order]
+            pRgivenH1_m <- pRgivenH1_m[new_order, , drop = FALSE]
+            pRgivenH2_m <- pRgivenH2_m[new_order, , drop = FALSE]
+            save(
+                srp, pRgivenH1_m, pRgivenH2_m,
+                file = file_sampleProbs(tempdir, iSample, regionName)
+            )
+        }        
     }
     return(
         list(
@@ -1167,7 +1189,11 @@ split_a_read <- function(
     L,
     eHapsCurrent_t,
     K,
-    grid
+    grid,
+    method,
+    pRgivenH1_m,
+    pRgivenH2_m,
+    srp
 ) {
 
     did_split <- FALSE
@@ -1223,12 +1249,23 @@ split_a_read <- function(
             list(new_read_2)
         )
         did_split <- TRUE
+        if (method == "pseudoHaploid") {
+            pRgivenH1_m[read_to_split, ] <- runif(ncol(pRgivenH1_m))
+            pRgivenH2_m[read_to_split, ] <- runif(ncol(pRgivenH2_m))
+            srp[read_to_split] <- sampleReads[[read_to_split]][[2]]
+            pRgivenH1_m <- rbind(pRgivenH1_m, runif(ncol(pRgivenH1_m)))
+            pRgivenH2_m <- rbind(pRgivenH2_m, runif(ncol(pRgivenH2_m)))
+            srp <- c(srp, sampleReads[[length(sampleReads)]][[2]])
+        }        
     }
 
     return(
         list(
             sampleReads = sampleReads,
-            did_split = did_split
+            did_split = did_split,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m,
+            srp = srp            
         )
     )
 }
