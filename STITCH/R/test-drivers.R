@@ -222,20 +222,36 @@ make_acceptance_test_data_package <- function(
     reads_span_n_snps = NULL,
     n_cores = 1,
     tmpdir = tempdir(),
+    use_tmpdir_directly = FALSE,
     use_crams = FALSE,
     sample_names = NULL,
     samples_are_inbred = FALSE,
-    phred_bq = 25
+    phred_bq = 25,
+    regionName = NA
 ) {
 
     if (length(n_reads) == 1) {
         n_reads <- rep(round(n_reads), n_samples)
     }
 
-    if (is.null(reads_span_n_snps))
+    if (is.null(reads_span_n_snps)) {
         reads_span_n_snps <- n_snps
+    }
 
-    outputdir <- tempfile(pattern = "dir", tmpdir = tmpdir)
+    if (is.na(regionName)) {
+        if (is.na(L[1])) {
+            regionName <- chr
+        } else {
+            regionName <- paste0(chr, ".", min(L), ".", max(L))
+        }
+    }
+
+    if (!use_tmpdir_directly) {
+        ## default - build new, specific directory for this
+        outputdir <- tempfile(pattern = "dir", tmpdir = tmpdir)
+    } else {
+        outputdir <- tmpdir
+    }
     if (use_crams) {
         rawdir <- file.path(outputdir, "crams")
     } else {
@@ -249,11 +265,11 @@ make_acceptance_test_data_package <- function(
     } else {
         L_is_simple <- FALSE
     }
-    posfile <- file.path(outputdir, "posfile.txt")
+    posfile <- file.path(outputdir, paste0("pos.", regionName, ".txt"))
     pos <- make_posfile(posfile, L = L, n_snps = n_snps, chr = chr)
     L <- pos[, 2]
 
-    phasefile <- file.path(outputdir, "phasefile.txt")
+    phasefile <- file.path(outputdir, paste0("phase.", regionName, ".txt"))
     phase <- make_phasefile(
         phasefile,
         n_snps = n_snps,
@@ -264,7 +280,7 @@ make_acceptance_test_data_package <- function(
         samples_are_inbred = samples_are_inbred
     )
 
-    genfile <- file.path(outputdir, "genfile.txt")
+    genfile <- file.path(outputdir, paste0("gen", regionName, ".file.txt"))
     write.table(
         phase[, , 1] + phase[, , 2] ,
         file = genfile,
@@ -339,7 +355,7 @@ make_acceptance_test_data_package <- function(
     })
 
     if (use_crams) {
-        cramlist <- file.path(outputdir, "cramlist.txt")
+        cramlist <- file.path(outputdir, paste0("cramlist.", regionName, ".txt"))
         bamlist <- NULL
         samplelist <- cramlist
         ref <- sample_files[[1]]$ref
@@ -348,7 +364,7 @@ make_acceptance_test_data_package <- function(
     } else {
         ref <- NULL
         cramlist <- NULL
-        bamlist <- file.path(outputdir, "bamlist.txt")
+        bamlist <- file.path(outputdir, paste0("bamlist.", regionName, ".txt"))
         samplelist <- bamlist
         sample_files <- sapply(sample_files, function(x) x)
         bam_files <- sample_files
