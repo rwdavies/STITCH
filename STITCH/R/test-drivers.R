@@ -257,8 +257,12 @@ make_acceptance_test_data_package <- function(
     } else {
         rawdir <- file.path(outputdir, "bams")
     }
-    dir.create(outputdir)
-    dir.create(rawdir)
+    if (!dir.exists(outputdir)) {
+        dir.create(outputdir)
+    }
+    if (!dir.exists(rawdir)) {
+        dir.create(rawdir)
+    }
 
     if (is.na(L[1])) {
         L_is_simple <- TRUE
@@ -280,7 +284,7 @@ make_acceptance_test_data_package <- function(
         samples_are_inbred = samples_are_inbred
     )
 
-    genfile <- file.path(outputdir, paste0("gen", regionName, ".file.txt"))
+    genfile <- file.path(outputdir, paste0("gen.", regionName, ".file.txt"))
     write.table(
         phase[, , 1] + phase[, , 2] ,
         file = genfile,
