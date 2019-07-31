@@ -260,6 +260,7 @@ make_acceptance_test_data_package <- function(
     if (!dir.exists(outputdir)) {
         dir.create(outputdir)
     }
+
     if (!dir.exists(rawdir)) {
         dir.create(rawdir)
     }
@@ -571,7 +572,6 @@ simple_write <- function(matrix, file, gzip = FALSE, col.names = TRUE) {
 
 #' @export
 make_reference_package <- function(
-    regionName = "test",
     n_snps = 10,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
@@ -579,22 +579,43 @@ make_reference_package <- function(
     chr = 1,
     reference_sample_header = NA,
     reference_genders = c("male", "female"),
-    phasemaster = NULL
+    phasemaster = NULL,
+    tmpdir = tempdir(),
+    use_tmpdir_directly = FALSE,
+    regionName = NA    
 ) {
 
+    if (is.na(regionName)) {
+        if (is.na(L[1])) {
+            regionName <- chr
+        } else {
+            regionName <- paste0(chr, ".", min(L), ".", max(L))
+        }
+    }
+    if (!use_tmpdir_directly) {
+        ## default - build new, specific directory for this
+        outputdir <- tempfile(pattern = "dir", tmpdir = tmpdir)
+    } else {
+        outputdir <- tmpdir
+    }
+    if (!dir.exists(outputdir)) {
+        dir.create(outputdir)
+    }
+
+    ## add a space in it
+    reference_haplotype_file <- file.path(outputdir, paste0("ref hap.", regionName, ".txt.gz"))
+    reference_legend_file <- file.path(outputdir, paste0("ref legend.", regionName, ".txt.gz"))
+    reference_sample_file <- file.path(outputdir, paste0("ref sample.", regionName, ".txt"))
+    posfile <- file.path(outputdir, paste0("ref.", regionName, ".pos.txt"))
+    
+    ##     
     n_total_samples <- length(reference_populations) * n_samples_per_pop
-    posfile <- tempfile()
     pos <- make_posfile(
         posfile = posfile,
         n_snps = n_snps,
         seed = 1,
         L = L
     )
-
-    ## add a space in it
-    reference_haplotype_file <- tempfile(pattern = "fi le", fileext = ".gz")
-    reference_legend_file <- tempfile(pattern = "fi le", fileext = ".gz")
-    reference_sample_file <- tempfile(pattern = "fi le")
 
     ##ID POP GROUP SEX
     ##HG00096 GBR EUR male
@@ -606,8 +627,9 @@ make_reference_package <- function(
     reference_samples[, "ID"] <- paste0("NOT_USED", 1:nrow(reference_samples))
 
     ## override the header for testing
-    if (is.na(reference_sample_header[1]) == FALSE)
+    if (is.na(reference_sample_header[1]) == FALSE) {
         colnames(reference_samples) <- reference_sample_header
+    }
     simple_write(reference_samples, reference_sample_file)
 
     ##id position a0 a1 TYPE AFR AMR EAS EUR SAS ALL
