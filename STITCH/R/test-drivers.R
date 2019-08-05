@@ -204,7 +204,7 @@ make_phasefile <- function(
         if (nrow(out) != length(write_row_as_NA)) {
             stop("Supplied write_row_as_NA must be the same dimension as phase")
         }
-        out[write_row_as_NA, ] <- NA
+        out[write_row_as_NA, ] <- "NA|NA"
     }
     write.table(out, file = phasefile, sep = "\t", row.names = FALSE, col.names = include_header, quote = FALSE)
     if (length(colnames(out)) == 1) {

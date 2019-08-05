@@ -245,9 +245,9 @@ test_that("phase throws an error if values other than 0 or 1 are used", {
     phase <- make_phasefile(phasefile, vals = c(0, 1, 2), seed = 1)
     if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
         ## 3.6.0 and beyond
-        expected_error <- "The phasefile contains entries other than 0 or 1. One such entry is in column 1 and row 2  with value 2|0"
+        expected_error <- "The phasefile contains entries other than 0, 1 or NA. One such entry is in column 1 and row 2  with value 2|0"
     } else {
-        expected_error <- "The phasefile contains entries other than 0 or 1. One such entry is in column 1 and row 4  with value 2|0"
+        expected_error <- "The phasefile contains entries other than 0, 1 or NA1. One such entry is in column 1 and row 4  with value 2|0"
     }
     expect_error(
         get_and_validate_phase(phasefile),
@@ -426,4 +426,25 @@ test_that("phase name is properly matched with one sample", {
         out$samples_with_phase,
         9
     )
+})
+
+
+test_that("can test-drive NA phase", {
+    
+    sampleNames <- paste0("samp", 1:10)
+    phasefile <- tempfile()
+    n_snps <- 10
+    write_row_as_NA <- array(FALSE, n_snps)
+    write_row_as_NA[5] <- TRUE
+    phaseIN <- make_phasefile(
+        phasefile,
+        n_samples = 1,
+        header = c("samp9"),
+        write_row_as_NA = write_row_as_NA
+    )
+    phaseIN[write_row_as_NA, , ] <- NA
+    ## 
+    phaseOUT <- get_and_validate_phase(phasefile)
+    expect_equal(phaseIN, phaseOUT)
+
 })

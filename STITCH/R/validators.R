@@ -128,22 +128,6 @@ validate_reference_sample_file <- function(samples, reference_sample_file) {
 
 
 
-validate_phase <- function(phase) {
-    if (length(dim(phase)) != 3)
-        stop("The phasefile does not have the right number of dimensions")
-    if (sum(phase[, , 1] != 0 & phase[, , 1] != 1 & phase[, , 2] != 0 & phase[, , 2] != 1) > 0) {
-        for(i_col in 1:dim(phase)[2]) {
-            p <- phase[, i_col, ]
-            i_row <- which.max(rowSums(p != 0 & p != 1) > 0)
-            p2 <- phase[i_row, i_col, ]
-            stop(paste0(
-                "The phasefile contains entries other than 0 or 1. ",
-                "One such entry is in column ", i_col, " and row ", i_row, " ",
-                " with value ", paste(p2, collapse = "|")
-            ))
-        }
-    }
-}
 
 
 ## validate pos matrix shortly after loading
@@ -330,23 +314,40 @@ get_and_validate_pos <- function(posfile, chr) {
 get_and_validate_phase <- function(
     phasefile
 ) {
-    if (phasefile == "")
+    if (phasefile == "") {
         return(NULL)
+    }
     phaseX <- read.table(phasefile, header = TRUE, stringsAsFactors = FALSE)
     validate_phase_header(phasefile)
     phase <- array(0, c(nrow(phaseX), ncol(phaseX), 2))
     for(i_samp in 1:ncol(phase)) {
         col <- strsplit(phaseX[, i_samp], "|", fixed = TRUE)
         validate_phase_col(col, i_samp)
-        for(j in 1:2)
-            phase[, i_samp, j] <- as.integer(sapply(col, function(x) x[j]))
+        for(j in 1:2) {
+            x <- sapply(col, function(x) x[j])
+            ## only allow NA, 0, or 1
+            w <- x %in% c(0, 1, NA, "0", "1", "NA") ## any of these are fine
+            if (sum(!w) > 0) {
+                ## report error
+                i_row <- which.max(!w)
+                p2 <- phaseX[i_row, i_samp]
+                stop(paste0(
+                    "The phasefile contains entries other than 0, 1 or NA. ",
+                    "One such entry is in column ", i_samp, " and row ", i_row, " ",
+                    " with value ", paste(p2, collapse = "|")
+                ))
+            }
+            phase[, i_samp, j] <- suppressWarnings(as.integer(x))
+        }
     }
     if (length(colnames(phaseX)) == 1) {
         dimnames(phase)[[2]] <- list(colnames(phaseX))
     } else {
         dimnames(phase)[[2]] <- colnames(phaseX)
     }
-    validate_phase(phase)
+    if (length(dim(phase)) != 3) {
+        stop("The phasefile does not have the right number of dimensions")
+    }
     return(phase)
 }
 

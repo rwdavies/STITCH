@@ -182,7 +182,6 @@ test_that("STITCH pseudoHaploid works with switchModelIteration", {
 test_that("STITCH pseudoHaploid works with a single sample and two cores", {
 
     phasemaster <- matrix(c(c(0, 0, 0), c(1, 1, 1)), ncol = 2)
-    write_row_as_NA <- c(FALSE, TRUE, FALSE)
     data_package3 <- make_acceptance_test_data_package(
         n_samples = 1,
         n_snps = 3,
@@ -190,8 +189,7 @@ test_that("STITCH pseudoHaploid works with a single sample and two cores", {
         seed = 1,
         chr = "chrWER",
         K = 2,
-        phasemaster = phasemaster,
-        write_row_as_NA = write_row_as_NA
+        phasemaster = phasemaster
     )
     
     for(output_format in c("bgvcf", "bgen")) {
