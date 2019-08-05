@@ -2,7 +2,7 @@ if (1 == 0) {
     
     library("testthat"); library("STITCH"); library("rrbgen")
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    ## dir <- "~/proj/STITCH/"
+    dir <- "~/proj/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
     a <- dir(pattern = "*R")
     b <- grep("~", a)
@@ -12,7 +12,6 @@ if (1 == 0) {
     o <- sapply(a, source)
     setwd(dir)
     Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
-    
 
 }
 

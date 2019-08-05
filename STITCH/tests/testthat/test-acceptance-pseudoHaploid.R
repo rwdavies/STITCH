@@ -1,3 +1,21 @@
+if (1 == 0) {
+    
+    library("testthat"); library("STITCH"); library("rrbgen")
+    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "~/proj/STITCH/"
+    setwd(paste0(dir, "/STITCH/R"))
+    a <- dir(pattern = "*R")
+    b <- grep("~", a)
+    if (length(b) > 0) {
+        a <- a[-b]
+    }
+    o <- sapply(a, source)
+    setwd(dir)
+    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+
+}
+
+
 ## suppressWarnings(RNGversion("3.5.0"))
 
 n_snps <- 10
@@ -164,6 +182,7 @@ test_that("STITCH pseudoHaploid works with switchModelIteration", {
 test_that("STITCH pseudoHaploid works with a single sample and two cores", {
 
     phasemaster <- matrix(c(c(0, 0, 0), c(1, 1, 1)), ncol = 2)
+    write_row_as_NA <- c(FALSE, TRUE, FALSE)
     data_package3 <- make_acceptance_test_data_package(
         n_samples = 1,
         n_snps = 3,
@@ -171,7 +190,8 @@ test_that("STITCH pseudoHaploid works with a single sample and two cores", {
         seed = 1,
         chr = "chrWER",
         K = 2,
-        phasemaster = phasemaster
+        phasemaster = phasemaster,
+        write_row_as_NA = write_row_as_NA
     )
     
     for(output_format in c("bgvcf", "bgen")) {

@@ -168,7 +168,8 @@ make_phasefile <- function(
     header = NULL,
     K = NA,
     phasemaster = NULL,
-    samples_are_inbred = FALSE
+    samples_are_inbred = FALSE,
+    write_row_as_NA = NULL ## boolean vector when defined
 ) {
     set.seed(seed)
     if (is.na(K)) {
@@ -199,6 +200,12 @@ make_phasefile <- function(
     } else {
         colnames(out) <- header
     }
+    if (!is.null(write_row_as_NA)) {
+        if (nrow(out) != length(write_row_as_NA)) {
+            stop("Supplied write_row_as_NA must be the same dimension as phase")
+        }
+        out[write_row_as_NA, ] <- NA
+    }
     write.table(out, file = phasefile, sep = "\t", row.names = FALSE, col.names = include_header, quote = FALSE)
     if (length(colnames(out)) == 1) {
         dimnames(phase)[[2]] <- list(colnames(out))
@@ -227,7 +234,8 @@ make_acceptance_test_data_package <- function(
     sample_names = NULL,
     samples_are_inbred = FALSE,
     phred_bq = 25,
-    regionName = NA
+    regionName = NA,
+    write_row_as_NA = NULL
 ) {
 
     if (length(n_reads) == 1) {
@@ -275,6 +283,7 @@ make_acceptance_test_data_package <- function(
     L <- pos[, 2]
 
     phasefile <- file.path(outputdir, paste0("phase.", regionName, ".txt"))
+    
     phase <- make_phasefile(
         phasefile,
         n_snps = n_snps,
@@ -282,7 +291,8 @@ make_acceptance_test_data_package <- function(
         K = K,
         seed = seed,
         phasemaster = phasemaster,
-        samples_are_inbred = samples_are_inbred
+        samples_are_inbred = samples_are_inbred,
+        write_row_as_NA = write_row_as_NA
     )
 
     genfile <- file.path(outputdir, paste0("gen.", regionName, ".file.txt"))
