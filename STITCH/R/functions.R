@@ -133,6 +133,7 @@ STITCH <- function(
     outputBlockSize = 1000,
     outputSNPBlockSize = 10000,
     inputBundleBlockSize = NA,
+    genetic_map_file = "",
     reference_haplotype_file = "",
     reference_legend_file = "",
     reference_sample_file = "",
@@ -513,7 +514,7 @@ STITCH <- function(
     ##
     ## initialize variables
     ##
-    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations)
+    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations, genetic_map_file = genetic_map_file)
     eHapsCurrent_tc <- out$eHapsCurrent_tc
     alphaMatCurrent_tc <- out$alphaMatCurrent_tc
     hapSumCurrent_tc <- out$hapSumCurrent_tc
@@ -1285,7 +1286,8 @@ initialize_parameters <- function(
     plot_shuffle_haplotype_attempts,
     shuffle_bin_radius,
     snps_in_grid_1_based,
-    plotHapSumDuringIterations
+    plotHapSumDuringIterations,
+    genetic_map_file
 ) {
 
     print_message("Begin parameter initialization")
@@ -1297,6 +1299,12 @@ initialize_parameters <- function(
         dl <- grid_distances
     }
 
+    if (genetic_map_file != "") {
+        ## 
+        genetic_map <- get_and_validate_genetic_map(genetic_map_file)
+        ## now - convert to sigmaCurrent_m
+    }
+    
     ## default values
     eHapsCurrent_tc <- array(runif(nSNPs * K * S), c(K, nSNPs, S))
     alphaMatCurrent_tc <- array(1 / K, c(K, nGrids - 1, S))
