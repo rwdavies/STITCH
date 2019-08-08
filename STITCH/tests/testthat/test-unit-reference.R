@@ -354,3 +354,55 @@ test_that("can do single reference iteration", {
 
 
 })
+
+
+test_that("can understand genetic map format", {
+    
+    ## from https://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3_chrX.tgz
+    ## from the top of one of the genetic maps
+    genetic_map <- rbind(
+        c(150118, 1.13462264157027, 0),
+        c(154675, 1.12962782559127, 0.00517047537763574),
+        c(154753, 1.13654510133156, 0.00525858634803186),
+        c(168567, 1.58657526542862, 0.0209588203778261)
+    )
+    colnames(genetic_map) <- c("position", "COMBINED_rate.cM.Mb.", "Genetic_Map.cM.")
+    ## add back in last column, check OK
+    expect_equal(
+        fill_in_genetic_map_cm_column(genetic_map)[, 3],
+        genetic_map[, 3]
+    )
+
+})
+
+
+## something like 
+## position COMBINED_rate.cM.Mb. Genetic_Map.cM.
+## 82590               3.8618       0.0000000
+## 82603               3.8740       0.0000502
+## 83158               3.8802       0.0022003
+
+## alternatively like
+##position COMBINED_rate(cM/Mb) Genetic_Map(cM)
+## 150118 1.13462264157027 0
+## 154675 1.12962782559127 0.00517047537763574
+test_that("can load and validate reference genetic map", {
+
+    refpack <- make_reference_package()
+    reference_genetic_map_file <- refpack$reference_genetic_map_file
+    genetic_map <- read.table(reference_genetic_map_file, header = TRUE)
+    expect_null(
+        validate_genetic_map(genetic_map)
+    )
+
+})
+
+test_that("can error invalid genetic reference map", {
+
+    L <- 1:10
+    n_snps <- 10
+    genetic_map <- make_genetic_map_file(L, n_snps, expRate = 0.5)
+    genetic_map[5, "Genetic_Map.cM."] <- 2 * genetic_map[5, "Genetic_Map.cM."]
+    expect_error(validate_genetic_map(genetic_map, verbose = FALSE))
+
+})
