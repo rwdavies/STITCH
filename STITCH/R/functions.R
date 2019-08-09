@@ -1323,7 +1323,7 @@ initialize_parameters <- function(
     ## default values
     eHapsCurrent_tc <- array(runif(nSNPs * K * S), c(K, nSNPs, S))
     alphaMatCurrent_tc <- array(1 / K, c(K, nGrids - 1, S))
-    hapSumCurrent_tc <- array(0, c(K, nGrids - 1, S)) ## should not care?
+    hapSumCurrent_tc <- array(0, c(K, nGrids, S))
     priorCurrent_m <- array(1 / K, c(K, S))
 
     ##
