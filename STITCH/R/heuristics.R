@@ -314,16 +314,13 @@ define_and_save_breaks_to_consider <- function(
         sigmaSum_unnormalized <- sigmaSum_m_unnormalized[, s]
         ## generate smoothed rate
         smoothed_rate <- rcpp_make_smoothed_rate(
-            sigmaSum = sigmaSum_unnormalized,
             sigma_rate = -log(sigmaSum_unnormalized) / grid_distances,
             L_grid = L_grid,
-            grid_distances = grid_distances, ## when no grid, this is diff(L)
-            nGrids = nGrids, ## when no grid, this equals nSNPs 
             shuffle_bin_radius = shuffle_bin_radius
         )
         ## normalize against max rate
         smoothed_rate <- smoothed_rate / 
-            ((nGen * maxRate * 1/100/1000000) * shuffle_bin_radius * 2)
+            ((nGen * maxRate * 1/100/1000000))
         ##
         out <- choose_points_to_break(
             smoothed_rate = smoothed_rate,
@@ -372,72 +369,117 @@ define_and_save_breaks_to_consider <- function(
 }
 
 
+
+## smooth AT the point
+## not BETWEEN the points
+make_smoothed_cM_rate <- function(
+    cM,
+    L_grid,
+    shuffle_bin_radius = 5000
+) {
+    ## 
+    new_L <- L_grid[-length(L_grid)] + diff(L_grid)/2
+    n <- length(new_L)
+    new_L <- c(
+        new_L[1] - (new_L[1] - L_grid[1]) / 2,
+        new_L,
+        new_L[n] + (L_grid[length(L_grid)] - new_L[n]) / 2
+    )
+    cM_smoothed <- make_smoothed_rate(
+        sigma_rate = cM,
+        L_grid = new_L,
+        shuffle_bin_radius = shuffle_bin_radius
+    )
+    return(cM_smoothed)
+}
+
 ##
 ## returns one entry of average rate between pairs of SNPs
 ## value is average for middle point +/- shuffle_bin_radius
 ## 
 make_smoothed_rate <- function(
-    sigmaSum_unnormalized,
     sigma_rate,
     L_grid,
-    grid_distances,
-    nGrids,
-    shuffle_bin_radius = 5000
+    shuffle_bin_radius = 5000,
+    verbose = FALSE,
+    range = NA
 ) {
+    nGrids <- length(L_grid)
+    if (is.na(range)) {
+        range <- 1:(nGrids - 1)
+    }
     smoothed_rate <- array(0, nGrids - 1) ## between SNPs
     ##
     min_L_grid <- min(L_grid)
     max_L_grid <- max(L_grid)
-    for(iSNP in 1:(nGrids - 1)) {
-        focal_point <- floor((L_grid[iSNP] + L_grid[iSNP + 1]) / 2)        
-        if (
-            min_L_grid <= (focal_point - shuffle_bin_radius) &
-            (focal_point + shuffle_bin_radius) <= max_L_grid
-        ) {
-            ## left
-            ## so re-call
-            ## start with focal SNP, defined by position average of iSNP and iSNP + 1
-            ## first region is iSNP_left
-            iSNP_left <- iSNP
-            bp_remaining <- shuffle_bin_radius
-            bp_prev <- focal_point
-            while(0 < bp_remaining) {
-                bp_to_add <- (bp_prev - L_grid[iSNP_left] + 1)
-                if ((bp_remaining - bp_to_add) < 0) {
-                    bp_to_add <- bp_remaining
-                    bp_remaining <- 0
-                } else {
-                    bp_remaining <- bp_remaining - bp_to_add
-                    bp_prev <- L_grid[iSNP_left]
-                }
-                ## add bit
-                smoothed_rate[iSNP] <- smoothed_rate[iSNP] + bp_to_add * sigma_rate[iSNP_left]
-                iSNP_left <- iSNP_left - 1                
-            }
-            ## right
-            ## so recall. start with iSNP, then iSNP_right starts one to the right
-            ## at first, difference between focal point (mid-way between iSNP and iSNP + 1)
-            ## and iSNP + 1. then rate for that region is for iSNP (iSNP_right -1)
-            iSNP_right <- iSNP + 1
-            bp_remaining <- shuffle_bin_radius
-            bp_prev <- focal_point
-            while(0 < bp_remaining) {
-                bp_to_add <- (L_grid[iSNP_right] - bp_prev + 1)
-                if ((bp_remaining - bp_to_add) < 0) {
-                    bp_to_add <- bp_remaining
-                    bp_remaining <- 0
-                } else {
-                    bp_remaining <- bp_remaining - bp_to_add
-                    bp_prev <- L_grid[iSNP_right] ## reset
-                }
-                ## add bit
-                smoothed_rate[iSNP] <- smoothed_rate[iSNP] +
-                    bp_to_add * sigma_rate[iSNP_right - 1]
-                iSNP_right <- iSNP_right + 1
-            }
-        } else {
-            smoothed_rate[iSNP] <- NA
+    for(iGrid in range) {
+        focal_point <- ((L_grid[iGrid] + L_grid[iGrid + 1]) / 2)
+        total_bp_added <- 0
+        if (verbose) {
+            print_message(paste0("This is iGrid ", iGrid))
+            print_message(paste0("This is between SNPs ", iGrid, " and ", iGrid + 1))
+            print_message(paste0("The position of those two SNPs are", L[iGrid], " and ", L[iGrid + 1]))
+            print_message(paste0("The focal point is:", focal_point))
+            print_message(paste0("So, arguably, we want from:", focal_point - shuffle_bin_radius, " to ", focal_point + shuffle_bin_radius))
         }
+        ## 
+        ## left
+        ## so re-call
+        ## start with focal SNP, defined by position average of iGrid and iGrid + 1
+        ## first region is iGrid_left
+        iGrid_left <- iGrid
+        bp_remaining <- shuffle_bin_radius
+        bp_prev <- focal_point
+        while ((0 < bp_remaining) & (0 < iGrid_left)) {
+            bp_to_add <- (bp_prev - L_grid[iGrid_left])
+            if ((bp_remaining - bp_to_add) < 0) {
+                bp_to_add <- bp_remaining
+                bp_remaining <- 0
+            } else {
+                bp_remaining <- bp_remaining - bp_to_add
+            }
+            ## add bit
+            if (verbose) {
+                print_message(paste0("This is iGrid left :", iGrid_left))
+                print_message(paste0("This is effectively from, inclusively:", bp_prev - bp_to_add, " to ", bp_prev - 1))
+                print_message(paste0("We are adding this many bp: ", bp_to_add))
+                print_message(paste0("Using rate: ", sigma_rate[iGrid_left]))
+            }
+            smoothed_rate[iGrid] <- smoothed_rate[iGrid] + bp_to_add * sigma_rate[iGrid_left]
+            total_bp_added <- total_bp_added + bp_to_add
+            bp_prev <- L_grid[iGrid_left]
+            iGrid_left <- iGrid_left - 1                
+        }
+        ## right
+        ## so recall. start with iGrid, then iGrid_right starts one to the right
+        ## at first, difference between focal point (mid-way between iGrid and iGrid + 1)
+        ## and iGrid + 1. then rate for that region is for iGrid (iGrid_right -1)
+        iGrid_right <- iGrid + 1
+        bp_remaining <- shuffle_bin_radius
+        bp_prev <- focal_point
+        while ((0 < bp_remaining) & (iGrid_right <= (nGrids))) {
+            bp_to_add <- (L_grid[iGrid_right] - bp_prev)
+            ##
+            if ((bp_remaining - bp_to_add) < 0) {
+                bp_to_add <- bp_remaining
+                bp_remaining <- 0 ## will end loop
+            } else {
+                bp_remaining <- bp_remaining - bp_to_add
+            }
+            ## add bit
+            if (verbose) {
+                print_message(paste0("This is iGrid right :", iGrid_right))
+                print_message(paste0("This is effectively from, inclusively:", bp_prev, " to ", bp_prev + bp_to_add - 1))
+                print_message(paste0("We are adding this many bp: ", bp_to_add))            
+                print_message(paste0("Using rate: ", sigma_rate[iGrid_right - 1]))
+            }
+            smoothed_rate[iGrid] <- smoothed_rate[iGrid] +
+                bp_to_add * sigma_rate[iGrid_right - 1]
+            total_bp_added <- total_bp_added + bp_to_add
+            bp_prev <- L_grid[iGrid_right] ## reset
+            iGrid_right <- iGrid_right + 1
+        }
+        smoothed_rate[iGrid] <- smoothed_rate[iGrid] / total_bp_added
     }
     return(smoothed_rate)
 }

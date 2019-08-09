@@ -85,13 +85,80 @@ test_that("can run getBetterSwitchesSimple with / without grid", {
 })
 
 
+test_that("can smooth simple rate in R", {
+
+    set.seed(9191)
+    shuffle_bin_radius <- 20
+    L <- c(7, 19, 27, 35, 43, 53, 61) ## keep odd - ignore tiny 0.5 errors
+    expRates <- c(1, 2, 3, 4, 3, 2, 1) + runif(7)
+    nGrids <- length(L)
+    gridWindowSize <- NA
+    truth_rate <- array(0, 100)
+    ## make rates constant in each bin
+    for(iLL in 1:(nGrids - 1)) {
+        LL <- L[iLL]
+        truth_rate[(LL):(L[iLL + 1] - 1)] <- 100 * expRates[iLL]
+    }
+    truth_map <- c(0, cumsum(truth_rate / 1e6))    
+    ## now - we want sigma_rate
+    ## this is the rate between the SNPs
+    sigma_rate <- diff(truth_map[L]) / diff(L) * 1e6
+    L_grid <- L
+    
+    ## now - smooth the rate
+    results1 <- make_smoothed_rate(
+        sigma_rate = sigma_rate,
+        L_grid = L,
+        shuffle_bin_radius = shuffle_bin_radius,
+        verbose = FALSE
+    )
+
+    ## now - check versus expectations
+    expected_rates <- sapply(1:length(results1), function(iGrid) {
+        focal_L <- (L[iGrid] + L[iGrid + 1]) / 2
+        w <- max(min(L), (focal_L - shuffle_bin_radius)):min((focal_L + shuffle_bin_radius - 1), max(L) - 1)
+        return(mean(truth_rate[w]))
+    })
+    expect_equal(expected_rates, as.numeric(results1))
+    
+    ## so MANUAL truth
+    ## first one is 7-19 so 13
+    ## then we want 0->32
+    ## which means 7->32 average here
+    ## mean(truth_rate[7:32])
+    if (1 == 0) {
+        ##
+        plot(truth_rate)
+        ## check sigma-rate definition
+        segments(
+            x0 = L[-length(L)],
+            x1 = L[-1] - 1,
+            y0 = sigma_rate,
+            y1 = sigma_rate,
+            col = "red"
+        )
+        ## checked smooth version
+        segments(
+            x0 = L[-length(L)],
+            x1 = L[-1] - 1,
+            y0 = results1,
+            y1 = results1,
+            col = "orange"
+        )
+    }
+    
+})
+
+
+
+
 test_that("can smooth rate", {
 
     set.seed(10)            
     shuffle_bin_radius <- 5000
     L <- sort(sample(100000, 100))
 
-    for(gridWindowSize in c(NA, 10000)) {
+    for(gridWindowSize in c(NA, 2800)) {
         
         out <- assign_positions_to_grid(L = L, gridWindowSize = gridWindowSize)
         grid <- out$grid
@@ -99,27 +166,30 @@ test_that("can smooth rate", {
         L_grid <- out$L_grid
         nGrids <- out$nGrids
         
-        ## now simulate a rate
-        sigmaSum_unnormalized <- runif(nGrids - 1)
-        sigma_rate <- -log(sigmaSum_unnormalized) / grid_distances ## by definition
+        ## 
+        truth_rate <- array(0, 100000)
+        ## make rates constant in each bin
+        for(iLL in 1:nGrids) {
+             LL <- L_grid[iLL]
+            truth_rate[(LL + 1):(c(L_grid, 100000)[iLL + 1])] <- runif(1) * 100
+        }
+        truth_map <- c(0, cumsum(truth_rate / 1e6))
+
+        ## now simulate a rate per bp
+        sigma_rate <- diff(truth_map[L_grid]) / grid_distances
         
-        ## just check the same
+        ## 
         results1 <- make_smoothed_rate(
-            sigmaSum_unnormalized,
-            sigma_rate,
-            L_grid,
-            grid_distances,
-            nGrids,
-            shuffle_bin_radius
+            sigma_rate = sigma_rate,
+            L_grid = L_grid,
+            shuffle_bin_radius = shuffle_bin_radius
         )
-        
+
+        ##         
         results2 <- rcpp_make_smoothed_rate(
-            sigmaSum_unnormalized,
-            sigma_rate,
-            L_grid,
-            grid_distances,
-            nGrids,
-            shuffle_bin_radius
+            sigma_rate = sigma_rate,
+            L_grid = L_grid,
+            shuffle_bin_radius = shuffle_bin_radius
         )
         
         expect_equal(as.numeric(results1), as.numeric(results2))

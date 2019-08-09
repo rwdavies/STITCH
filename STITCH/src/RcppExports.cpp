@@ -552,19 +552,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_smoothed_rate
-Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigmaSum_unnormalized, const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const Rcpp::IntegerVector& grid_distances, const int nGrids, const int shuffle_bin_radius, const bool verbose);
-RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigmaSum_unnormalizedSEXP, SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP grid_distancesSEXP, SEXP nGridsSEXP, SEXP shuffle_bin_radiusSEXP, SEXP verboseSEXP) {
+Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const int shuffle_bin_radius, const bool verbose);
+RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP shuffle_bin_radiusSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigmaSum_unnormalized(sigmaSum_unnormalizedSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sigma_rate(sigma_rateSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type L_grid(L_gridSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type grid_distances(grid_distancesSEXP);
-    Rcpp::traits::input_parameter< const int >::type nGrids(nGridsSEXP);
     Rcpp::traits::input_parameter< const int >::type shuffle_bin_radius(shuffle_bin_radiusSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_smoothed_rate(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_smoothed_rate(sigma_rate, L_grid, shuffle_bin_radius, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -643,7 +640,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 39},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},
-    {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 7},
+    {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
     {"_STITCH_test_eHaps_options", (DL_FUNC) &_STITCH_test_eHaps_options, 8},
     {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 5},
