@@ -14,7 +14,6 @@ Sys.setenv(PATH = paste0(Sys.getenv("PATH"), ":", getwd()))
 library("testthat")
 library("parallel")
 source("STITCH/R/cli.R")
-source("STITCH/R/test-drivers.R")
 
 ## testthat doesn't do what I want outside of package form
 ## so don't bother wrappping, just fail
@@ -66,7 +65,7 @@ expect_equal(0, out)
 n_snps <- 5
 chr <- 10
 phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
-data_package <- make_acceptance_test_data_package(
+data_package <- STITCH::make_acceptance_test_data_package(
     n_samples = 10,
     n_snps = n_snps,
     n_reads = 4,
@@ -75,7 +74,7 @@ data_package <- make_acceptance_test_data_package(
     K = 2,
     phasemaster = phasemaster
 )
-refpack <- make_reference_package(
+refpack <- STITCH::make_reference_package(
     n_snps = n_snps,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
