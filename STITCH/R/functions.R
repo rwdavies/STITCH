@@ -133,6 +133,7 @@ STITCH <- function(
     outputBlockSize = 1000,
     outputSNPBlockSize = 10000,
     inputBundleBlockSize = NA,
+    genetic_map_file = "",
     reference_haplotype_file = "",
     reference_legend_file = "",
     reference_sample_file = "",
@@ -490,17 +491,27 @@ STITCH <- function(
         return(NULL)
     }
 
+    ## 
+    ## load genetic map at sites L, if it is supplied
+    ## 
+    cM <- load_validate_and_match_genetic_map(
+        genetic_map_file = genetic_map_file,
+        L = L,
+        expRate = expRate
+    )
 
     ## set up grid
     out <- assign_positions_to_grid(
         L = L,
-        gridWindowSize = gridWindowSize
+        gridWindowSize = gridWindowSize,
+        cM = cM
     )
     grid <- out$grid
     grid_distances <- out$grid_distances
     L_grid <- out$L_grid
     nGrids <- out$nGrids
     snps_in_grid_1_based <- out$snps_in_grid_1_based
+    cM_grid <- out$cM_grid
 
     ## determine output regions
     blocks_for_output <- determine_snp_and_grid_blocks_for_output(
@@ -513,7 +524,7 @@ STITCH <- function(
     ##
     ## initialize variables
     ##
-    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations)
+    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, windowSNPs = windowSNPs, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations, cM_grid = cM_grid)
     eHapsCurrent_tc <- out$eHapsCurrent_tc
     alphaMatCurrent_tc <- out$alphaMatCurrent_tc
     hapSumCurrent_tc <- out$hapSumCurrent_tc
@@ -1285,7 +1296,8 @@ initialize_parameters <- function(
     plot_shuffle_haplotype_attempts,
     shuffle_bin_radius,
     snps_in_grid_1_based,
-    plotHapSumDuringIterations
+    plotHapSumDuringIterations,
+    cM_grid
 ) {
 
     print_message("Begin parameter initialization")
@@ -1297,11 +1309,20 @@ initialize_parameters <- function(
         dl <- grid_distances
     }
 
+    ## make sigmaCurrent, either standard way, or using cM from grid (or ungridded)
+    sigmaCurrent_m <- initialize_sigmaCurrent_m(
+        cM_grid = cM_grid,
+        nGen = nGen,
+        nGrids = nGrids,
+        S = S,
+        dl = dl,
+        expRate = expRate
+    )
+    
     ## default values
     eHapsCurrent_tc <- array(runif(nSNPs * K * S), c(K, nSNPs, S))
     alphaMatCurrent_tc <- array(1 / K, c(K, nGrids - 1, S))
     hapSumCurrent_tc <- array(0, c(K, nGrids - 1, S)) ## should not care?
-    sigmaCurrent_m <- array(exp(-nGen * expRate / 100 / 1000000 * dl), c(nGrids - 1, S))
     priorCurrent_m <- array(1 / K, c(K, S))
 
     ##

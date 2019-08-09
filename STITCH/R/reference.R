@@ -990,5 +990,3 @@ sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples =
     ## }
     ## dev.off()
 }
-
-
