@@ -186,22 +186,3 @@ test_that("can downsample for gridding appropriately", {
 
 
 
-
-test_that("can understand genetic map format", {
-    
-    ## from https://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3_chrX.tgz
-    ## from the top of one of the genetic maps
-    genetic_map <- rbind(
-        c(150118, 1.13462264157027, 0),
-        c(154675, 1.12962782559127, 0.00517047537763574),
-        c(154753, 1.13654510133156, 0.00525858634803186),
-        c(168567, 1.58657526542862, 0.0209588203778261)
-    )
-    colnames(genetic_map) <- c("position", "COMBINED_rate.cM.Mb.", "Genetic_Map.cM.")
-    ## add back in last column, check OK
-    expect_equal(
-        fill_in_genetic_map_cm_column(genetic_map)[, 3],
-        genetic_map[, 3]
-    )
-
-})

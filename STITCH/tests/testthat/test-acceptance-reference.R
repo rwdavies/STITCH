@@ -125,35 +125,34 @@ test_that("STITCH can initialize with reference data for S > 1", {
 
 test_that("STITCH can initialize with reference data including genetic map", {
 
-    for(output_format in c("bgvcf", "bgen")) {
+    output_format <- "bgvcf"
+    outputdir <- make_unique_tempdir()
+    set.seed(3393)
 
-        outputdir <- make_unique_tempdir()
-        set.seed(478)
-
-        STITCH(
-            chr = data_package$chr,
-            bamlist = data_package$bamlist,
-            posfile = data_package$posfile,
-            genfile = data_package$genfile,
-            outputdir = outputdir,
-            reference_haplotype_file = refpack$reference_haplotype_file,
-            reference_legend_file = refpack$reference_legend_file,
-            K = 2,
-            S = 3,
-            nGen = 100,
-            nCores = 1,
-            output_format = output_format
-        )
-
-        check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
-            data_package,
-            output_format,
-            which_snps = NULL,
-            tol = 0.2
-        )
-
-    }
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,
+        outputdir = outputdir,
+        reference_haplotype_file = refpack$reference_haplotype_file,
+        reference_legend_file = refpack$reference_legend_file,
+        genetic_map_file = refpack$reference_genetic_map_file,
+        K = 2,
+        S = 3,
+        gridWindowSize = 3,
+        nGen = 100,
+        nCores = 1,
+        output_format = output_format
+    )
+    
+    check_output_against_phase(
+        file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+        data_package,
+        output_format,
+        which_snps = NULL,
+        tol = 0.2
+    )
 
 
 })
