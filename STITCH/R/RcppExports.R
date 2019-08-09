@@ -147,8 +147,8 @@ rcpp_sample_path <- function(read_labels, eMatRead_t, sampleReads, maxDifference
 }
 
 #' @export
-rcpp_make_smoothed_rate <- function(sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius, verbose = FALSE) {
-    .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigmaSum_unnormalized, sigma_rate, L_grid, grid_distances, nGrids, shuffle_bin_radius, verbose)
+rcpp_make_smoothed_rate <- function(sigma_rate, L_grid, shuffle_bin_radius, verbose = FALSE) {
+    .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigma_rate, L_grid, shuffle_bin_radius, verbose)
 }
 
 #' @export

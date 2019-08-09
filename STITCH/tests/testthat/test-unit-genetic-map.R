@@ -150,11 +150,12 @@ test_that("can assign grid positions when genetic map is given", {
     truth_rate[3001 + -500:500] <- 10 * dnorm(x = seq(-1, 1, length.out = 1001), sd = 0.1)
     ## make a diffuse peak around 6000
     truth_rate[6001 + -1000:1000] <- 10 * dnorm(x = seq(-1, 1, length.out = 2001), sd = 0.25)
-    truth_rate <- truth_rate + 1
+    truth_rate <- truth_rate + runif(length(truth_rate))
     truth_map <- c(0, cumsum(truth_rate / 1e6))
     ##
     ## want grid to focus around those regions
     L <- seq(101, 9901, 25)
+    L_grid <- L
     ## L <- c(223, 334, 503, 723, 757, 823, 1061, 1145, 1247, 1285, 1331, 1430, 1624, 1631, 1752, 1808, 1817, 1867, 1976, 1990, 2329, 2347, 2469, 2478, 2496, 2514, 2691, 2779, 2842, 3052, 3218, 3326, 3386, 3430, 3696, 3727, 3742, 3786, 4090, 4266, 4318, 4483, 4652, 4756, 5067, 5074, 5094, 5108, 5238, 5278, 5287, 5305, 5483, 5507, 5614, 5674, 5704, 5850, 5912, 5985, 5998, 6120, 6395, 6468, 6515, 6682, 6711, 6772, 6988, 6990, 7044, 7047, 7064, 7087, 7175, 7216, 7301, 7545, 7886, 8031, 8093, 8173, 8192, 8208, 8480, 8520, 8539, 8648, 8662, 8797, 9071, 9139, 9140, 9141, 9353, 9410, 9612, 9641, 9732, 9991)
     cM <- truth_map[L]
     ##
@@ -175,12 +176,34 @@ test_that("can assign grid positions when genetic map is given", {
         length(unique(out$grid[5001 <= L & L <= 7000])) / 1000,
         out$nGrids / 10000
     )
+
+    smoothed_cM <- make_smoothed_cM_rate(
+        cM = cM,
+        L_grid = L_grid,
+        shuffle_bin_radius = 250
+    )
     
     ## optional - plot to verify manually
     if (1 == 0) {
 
         par(mfrow = c(2, 1))
+        ##
+        ## rate
+        ##
         plot(truth_rate, type = "l")
+        ## also - plot smoothed
+        segments(
+            x0 = L[-length(L)],
+            x1 = L[-1] - 1,
+            y0 = diff(smoothed_cM) / diff(L) * 1e6,
+            y1 = diff(smoothed_cM) / diff(L) * 1e6,
+            col = "orange",
+            lwd = 3
+        )
+        
+        ##
+        ## cumsum
+        ##
         y <- cumsum(truth_rate / 1e6)
         ## plot rates at SNPs
         plot(x = L, y = cM, col = c("orange", "green")[(out$grid %% 2) + 1], type = "o")
