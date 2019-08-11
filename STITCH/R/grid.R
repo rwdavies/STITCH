@@ -103,10 +103,12 @@ attempt_to_better_grid <- function(
         ## if it exceeds - break
         if ((running_total > average_smoothed_rate_cM_per_grid)) {
             ## this is now the first SNP of it's own grid
-            iGrid <- iGrid + 1
             running_total <- 0
             w <- first_snp_in_this_grid:(iSNP - 1)
-            L_grid[iGrid] <- mean(L[w])
+            L_grid[iGrid + 1] <- mean(L[w])
+            if (iSNP != nSNP) {
+                iGrid <- iGrid + 1
+            }
             ## Now - set L_grid is average of those in the grid
             first_snp_in_this_grid <- iSNP
         } else if (iSNP == nSNP) {
