@@ -147,6 +147,8 @@ STITCH(chr, nGen, posfile, K, S = 1, outputdir, nStarts, tempdir = NA,
 
 \item{inputBundleBlockSize}{If NA, disable bundling of input files. If not NA, bundle together input files in sets of <= inputBundleBlockSize together}
 
+\item{genetic_map_file}{Path to file with genetic map information, a file with 3 white-space delimited entries giving position (1-based), genetic rate map in cM/Mbp, and genetic map in cM}
+
 \item{reference_haplotype_file}{Path to reference haplotype file in IMPUTE format (file with no header and no rownames, one row per SNP, one column per reference haplotype, space separated, values must be 0 or 1)}
 
 \item{reference_legend_file}{Path to reference haplotype legend file in IMPUTE format (file with one row per SNP, and a header including position for the physical position in 1 based coordinates, a0 for the reference allele, and a1 for the alternate allele)}
