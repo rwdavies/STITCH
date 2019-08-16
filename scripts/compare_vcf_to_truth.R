@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 
+message("--- Running script to compare VCF and truth ---")
 ## Script to compare VCF output to bespoke array genotypes
 ## Could be generalized
 
@@ -13,6 +14,7 @@ for(key in c("--file=", "--f=")) {
 }
 Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
 
+##setwd("~/proj/STITCH")
 source("scripts/compare_vcf_to_truth_functions.R")
 source("STITCH/R/functions.R") ## for function generate_hwe_on_counts
 
@@ -52,10 +54,23 @@ option_list <- list(
         default = FALSE
     ),
     make_option(
+        "--rebuild-mega-save-file",
+        action = "store_true",
+        default = FALSE,
+        dest = "rebuild_mega_save_file"
+    ),
+    make_option(
         "--mega-save-file",
         type = "character",        
         help = "RData file to save mega-muga processed results",
         dest = "mega_save_file",
+        default = NA
+    ),
+    make_option(
+        "--comparison-save-file",
+        type = "character",        
+        help = "RData file to save final compared results to",
+        dest = "comparison_save_file",
         default = NA
     ),
     make_option(
@@ -68,11 +83,10 @@ option_list <- list(
     make_option(
         "--whose-samples",
         type = "character",        
-        help = "Whether to analyze oxford or chicago samples",
+        help = "Whether to analyze oxford, chicago, or both samples",
         dest = "whose_samples",
         default = "oxford"
     )
-    
 )
 
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -80,12 +94,14 @@ opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
 if (1 == 0) {
 
     opt <- list(
-        "test-file" = "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results//whole_chr_CFW_1.5.2_bgen//stitch.chr19.bgen",
+        "test-file"="/well/myers/rwdavies/chicago_oxford_2019_08_07/stitch.chr19.vcf.gz",
         chr = "chr19",
-        compare_against = "megamuga",
-        verbose = TRUE,
-        mega_save_file = NA,
-        cfw_data_dir = "/data/smew1/rdavies/stitch_development/truth/cfw/"
+        compare_against="megamuga",
+        verbose=TRUE,
+        whose_samples="both",
+        rebuild_mega_save_file=TRUE,
+        cfw_data_dir="/well/myers/rwdavies/cfw_truth/",
+        mega_save_file="/well/myers/rwdavies/chicago_oxford_2019_08_07/mega.chr19.RData"
     )
     ## opt[["test-file"]] <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH/test-results//whole_chr_CFW_1.5.0//stitch.chr19.vcf.gz";
     
@@ -98,7 +114,9 @@ whose_samples <- opt$whose_samples
 compare_against <- opt$compare_against
 verbose <- opt$verbose
 mega_save_file <- opt$mega_save_file
+comparison_save_file <- opt$comparison_save_file
 cfw_data_dir <- opt$cfw_data_dir
+rebuild_mega_save_file <- opt$rebuild_mega_save_file
 megamugadir <- file.path(cfw_data_dir, "megamuga")
 affydir <- file.path(cfw_data_dir, "affy")
 
@@ -125,25 +143,18 @@ if (compare_against == "affy") {
 } else if (compare_against == "megamuga") {
 
     message("--- Compare MegaMUGA to Input VCF ---")
-    rebuild <- TRUE    
-    if (is.na(mega_save_file) == FALSE) {
-        if (file.exists(mega_save_file)) {
-            message("Load previous MegaMuga file")
-            load(mega_save_file)
-            rebuild <- FALSE
-        }
-    }
-    if (rebuild == TRUE) {
-        message("Get MegaMUGA calls for chr")
+    if (
+        !rebuild_mega_save_file &
+        !is.na(mega_save_file) &
+        file.exists(mega_save_file)
+    ) {
+        message(paste0("Load previous MegaMuga file for ", chr))
+        load(mega_save_file)
+    } else {
         megamuga <- get_megamuga_calls_for_chr(chr)
         mega_calls <- convert_megamuga_to_calls(megamuga, chr, whose_samples)
         mega_calls <- filter_calls_for_chr(mega_calls)
         subjects <- setdiff(colnames(mega_calls), c("chr", "pos"))
-        ## if (whose_samples == "oxford") {
-        ##     subjects <- colnames(mega_calls)[grep("Q_", colnames(mega_calls))]
-        ## } else if (whose_samples == "chicago") {
-        ##     subjects <- colnames(mega_calls)[-grep("Q_", colnames(mega_calls))]
-        ## }
         if (is.na(mega_save_file) == FALSE) {
             message("Save MegaMUGA calls for chr")
             save(mega_calls, subjects, file = mega_save_file)
@@ -180,11 +191,17 @@ dosages <- out$dosages
 dosages_meta <- out$dosages_meta
 genotypes <- out$genotypes
 
-compare_array_calls_and_dosages(
+out <- compare_array_calls_and_dosages(
     calls = truth_calls,
     dosages = dosages,
     dosages_meta = dosages_meta,
-    genotypes = genotypes
+    genotypes = genotypes,
+    return_things = !is.na(comparison_save_file)
 )
+if (!is.na(comparison_save_file)) {
+    message(paste0("Saving results to:", comparison_save_file))
+    save(out, file = comparison_save_file)
+}
+
 
 quit()

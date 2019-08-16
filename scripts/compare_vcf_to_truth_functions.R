@@ -134,27 +134,23 @@ convert_megamuga_to_calls <- function(megamuga, chr, whose_samples) {
     ## re-size and re-name megaG
     ## Q_CFW-SW___49.0e_recal
     ## subset both megaG and megaSamples to Oxford CFW samples
+    oxford_samples <- grep(".", megaSamples[, "betterName"], fixed = TRUE)
+    chicago_samples <- -grep(".", megaSamples[, "betterName"], fixed = TRUE)
+
+    colnames(megaG)[oxford_samples] <- paste0("Q_CFW-SW___", megaSamples[oxford_samples, "betterName"], "_recal")
+    colnames(megaG)[match(c("42401", "42937"), colnames(megaG))] <- c("42937", "42401")
+
+    ## subset if so desired
     if (whose_samples == "oxford") {
-        samples <- megaSamples[grep(".", megaSamples[, "betterName"], fixed = TRUE), "Name"]
+        samples <- megaSamples[oxford_samples, "Name"]
     } else if (whose_samples == "chicago") {
-        samples <- megaSamples[-grep(".", megaSamples[, "betterName"], fixed = TRUE), "Name"]
-        ## remove missing samples
-        ##samples <- setdiff(samples, c("43919", "26658", "26351"))
+        samples <- megaSamples[chicago_samples,"Name"]
+    } else if (whose_samples == "both") {
+        samples <- megaSamples[, "Name"]
     }
-    megaG <- megaG[, match(samples, colnames(megaG))]
+    megaG <- megaG[, match(samples, megaSamples[, "Name"])]
     megaSamples <- megaSamples[match(samples, megaSamples[, "Name"]), ]
 
-    if (whose_samples == "oxford") {
-        colnames(megaG) <- paste0("Q_CFW-SW___", megaSamples[, "betterName"], "_recal")
-    }
-    ## re-name mis-labelled samples
-    if (whose_samples == "chicago") {
-        ## re-name mis-labelled samples
-        colnames(megaG)[match(c("42401", "42937"), colnames(megaG))] <- c("42937", "42401")
-    }
-
-
-    
     ## these files failed QC - see email from Sat Jun 13, 2015, 6:57 AM
     ## ~/proj/outbred/megaMugaQC_v0.0.0.R
     ## remove samples that are of poor quality
@@ -475,6 +471,7 @@ get_col_from_info <- function(y, col = "EAF=") {
 }
 
 
+
 compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta, genotypes, return_things = FALSE) {
     
     if (verbose) {
@@ -526,11 +523,16 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta, genoty
     callsS[callsS == -1] <- NA
 
     r2 <- sapply(1:nrow(callsS), function(i_row) {
-        cor(
-            unlist(callsS[i_row, ]),
-            dosagesS[i_row, ],
-            use = "complete.obs"
-        ) ** 2
+        x <- unlist(callsS[i_row, ])
+        y <- dosagesS[i_row, ]
+        w <- !(is.na(x) | is.na(y))
+        x <- x[w]
+        y <- y[w]
+        if (length(unique(x)) < 2 | length(unique(y)) < 2) {
+            NA
+        } else {
+            (cor(x, y, use = "complete.obs") ** 2)
+        }
     })
     pass_qc <- dosages_metaS[, "info"] > 0.4 & dosages_metaS[, "hwe"] > 1e-6
 
@@ -571,7 +573,16 @@ compare_array_calls_and_dosages <- function(calls, dosages, dosages_meta, genoty
     message(paste0(100 * miss, "% concordance among non-missing sites"))        
 
     if (return_things) {
-        return(list(callsS = callsS, dosagesS = dosagesS, maf = maf, pass_qc = pass_qc, dosages_metaS = dosages_metaS))
+        return(
+            list(
+                r2 = r2,
+                callsS = callsS,
+                dosagesS = dosagesS,
+                maf = maf,
+                pass_qc = pass_qc,
+                dosages_metaS = dosages_metaS
+            )
+        )
     } else {
         return(NULL)
     }
