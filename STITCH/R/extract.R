@@ -5,6 +5,7 @@
 #' @param gatk_jar path to GATK jar
 #' @param samples vector of sample names (or NULL for all)
 #' @param pos pos matrix, a matrix with at least two columns where the first two columns are chrom and 1-based physical position, respectively. specifies which SNPs to extract (or NULL for all)
+#' @param field What to get from the VCF. Default HD for haplotype dosages
 #' @return A cube with dimensions of SNPs x samples x ancestral haplotypes
 #' @author Robert Davies
 #' @export
@@ -16,6 +17,7 @@ extract_hd_to_cube <- function(
     samples = NULL,
     pos = NULL,
     ram = "-Xmx4g",
+    field = "HD",
     verbose = TRUE
 ) {
     ##
@@ -47,7 +49,7 @@ extract_hd_to_cube <- function(
     args <- c(
         ram, "-jar", gatk_jar, "-T", "VariantsToTable", "-R", ref,
         "-V", paste0(vcf_output_file, ".gz"),
-        "--genotypeFields", "HD",
+        "--genotypeFields", field,
         "-o", table_file
     )
     if (verbose) {
