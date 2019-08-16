@@ -318,6 +318,12 @@ option_list <- list(
         default = NA
     ), 
     make_option(
+        "--genetic_map_file",
+        type = "character",
+        help = "Path to file with genetic map information, a file with 3 white-space delimited entries giving position (1-based), genetic rate map in cM/Mbp, and genetic map in cM [default \"\"] ",
+        default = ""
+    ), 
+    make_option(
         "--reference_haplotype_file",
         type = "character",
         help = "Path to reference haplotype file in IMPUTE format (file with no header and no rownames, one row per SNP, one column per reference haplotype, space separated, values must be 0 or 1) [default \"\"] ",
@@ -501,6 +507,7 @@ STITCH(
     outputBlockSize = opt$outputBlockSize,
     outputSNPBlockSize = opt$outputSNPBlockSize,
     inputBundleBlockSize = opt$inputBundleBlockSize,
+    genetic_map_file = opt$genetic_map_file,
     reference_haplotype_file = opt$reference_haplotype_file,
     reference_legend_file = opt$reference_legend_file,
     reference_sample_file = opt$reference_sample_file,

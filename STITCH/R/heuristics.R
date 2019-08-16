@@ -385,7 +385,7 @@ make_smoothed_cM_rate <- function(
         new_L,
         new_L[n] + (L_grid[length(L_grid)] - new_L[n]) / 2
     )
-    cM_smoothed <- make_smoothed_rate(
+    cM_smoothed <- rcpp_make_smoothed_rate(
         sigma_rate = cM,
         L_grid = new_L,
         shuffle_bin_radius = shuffle_bin_radius
