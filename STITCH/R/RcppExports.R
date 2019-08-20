@@ -147,6 +147,11 @@ rcpp_sample_path <- function(read_labels, eMatRead_t, sampleReads, maxDifference
 }
 
 #' @export
+reference_fbh <- function(sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, pRgivenH1_m, pRgivenH2_m, run_pseudo_haploid, blocks_for_output, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta = 0L, generate_fb_snp_offsets = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_extra = FALSE, return_gamma = FALSE, return_gammaK = FALSE, return_hapDosage = TRUE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, rescale_eMatGrid_t = FALSE) {
+    .Call('_STITCH_reference_fbh', PACKAGE = 'STITCH', sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, model, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, pRgivenH1_m, pRgivenH2_m, run_pseudo_haploid, blocks_for_output, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta, generate_fb_snp_offsets, run_fb_subset, run_fb_grid_offset, return_extra, return_gamma, return_gammaK, return_hapDosage, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, snp_start_1_based, snp_end_1_based, grid, rescale_eMatGrid_t)
+}
+
+#' @export
 rcpp_make_smoothed_rate <- function(sigma_rate, L_grid, shuffle_bin_radius, verbose = FALSE) {
     .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigma_rate, L_grid, shuffle_bin_radius, verbose)
 }
