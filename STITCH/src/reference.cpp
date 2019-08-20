@@ -96,31 +96,20 @@ void Rcpp_run_backward_haploid(
     const int s
 );
 
-void perform_haploid_per_sample_updates(
+void make_haploid_gammaUpdate_t(
     int s,
-    arma::mat& betaHat_t,
-    arma::mat& eMatGrid_t,
-    const Rcpp::List& sampleReads,    
+    arma::cube& gammaSum0_tc,
+    arma::cube& gammaSum1_tc,    
+    const Rcpp::List& sampleReads,
+    const arma::mat& gamma_t,
     const arma::cube& eHapsCurrent_tc,
-    const arma::cube& alphaMatCurrent_tc,
-    const arma::cube& transMatRate_tc_H,
-    const arma::mat& priorCurrent_m,    
     const arma::mat& eMatRead_t,    
     const arma::mat& eMatHapOri_t,
-    arma::mat& gamma_t,
-    const bool update_in_place,
-    arma::cube& gammaSum0_tc,
-    arma::cube& gammaSum1_tc,
-    arma::cube& alphaMatSum_tc,
-    arma::mat& priorSum_m,
     const arma::vec& pRgivenH1,
     const arma::vec& pRgivenH2,
-    const bool run_pseudo_haploid,
-    double& prev,
-    int suppressOutput,
-    std::string& prev_section,
-    std::string& next_section
+    const bool run_pseudo_haploid = false
 );
+
 
 
 // forwardBackwardHaploid for reference
@@ -219,31 +208,26 @@ Rcpp::List reference_fbh(
   // int variables and such
   int iGrid, k, s;
   Rcpp::List to_return;
-  Rcpp::List list_of_gamma_t;
   Rcpp::List list_of_gammaK_t;  
   //  
   Rcpp::NumericVector alphaStart, betaEnd;
   arma::mat alphaHatBlocks_t, betaHatBlocks_t;
-  Rcpp::List alphaBetaBlocks;
-  Rcpp::List list_of_alphaBetaBlocks;
   Rcpp::List list_of_eMatRead_t;
   Rcpp::List list_of_hapDosage;
   arma::vec pRgivenH1(nReads);
   arma::vec pRgivenH2(nReads);
+  double g_temp = 0;
   //
   // everything works on s here
   //
   for(s = 0; s < S; s++) {
-      // reset if > first s, or if they're passed in
-      if ((s > 0) | pass_in_alphaBeta) {
-          alphaHat_t.fill(0);
-          betaHat_t.fill(0);
-          eMatRead_t.fill(1);
-          eMatGrid_t.fill(1);
-          if (run_pseudo_haploid) {
-              eMatHapOri_t.fill(0);
-          }
-      }
+      // always reset - always passed in
+      alphaHat_t.fill(0);
+      betaHat_t.fill(0);
+      eMatRead_t.fill(1);
+      eMatGrid_t.fill(1);
+      //
+      // so only need eMatGrid_t marginally
       //
       rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid);
       //
@@ -271,54 +255,33 @@ Rcpp::List reference_fbh(
       //
       gamma_t = alphaHat_t % betaHat_t;
       // normalize as well
-      double g_temp = 0;
       for(iGrid = 0; iGrid < nGrids; iGrid++) {
           g_temp = 1 / c(iGrid);
           gamma_t.col(iGrid) *= g_temp;
       }
       //
+      // inline - make changes
       //
-      if (output_haplotype_dosages) {
-          // yuck - only with s = 1?
-          arma::mat gammaEK_t = make_gammaEK_t_from_gammaK_t(
-              gamma_t, K, grid,
-              snp_start_1_based, snp_end_1_based,
-              prev, suppressOutput, prev_section, next_section,
-              run_fb_grid_offset
-          );
-          to_return.push_back(gammaEK_t, "gammaEK_t");      
+      next_section="Update things";
+      prev=print_times(prev, suppressOutput, prev_section, next_section);
+      prev_section=next_section;
+      //
+      hapSum_tc.slice(s) += gamma_t;
+      priorSum_m.col(s) += gamma_t.col(0);
+      //
+      make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, sampleReads, gamma_t, eHapsCurrent_tc, eMatRead_t, eMatHapOri_t, pRgivenH1, pRgivenH2, run_pseudo_haploid);
+      //
+      for(int iGrid = 0; iGrid < nGrids - 1; iGrid++) {
+          alphaMatSum_tc.slice(s).col(iGrid) += transMatRate_tc_H(1, iGrid, s) * (alphaMatCurrent_tc.slice(s).col(iGrid) % betaHat_t.col(iGrid + 1) % eMatGrid_t.col(iGrid + 1));
       }
       //
-      // if not fb subset, do updates
-      //
-      // three options
-      // generate_fb_snp_offsets
-      // run_fb_offset (do nothing - only hapDosage above)
-      // normal (do updates)
-      // hapSum here
-      hapSum_tc.slice(s) += gamma_t;          
-      perform_haploid_per_sample_updates(
-          s, betaHat_t, eMatGrid_t, sampleReads,    
-          eHapsCurrent_tc,  alphaMatCurrent_tc,  transMatRate_tc_H,  priorCurrent_m,    
-          eMatRead_t, eMatHapOri_t, gamma_t, update_in_place,
-          gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, priorSum_m,
-          pRgivenH1, pRgivenH2, run_pseudo_haploid,
-          prev, suppressOutput, prev_section, next_section
-      );
       if (return_gammaK) {
           list_of_gammaK_t.push_back(gamma_t);
       }
   }
-  next_section="Done";
+  next_section="Finalize";
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
-  if (return_gamma | run_pseudo_haploid) {
-      to_return.push_back(list_of_gamma_t, "list_of_gamma_t");
-  }
-  if (run_pseudo_haploid) {
-      to_return.push_back(eMatRead_t, "eMatRead_t");
-      to_return.push_back(list_of_eMatRead_t , "list_of_eMatRead_t");
-  }
   if (return_gammaK) {
     to_return.push_back(list_of_gammaK_t, "list_of_gammaK_t");
   }
