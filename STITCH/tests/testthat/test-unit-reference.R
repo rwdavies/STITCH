@@ -312,6 +312,77 @@ test_that("can make fake reference samples in C++", {
 })
 
 
+test_that("can convert a reference hap into eMatGrid_t directly", {
+
+    for(has_NA in c(FALSE, TRUE)) {
+        for(gridWindowSize in c(NA, 3)) {
+        
+            test_package <- make_fb_test_package(
+                K = 4,
+                nReads = 8,
+                nSNPs = 10,
+                gridWindowSize = gridWindowSize,
+                S = 2
+            )
+            nSNPs <- test_package$nSNPs
+            nGrids <- test_package$nGrids
+            K <- test_package$K
+            
+            reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))
+            if (has_NA) {
+                reference_haps[c(4, 7), ] <- NA
+            }
+            non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)            
+            grid <- test_package$grid
+            eHapsCurrent_tc <- test_package$eHapsCurrent_tc
+            
+            eMatGrid_t1 <- array(1, c(K, nGrids))
+            eMatGrid_t2 <- array(1, c(K, nGrids))        
+            s <- 0
+            iSample <- 0
+            reference_phred <- 20
+            maxEmissionMatrixDifference <- 1e10
+            
+            rcpp_ref_make_eMatGrid_t(
+                eMatGrid_t = eMatGrid_t1,
+                reference_haps = reference_haps,
+                non_NA_cols = non_NA_cols,
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                grid = grid,
+                reference_phred = reference_phred,
+                s = s,
+                iSample = iSample,
+                maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+                rescale = TRUE,
+                bound = TRUE
+            )
+
+            ## compare against old way
+            sampleReads <- rcpp_make_sampleReads_from_hap(
+                non_NA_cols = non_NA_cols,
+                reference_phred = reference_phred,
+                reference_hap = reference_haps[, iSample + 1]
+            )
+            ## 
+            sampleReads <- snap_sampleReads_to_grid(
+                sampleReads = sampleReads,
+                grid = grid
+            )
+            ## 
+            eMatRead_t <- array(1, c(K, length(sampleReads)))
+            rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads = 1e10, Jmax = 100, eMatHapOri_t = array(0, c(1, 1)), pRgivenH1 = array(0, 1), pRgivenH2 = array(0, 1), prev = 0, suppressOutput = 1, prev_section ="", next_section = "", run_pseudo_haploid = FALSE);
+            ## 
+            rcpp_make_eMatGrid_t(eMatGrid_t2, eMatRead_t, 1, sampleReads, 1, nGrids, prev = 0, suppressOutput = 1, prev_section = "",next_section = "", run_fb_grid_offset = 0, TRUE, TRUE, maxEmissionMatrixDifference = maxEmissionMatrixDifference, rescale = TRUE)
+
+            expect_equal(eMatGrid_t1, eMatGrid_t2)
+            
+        }
+
+    }
+    
+})
+
+
 test_that("can do single reference iteration", {
 
     ## hmm, need to dummy up a bit

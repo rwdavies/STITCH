@@ -56,23 +56,6 @@ void rcpp_make_eMatRead_t(
     const bool rescale_eMatRead_t = true
 );
 
-void rcpp_make_eMatGrid_t(
-    arma::mat& eMatGrid_t,
-    const arma::mat& eMatRead_t,
-    const Rcpp::IntegerVector& H,
-    const Rcpp::List sampleReads,
-    const int hap,
-    const int nGrids,
-    double& prev,
-    int suppressOutput,
-    std::string& prev_section,
-    std::string& next_section,
-    const int run_fb_grid_offset = 0,
-    const bool use_all_reads = false,
-    const bool bound = false,
-    const double maxEmissionMatrixDifference = 1000,
-    const bool rescale = false
-);
 
 
 void Rcpp_run_forward_haploid(
@@ -110,6 +93,116 @@ void make_haploid_gammaUpdate_t(
     const bool run_pseudo_haploid = false
 );
 
+
+void rcpp_make_eMatGrid_t(
+    arma::mat& eMatGrid_t,
+    const arma::mat& eMatRead_t,
+    const Rcpp::IntegerVector& H,
+    const Rcpp::List sampleReads,
+    const int hap,
+    const int nGrids,
+    double& prev,
+    int suppressOutput,
+    std::string& prev_section,
+    std::string& next_section,
+    const int run_fb_grid_offset = 0,
+    const bool use_all_reads = false,
+    const bool bound = false,
+    const double maxEmissionMatrixDifference = 1000,
+    const bool rescale = false
+);
+
+
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::List rcpp_make_sampleReads_from_hap(
+    const Rcpp::IntegerVector non_NA_cols,
+    const int reference_phred,
+    const Rcpp::IntegerVector reference_hap
+) {
+    Rcpp::List sampleReads(non_NA_cols.length());
+    int iSNP;
+    for(int i = 0; i < non_NA_cols.length(); i++) {
+      iSNP = non_NA_cols[i] - 1; // this is 0-based (note - grid comes later)
+        sampleReads[i]=Rcpp::List::create(0, iSNP, reference_phred * (2 * reference_hap[iSNP] - 1), iSNP);
+    }
+    return sampleReads;
+}
+
+
+//' @export
+// [[Rcpp::export]]
+void rcpp_ref_make_eMatGrid_t(
+    arma::mat& eMatGrid_t,
+    Rcpp::IntegerMatrix& reference_haps,
+    const Rcpp::IntegerVector& non_NA_cols,
+    const arma::cube& eHapsCurrent_tc,
+    const Rcpp::IntegerVector& grid,    
+    const int reference_phred,    
+    const int s,
+    const int iSample,
+    const double maxEmissionMatrixDifference,
+    const bool rescale = true,
+    const bool bound = true
+) {
+    //
+    // non_NA_cols is 1-based, which columns are we running over
+    //
+    const int K = eMatGrid_t.n_rows;
+    int iSNP, iGrid, h;
+    double eps = pow(10,(double(-reference_phred) / 10));
+    double pA, pR, eps2, d2, x, rescale_val;
+    int k, cur_grid;
+    int prev_grid = -1;
+    int nnSNPs = non_NA_cols.length();
+    //
+    //
+    //
+    for(int iiSNP = 0; iiSNP < nnSNPs; iiSNP++) {
+        iSNP = non_NA_cols(iiSNP) - 1; // here, 0-based
+	iGrid = grid(iSNP);
+	h = reference_haps(iSNP, iSample); // here, 0 = ref, 1 = alt
+	//std::cout << "iSNP = " << iSNP << ", iGrid = " << iGrid << ", h = " << h << std::endl;
+	if (h == 1) {
+	  pA = 1 - eps;
+	  pR = eps / 3;
+	} else {
+	  pA = eps / 3;
+	  pR = 1 - eps;
+	}
+	eMatGrid_t.col(iGrid) %= ( eHapsCurrent_tc.slice(s).col(iSNP) * pA + (1 - eHapsCurrent_tc.slice(s).col(iSNP)) * pR);
+	// 
+	// otherwise, not too worried
+	cur_grid = iGrid;
+	if (cur_grid == prev_grid) {
+	  eps2 *= eps;
+	} else {
+	  eps2 = 1;
+	}
+	prev_grid = cur_grid;
+	// screw it, be inefficient!
+	if (
+	    (rescale | bound)
+	) {
+	   eps2 = 1;
+	   x = eMatGrid_t.col(iGrid).max();
+	   rescale_val = 1 / x;
+	   if (rescale) {
+	     eMatGrid_t.col(iGrid) *= rescale_val;
+	   }
+	   if (bound) {
+	     d2 = 1 / maxEmissionMatrixDifference;
+	     for (k = 0; k < K; k++) {
+	       if(eMatGrid_t(k, iGrid) < (d2)) {
+		 eMatGrid_t(k, iGrid) = d2;
+	       }
+	     }
+	   }
+	}
+    }
+    return;
+}
 
 
 // forwardBackwardHaploid for reference

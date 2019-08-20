@@ -589,7 +589,7 @@ single_reference_iteration <- function(
         nbreaks = nbreaks,        
         reference_phred = reference_phred,
         sampleRanges = sampleRanges,
-        plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, 
+        plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
         iteration = iteration
     )
 

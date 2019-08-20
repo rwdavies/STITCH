@@ -62,11 +62,6 @@ forwardBackwardDiploid <- function(sampleReads, eHapsCurrent_tc, alphaMatCurrent
 }
 
 #' @export
-rcpp_make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
-    .Call('_STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
-}
-
-#' @export
 increment2N <- function(yT, xT, y, z) {
     .Call('_STITCH_increment2N', PACKAGE = 'STITCH', yT, xT, y, z)
 }
@@ -154,6 +149,16 @@ rcpp_make_smoothed_rate <- function(sigma_rate, L_grid, shuffle_bin_radius, verb
 #' @export
 rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
+}
+
+#' @export
+rcpp_make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
+    .Call('_STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
+}
+
+#' @export
+rcpp_ref_make_eMatGrid_t <- function(eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, rescale = TRUE, bound = TRUE) {
+    invisible(.Call('_STITCH_rcpp_ref_make_eMatGrid_t', PACKAGE = 'STITCH', eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, rescale, bound))
 }
 
 #' @export

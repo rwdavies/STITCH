@@ -30,15 +30,6 @@ using namespace Rcpp;
 
 
 
-//' @export
-// [[Rcpp::export]]
-Rcpp::List rcpp_make_sampleReads_from_hap(const Rcpp::IntegerVector non_NA_cols, const int reference_phred, const Rcpp::IntegerVector reference_hap) {
-    Rcpp::List sampleReads(non_NA_cols.length());
-    for(int i = 0; i < non_NA_cols.length(); i++) {
-        sampleReads[i]=Rcpp::List::create(0, non_NA_cols[i] - 1, reference_phred * (2 * reference_hap[i] - 1), non_NA_cols[i] - 1);
-    }
-    return sampleReads;
-}
 
 
 
