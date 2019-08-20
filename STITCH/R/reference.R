@@ -699,7 +699,7 @@ new_subset_of_single_reference_iteration <- function(
         )
         sampleReads <- out$sampleReads
         bundledSampleReads <- out$bundledSampleReads
-        
+
         fbsoL <- reference_fbh(
             sampleReads = sampleReads,
             eHapsCurrent_tc = eHapsCurrent_tc,
@@ -730,7 +730,7 @@ new_subset_of_single_reference_iteration <- function(
         )
         
         for(s in which(nbreaks > 0)) {
-            ## 
+            ##
             break_results <- list_of_break_results[[s]]
             for(iBreak in 1:nbreaks[s]) {
                 from <- break_results[iBreak, "left_grid_break_0_based"]
