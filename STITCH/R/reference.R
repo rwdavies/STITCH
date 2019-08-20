@@ -653,6 +653,8 @@ new_subset_of_single_reference_iteration <- function(
     sampleRanges,
     plot_shuffle_haplotype_attempts,
     iteration,
+    reference_haps,
+    non_NA_cols,
     suppressOutput = 1
 ) {
 
@@ -709,7 +711,9 @@ new_subset_of_single_reference_iteration <- function(
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             suppressOutput = suppressOutput,
-            model = -1, ## irrelavent here
+            reference_haps = reference_haps,
+            non_NA_cols = non_NA_cols,
+            iSample = iSample - 1,
             run_pseudo_haploid = as.integer(0), ## just run haploid
             blocks_for_output = array(0, c(1, 1)),
             update_in_place = TRUE,
@@ -726,8 +730,14 @@ new_subset_of_single_reference_iteration <- function(
             grid = grid,
             Jmax = 10,
             prev_list_of_alphaBetaBlocks = list(),
-            return_gammaK = return_gammaK
+            return_gammaK = return_gammaK,
+            return_extra = TRUE,
+            reference_phred = reference_phred
         )
+        if (iSample == 1) {
+            print("remove return extar")
+            save(fbsoL, file = "~/temp.new.RData")
+        }
         
         for(s in which(nbreaks > 0)) {
             ##
@@ -866,8 +876,14 @@ subset_of_single_reference_iteration <- function(
             grid = grid,
             Jmax = 10,
             prev_list_of_alphaBetaBlocks = list(),
-            return_gammaK = return_gammaK
+            return_gammaK = return_gammaK,
+            return_extra = TRUE,
+            rescale_eMatGrid_t = TRUE
         )
+        if (iSample == 1) {
+            print("remove return extar")
+            save(fbsoL, file = "~/temp.old.RData")
+        }
         
         for(s in which(nbreaks > 0)) {
             ## 

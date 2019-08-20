@@ -227,7 +227,10 @@ Rcpp::List reference_fbh(
     const double maxEmissionMatrixDifference,
     const int Jmax,
     const int suppressOutput,
-    const int model,
+    Rcpp::IntegerMatrix& reference_haps,
+    const Rcpp::IntegerVector& non_NA_cols,
+    const int iSample,
+    const double reference_phred,
     arma::cube& gammaSum0_tc,
     arma::cube& gammaSum1_tc,    
     arma::cube& alphaMatSum_tc,
@@ -250,7 +253,8 @@ Rcpp::List reference_fbh(
     int snp_start_1_based = -1,
     int snp_end_1_based = -1,
     const Rcpp::IntegerVector grid = 0,
-    const bool rescale_eMatGrid_t = false
+    const bool rescale_eMatGrid_t = true,
+    const bool bound_eMatGrid_t = true
 ) {
   double prev=clock();
   std::string prev_section="Null";
@@ -322,9 +326,12 @@ Rcpp::List reference_fbh(
       //
       // so only need eMatGrid_t marginally
       //
-      rcpp_make_eMatRead_t(eMatRead_t, sampleReads, eHapsCurrent_tc, s, maxDifferenceBetweenReads, Jmax, eMatHapOri_t, pRgivenH1, pRgivenH2, prev, suppressOutput, prev_section, next_section, run_pseudo_haploid);
+      next_section="Make eMatGrid_t for special reference";
+      prev=print_times(prev, suppressOutput, prev_section, next_section);
+      prev_section=next_section;
+      rcpp_ref_make_eMatGrid_t(eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, rescale_eMatGrid_t, bound_eMatGrid_t);
+      eMatRead_t = eMatGrid_t;
       //
-      rcpp_make_eMatGrid_t(eMatGrid_t, eMatRead_t, 1, sampleReads, 1, nGrids, prev, suppressOutput, prev_section,next_section, run_fb_grid_offset, true, true, maxEmissionMatrixDifference, rescale_eMatGrid_t);
       //
       next_section="Forward recursion";
       prev=print_times(prev, suppressOutput, prev_section, next_section);
@@ -377,6 +384,9 @@ Rcpp::List reference_fbh(
   prev_section=next_section;
   if (return_gammaK) {
     to_return.push_back(list_of_gammaK_t, "list_of_gammaK_t");
+  }
+  if (return_extra) {
+    to_return.push_back(eMatGrid_t, "eMatGrid_t");
   }
   //
   //
