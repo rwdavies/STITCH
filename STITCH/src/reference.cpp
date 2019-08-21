@@ -366,7 +366,7 @@ Rcpp::List reference_fbh(
     const double maxDifferenceBetweenReads,
     const double maxEmissionMatrixDifference,
     int suppressOutput,
-    Rcpp::IntegerMatrix& reference_haps,
+    Rcpp::IntegerVector& reference_hap,
     const Rcpp::IntegerVector& non_NA_cols,
     const double reference_phred,
     arma::cube& gammaSum0_tc,
@@ -414,7 +414,6 @@ Rcpp::List reference_fbh(
   double g_temp = 0;
   //
   // do inside this
-  Rcpp::IntegerVector reference_hap = reference_haps.column(iSample1 - 1);
   //
   // everything works on s here
   //

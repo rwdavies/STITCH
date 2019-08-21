@@ -426,6 +426,11 @@ test_that("can do single reference iteration", {
     grid <- test_package$grid
     grid_distances <- test_package$grid_distances
 
+    ## close enough!
+    reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))        
+    non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
+
+    
     ## dummy up a bit
     tempdir <- tempfile("tempdir")
     dir.create(tempdir)
@@ -434,12 +439,7 @@ test_that("can do single reference iteration", {
     reference_bundling_info <- NULL
     nGen <- 10000
 
-    regionName <- "jimmy"
-    for(iBam in 1:2) {
-        save(sampleReads, file = file_referenceSampleReads(tempdir, iBam, regionName))
-    }
-
-    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen)
+    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, reference_haps = reference_haps, non_NA_cols = non_NA_cols)
 
 
 })
