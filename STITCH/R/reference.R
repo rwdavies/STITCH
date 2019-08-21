@@ -704,6 +704,9 @@ new_subset_of_single_reference_iteration <- function(
         ehh_h0_D = ehh_h0_D,        
         reference_phred = reference_phred
     )     
+
+    alphaMatCurrentX_tc <- array(0, dim(alphaMatCurrent_tc))
+    rcpp_make_alphaMatSumX_tc(alphaMatCurrent_tc = alphaMatCurrent_tc, alphaMatCurrentX_tc = alphaMatCurrentX_tc, transMatRate_tc_H = transMatRate_tc_H)
     
     ## for updating
     gammaSum0_tc <- array(0, c(K, nSNPs, S))
@@ -722,18 +725,32 @@ new_subset_of_single_reference_iteration <- function(
         list_of_fromMat <- NULL
         return_gammaK <- FALSE
     }
-    
-    for(iSample in sampleRange[1]:sampleRange[2]) {
 
-        if (iSample == 10) {
+    ## this is dinky - just make anyway
+    pshaM <- min(20, sampleRange[2]) ## how many to plot                    
+    list_of_fbd_store <- lapply(1:S, function(s) {
+        return(as.list(1:pshaM))
+    })
+    i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
+    if ((sum(nbreaks) > 0) & plot_shuffle_haplotype_attempts & i_core == 1) {
+        save_fbd_store <- TRUE
+    } else {
+        save_fbd_store <- FALSE
+    }
+
+    for(iSample1 in sampleRange[1]:sampleRange[2]) {
+
+        ## note - makes almost no difference to push the entire below into c++
+        if (iSample1 == 10) {
             print("remove me")
             suppressOutput <- 0
         } else {
             suppressOutput <- 1
         }
+        reference_hap <- reference_haps[, iSample1]
         fbsoL <- reference_fbh(
             eHapsCurrent_tc = eHapsCurrent_tc,
-            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            alphaMatCurrentX_tc = alphaMatCurrentX_tc,
             transMatRate_tc_H = transMatRate_tc_H,
             priorCurrent_m = priorCurrent_m,
             maxDifferenceBetweenReads = maxDifferenceBetweenReads,
@@ -741,12 +758,14 @@ new_subset_of_single_reference_iteration <- function(
             suppressOutput = suppressOutput,
             reference_haps = reference_haps,
             non_NA_cols = non_NA_cols,
-            iSample = iSample - 1,
             gammaSum0_tc = gammaSum0_tc,
             gammaSum1_tc = gammaSum1_tc,
             alphaMatSum_tc = alphaMatSum_tc,
             hapSum_tc = hapSum_tc,
             priorSum_m = priorSum_m,
+            list_of_break_results = list_of_break_results,
+            list_of_fromMat = list_of_fromMat,
+            nbreaks = nbreaks,
             alphaHat_t = alphaHat_t,
             betaHat_t = betaHat_t,
             gamma_t = gamma_t,
@@ -756,44 +775,21 @@ new_subset_of_single_reference_iteration <- function(
             ehh_h0_S = ehh_h0_S,
             ehh_h0_D = ehh_h0_D,
             grid = grid,
-            return_gammaK = return_gammaK,
+            return_gammaK = FALSE,
             return_extra = FALSE,
-            reference_phred = reference_phred
+            reference_phred = reference_phred,
+            list_of_fbd_store = list_of_fbd_store,
+            save_fbd_store = save_fbd_store,
+            iSample1 = iSample1,
+            pshaM = pshaM
         )
 
-        ## can I move this into cpp too
-        ## then move WHOLE LOOP into cpp?
-        for(s in which(nbreaks > 0)) {
-            ##
-            break_results <- list_of_break_results[[s]]
-            for(iBreak in 1:nbreaks[s]) {
-                from <- break_results[iBreak, "left_grid_break_0_based"]
-                to <- break_results[iBreak, "right_grid_break_0_based"]
-                hp1 <- fbsoL[["list_of_gammaK_t"]][[s]][, from + 1]
-                hp2 <- fbsoL[["list_of_gammaK_t"]][[s]][, to + 1]
-                list_of_fromMat[[s]][iBreak, , ] <-
-                    list_of_fromMat[[s]][iBreak, , ] + hp1 %*% t(hp2)
-            }
-            i_core <- match(sampleRange[1], sapply(sampleRanges, function(x) x[[1]]))
-            if (plot_shuffle_haplotype_attempts & (i_core == 1)) {
-                M <- min(20, sampleRange[2]) ## how many to plot
-                if (iSample == 1 & (s == min(which(nbreaks > 0)))) {
-                    list_of_fbd_store <- lapply(1:S, function(s) {
-                        return(as.list(1:M))
-                    })
-                }
-                if (iSample <= M) {
-                    ## this needs to be R <- fbd_store[[iSample]]$gammaK_t
-                    list_of_fbd_store[[s]][[iSample]] <- list(gammaK_t = fbsoL[["list_of_gammaK_t"]][[s]])
-                }
-                if ((iSample == M) & (s == max(which(nbreaks > 0)))) {
-                    save(list_of_fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
-                    fbd_store <- NULL
-                }
-            }
-        }
-        
     }
+
+    if (save_fbd_store) {
+        save(list_of_fbd_store, file = file_fbdStore(tempdir, regionName, iteration))
+    }
+    
 
     ## remove one entry
     ## alphaMatSum_tc <- alphaMatSum_tc[, -1, ]
@@ -802,9 +798,9 @@ new_subset_of_single_reference_iteration <- function(
     rcpp_finalize_alphaMatSum_tc(
         alphaMatSum_tc = alphaMatSum_tc,
         transMatRate_tc_H = transMatRate_tc_H,
-        alphaMatCurrent_tc = alphaMatCurrent_tc
+        alphaMatCurrentX_tc = alphaMatCurrentX_tc
     )
-    
+
     return(
         list(
             gammaSum0_tc = gammaSum0_tc,
@@ -817,6 +813,9 @@ new_subset_of_single_reference_iteration <- function(
     )
 
 }
+
+
+
 
 subset_of_single_reference_iteration <- function(
     sampleRange,

@@ -358,16 +358,16 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
                 ehh_h0_D = ehh_h0_D,
                 reference_phred = reference_phred
             )
-            
+
+            reference_hap <- reference_haps[, iSample + 1]
             rcpp_ref_make_eMatGrid_t(
                 eMatGrid_t = eMatGrid_t1,
-                reference_haps = reference_haps,
+                reference_hap = reference_hap,
                 non_NA_cols = non_NA_cols,
                 eHapsCurrent_tc = eHapsCurrent_tc,
                 grid = grid,
                 reference_phred = reference_phred,
                 s = s,
-                iSample = iSample,
                 maxEmissionMatrixDifference = maxEmissionMatrixDifference,
                 ehh_h1_S = ehh_h1_S,
                 ehh_h0_S = ehh_h0_S,
