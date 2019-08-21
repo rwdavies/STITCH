@@ -690,18 +690,18 @@ new_subset_of_single_reference_iteration <- function(
     gamma_t <- array(0, c(K, nGrids))
     eMatGrid_t <- array(0, c(K, nGrids))
 
-    ehh_h1_A <- array(0, c(K, nSNPs, S))
-    ehh_h1_S <- array(0, c(K, nSNPs, S))    
-    ehh_h0_A <- array(0, c(K, nSNPs, S))
-    ehh_h0_S <- array(0, c(K, nSNPs, S))    
+    ehh_h1_S <- array(0, c(K, nSNPs, S))
+    ehh_h1_D <- array(0, c(K, nSNPs, S))
+    ehh_h0_S <- array(0, c(K, nSNPs, S))
+    ehh_h0_D <- array(0, c(K, nSNPs, S))        
     
     ref_make_ehh(
         eHapsCurrent_tc = eHapsCurrent_tc,
         non_NA_cols = non_NA_cols,
-        ehh_h1_A = ehh_h1_A,
         ehh_h1_S = ehh_h1_S,
-        ehh_h0_A = ehh_h0_A,
+        ehh_h1_D = ehh_h1_D,
         ehh_h0_S = ehh_h0_S,
+        ehh_h0_D = ehh_h0_D,        
         reference_phred = reference_phred
     )     
     
@@ -709,6 +709,7 @@ new_subset_of_single_reference_iteration <- function(
     gammaSum0_tc <- array(0, c(K, nSNPs, S))
     gammaSum1_tc <- array(0, c(K, nSNPs, S))
     alphaMatSum_tc <- array(0, c(K, nGrids - 1, S))
+    alphaMatSum_tc <- array(0, c(K, nGrids, S)) ## make 1 bigger for now!
     hapSum_tc <- array(0, c(K, nGrids, S))
     priorSum_m <- array(0, c(K, S))
     
@@ -750,10 +751,10 @@ new_subset_of_single_reference_iteration <- function(
             betaHat_t = betaHat_t,
             gamma_t = gamma_t,
             eMatGrid_t = eMatGrid_t,
-            ehh_h1_A = ehh_h1_A,
             ehh_h1_S = ehh_h1_S,
-            ehh_h0_A = ehh_h0_A,
+            ehh_h1_D = ehh_h1_D,
             ehh_h0_S = ehh_h0_S,
+            ehh_h0_D = ehh_h0_D,
             grid = grid,
             return_gammaK = return_gammaK,
             return_extra = FALSE,
@@ -793,6 +794,16 @@ new_subset_of_single_reference_iteration <- function(
         }
         
     }
+
+    ## remove one entry
+    alphaMatSum_tc <- alphaMatSum_tc[, -1, ]
+    ## in c++, for normal mode, avoided some multiplications
+    ## here, add them back in
+    rcpp_finalize_alphaMatSum_tc(
+        alphaMatSum_tc = alphaMatSum_tc,
+        transMatRate_tc_H = transMatRate_tc_H,
+        alphaMatCurrent_tc = alphaMatCurrent_tc
+    )
     
     return(
         list(

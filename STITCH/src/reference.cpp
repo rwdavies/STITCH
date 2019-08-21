@@ -78,14 +78,28 @@ void Rcpp_ref_run_forward_haploid(
     return ;
 }
 
-void Rcpp_run_backward_haploid(
+
+
+//' @export
+// [[Rcpp::export]]
+void Rcpp_ref_run_backward_haploid(
     arma::mat& betaHat_t,
     arma::rowvec& c,
     const arma::mat& eMatGrid_t,
     const arma::cube& alphaMatCurrent_tc,
     const arma::cube& transMatRate_tc_H,
     const int s
-);
+) {
+    const int nGrids = eMatGrid_t.n_cols;
+    double x;
+    arma::colvec e_times_b;
+    for(int iGrid = nGrids - 2; iGrid >= 0; --iGrid) {
+        e_times_b = eMatGrid_t.col(iGrid + 1) % betaHat_t.col(iGrid + 1);
+        x = transMatRate_tc_H(1, iGrid, s) * sum(alphaMatCurrent_tc.slice(s).col(iGrid) % e_times_b);
+        betaHat_t.col(iGrid) = c(iGrid) * (x + transMatRate_tc_H(0, iGrid, s) * e_times_b);
+    }
+    return;
+}
 
 
 
@@ -115,10 +129,10 @@ Rcpp::List rcpp_make_sampleReads_from_hap(
 void ref_make_ehh(
     const arma::cube& eHapsCurrent_tc,
     const Rcpp::IntegerVector& non_NA_cols,
-    arma::cube& ehh_h1_A,
     arma::cube& ehh_h1_S,
-    arma::cube& ehh_h0_A,
+    arma::cube& ehh_h1_D,
     arma::cube& ehh_h0_S,
+    arma::cube& ehh_h0_D,
     double reference_phred
 ) {
     const int S = eHapsCurrent_tc.n_slices;
@@ -131,13 +145,13 @@ void ref_make_ehh(
       // do h1 first
       pA = 1 - eps;
       pR = eps / 3;
-      ehh_h1_A.slice(s) = eHapsCurrent_tc.slice(s) * pA;
-      ehh_h1_S.slice(s) = ehh_h1_A.slice(s) + (1 - eHapsCurrent_tc.slice(s)) * pR;
+      ehh_h1_S.slice(s) = eHapsCurrent_tc.slice(s) * pA + (1 - eHapsCurrent_tc.slice(s)) * pR;
+      ehh_h1_D.slice(s) = (eHapsCurrent_tc.slice(s) * pA) / ehh_h1_S.slice(s);
       // do h0
       pA = eps / 3;
       pR = 1 - eps;      
-      ehh_h0_A.slice(s) = eHapsCurrent_tc.slice(s) * pA;
-      ehh_h0_S.slice(s) = ehh_h0_A.slice(s) + (1 - eHapsCurrent_tc.slice(s)) * pR;      
+      ehh_h0_S.slice(s) = eHapsCurrent_tc.slice(s) * pA + (1 - eHapsCurrent_tc.slice(s)) * pR;
+      ehh_h0_D.slice(s) = (eHapsCurrent_tc.slice(s) * pA) / ehh_h0_S.slice(s);
     }
     return;
 }
@@ -195,9 +209,7 @@ void rcpp_ref_make_eMatGrid_t(
     const int s,
     const int iSample,
     const double maxEmissionMatrixDifference,
-    arma::cube& ehh_h1_A,
     arma::cube& ehh_h1_S,
-    arma::cube& ehh_h0_A,
     arma::cube& ehh_h0_S,
     const bool rescale = true,
     const bool bound = true
@@ -268,10 +280,8 @@ void ref_make_haploid_gammaUpdate_t(
     const int iSample,
     const Rcpp::IntegerVector& grid,
     const double reference_phred,
-    arma::cube& ehh_h1_A,
-    arma::cube& ehh_h1_S,
-    arma::cube& ehh_h0_A,
-    arma::cube& ehh_h0_S
+    arma::cube& ehh_h1_D,    
+    arma::cube& ehh_h0_D
 ) {
     //
     //const int nSNPs = eHapsCurrent_t.n_cols;
@@ -309,18 +319,15 @@ void ref_make_haploid_gammaUpdate_t(
 	//a1_col = pA * eHapsCurrent_tc.slice(s).col(iSNP);
 	//a2_col = pR * (1 - eHapsCurrent_tc.slice(s).col(iSNP));
 	if (h == 1) {
-	  a1_col = ehh_h1_A.slice(s).col(iSNP);
-	  y_col  = ehh_h1_S.slice(s).col(iSNP);
+	  d_col  = ehh_h1_D.slice(s).col(iSNP);	  
 	} else {
-	  a1_col = ehh_h0_A.slice(s).col(iSNP);
-	  y_col  = ehh_h0_S.slice(s).col(iSNP);
+	  d_col  = ehh_h0_D.slice(s).col(iSNP);	  	  
 	}
 	// a1_col = eHapsHelper_A.col(iSNP);
 	// a2_col = eHapsHelper_B.col(iSNP);
 	// y_col = a1_col + a2_col;
-	d_col = gamma_t_col / y_col;
-	gammaSum0_tc.slice(s).col(iSNP) += a1_col % d_col; // despite being "gamma", this is per-SNP
-	gammaSum1_tc.slice(s).col(iSNP) += y_col % d_col;
+	gammaSum0_tc.slice(s).col(iSNP) += gamma_t_col % d_col; // despite being "gamma", this is per-SNP
+	gammaSum1_tc.slice(s).col(iSNP) += gamma_t_col;
     }
     return;
 }
@@ -346,10 +353,10 @@ Rcpp::List reference_fbh(
     arma::mat& betaHat_t,
     arma::mat& gamma_t,
     arma::mat& eMatGrid_t,
-    arma::cube& ehh_h1_A,
     arma::cube& ehh_h1_S,
-    arma::cube& ehh_h0_A,
+    arma::cube& ehh_h1_D,
     arma::cube& ehh_h0_S,
+    arma::cube& ehh_h0_D,
     const double maxDifferenceBetweenReads,
     const double maxEmissionMatrixDifference,
     const int suppressOutput,
@@ -409,7 +416,7 @@ Rcpp::List reference_fbh(
       next_section="Make eMatGrid_t for special reference";
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
-      rcpp_ref_make_eMatGrid_t(eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, rescale_eMatGrid_t, bound_eMatGrid_t);
+      rcpp_ref_make_eMatGrid_t(eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, ehh_h1_S, ehh_h0_S, rescale_eMatGrid_t, bound_eMatGrid_t);
       //
       //
       next_section="Forward recursion";
@@ -424,7 +431,7 @@ Rcpp::List reference_fbh(
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
       betaHat_t.col(nGrids - 1).fill(c(nGrids - 1));
-      Rcpp_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, s);
+      Rcpp_ref_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, s);
       //
       // make gamma
       //
@@ -461,16 +468,26 @@ Rcpp::List reference_fbh(
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
       //
-      ref_make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, gamma_t, eHapsCurrent_tc, reference_haps, non_NA_cols, iSample, grid, reference_phred, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S);
+      ref_make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, gamma_t, eHapsCurrent_tc, reference_haps, non_NA_cols, iSample, grid, reference_phred, ehh_h1_D, ehh_h0_D);
       //
       // update alphaMatSum
       //
       next_section="Update alphaMatSum";
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
-      for(int iGrid = 0; iGrid < nGrids - 1; iGrid++) {
-          alphaMatSum_tc.slice(s).col(iGrid) += transMatRate_tc_H(1, iGrid, s) * (alphaMatCurrent_tc.slice(s).col(iGrid) % betaHat_t.col(iGrid + 1) % eMatGrid_t.col(iGrid + 1));
-      }
+      //
+      // NOTE - differs from original (here) in the following ways
+      // is artificially one bigger, for easier addition of betaHat and eMatGrid. this is removed in R
+      // also, does not include multiplication by transMatRate_tc_H(1, iGrid, s) and alphaMatCurrent_tc.slice(s).col(iGrid) - as these are constant, they are multiplied in later
+      alphaMatSum_tc.slice(s) += betaHat_t % eMatGrid_t;
+      // for(int iGrid = 0; iGrid < nGrids - 1; iGrid++) {
+      //     alphaMatSum_tc.slice(s).col(iGrid) += \
+      // 	    transMatRate_tc_H(1, iGrid, s) *	\
+      // 	    (
+      // 	     alphaMatCurrent_tc.slice(s).col(iGrid) %			\
+      // 	     betaHat_t.col(iGrid + 1) % eMatGrid_t.col(iGrid + 1)	\
+      // 	     );
+      // }
       //
       if (return_gammaK) {
           list_of_gammaK_t.push_back(gamma_t);
@@ -491,4 +508,24 @@ Rcpp::List reference_fbh(
   prev=print_times(prev, suppressOutput, prev_section, next_section);
   prev_section=next_section;
   return(to_return);  
+}
+
+
+
+//' @export
+// [[Rcpp::export]]
+void rcpp_finalize_alphaMatSum_tc(
+    arma::cube& alphaMatSum_tc,
+    arma::cube& transMatRate_tc_H,
+    arma::cube& alphaMatCurrent_tc
+) {
+    const int S = alphaMatSum_tc.n_slices;
+    const int nGrids = alphaMatSum_tc.n_cols + 1; 
+    for(int s = 0; s < S; s++) {
+        alphaMatSum_tc.slice(s) %= alphaMatCurrent_tc.slice(s);
+	for(int iGrid = 0; iGrid < (nGrids - 1); iGrid++) {
+	    alphaMatSum_tc.slice(s).col(iGrid) *= transMatRate_tc_H(1, iGrid, s);
+	}
+    }
+    return;
 }

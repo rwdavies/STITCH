@@ -344,18 +344,18 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
             reference_phred <- 20
             maxEmissionMatrixDifference <- 1e10
 
-            ehh_h1_A <- array(0, c(K, nSNPs, S))
-            ehh_h1_S <- array(0, c(K, nSNPs, S))    
-            ehh_h0_A <- array(0, c(K, nSNPs, S))
-            ehh_h0_S <- array(0, c(K, nSNPs, S))    
+            ehh_h1_S <- array(0, c(K, nSNPs, S))
+            ehh_h1_D <- array(0, c(K, nSNPs, S))
+            ehh_h0_S <- array(0, c(K, nSNPs, S))
+            ehh_h0_D <- array(0, c(K, nSNPs, S))
             
             ref_make_ehh(
                 eHapsCurrent_tc = eHapsCurrent_tc,
                 non_NA_cols = non_NA_cols,
-                ehh_h1_A = ehh_h1_A,
                 ehh_h1_S = ehh_h1_S,
-                ehh_h0_A = ehh_h0_A,
+                ehh_h1_D = ehh_h1_D,
                 ehh_h0_S = ehh_h0_S,
+                ehh_h0_D = ehh_h0_D,
                 reference_phred = reference_phred
             )
             
@@ -369,9 +369,7 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
                 s = s,
                 iSample = iSample,
                 maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-                ehh_h1_A = ehh_h1_A,
                 ehh_h1_S = ehh_h1_S,
-                ehh_h0_A = ehh_h0_A,
                 ehh_h0_S = ehh_h0_S,
                 rescale = TRUE,
                 bound = TRUE
