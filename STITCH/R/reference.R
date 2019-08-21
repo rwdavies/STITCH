@@ -471,7 +471,7 @@ run_EM_on_reference_sample_reads <- function(
     iteration <- 1
     
     for(iteration in 1:reference_iterations) {
-
+        
         print_message(paste0("Reference iteration = ", iteration))
 
         ## this loads the break information if the proper iteration (does check)
@@ -558,7 +558,9 @@ single_reference_iteration <- function(
     nbreaks = NA,
     list_of_break_results = NULL,
     plot_shuffle_haplotype_attempts = FALSE,
-    iteration = 1
+    iteration = 1,
+    maxDifferenceBetweenReads = 1000,
+    maxEmissionMatrixDifference = 1e10
 ) {
 
     sampleRanges <- getSampleRange(N_haps, nCores)
@@ -590,7 +592,9 @@ single_reference_iteration <- function(
         reference_phred = reference_phred,
         sampleRanges = sampleRanges,
         plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
-        iteration = iteration
+        iteration = iteration,
+        maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+        maxEmissionMatrixDifference = maxEmissionMatrixDifference
     )
 
     check_mclapply_OK(out2, "There has been an error generating the input. Please see error message above")
@@ -644,8 +648,6 @@ new_subset_of_single_reference_iteration <- function(
     alphaMatCurrent_tc,
     transMatRate_tc_H,
     priorCurrent_m,
-    maxDifferenceBetweenReads,
-    maxEmissionMatrixDifference,
     grid,
     list_of_break_results,
     nbreaks,
@@ -655,6 +657,8 @@ new_subset_of_single_reference_iteration <- function(
     iteration,
     reference_haps,
     non_NA_cols,
+    maxDifferenceBetweenReads = 1000,
+    maxEmissionMatrixDifference = 1e10,
     suppressOutput = 1
 ) {
 
@@ -662,8 +666,10 @@ new_subset_of_single_reference_iteration <- function(
     nSNPs <- ncol(eHapsCurrent_tc)
     S <- dim(eHapsCurrent_tc)[[3]]
     nGrids <- ncol(alphaMatCurrent_tc) + 1
-    maxDifferenceBetweenReads <- 1 / (10 **(-(reference_phred / 10)))
-    maxEmissionMatrixDifference <- 1 / (10 **(-(reference_phred / 10)))
+
+    ## no, make like before
+    ## maxDifferenceBetweenReads <- 1 / (10 **(-(reference_phred / 10)))
+    ## maxEmissionMatrixDifference <- 1 / (10 **(-(reference_phred / 10)))
     
     alphaHat_t <- array(0, c(K, nGrids))
     betaHat_t <- array(0, c(K, nGrids))
@@ -734,10 +740,6 @@ new_subset_of_single_reference_iteration <- function(
             return_extra = TRUE,
             reference_phred = reference_phred
         )
-        if (iSample == 1) {
-            print("remove return extar")
-            save(fbsoL, file = "~/temp.new.RData")
-        }
         
         for(s in which(nbreaks > 0)) {
             ##
@@ -793,8 +795,6 @@ subset_of_single_reference_iteration <- function(
     alphaMatCurrent_tc,
     transMatRate_tc_H,
     priorCurrent_m,
-    maxDifferenceBetweenReads,
-    maxEmissionMatrixDifference,
     grid,
     list_of_break_results,
     nbreaks,
@@ -802,6 +802,8 @@ subset_of_single_reference_iteration <- function(
     sampleRanges,
     plot_shuffle_haplotype_attempts,
     iteration,
+    maxDifferenceBetweenReads = 1000,
+    maxEmissionMatrixDifference = 1e10,
     suppressOutput = 1
 ) {
 
@@ -809,8 +811,8 @@ subset_of_single_reference_iteration <- function(
     nSNPs <- ncol(eHapsCurrent_tc)
     S <- dim(eHapsCurrent_tc)[[3]]
     nGrids <- ncol(alphaMatCurrent_tc) + 1
-    maxDifferenceBetweenReads <- 1 / (10 **(-(reference_phred / 10)))
-    maxEmissionMatrixDifference <- 1 / (10 **(-(reference_phred / 10)))
+    ## maxDifferenceBetweenReads <- 1 / (10 **(-(reference_phred / 10)))
+    ## maxEmissionMatrixDifference <- 1 / (10 **(-(reference_phred / 10)))
     
     alphaHat_t <- array(0, c(K, nGrids))
     betaHat_t <- array(0, c(K, nGrids))
@@ -880,10 +882,6 @@ subset_of_single_reference_iteration <- function(
             return_extra = TRUE,
             rescale_eMatGrid_t = TRUE
         )
-        if (iSample == 1) {
-            print("remove return extar")
-            save(fbsoL, file = "~/temp.old.RData")
-        }
         
         for(s in which(nbreaks > 0)) {
             ## 
