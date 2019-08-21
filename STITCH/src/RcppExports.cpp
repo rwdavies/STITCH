@@ -579,6 +579,22 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// Rcpp_ref_run_backward_haploid
+void Rcpp_ref_run_backward_haploid(arma::mat& betaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_H, arma::cube& alphaMatSum_tc, const int s);
+RcppExport SEXP _STITCH_Rcpp_ref_run_backward_haploid(SEXP betaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP alphaMatSum_tcSEXP, SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type betaHat_t(betaHat_tSEXP);
+    Rcpp::traits::input_parameter< arma::rowvec& >::type c(cSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type transMatRate_tc_H(transMatRate_tc_HSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type alphaMatSum_tc(alphaMatSum_tcSEXP);
+    Rcpp::traits::input_parameter< const int >::type s(sSEXP);
+    Rcpp_ref_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, alphaMatSum_tc, s);
+    return R_NilValue;
+END_RCPP
+}
 // rcpp_make_sampleReads_from_hap
 Rcpp::List rcpp_make_sampleReads_from_hap(const Rcpp::IntegerVector non_NA_cols, const int reference_phred, const Rcpp::IntegerVector reference_hap);
 RcppExport SEXP _STITCH_rcpp_make_sampleReads_from_hap(SEXP non_NA_colsSEXP, SEXP reference_phredSEXP, SEXP reference_hapSEXP) {
@@ -782,6 +798,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
     {"_STITCH_Rcpp_ref_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_forward_haploid, 7},
+    {"_STITCH_Rcpp_ref_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_backward_haploid, 7},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},
     {"_STITCH_ref_make_ehh", (DL_FUNC) &_STITCH_ref_make_ehh, 7},
     {"_STITCH_rcpp_ref_bound_eMatGrid_t", (DL_FUNC) &_STITCH_rcpp_ref_bound_eMatGrid_t, 4},

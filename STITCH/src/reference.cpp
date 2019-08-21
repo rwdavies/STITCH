@@ -88,6 +88,7 @@ void Rcpp_ref_run_backward_haploid(
     const arma::mat& eMatGrid_t,
     const arma::cube& alphaMatCurrent_tc,
     const arma::cube& transMatRate_tc_H,
+    arma::cube& alphaMatSum_tc,
     const int s
 ) {
     const int nGrids = eMatGrid_t.n_cols;
@@ -97,6 +98,9 @@ void Rcpp_ref_run_backward_haploid(
         e_times_b = eMatGrid_t.col(iGrid + 1) % betaHat_t.col(iGrid + 1);
         x = transMatRate_tc_H(1, iGrid, s) * sum(alphaMatCurrent_tc.slice(s).col(iGrid) % e_times_b);
         betaHat_t.col(iGrid) = c(iGrid) * (x + transMatRate_tc_H(0, iGrid, s) * e_times_b);
+	//
+	alphaMatSum_tc.slice(s).col(iGrid) += e_times_b;
+	// now - alphaMatSum update included here!
     }
     return;
 }
@@ -431,7 +435,7 @@ Rcpp::List reference_fbh(
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
       betaHat_t.col(nGrids - 1).fill(c(nGrids - 1));
-      Rcpp_ref_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, s);
+      Rcpp_ref_run_backward_haploid(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, alphaMatSum_tc, s);
       //
       // make gamma
       //
@@ -479,7 +483,8 @@ Rcpp::List reference_fbh(
       // NOTE - differs from original (here) in the following ways
       // is artificially one bigger, for easier addition of betaHat and eMatGrid. this is removed in R
       // also, does not include multiplication by transMatRate_tc_H(1, iGrid, s) and alphaMatCurrent_tc.slice(s).col(iGrid) - as these are constant, they are multiplied in later
-      alphaMatSum_tc.slice(s) += betaHat_t % eMatGrid_t;
+      //alphaMatSum_tc.slice(s) += betaHat_t % eMatGrid_t;
+      //alphaMatSum_tc.slice(s) += e_times_b;
       // for(int iGrid = 0; iGrid < nGrids - 1; iGrid++) {
       //     alphaMatSum_tc.slice(s).col(iGrid) += \
       // 	    transMatRate_tc_H(1, iGrid, s) *	\
@@ -490,6 +495,9 @@ Rcpp::List reference_fbh(
       // }
       //
       if (return_gammaK) {
+	next_section="Add to list of gammak_t";
+	prev=print_times(prev, suppressOutput, prev_section, next_section);
+	prev_section=next_section;
           list_of_gammaK_t.push_back(gamma_t);
       }
   }

@@ -709,7 +709,7 @@ new_subset_of_single_reference_iteration <- function(
     gammaSum0_tc <- array(0, c(K, nSNPs, S))
     gammaSum1_tc <- array(0, c(K, nSNPs, S))
     alphaMatSum_tc <- array(0, c(K, nGrids - 1, S))
-    alphaMatSum_tc <- array(0, c(K, nGrids, S)) ## make 1 bigger for now!
+    ## alphaMatSum_tc <- array(0, c(K, nGrids, S)) ## make 1 bigger for now!
     hapSum_tc <- array(0, c(K, nGrids, S))
     priorSum_m <- array(0, c(K, S))
     
@@ -796,7 +796,7 @@ new_subset_of_single_reference_iteration <- function(
     }
 
     ## remove one entry
-    alphaMatSum_tc <- alphaMatSum_tc[, -1, ]
+    ## alphaMatSum_tc <- alphaMatSum_tc[, -1, ]
     ## in c++, for normal mode, avoided some multiplications
     ## here, add them back in
     rcpp_finalize_alphaMatSum_tc(

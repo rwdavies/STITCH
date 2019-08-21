@@ -157,6 +157,11 @@ Rcpp_ref_run_forward_haploid <- function(alphaHat_t, c, eMatGrid_t, alphaMatCurr
 }
 
 #' @export
+Rcpp_ref_run_backward_haploid <- function(betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, alphaMatSum_tc, s) {
+    invisible(.Call('_STITCH_Rcpp_ref_run_backward_haploid', PACKAGE = 'STITCH', betaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, alphaMatSum_tc, s))
+}
+
+#' @export
 rcpp_make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
     .Call('_STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
 }
