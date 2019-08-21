@@ -152,18 +152,38 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
 }
 
 #' @export
+Rcpp_ref_run_forward_haploid <- function(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s) {
+    invisible(.Call('_STITCH_Rcpp_ref_run_forward_haploid', PACKAGE = 'STITCH', alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s))
+}
+
+#' @export
 rcpp_make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
     .Call('_STITCH_rcpp_make_sampleReads_from_hap', PACKAGE = 'STITCH', non_NA_cols, reference_phred, reference_hap)
 }
 
 #' @export
-rcpp_ref_make_eMatGrid_t <- function(eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, rescale = TRUE, bound = TRUE) {
-    invisible(.Call('_STITCH_rcpp_ref_make_eMatGrid_t', PACKAGE = 'STITCH', eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, rescale, bound))
+ref_make_ehh <- function(eHapsCurrent_tc, non_NA_cols, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, reference_phred) {
+    invisible(.Call('_STITCH_ref_make_ehh', PACKAGE = 'STITCH', eHapsCurrent_tc, non_NA_cols, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, reference_phred))
 }
 
 #' @export
-reference_fbh <- function(sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, reference_haps, non_NA_cols, iSample, reference_phred, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, run_pseudo_haploid, blocks_for_output, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta = 0L, generate_fb_snp_offsets = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_extra = FALSE, return_gamma = FALSE, return_gammaK = FALSE, return_hapDosage = TRUE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, rescale_eMatGrid_t = TRUE, bound_eMatGrid_t = TRUE) {
-    .Call('_STITCH_reference_fbh', PACKAGE = 'STITCH', sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, reference_haps, non_NA_cols, iSample, reference_phred, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, run_pseudo_haploid, blocks_for_output, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta, generate_fb_snp_offsets, run_fb_subset, run_fb_grid_offset, return_extra, return_gamma, return_gammaK, return_hapDosage, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, snp_start_1_based, snp_end_1_based, grid, rescale_eMatGrid_t, bound_eMatGrid_t)
+rcpp_ref_bound_eMatGrid_t <- function(eMatGrid_t, maxEmissionMatrixDifference, rescale, bound) {
+    invisible(.Call('_STITCH_rcpp_ref_bound_eMatGrid_t', PACKAGE = 'STITCH', eMatGrid_t, maxEmissionMatrixDifference, rescale, bound))
+}
+
+#' @export
+rcpp_ref_make_eMatGrid_t <- function(eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, rescale = TRUE, bound = TRUE) {
+    invisible(.Call('_STITCH_rcpp_ref_make_eMatGrid_t', PACKAGE = 'STITCH', eMatGrid_t, reference_haps, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, iSample, maxEmissionMatrixDifference, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, rescale, bound))
+}
+
+#' @export
+ref_make_haploid_gammaUpdate_t <- function(s, gammaSum0_tc, gammaSum1_tc, gamma_t, eHapsCurrent_tc, reference_haps, non_NA_cols, iSample, grid, reference_phred, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S) {
+    invisible(.Call('_STITCH_ref_make_haploid_gammaUpdate_t', PACKAGE = 'STITCH', s, gammaSum0_tc, gammaSum1_tc, gamma_t, eHapsCurrent_tc, reference_haps, non_NA_cols, iSample, grid, reference_phred, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S))
+}
+
+#' @export
+reference_fbh <- function(eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, maxDifferenceBetweenReads, maxEmissionMatrixDifference, suppressOutput, reference_haps, non_NA_cols, iSample, reference_phred, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, return_extra = FALSE, return_gammaK = FALSE, grid = 0L, rescale_eMatGrid_t = TRUE, bound_eMatGrid_t = TRUE, run_fb_subset = FALSE) {
+    .Call('_STITCH_reference_fbh', PACKAGE = 'STITCH', eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, ehh_h1_A, ehh_h1_S, ehh_h0_A, ehh_h0_S, maxDifferenceBetweenReads, maxEmissionMatrixDifference, suppressOutput, reference_haps, non_NA_cols, iSample, reference_phred, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, return_extra, return_gammaK, grid, rescale_eMatGrid_t, bound_eMatGrid_t, run_fb_subset)
 }
 
 #' @export

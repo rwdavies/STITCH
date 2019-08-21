@@ -340,6 +340,7 @@ void make_haploid_gammaUpdate_t(
             // do not always need to update
             gamma_t_col = gamma_t.col(cr);
         }
+        cr_prev = cr;
         for(j = 0; j <= J; j++) {
             t=pRU(j);
             if(bqU(j)<0) {

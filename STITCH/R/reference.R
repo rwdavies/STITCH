@@ -575,6 +575,16 @@ single_reference_iteration <- function(
         nbreaks <- rep(0, S)
     }
 
+    ## do not bother rescaling or bounding
+    ## if not using grid!
+    if (tail(grid, 1) == (length(grid) - 1)) {
+        rescale_eMatGrid_t <- FALSE
+        bound_eMatGrid_t <- FALSE
+    } else {
+        rescale_eMatGrid_t <- TRUE
+        bound_eMatGrid_t <- TRUE
+    }
+    
     out2 <- mclapply(
         sampleRanges,
         mc.cores = nCores,
@@ -594,7 +604,9 @@ single_reference_iteration <- function(
         plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
         iteration = iteration,
         maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-        maxEmissionMatrixDifference = maxEmissionMatrixDifference
+        maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+        rescale_eMatGrid_t = rescale_eMatGrid_t,
+        bound_eMatGrid_t = bound_eMatGrid_t
     )
 
     check_mclapply_OK(out2, "There has been an error generating the input. Please see error message above")
@@ -657,6 +669,8 @@ new_subset_of_single_reference_iteration <- function(
     iteration,
     reference_haps,
     non_NA_cols,
+    rescale_eMatGrid_t = FALSE,
+    bound_eMatGrid_t = FALSE,
     maxDifferenceBetweenReads = 1000,
     maxEmissionMatrixDifference = 1e10,
     suppressOutput = 1
@@ -675,6 +689,21 @@ new_subset_of_single_reference_iteration <- function(
     betaHat_t <- array(0, c(K, nGrids))
     gamma_t <- array(0, c(K, nGrids))
     eMatGrid_t <- array(0, c(K, nGrids))
+
+    ehh_h1_A <- array(0, c(K, nSNPs, S))
+    ehh_h1_S <- array(0, c(K, nSNPs, S))    
+    ehh_h0_A <- array(0, c(K, nSNPs, S))
+    ehh_h0_S <- array(0, c(K, nSNPs, S))    
+    
+    ref_make_ehh(
+        eHapsCurrent_tc = eHapsCurrent_tc,
+        non_NA_cols = non_NA_cols,
+        ehh_h1_A = ehh_h1_A,
+        ehh_h1_S = ehh_h1_S,
+        ehh_h0_A = ehh_h0_A,
+        ehh_h0_S = ehh_h0_S,
+        reference_phred = reference_phred
+    )     
     
     ## for updating
     gammaSum0_tc <- array(0, c(K, nSNPs, S))
@@ -693,23 +722,15 @@ new_subset_of_single_reference_iteration <- function(
         return_gammaK <- FALSE
     }
     
-    bundledSampleReads <- NULL
     for(iSample in sampleRange[1]:sampleRange[2]) {
 
-        ## right - get this
-        out <- get_sampleReads_from_dir_for_sample(
-            dir = tempdir,
-            regionName = regionName,
-            iSample = iSample,
-            bundling_info = reference_bundling_info,
-            bundledSampleReads = bundledSampleReads,
-            what = "referenceSampleReads"
-        )
-        sampleReads <- out$sampleReads
-        bundledSampleReads <- out$bundledSampleReads
-
+        if (iSample == 10) {
+            print("remove me")
+            suppressOutput <- 0
+        } else {
+            suppressOutput <- 1
+        }
         fbsoL <- reference_fbh(
-            sampleReads = sampleReads,
             eHapsCurrent_tc = eHapsCurrent_tc,
             alphaMatCurrent_tc = alphaMatCurrent_tc,
             transMatRate_tc_H = transMatRate_tc_H,
@@ -720,27 +741,27 @@ new_subset_of_single_reference_iteration <- function(
             reference_haps = reference_haps,
             non_NA_cols = non_NA_cols,
             iSample = iSample - 1,
-            run_pseudo_haploid = as.integer(0), ## just run haploid
-            blocks_for_output = array(0, c(1, 1)),
-            update_in_place = TRUE,
             gammaSum0_tc = gammaSum0_tc,
             gammaSum1_tc = gammaSum1_tc,
             alphaMatSum_tc = alphaMatSum_tc,
             hapSum_tc = hapSum_tc,
             priorSum_m = priorSum_m,
-            pass_in_alphaBeta = TRUE,
             alphaHat_t = alphaHat_t,
             betaHat_t = betaHat_t,
             gamma_t = gamma_t,
             eMatGrid_t = eMatGrid_t,
+            ehh_h1_A = ehh_h1_A,
+            ehh_h1_S = ehh_h1_S,
+            ehh_h0_A = ehh_h0_A,
+            ehh_h0_S = ehh_h0_S,
             grid = grid,
-            Jmax = 10,
-            prev_list_of_alphaBetaBlocks = list(),
             return_gammaK = return_gammaK,
-            return_extra = TRUE,
+            return_extra = FALSE,
             reference_phred = reference_phred
         )
-        
+
+        ## can I move this into cpp too
+        ## then move WHOLE LOOP into cpp?
         for(s in which(nbreaks > 0)) {
             ##
             break_results <- list_of_break_results[[s]]
@@ -802,6 +823,8 @@ subset_of_single_reference_iteration <- function(
     sampleRanges,
     plot_shuffle_haplotype_attempts,
     iteration,
+    rescale_eMatGrid_t = FALSE,
+    bound_eMatGrid_t = FALSE,
     maxDifferenceBetweenReads = 1000,
     maxEmissionMatrixDifference = 1e10,
     suppressOutput = 1
@@ -849,7 +872,13 @@ subset_of_single_reference_iteration <- function(
         )
         sampleReads <- out$sampleReads
         bundledSampleReads <- out$bundledSampleReads
-        
+
+        if (iSample == 10) {
+            print("remove me")
+            suppressOutput <- 0
+        } else {
+            suppressOutput <- 1
+        }
         fbsoL <- forwardBackwardHaploid(
             sampleReads = sampleReads,
             eHapsCurrent_tc = eHapsCurrent_tc,
@@ -879,9 +908,9 @@ subset_of_single_reference_iteration <- function(
             Jmax = 10,
             prev_list_of_alphaBetaBlocks = list(),
             return_gammaK = return_gammaK,
-            return_extra = TRUE,
-            rescale_eMatGrid_t = TRUE
-        )
+            return_extra = FALSE,
+            rescale_eMatGrid_t = rescale_eMatGrid_t
+        ) ##             bound_eMatGrid_t is TRUE inside function
         
         for(s in which(nbreaks > 0)) {
             ## 

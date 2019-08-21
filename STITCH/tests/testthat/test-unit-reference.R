@@ -327,6 +327,7 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
             nSNPs <- test_package$nSNPs
             nGrids <- test_package$nGrids
             K <- test_package$K
+            S <- test_package$S
             
             reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))
             if (has_NA) {
@@ -342,6 +343,21 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
             iSample <- 0
             reference_phred <- 20
             maxEmissionMatrixDifference <- 1e10
+
+            ehh_h1_A <- array(0, c(K, nSNPs, S))
+            ehh_h1_S <- array(0, c(K, nSNPs, S))    
+            ehh_h0_A <- array(0, c(K, nSNPs, S))
+            ehh_h0_S <- array(0, c(K, nSNPs, S))    
+            
+            ref_make_ehh(
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                non_NA_cols = non_NA_cols,
+                ehh_h1_A = ehh_h1_A,
+                ehh_h1_S = ehh_h1_S,
+                ehh_h0_A = ehh_h0_A,
+                ehh_h0_S = ehh_h0_S,
+                reference_phred = reference_phred
+            )
             
             rcpp_ref_make_eMatGrid_t(
                 eMatGrid_t = eMatGrid_t1,
@@ -353,6 +369,10 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
                 s = s,
                 iSample = iSample,
                 maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+                ehh_h1_A = ehh_h1_A,
+                ehh_h1_S = ehh_h1_S,
+                ehh_h0_A = ehh_h0_A,
+                ehh_h0_S = ehh_h0_S,
                 rescale = TRUE,
                 bound = TRUE
             )
