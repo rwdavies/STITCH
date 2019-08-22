@@ -19,7 +19,6 @@ get_and_initialize_from_reference <- function(
     nCores,
     regionName,
     alleleCount,
-    windowSNPs,
     expRate,
     nGen,
     tempdir,
