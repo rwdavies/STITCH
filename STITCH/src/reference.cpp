@@ -121,11 +121,12 @@ Rcpp::List rcpp_make_sampleReads_from_hap(
     Rcpp::List sampleReads(non_NA_cols.length());
     int iSNP;
     for(int i = 0; i < non_NA_cols.length(); i++) {
-      iSNP = non_NA_cols[i] - 1; // this is 0-based (note - grid comes later)
+        iSNP = non_NA_cols[i] - 1; // this is 0-based (note - grid comes later)
         sampleReads[i]=Rcpp::List::create(0, iSNP, reference_phred * (2 * reference_hap[iSNP] - 1), iSNP);
     }
     return sampleReads;
 }
+
 
 
 // since reference_phred is fixed, alot of these matrices are the same

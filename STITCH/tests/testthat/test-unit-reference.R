@@ -436,10 +436,9 @@ test_that("can do single reference iteration", {
     dir.create(tempdir)
     N_haps <- 2
     nCores <- 1
-    reference_bundling_info <- NULL
     nGen <- 10000
 
-    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, reference_bundling_info = reference_bundling_info, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, reference_haps = reference_haps, non_NA_cols = non_NA_cols)
+    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, reference_haps = reference_haps, non_NA_cols = non_NA_cols)
 
 
 })
