@@ -1,0 +1,5 @@
+This reverted README serves to record some information surrounding attempts to speed up the use of reference samples for building the internal STITCH parameters
+
+The reverted scripts/profile2.R contains (some) messy code that was used to make a test dataset to work with and profile.
+
+The reverted STITCH/tests/testthat/test-unit-temp.R contains some code to save the test package, as well as test a static version of the code under consideration with the new code
