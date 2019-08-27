@@ -123,9 +123,11 @@ get_and_initialize_from_reference <- function(
             eHapsCurrent_tc[, !reference_panel_SNPs, s] <- 0.5
         }
 
-        N_haps <- nrow(reference_haps_t)
+        N_haps <- ncol(reference_haps)
             
         if (reference_iterations > 0) {
+
+            print_message(paste0("Running reference EM with ", N_haps, " reference haplotypes"))
             out <- run_reference_EM(
                 eHapsCurrent_tc = eHapsCurrent_tc,
                 alphaMatCurrent_tc = alphaMatCurrent_tc,
@@ -505,8 +507,8 @@ single_reference_iteration <- function(
         nbreaks <- rep(0, S)
     }
 
-    ## do not bother rescaling or bounding
-    ## if not using grid!
+    ## unclear how much bounding might make a difference in the future
+    ## leave this in for now, possibly revisit
     if (tail(grid, 1) == (length(grid) - 1)) {
         rescale_eMatGrid_t <- FALSE
         bound_eMatGrid_t <- FALSE
