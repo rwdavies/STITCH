@@ -682,6 +682,18 @@ make_reference_package <- function(
     ## assume
     genetic_map <- make_genetic_map_file(L = L, n_snps = n_snps, expRate = expRate)
     simple_write(genetic_map, reference_genetic_map_file, gzip = TRUE, col.names = TRUE)
+
+    ## not sure how important long term    
+    if (is.na(reference_sample_header[1])) {
+        colClasses <- get_reference_colClasses(
+            reference_sample_file = reference_sample_file,
+            reference_populations = reference_populations,
+            chr = chr
+        )
+    } else {
+        ## not NA, these have been set, and will fail the above
+        colClasses <- NULL
+    }
     
     return(
         list(
@@ -693,7 +705,8 @@ make_reference_package <- function(
             pos = pos,
             reference_haplotypes = reference_haplotypes,
             reference_legend = reference_legend,
-            reference_samples = reference_samples
+            reference_samples = reference_samples,
+            colClasses = colClasses
         )
     )
 

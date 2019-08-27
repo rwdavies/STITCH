@@ -67,3 +67,28 @@ make_rhb_t_from_rhi_t <- function(rhi_t) {
     }
     return(rhb_t)
 }
+
+## where rows = SNPs, cols = K / hap
+make_rhb_from_rhi <- function(rhi) {
+    nSNPs <- nrow(rhi)
+    K <- ncol(rhi)
+    nbSNPs <- ceiling(nSNPs / 32)
+    rhb <- array(as.integer(0), c(nbSNPs, K))
+    for(bs in 0:(nbSNPs - 1)) {
+        w <- seq(32 * bs + 1, min(nSNPs, 32 * bs + 32))
+        if (bs < (nbSNPs - 1)) {
+            ## do not worry about padding
+            for(k in 1:K) {
+                rhb[bs + 1, k] <- int_contract(rhi[w, k])
+            }
+        } else {
+            x <- integer(32)
+            w2 <- 1:length(w)
+            for(k in 1:K) {
+                x[w2] <- rhi[w, k]
+                rhb[bs + 1, k] <- int_contract(x)
+            }
+        }
+    }
+    return(rhb)
+}
