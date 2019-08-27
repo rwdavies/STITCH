@@ -205,7 +205,8 @@ get_haplotypes_from_reference <- function(
     buffer = NA,
     chr,
     niterations = 40,
-    extraction_method = "both" ## both for 
+    extraction_method = "all", ## both for
+    load_rhb_method = "R"
 ) {
 
     print_message("Begin get haplotypes from reference")
@@ -242,7 +243,8 @@ get_haplotypes_from_reference <- function(
         tempdir = tempdir,
         colClasses = colClasses,
         niterations = niterations,
-        extraction_method = extraction_method
+        extraction_method = extraction_method,
+        load_rhb_method = load_rhb_method
     )
 
     print_message(paste0("Succesfully extracted ", ncol(out[["haps"]]), " haplotypes from reference data"))
@@ -852,7 +854,8 @@ extract_validate_and_load_haplotypes <- function(
     tempdir,
     colClasses,
     niterations,
-    extraction_method = "both"
+    extraction_method = "both",
+    load_rhb_method = "R"
 ) {
 
     print_message("Extract reference haplotypes")
@@ -875,12 +878,13 @@ extract_validate_and_load_haplotypes <- function(
     hap_snps_position_in_pos <- is.na(match(pos_snps, both_snps)) == FALSE
     lines_to_get <- position_in_haps_file[hap_snps_to_extract]
 
-    
     nSNPs <- nrow(pos)
+    n_haps_snps <- max(lines_to_get) ## stop at this, anyway
     reference_haps <- NA
     rhb1 <- NA
     rhb2 <- NA
-    if ((extraction_method == "both") | (extraction_method == "hap_v1")) {
+    rhb3 <- NA    
+    if ((extraction_method == "all") | (extraction_method == "hap_v1")) {
         ##
         reference_haps <- load_haps_at_positions_no_NAs(
             reference_haplotype_file = reference_haplotype_file,
@@ -891,23 +895,39 @@ extract_validate_and_load_haplotypes <- function(
         )
         rhb1 <- make_rhb_from_rhi(reference_haps)
     }
-    if ((extraction_method == "both") | (extraction_method == "hap_v2")) {
-        ## 
+    if ((extraction_method == "all") | (extraction_method == "hap_v2")) {
+        ##
         rhb2 <- load_rhb_at_positions_no_NAs(
             reference_haplotype_file = reference_haplotype_file,
             lines_to_get = lines_to_get,
             colClasses = colClasses,
             nSNPs = nSNPs,
-            tempdir = tempdir
+            tempdir = tempdir,
+            n_haps_snps = n_haps_snps,
+            load_rhb_method = "R"
         )
     }
+    if ((extraction_method == "all") | (extraction_method == "hap_v3")) {
+        ##
+        rhb2 <- load_rhb_at_positions_no_NAs(
+            reference_haplotype_file = reference_haplotype_file,
+            lines_to_get = lines_to_get,
+            colClasses = colClasses,
+            nSNPs = nSNPs,
+            tempdir = tempdir,
+            n_haps_snps = n_haps_snps,
+            load_rhb_method = "Rcpp"
+        )
+    }
+    
 
     return(
         list(
             reference_haps = reference_haps,
             rh_in_L = which(hap_snps_position_in_pos),
             rhb1 = rhb1,
-            rhb2 = rhb2            
+            rhb2 = rhb2,
+            rhb3 = rhb3
         )
     )
 }
@@ -981,76 +1001,6 @@ load_haps_at_positions_no_NAs <- function(
     ## 
     ## haps_both <- array(NA, c(nSNPs, ncol(haps)))
     ## haps_both[hap_snps_position_in_pos, ] <- haps
-    ## 
-}
-
-
-## lines to get is 1-based (right) what to get from haps file
-load_rhb_at_positions_no_NAs <- function(
-    reference_haplotype_file,
-    lines_to_get,
-    colClasses,
-    nSNPs,
-    tempdir = tempdir()
-) {
-    ##
-    ## first initialization
-    ##
-    ## want non-NULL values
-    ## determine columns to get
-    h_row_1 <- read.table(reference_haplotype_file, nrow = 1)
-    haps_to_get <- which((colClasses == "integer") & (h_row_1 != "-"))
-    n_haps <- length(haps_to_get)
-    nSNPs <- length(lines_to_get)
-    nbSNPs <- ceiling(nSNPs / 32)    
-    rhb <- array(as.integer(0), c(nbSNPs, n_haps))
-    ##
-    ## initialize variables needed for processing
-    ##
-    bs <- 1 ## 1-based in R
-    ihold <- 1 ## 1-based in R
-    hold <- array(0L, c(32, n_haps)) ## hold results here until needed
-    final_snp_to_get <- tail(lines_to_get, 1)
-    start_snp <- 1
-    ##
-    ##
-    in.con <- gzfile(reference_haplotype_file, "r")
-    while(TRUE) {
-        chunk <- readLines(in.con, n = 32)
-        if (length(chunk) == 0) {
-            break;
-        }
-        chunk_length <- length(chunk)
-        end_snp <- start_snp + chunk_length - 1
-        ## 
-        ## re-cast this bit in cpp
-        ##
-        for(iiSNP in 1:chunk_length) {
-            iSNP <- start_snp - 1 + iiSNP
-            if (iSNP %in% lines_to_get) {
-                ## get this line
-                x <- suppressWarnings(as.integer(strsplit(chunk[iiSNP], " ")[[1]]))
-                hold[ihold, ] <- x[haps_to_get]
-                ## if full or the final SNP to get, reset bs / ihold
-                if ((iSNP == final_snp_to_get) | (ihold == 32)) {
-                    ## overflow or end. note - with reset, should be fine not resetting this
-                    for(k in 1:n_haps) {
-                        rhb[bs, k] <- int_contract(hold[, k])
-                    }
-                    hold[] <- 0L ## reset
-                    bs <- bs + 1
-                    ihold <- 1
-                } else {
-                    ihold <- ihold + 1
-                }
-            }
-        }
-        start_snp <- start_snp + 32    
-    }
-    close(in.con)
-    ## validate_haps(haps, lines_to_get)
-    ## convert to rhb around here!
-    return(rhb)
     ## 
 }
 

@@ -563,6 +563,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Rcpp_rhb_reader_chunk_process
+void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, int& bs, int& ihold, Rcpp::IntegerVector& haps_to_get, int& final_snp_to_get, int& n_haps, Rcpp::LogicalVector& binary_get_line);
+RcppExport SEXP _STITCH_Rcpp_rhb_reader_chunk_process(SEXP rhbSEXP, SEXP holdSEXP, SEXP chunkSEXP, SEXP chunk_lengthSEXP, SEXP start_snpSEXP, SEXP end_snpSEXP, SEXP bsSEXP, SEXP iholdSEXP, SEXP haps_to_getSEXP, SEXP final_snp_to_getSEXP, SEXP n_hapsSEXP, SEXP binary_get_lineSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::imat& >::type rhb(rhbSEXP);
+    Rcpp::traits::input_parameter< arma::imat& >::type hold(holdSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::StringVector& >::type chunk(chunkSEXP);
+    Rcpp::traits::input_parameter< const int& >::type chunk_length(chunk_lengthSEXP);
+    Rcpp::traits::input_parameter< const int& >::type start_snp(start_snpSEXP);
+    Rcpp::traits::input_parameter< const int& >::type end_snp(end_snpSEXP);
+    Rcpp::traits::input_parameter< int& >::type bs(bsSEXP);
+    Rcpp::traits::input_parameter< int& >::type ihold(iholdSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
+    Rcpp::traits::input_parameter< int& >::type final_snp_to_get(final_snp_to_getSEXP);
+    Rcpp::traits::input_parameter< int& >::type n_haps(n_hapsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector& >::type binary_get_line(binary_get_lineSEXP);
+    Rcpp_rhb_reader_chunk_process(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line);
+    return R_NilValue;
+END_RCPP
+}
 // rcpp_int_expand
 Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, const int nSNPs);
 RcppExport SEXP _STITCH_rcpp_int_expand(SEXP hapcSEXP, SEXP nSNPsSEXP) {
@@ -850,6 +871,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 12},
     {"_STITCH_rcpp_int_expand", (DL_FUNC) &_STITCH_rcpp_int_expand, 2},
     {"_STITCH_calc_dist_between_rhb_t_and_hap", (DL_FUNC) &_STITCH_calc_dist_between_rhb_t_and_hap, 3},
     {"_STITCH_inflate_fhb_t", (DL_FUNC) &_STITCH_inflate_fhb_t, 3},

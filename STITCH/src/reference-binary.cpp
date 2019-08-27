@@ -24,6 +24,74 @@
 
 //' @export
 // [[Rcpp::export]]
+void Rcpp_rhb_reader_chunk_process(
+    arma::imat& rhb,
+    arma::imat& hold,
+    const Rcpp::StringVector& chunk,
+    const int& chunk_length,
+    const int& start_snp,
+    const int& end_snp,
+    int& bs,
+    int& ihold,
+    Rcpp::IntegerVector& haps_to_get,
+    int& final_snp_to_get,
+    int& n_haps,
+    Rcpp::LogicalVector& binary_get_line
+) {
+    int k, iiSNP;
+    iiSNP = -1;
+    std::cout << "inside!" << std::endl;
+    while(iiSNP < chunk_length) {
+        iiSNP++;
+        std::cout << "iiSNP = " << iiSNP << std::endl;        
+        int iSNP = start_snp - 1 + iiSNP; // 0-based here
+        std::cout << "iSNP = " << iSNP << std::endl;
+        if (binary_get_line(iSNP)) {
+            for(int i_hap = 0; i_hap < n_haps; i_hap++) {
+                hold(ihold, i_hap) = chunk[iiSNP][2 * haps_to_get(i_hap)] - '0';
+            }
+            // if full or the final SNP to get, reset bs / ihold
+            if ((iSNP == final_snp_to_get) | (ihold == 31)) {
+
+
+
+
+
+
+                
+                std::cout << "am here! sort this bad boy ouT!" << std::endl;
+                so close!!!!
+
+
+
+                
+                // ## overflow or end. note - with reset, should be fine not resetting this
+                for(int i_hap = 0; i_hap < n_haps; i_hap++) {
+                    std::uint32_t itmp = 0;
+                    for (k = 31; k >= 0; k--) {
+                        itmp <<= 1;
+                        int j = hold(k, i_hap);
+                        itmp |= j & 0x1;
+                    }
+                    rhb(bs, k) = itmp; // bs is 0-based
+                    // like https://github.com/wch/r-source/blob/5a156a0865362bb8381dcd69ac335f5174a4f60c/src/main/raw.c#L179
+                }
+                hold.fill(0);
+                bs++;
+                ihold = 0; // 0-based
+                iiSNP += 100; // finish off
+	    } else {
+                ihold++;
+            }
+        }
+    }
+    return;
+}
+
+
+
+//' @export
+// [[Rcpp::export]]
 Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, const int nSNPs) {
   const int nbSNPs = hapc.size();
   //const int nSNPs = nbSNPs * 32;

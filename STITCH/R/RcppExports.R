@@ -152,6 +152,11 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
 }
 
 #' @export
+Rcpp_rhb_reader_chunk_process <- function(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line) {
+    invisible(.Call('_STITCH_Rcpp_rhb_reader_chunk_process', PACKAGE = 'STITCH', rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line))
+}
+
+#' @export
 rcpp_int_expand <- function(hapc, nSNPs) {
     .Call('_STITCH_rcpp_int_expand', PACKAGE = 'STITCH', hapc, nSNPs)
 }

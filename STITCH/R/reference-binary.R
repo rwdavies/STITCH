@@ -92,3 +92,116 @@ make_rhb_from_rhi <- function(rhi) {
     }
     return(rhb)
 }
+
+
+## lines to get is 1-based (right) what to get from haps file
+load_rhb_at_positions_no_NAs <- function(
+    reference_haplotype_file,
+    lines_to_get,
+    colClasses,
+    nSNPs,
+    n_haps_snps,
+    tempdir = tempdir(),
+    load_rhb_method = "R"
+) {
+    ##
+    ## first initialization
+    ##
+    ## want non-NULL values
+    ## determine columns to get
+    h_row_1 <- read.table(reference_haplotype_file, nrow = 1)
+    haps_to_get <- which((colClasses == "integer") & (h_row_1 != "-")) - 1
+    n_haps <- length(haps_to_get)
+    nSNPs <- length(lines_to_get)
+    nbSNPs <- ceiling(nSNPs / 32)    
+    rhb <- array(as.integer(0), c(nbSNPs, n_haps))
+    ##
+    ## initialize variables needed for processing
+    ##
+    bs <- 0 ## keep 0-based
+    ihold <- 0 ## keep 0-based
+    hold <- array(0L, c(32, n_haps)) ## hold results here until needed
+    final_snp_to_get <- tail(lines_to_get, 1) - 1 ## 0-based
+    start_snp <- 1
+    binary_get_line <- array(FALSE, n_haps_snps)
+    binary_get_line[lines_to_get] <- TRUE
+    iSNP <- -1
+    ##
+    ##
+    ## validate_haps(haps, lines_to_get)
+    ## convert to rhb around here!
+    if (load_rhb_method == "Rcpp") {
+        ##
+        in.con <- gzfile(reference_haplotype_file, "r")
+        while(TRUE) {
+            chunk <- readLines(in.con, n = 32)
+            if (length(chunk) == 0 | final_snp_to_get < (iSNP - 1)) {
+                break;
+            }
+            chunk_length <- length(chunk)
+            end_snp <- start_snp + chunk_length - 1
+            ## cpp
+            Rcpp_rhb_reader_chunk_process(
+                rhb,
+                hold,
+                chunk,
+                chunk_length,
+                start_snp,
+                end_snp,
+                bs,
+                ihold,
+                haps_to_get,
+                final_snp_to_get,
+                n_haps,
+                binary_get_line
+            )
+            ##
+        }
+        ## 
+    } else if (load_rhb_method == "R") {
+        in.con <- gzfile(reference_haplotype_file, "r")
+        while(TRUE) {
+            chunk <- readLines(in.con, n = 32)
+            if (length(chunk) == 0 | final_snp_to_get < (iSNP - 1)) {
+                break;
+            }
+            chunk_length <- length(chunk)
+            end_snp <- start_snp + chunk_length - 1
+            ## 
+            ## re-cast this bit in cpp
+            ##
+            iiSNP <- 0
+            while(iiSNP < chunk_length) {
+                iiSNP <- iiSNP + 1
+                iSNP <- start_snp - 1 + iiSNP ## 1-based
+                if (binary_get_line[iSNP]) {
+                    ## how to do this in cpp
+                    x <- suppressWarnings(as.integer(strsplit(chunk[iiSNP], " ")[[1]]))
+                    ## 
+                    hold[ihold + 1, ] <- x[haps_to_get + 1]
+                    ## if full or the final SNP to get, reset bs / ihold
+                    if (((iSNP - 1) == final_snp_to_get) | (ihold == 31)) {
+                        ## overflow or end. note - with reset, should be fine not resetting this
+                        for(k in 1:n_haps) {
+                            rhb[bs + 1, k] <- packBits(hold[, k], type = "integer")
+                        }
+                        hold[] <- 0L ## reset
+                        bs <- bs + 1
+                        ihold <- 0
+                        if ((iSNP - 1) == final_snp_to_get) {
+                            iiSNP <- 100
+                        }
+                    } else {
+                        ihold <- ihold + 1
+                    }
+                }
+            }
+            ##
+            start_snp <- start_snp + 32    
+        }
+        close(in.con)
+    }
+    return(rhb)
+    ## 
+}
+

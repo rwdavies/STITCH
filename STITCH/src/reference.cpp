@@ -39,20 +39,6 @@ arma::mat make_gammaEK_t_from_gammaK_t(
 );
 
 
-// //' @export
-// // [[Rcpp::export]]
-// Rcpp_get_haplotypes(
-//     reference_haplotype_file,
-//                     width,
-//                     height
-//                     )
-// while (std::getline(matrix_file, line) && line_count < Height) {
-//         line.resize(Width);
-//         for (size_t i = 0; i < line.length(); ++i)
-//             Map[i][line_count] = line[i];
-//         ++line_count;
-//     }
-
 
 
 //' @export

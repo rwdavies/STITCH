@@ -2,6 +2,7 @@
 
 export(Rcpp_ref_run_backward_haploid)
 export(Rcpp_ref_run_forward_haploid)
+export(Rcpp_rhb_reader_chunk_process)
 export(Rcpp_run_backward_haploid)
 export(Rcpp_run_forward_haploid)
 export(STITCH)
