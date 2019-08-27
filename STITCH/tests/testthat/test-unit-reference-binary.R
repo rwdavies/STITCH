@@ -95,3 +95,4 @@ test_that("can quickly subset rhb_t to a new eHaps like container", {
     }
 
 })
+

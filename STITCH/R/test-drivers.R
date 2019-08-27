@@ -661,7 +661,7 @@ make_reference_package <- function(
         for (i_hap in 1:2) {
             c <- 2 * (i_sample - 1) + i_hap
             if (is.null(phasemaster )) {
-                g <- sample(c(0, 1), n_snps, replace = TRUE)
+                g <- sample(c(0L, 1L), n_snps, replace = TRUE)
             } else {
                 g <- phasemaster[, sample(1:ncol(phasemaster), 1)]
             }
@@ -674,6 +674,7 @@ make_reference_package <- function(
         w <- 2 * which(reference_samples[, "SEX"] == "male")
         reference_haplotypes[, w] <- "-"
     }
+
     simple_write(reference_haplotypes, reference_haplotype_file, gzip = TRUE, col.names = FALSE)
 
     ## make genetic map as well

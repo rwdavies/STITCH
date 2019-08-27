@@ -39,6 +39,21 @@ arma::mat make_gammaEK_t_from_gammaK_t(
 );
 
 
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp_get_haplotypes(
+//     reference_haplotype_file,
+//                     width,
+//                     height
+//                     )
+// while (std::getline(matrix_file, line) && line_count < Height) {
+//         line.resize(Width);
+//         for (size_t i = 0; i < line.length(); ++i)
+//             Map[i][line_count] = line[i];
+//         ++line_count;
+//     }
+
+
 
 //' @export
 // [[Rcpp::export]]
@@ -114,14 +129,14 @@ void Rcpp_ref_run_backward_haploid(
 //' @export
 // [[Rcpp::export]]
 Rcpp::List rcpp_make_sampleReads_from_hap(
-    const Rcpp::IntegerVector non_NA_cols,
+    const Rcpp::IntegerVector rh_in_L,
     const int reference_phred,
     const Rcpp::IntegerVector reference_hap
 ) {
-    Rcpp::List sampleReads(non_NA_cols.length());
+    Rcpp::List sampleReads(rh_in_L.length());
     int iSNP;
-    for(int i = 0; i < non_NA_cols.length(); i++) {
-        iSNP = non_NA_cols[i] - 1; // this is 0-based (note - grid comes later)
+    for(int i = 0; i < rh_in_L.length(); i++) {
+        iSNP = rh_in_L[i] - 1; // this is 0-based (note - grid comes later)
         sampleReads[i]=Rcpp::List::create(0, iSNP, reference_phred * (2 * reference_hap[iSNP] - 1), iSNP);
     }
     return sampleReads;
@@ -136,7 +151,6 @@ Rcpp::List rcpp_make_sampleReads_from_hap(
 // [[Rcpp::export]]
 void ref_make_ehh(
     const arma::cube& eHapsCurrent_tc,
-    const Rcpp::IntegerVector& non_NA_cols,
     arma::cube& ehh_h1_S,
     arma::cube& ehh_h1_D,
     arma::cube& ehh_h0_S,
@@ -144,7 +158,6 @@ void ref_make_ehh(
     double reference_phred
 ) {
     const int S = eHapsCurrent_tc.n_slices;
-    //int nnSNPs = non_NA_cols.length();
     double eps = pow(10,(double(-reference_phred) / 10));
     double pA, pR;
     for(int s = 0; s < S; s++) {
@@ -209,7 +222,7 @@ void rcpp_ref_bound_eMatGrid_t(
 void rcpp_ref_make_eMatGrid_t(
     arma::mat& eMatGrid_t,
     Rcpp::IntegerVector& reference_hap,
-    const Rcpp::IntegerVector& non_NA_cols,
+    const Rcpp::IntegerVector& rh_in_L,
     const arma::cube& eHapsCurrent_tc,
     const Rcpp::IntegerVector& grid,    
     const int reference_phred,    
@@ -221,20 +234,20 @@ void rcpp_ref_make_eMatGrid_t(
     const bool bound = true
 ) {
     //
-    // non_NA_cols is 1-based, which columns are we running over
+    // rh_in_L is 1-based, which columns are we running over
     //
     //const int K = eMatGrid_t.n_rows;
     int iSNP, iGrid, h;
     // double eps = pow(10,(double(-reference_phred) / 10));
     //int k, cur_grid;
     //int prev_grid = -1;
-    int nnSNPs = non_NA_cols.length();
+    int nnSNPs = rh_in_L.length();
     //
     //
     for(int iiSNP = 0; iiSNP < nnSNPs; iiSNP++) {
-        iSNP = non_NA_cols(iiSNP) - 1; // here, 0-based
+        iSNP = rh_in_L(iiSNP) - 1; // here, 0-based
 	iGrid = grid(iSNP);
-	h = reference_hap(iSNP); // here, 0 = ref, 1 = alt
+	h = reference_hap(iiSNP); // here, 0 = ref, 1 = alt
 	if (h == 1) {
 	    eMatGrid_t.col(iGrid) %= ehh_h1_S.slice(s).col(iSNP);
 	} else {
@@ -284,7 +297,7 @@ void ref_make_haploid_gammaUpdate_t(
     const arma::mat& gamma_t,
     const arma::cube& eHapsCurrent_tc,
     const Rcpp::IntegerVector& reference_hap,
-    const Rcpp::IntegerVector& non_NA_cols,
+    const Rcpp::IntegerVector& rh_in_L,
     const Rcpp::IntegerVector& grid,
     const double reference_phred,
     arma::cube& ehh_h1_D,    
@@ -302,19 +315,19 @@ void ref_make_haploid_gammaUpdate_t(
     int h, iGrid, iSNP;
     //arma::colvec a1_col, a2_col, y_col, d_col, b_col, d1_col, d2_col, gamma_t_col;
     arma::colvec gamma_t_col, d_col;
-    int nnSNPs = non_NA_cols.length();    
+    int nnSNPs = rh_in_L.length();    
     //
     // here, only need to loop over non-empty eMatGrid_t
     //
     for(int iiSNP = 0; iiSNP < nnSNPs; iiSNP++) {
-        iSNP = non_NA_cols(iiSNP) - 1; // here, 0-based
+        iSNP = rh_in_L(iiSNP) - 1; // here, 0-based
 	iGrid = grid(iSNP);
         if (iGrid > iGrid_prev) {
             // do not always need to update
             gamma_t_col = gamma_t.col(iGrid);
         }
         iGrid_prev = iGrid;	
-	h = reference_hap(iSNP); // here, 0 = ref, 1 = alt
+	h = reference_hap(iiSNP); // here, 0 = ref, 1 = alt
 	// if (h == 1) {
 	//   pA = 1 - eps;
 	//   pR = eps / 3;
@@ -368,7 +381,7 @@ Rcpp::List reference_fbh(
     const double maxEmissionMatrixDifference,
     int suppressOutput,
     Rcpp::IntegerVector& reference_hap,
-    const Rcpp::IntegerVector& non_NA_cols,
+    const Rcpp::IntegerVector& rh_in_L,
     const double reference_phred,
     arma::cube& gammaSum0_tc,
     arma::cube& gammaSum1_tc,    
@@ -429,7 +442,7 @@ Rcpp::List reference_fbh(
       next_section="Make eMatGrid_t for special reference";
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
-      rcpp_ref_make_eMatGrid_t(eMatGrid_t, reference_hap, non_NA_cols, eHapsCurrent_tc, grid, reference_phred, s, maxEmissionMatrixDifference, ehh_h1_S, ehh_h0_S, rescale_eMatGrid_t, bound_eMatGrid_t);
+      rcpp_ref_make_eMatGrid_t(eMatGrid_t, reference_hap, rh_in_L, eHapsCurrent_tc, grid, reference_phred, s, maxEmissionMatrixDifference, ehh_h1_S, ehh_h0_S, rescale_eMatGrid_t, bound_eMatGrid_t);
       //
       //
       next_section="Forward recursion";
@@ -481,7 +494,7 @@ Rcpp::List reference_fbh(
       prev=print_times(prev, suppressOutput, prev_section, next_section);
       prev_section=next_section;
       //
-      ref_make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, gamma_t, eHapsCurrent_tc, reference_hap, non_NA_cols, grid, reference_phred, ehh_h1_D, ehh_h0_D);
+      ref_make_haploid_gammaUpdate_t(s, gammaSum0_tc, gammaSum1_tc, gamma_t, eHapsCurrent_tc, reference_hap, rh_in_L, grid, reference_phred, ehh_h1_D, ehh_h0_D);
       //
       // update alphaMatSum
       //

@@ -47,7 +47,7 @@ get_and_initialize_from_reference <- function(
     ## get reference haplotypes matched to posfile
     ## NA's where there are no match
     ## only for populations of interest
-    reference_haps <- get_haplotypes_from_reference(
+    out <- get_haplotypes_from_reference(
         reference_haplotype_file = reference_haplotype_file,
         reference_legend_file = reference_legend_file,
         reference_sample_file = reference_sample_file,
@@ -61,19 +61,28 @@ get_and_initialize_from_reference <- function(
         chr = chr,
         niterations = niterations
     )
-    non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
+    ## change here - make rh compact
     
-    reference_panel_SNPs <- is.na(reference_haps[, 1]) == FALSE
+    reference_haps <- out[["reference_haps"]]
+    rh_in_L <- out[["rh_in_L"]]
+    ## rh_in_L is 1-based mapping of where reference_haplotypes are in L
+    ## e.g. for 5 reference SNPs, 1, 2, 3, 4, 5, could be 1, 5, 8, 12, 15, i.e. it is those SNPs 
+    reference_panel_SNPs <- array(FALSE, nrow(pos))
+    reference_panel_SNPs[rh_in_L] <- TRUE
+    ## note - non_NA_cols is deprecated, being the same thing
+    ## non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
 
     ## build ref_alleleCount
     ref_alleleCount <- array(NA, c(nrow(reference_haps), 3))
-    ref_alleleCount[, 1] <- rowSums(reference_haps)
-    ref_alleleCount[, 2] <- ncol(reference_haps)
+    ref_alleleCount[rh_in_L, 1] <- rowSums(reference_haps)
+    ref_alleleCount[rh_in_L, 2] <- ncol(reference_haps)
     ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
 
     if (is.null(alleleCount) == FALSE) {
+        alleleCount_ars <- alleleCount[reference_panel_SNPs, ]
+        
         compare_reference_haps_against_alleleCount(
-            alleleCount = alleleCount,
+            alleleCount_ars = alleleCount_ars,
             reference_haps = reference_haps,
             outputdir = outputdir,
             regionName = regionName
@@ -84,9 +93,9 @@ get_and_initialize_from_reference <- function(
 
         ## fill in rest with noise
         print_message("You have set K to be more than the number of reference haplotypes. The rest of the K ancestral haplotypes will be filled with noise to start")
-        h <- t(reference_haps[reference_panel_SNPs, ])
+        reference_haps_t <- t(reference_haps)
         for(s in 1:S) {
-            eHapsCurrent_tc[1:ncol(reference_haps), reference_panel_SNPs, s] <- h
+            eHapsCurrent_tc[1:ncol(reference_haps), reference_panel_SNPs, s] <- reference_haps_t
         }
 
     } else if (K == ncol(reference_haps)) {
@@ -96,7 +105,7 @@ get_and_initialize_from_reference <- function(
         e <- 0.001
         reference_haps[reference_haps == 0] <- e
         reference_haps[reference_haps == 1] <- (1 - e)
-        reference_haps_t <- t(reference_haps[reference_panel_SNPs, ])
+        reference_haps_t <- t(reference_haps)
         for(s in 1:S) {
             eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t
         }
@@ -117,7 +126,7 @@ get_and_initialize_from_reference <- function(
             ## add some ACTUAL noise. biggest problem is if they are exactly the same - then cannot EM
             reference_haps_t <- 0.95 * reference_haps_t + 0.05 * array(runif(prod(dim(reference_haps_t))), dim(reference_haps_t))
             ##
-            eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t[, reference_panel_SNPs]
+            eHapsCurrent_tc[, reference_panel_SNPs, s] <- reference_haps_t
             ## these do not matter for now
             eHapsCurrent_tc[, !reference_panel_SNPs, s] <- 0.5
         }
@@ -135,7 +144,7 @@ get_and_initialize_from_reference <- function(
                 priorCurrent_m = priorCurrent_m,
                 reference_iterations = reference_iterations,
                 reference_haps = reference_haps,
-                non_NA_cols = non_NA_cols,
+                rh_in_L = rh_in_L,
                 N_haps = N_haps, nCores = nCores,
                 tempdir = tempdir,
                 regionName = regionName, nSNPs = nSNPs, nGrids = nGrids, L = L, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, minRate = minRate, maxRate = maxRate, pseudoHaploidModel = pseudoHaploidModel, reference_phred = reference_phred, grid_distances = grid_distances, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, grid = grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, outputdir = outputdir, plotHapSumDuringIterations = plotHapSumDuringIterations)
@@ -198,8 +207,8 @@ get_haplotypes_from_reference <- function(
 ) {
 
     print_message("Begin get haplotypes from reference")
-
     print_message("Load and validate reference legend header")
+    
     legend_header <- as.character(unlist(read.table(reference_legend_file, nrow = 1, sep = " ")))
     validate_legend_header(legend_header)
 
@@ -222,7 +231,7 @@ get_haplotypes_from_reference <- function(
 
     validate_reference_legend(legend, reference_legend_file)
 
-    haps <- extract_validate_and_load_haplotypes(
+    out <- extract_validate_and_load_haplotypes(
         legend,
         pos,
         reference_haplotype_file,
@@ -233,10 +242,10 @@ get_haplotypes_from_reference <- function(
         niterations
     )
 
-    print_message(paste0("Succesfully extracted ", ncol(haps), " haplotypes from reference data"))
+    print_message(paste0("Succesfully extracted ", ncol(out[["haps"]]), " haplotypes from reference data"))
     print_message("End get haplotypes from reference")
 
-    return(haps)
+    return(out)
 
 }
 
@@ -277,9 +286,9 @@ validate_reference_legend <- function(
 
 validate_haps <- function(
     haps,
-    both_snps
+    lines_to_get
 ) {
-    if (nrow(haps) != length(both_snps))
+    if (nrow(haps) != length(lines_to_get)) 
         stop ("Something has gone wrong during processing the reference haplotype and legend files. Please double check the legend file and haplotype file have the same number of entries, other than headers, and there are SNPs in the target region in the reference haplotype file")
     if (sum(is.na(haps)) > 0)
         stop ("The reference_haplotype_file contains entries other than 0 or 1")
@@ -308,29 +317,31 @@ validate_legend_header <- function(
 
 
 compare_reference_haps_against_alleleCount <- function(
-    alleleCount,
+    alleleCount_ars,
     reference_haps,
     outputdir,
     regionName
 ) {
 
     all_cor <- suppressWarnings(
-        cor(alleleCount[, 3], rowSums(reference_haps), use = "pairwise.complete.obs")
+        cor(alleleCount_ars[, 3], rowSums(reference_haps), use = "pairwise.complete.obs")
     )
     low_maf_cor <- NA
     high_maf_cor <- NA
 
-    w <- alleleCount[,3] > 0.05 & alleleCount[,3] < 0.95
-    if (sum(w) > 1)
+    w <- alleleCount_ars[, 3] > 0.05 & alleleCount_ars[, 3] < 0.95
+    if (sum(w) > 1) {
         high_maf_cor <- suppressWarnings(
-            cor(alleleCount[w, 3], rowSums(reference_haps[w, ]), use = "pairwise.complete.obs")
+            cor(alleleCount_ars[w, 3], rowSums(reference_haps[w, ]), use = "pairwise.complete.obs")
         )
+    }
 
-    w <- alleleCount[,3] < 0.05 | alleleCount[,3] > 0.95
-    if (sum(w) > 1)
+    w <- (alleleCount_ars[,3] < 0.05 | alleleCount_ars[,3] > 0.95)
+    if (sum(w) > 1) {
         low_maf_cor <- suppressWarnings(
-            cor(alleleCount[w, 3], rowSums(reference_haps[w, ]), use = "pairwise.complete.obs")
+            cor(alleleCount_ars[w, 3], rowSums(reference_haps[w, ]), use = "pairwise.complete.obs")
         )
+    }
 
     print_message(paste0("The following correlations are observed between allele frequencies estimated from the sequencing pileup and the reference haplotype counts:"))
     print_message(paste0(round(all_cor, 3), " for all SNPs"))
@@ -342,7 +353,7 @@ compare_reference_haps_against_alleleCount <- function(
     out_plot <- file.path(outputdir, "plots", paste0("alleleFrequency_pileup_vs_reference_haplotypes.", regionName, ".png"))
     print_message(paste0("A plot of allele frequencies from sequencing pileup vs reference haplotype counts is at:", out_plot))
     png(out_plot, height = 500, width = 500)
-    plot(alleleCount[, 3], rowSums(reference_haps) / N_haps, xlab = "Allele frequency from pileup", ylab = "Allele frequency from reference haplotypes")
+    plot(alleleCount_ars[, 3], rowSums(reference_haps) / N_haps, xlab = "Allele frequency from pileup", ylab = "Allele frequency from reference haplotypes")
     dev.off()
 
     return(NULL)
@@ -360,7 +371,7 @@ run_reference_EM <- function(
     priorCurrent_m,
     reference_iterations,
     reference_haps,
-    non_NA_cols,
+    rh_in_L,
     N_haps,
     nCores,
     tempdir,
@@ -409,7 +420,7 @@ run_reference_EM <- function(
         out <- single_reference_iteration(
             eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, expRate = expRate, maxRate = maxRate, minRate = minRate, reference_phred = reference_phred, nbreaks = nbreaks, list_of_break_results = list_of_break_results, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, iteration = iteration,
             reference_haps = reference_haps,
-            non_NA_cols = non_NA_cols
+            rh_in_L = rh_in_L
         )
 
         eHapsCurrent_tc <- out$gammaSum_tc
@@ -479,7 +490,7 @@ single_reference_iteration <- function(
     grid_distances,
     nGen,
     reference_haps,
-    non_NA_cols,
+    rh_in_L,
     emissionThreshold = 1e-4,
     alphaMatThreshold = 1e-4,
     expRate = 0.5,
@@ -538,7 +549,7 @@ single_reference_iteration <- function(
         rescale_eMatGrid_t = rescale_eMatGrid_t,
         bound_eMatGrid_t = bound_eMatGrid_t,
         reference_haps = reference_haps,
-        non_NA_cols = non_NA_cols
+        rh_in_L = rh_in_L
     )
 
     check_mclapply_OK(out2, "There has been an error generating the input. Please see error message above")
@@ -599,7 +610,7 @@ new_subset_of_single_reference_iteration <- function(
     plot_shuffle_haplotype_attempts,
     iteration,
     reference_haps,
-    non_NA_cols,
+    rh_in_L,
     rescale_eMatGrid_t = FALSE,
     bound_eMatGrid_t = FALSE,
     maxDifferenceBetweenReads = 1000,
@@ -628,7 +639,6 @@ new_subset_of_single_reference_iteration <- function(
     
     ref_make_ehh(
         eHapsCurrent_tc = eHapsCurrent_tc,
-        non_NA_cols = non_NA_cols,
         ehh_h1_S = ehh_h1_S,
         ehh_h1_D = ehh_h1_D,
         ehh_h0_S = ehh_h0_S,
@@ -694,7 +704,7 @@ new_subset_of_single_reference_iteration <- function(
             maxEmissionMatrixDifference = maxEmissionMatrixDifference,
             suppressOutput = suppressOutput,
             reference_hap = reference_hap,
-            non_NA_cols = non_NA_cols,
+            rh_in_L = rh_in_L,
             gammaSum0_tc = gammaSum0_tc,
             gammaSum1_tc = gammaSum1_tc,
             alphaMatSum_tc = alphaMatSum_tc,
@@ -843,7 +853,6 @@ extract_validate_and_load_haplotypes <- function(
 
     print_message("Extract reference haplotypes")
     temp_haps_file <- file.path(tempdir, paste0("haps.", regionName, ".txt.gz"))
-    temp_extract_file <- file.path(tempdir, paste0("extract.", regionName, ".txt"))
 
     pos_snps <- paste(pos[,2], pos[,3], pos[,4], sep = "-")
     legend_snps <- paste(
@@ -860,32 +869,31 @@ extract_validate_and_load_haplotypes <- function(
     ## note - legend_snps validated - so no duplicate legend SNPs
     hap_snps_to_extract <- is.na(match(legend_snps, both_snps)) == FALSE
     hap_snps_position_in_pos <- is.na(match(pos_snps, both_snps)) == FALSE
+    lines_to_get <- position_in_haps_file[hap_snps_to_extract]
 
-    ## extract rows from haplotypes file
-    cat(
-        position_in_haps_file[hap_snps_to_extract],
-        file = temp_extract_file, sep = "\n"
+    nSNPs <- nrow(pos)
+    ## this segment - replace with readLines type thing
+    reference_haps <- load_haps_at_positions_no_NAs(
+        reference_haplotype_file = reference_haplotype_file,
+        lines_to_get = lines_to_get,
+        colClasses = colClasses,
+        nSNPs = nSNPs,
+        tempdir = tempdir
     )
 
-    awk_command <- paste0(
-        "awk '{if (NR==FNR) {a[$1]=$1; next} ",
-        "if (FNR in a) {print $0}}' "
+    ## convert to rhb_t here
+    ## then do rest!
+    ## actually, to start, 
+
+    ## right - so ideally do not do this!
+    ## also - how to deal with NA? does not exist in binary format!
+
+    return(
+        list(
+            reference_haps = reference_haps,
+            rh_in_L = hap_snps_position_in_pos
+        )
     )
-    command <- paste0(
-        "gunzip -c ", shQuote(reference_haplotype_file), " | ",
-        awk_command, shQuote(temp_extract_file), " - "
-    )
-    haps <- data.table::fread(cmd = command, colClasses = colClasses, sep = " ", na.strings = "-", data.table = FALSE)
-    
-    haps <- as.matrix(haps)
-
-    haps <- remove_NA_columns_from_haps(haps)
-    validate_haps(haps, both_snps)
-
-    haps_both <- array(NA, c(nrow(pos), ncol(haps)))
-    haps_both[hap_snps_position_in_pos, ] <- haps
-
-    return(haps_both)
 }
 
 
@@ -900,11 +908,64 @@ remove_NA_columns_from_haps <- function(haps) {
         stop("There are no viable haplotypes from the reference samples for the region of interest")
     if (sum(na_sum == nrow(na_sum)) > 0)
         print_message(paste0("Removing ", X, " out of ", Y, " male haplotypes from the reference haplotypes"))
-    haps <- haps[, na_sum == 0, drop = FALSE]
+    if (sum(na_sum != 0) > 0) {
+        haps <- haps[, na_sum == 0, drop = FALSE]
+    }
     return(haps)
 }
 
 
+## lines to get is 1-based (right) what to get from haps file
+## hap_snps_position_in_pos is 1-based, where this goes wrt big file
+load_haps_at_positions_no_NAs <- function(
+    reference_haplotype_file,
+    lines_to_get,
+    colClasses,
+    nSNPs,
+    tempdir = tempdir()
+) {
+    temp_extract_file <- tempfile(fileext = ".txt", tmpdir = tempdir)
+    cat(
+        lines_to_get,
+        file = temp_extract_file, sep = "\n"
+    )
+    awk_command <- paste0(
+        "awk '{if (NR==FNR) {a[$1]=$1; next} ",
+        "if (FNR in a) {print $0}}' "
+    )
+    command <- paste0(
+        "gunzip -c ", shQuote(reference_haplotype_file), " | ",
+        awk_command, shQuote(temp_extract_file), " - "
+    )
+    ## 
+    haps <- data.table::fread(
+        cmd = command,
+        colClasses = colClasses,
+        sep = " ",
+        na.strings = "-",
+        data.table = FALSE
+    )
+    colnames(haps) <- NULL
+    unlink(temp_extract_file)
+    ##
+    ## argh - data.table doing weird things
+    ## 
+    haps2 <- matrix(0L, nrow = nrow(haps), ncol = ncol(haps))
+    haps2[] <- as.matrix(haps)
+    haps <- haps2
+    ## haps <- base::as.matrix(haps) ## as.matrix
+    haps <- remove_NA_columns_from_haps(haps)
+    validate_haps(haps, lines_to_get)
+    ## convert to rhb around here!
+    return(haps)    
+    ##
+    ## no longer "expand" haps here. now make the size of whatever was loaded
+    ## control later with rh_in_L, saying how it compares to pos
+    ## 
+    ## haps_both <- array(NA, c(nSNPs, ncol(haps)))
+    ## haps_both[hap_snps_position_in_pos, ] <- haps
+    ## 
+}
 
 
 
@@ -998,9 +1059,9 @@ sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples =
 
 
 
-make_sampleReads_from_hap <- function(non_NA_cols, reference_phred, reference_hap) {
+make_sampleReads_from_hap <- function(rh_in_L, reference_phred, reference_hap) {
     sampleReads <- lapply(
-        non_NA_cols,
+        rh_in_L,
         function(x) {
         return(list(
             0, x - 1,
