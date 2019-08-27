@@ -6,7 +6,8 @@
 \usage{
 extract_hd_to_cube(vcf_file, ref, bcftools = "bcftools",
   gatk_jar = "/data/smew1/rdavies/stitch_richard_paper/bin/gatk/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar",
-  samples = NULL, pos = NULL, ram = "-Xmx4g", verbose = TRUE)
+  samples = NULL, pos = NULL, ram = "-Xmx4g", field = "HD",
+  verbose = TRUE)
 }
 \arguments{
 \item{vcf_file}{path to VCF}
@@ -20,6 +21,8 @@ extract_hd_to_cube(vcf_file, ref, bcftools = "bcftools",
 \item{samples}{vector of sample names (or NULL for all)}
 
 \item{pos}{pos matrix, a matrix with at least two columns where the first two columns are chrom and 1-based physical position, respectively. specifies which SNPs to extract (or NULL for all)}
+
+\item{field}{What to get from the VCF. Default HD for haplotype dosages}
 }
 \value{
 A cube with dimensions of SNPs x samples x ancestral haplotypes

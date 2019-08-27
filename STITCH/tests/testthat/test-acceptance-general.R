@@ -4,7 +4,7 @@ if (1 == 0) {
     dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
     dir <- "~/proj/STITCH/"
     setwd(paste0(dir, "/STITCH/R"))
-    a <- dir(pattern = "*R")
+    a <- dir(pattern = "*.R")
     b <- grep("~", a)
     if (length(b) > 0) {
         a <- a[-b]
