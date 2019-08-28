@@ -31,40 +31,28 @@ void Rcpp_rhb_reader_chunk_process(
     const int& chunk_length,
     const int& start_snp,
     const int& end_snp,
-    int& bs,
-    int& ihold,
-    Rcpp::IntegerVector& haps_to_get,
-    int& final_snp_to_get,
-    int& n_haps,
-    Rcpp::LogicalVector& binary_get_line
+    Rcpp::IntegerVector& bs,
+    Rcpp::IntegerVector& ihold,
+    const Rcpp::IntegerVector& haps_to_get,
+    const int& final_snp_to_get,
+    const int& n_haps,
+    const Rcpp::LogicalVector& binary_get_line
 ) {
     int k, iiSNP;
     iiSNP = -1;
-    std::cout << "inside!" << std::endl;
-    while(iiSNP < chunk_length) {
+    while(iiSNP < (chunk_length - 1)) {
         iiSNP++;
-        std::cout << "iiSNP = " << iiSNP << std::endl;        
+        //std::cout << "iiSNP = " << iiSNP << std::endl;
         int iSNP = start_snp - 1 + iiSNP; // 0-based here
-        std::cout << "iSNP = " << iSNP << std::endl;
+        //std::cout << "iSNP = " << iSNP << std::endl;        
         if (binary_get_line(iSNP)) {
+            //std::cout << "inside, do hold storage, ihold(0) = " << ihold(0) << std::endl;            
             for(int i_hap = 0; i_hap < n_haps; i_hap++) {
-                hold(ihold, i_hap) = chunk[iiSNP][2 * haps_to_get(i_hap)] - '0';
+                hold(ihold(0), i_hap) = chunk[iiSNP][2 * haps_to_get(i_hap)] - '0';
             }
             // if full or the final SNP to get, reset bs / ihold
-            if ((iSNP == final_snp_to_get) | (ihold == 31)) {
-
-
-
-
-
-
-                
-                std::cout << "am here! sort this bad boy ouT!" << std::endl;
-                so close!!!!
-
-
-
-                
+            if ((iSNP == final_snp_to_get) | (ihold(0) == 31)) {
+                //std::cout << "do rbs storage" << std::endl;
                 // ## overflow or end. note - with reset, should be fine not resetting this
                 for(int i_hap = 0; i_hap < n_haps; i_hap++) {
                     std::uint32_t itmp = 0;
@@ -73,15 +61,17 @@ void Rcpp_rhb_reader_chunk_process(
                         int j = hold(k, i_hap);
                         itmp |= j & 0x1;
                     }
-                    rhb(bs, k) = itmp; // bs is 0-based
+                    rhb(bs(0), i_hap) = itmp; // bs is 0-based
                     // like https://github.com/wch/r-source/blob/5a156a0865362bb8381dcd69ac335f5174a4f60c/src/main/raw.c#L179
                 }
                 hold.fill(0);
-                bs++;
-                ihold = 0; // 0-based
-                iiSNP += 100; // finish off
+                bs(0)++;
+                ihold(0) = 0; // 0-based
+                if (iSNP == final_snp_to_get) {
+                    iiSNP += 100; // end
+                }
 	    } else {
-                ihold++;
+                ihold(0) += 1;
             }
         }
     }

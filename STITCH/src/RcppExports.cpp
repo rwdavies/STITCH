@@ -564,7 +564,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // Rcpp_rhb_reader_chunk_process
-void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, int& bs, int& ihold, Rcpp::IntegerVector& haps_to_get, int& final_snp_to_get, int& n_haps, Rcpp::LogicalVector& binary_get_line);
+void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, Rcpp::IntegerVector& bs, Rcpp::IntegerVector& ihold, const Rcpp::IntegerVector& haps_to_get, const int& final_snp_to_get, const int& n_haps, const Rcpp::LogicalVector& binary_get_line);
 RcppExport SEXP _STITCH_Rcpp_rhb_reader_chunk_process(SEXP rhbSEXP, SEXP holdSEXP, SEXP chunkSEXP, SEXP chunk_lengthSEXP, SEXP start_snpSEXP, SEXP end_snpSEXP, SEXP bsSEXP, SEXP iholdSEXP, SEXP haps_to_getSEXP, SEXP final_snp_to_getSEXP, SEXP n_hapsSEXP, SEXP binary_get_lineSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -574,12 +574,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type chunk_length(chunk_lengthSEXP);
     Rcpp::traits::input_parameter< const int& >::type start_snp(start_snpSEXP);
     Rcpp::traits::input_parameter< const int& >::type end_snp(end_snpSEXP);
-    Rcpp::traits::input_parameter< int& >::type bs(bsSEXP);
-    Rcpp::traits::input_parameter< int& >::type ihold(iholdSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
-    Rcpp::traits::input_parameter< int& >::type final_snp_to_get(final_snp_to_getSEXP);
-    Rcpp::traits::input_parameter< int& >::type n_haps(n_hapsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::LogicalVector& >::type binary_get_line(binary_get_lineSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type bs(bsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type ihold(iholdSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
+    Rcpp::traits::input_parameter< const int& >::type final_snp_to_get(final_snp_to_getSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n_haps(n_hapsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type binary_get_line(binary_get_lineSEXP);
     Rcpp_rhb_reader_chunk_process(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line);
     return R_NilValue;
 END_RCPP

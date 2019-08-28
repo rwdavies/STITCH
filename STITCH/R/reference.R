@@ -909,7 +909,7 @@ extract_validate_and_load_haplotypes <- function(
     }
     if ((extraction_method == "all") | (extraction_method == "hap_v3")) {
         ##
-        rhb2 <- load_rhb_at_positions_no_NAs(
+        rhb3 <- load_rhb_at_positions_no_NAs(
             reference_haplotype_file = reference_haplotype_file,
             lines_to_get = lines_to_get,
             colClasses = colClasses,

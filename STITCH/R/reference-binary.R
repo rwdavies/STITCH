@@ -118,8 +118,9 @@ load_rhb_at_positions_no_NAs <- function(
     ##
     ## initialize variables needed for processing
     ##
-    bs <- 0 ## keep 0-based
-    ihold <- 0 ## keep 0-based
+    ## recal -- integer initializes at 0. 1 means length
+    bs <- integer(1) ## keep 0-based, also, make vector, for proper pass by reference
+    ihold <- integer(1) ## keep 0-based
     hold <- array(0L, c(32, n_haps)) ## hold results here until needed
     final_snp_to_get <- tail(lines_to_get, 1) - 1 ## 0-based
     start_snp <- 1
@@ -135,28 +136,30 @@ load_rhb_at_positions_no_NAs <- function(
         in.con <- gzfile(reference_haplotype_file, "r")
         while(TRUE) {
             chunk <- readLines(in.con, n = 32)
-            if (length(chunk) == 0 | final_snp_to_get < (iSNP - 1)) {
+            if (length(chunk) == 0 | final_snp_to_get < iSNP) {
                 break;
             }
             chunk_length <- length(chunk)
             end_snp <- start_snp + chunk_length - 1
             ## cpp
             Rcpp_rhb_reader_chunk_process(
-                rhb,
-                hold,
-                chunk,
-                chunk_length,
-                start_snp,
-                end_snp,
-                bs,
-                ihold,
-                haps_to_get,
-                final_snp_to_get,
-                n_haps,
-                binary_get_line
+                rhb = rhb,
+                hold = hold,
+                chunk = chunk,
+                chunk_length = chunk_length,
+                start_snp = start_snp,
+                end_snp = end_snp,
+                bs = bs,
+                ihold = ihold,
+                haps_to_get = haps_to_get,
+                final_snp_to_get = final_snp_to_get,
+                n_haps = n_haps,
+                binary_get_line = binary_get_line
             )
             ##
+            start_snp <- start_snp + 32
         }
+        close(in.con)
         ## 
     } else if (load_rhb_method == "R") {
         in.con <- gzfile(reference_haplotype_file, "r")
@@ -197,7 +200,7 @@ load_rhb_at_positions_no_NAs <- function(
                 }
             }
             ##
-            start_snp <- start_snp + 32    
+            start_snp <- start_snp + 32
         }
         close(in.con)
     }

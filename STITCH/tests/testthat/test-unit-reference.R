@@ -155,6 +155,7 @@ test_that("reference data can be loaded for chromosome X", {
     expect <- matrix(as.integer(refpack$reference_haplotypes[, keep]), ncol = sum(keep))
     expect_equal(expect, reference_haps)
     expect_equal(out[["rhb1"]], out[["rhb2"]])
+    expect_equal(out[["rhb1"]], out[["rhb3"]])
 
 })
 
@@ -188,6 +189,8 @@ test_that("reference data can be loaded for an autosome specifying regionStart, 
     expect <- refpack$reference_haplotypes[not_NA, ]
     expect_equal(expect, reference_haps)
     expect_equal(out[["rhb1"]], out[["rhb2"]])
+    expect_equal(out[["rhb1"]], out[["rhb3"]])
+    
     
 })
 
@@ -228,44 +231,52 @@ test_that("reference data can be loaded for chromosome X specifying regionStart,
 
     expect_equal(expect, reference_haps)
     expect_equal(out[["rhb1"]], out[["rhb2"]])
+    expect_equal(out[["rhb1"]], out[["rhb3"]])
 
-
+    
 })
 
 test_that("reference data can be loaded for a population", {
 
-    regionStart <- 5
-    regionEnd <- 47
-    buffer <- 1
-    refpack <- make_reference_package(
-        n_snps = 50,
-        n_samples_per_pop = 4,
-        reference_populations = c("CEU", "GBR", "CHB")
-    )
-    ref_pops_to_load <- c("GBR", "CHB")
-    pos <- refpack$pos
-    out <- get_haplotypes_from_reference(
-        reference_haplotype_file = refpack$reference_haplotype_file,
-        reference_legend_file = refpack$reference_legend_file,
-        reference_sample_file = refpack$reference_sample_file,
-        reference_populations = ref_pops_to_load,
-        pos = pos,
-        tempdir = tempdir(),
-        regionName = "test",
-        regionStart = regionStart,
-        regionEnd = regionEnd,
-        buffer = buffer
-    )
-    reference_haps <- out[["reference_haps"]]
+    ## specifically ensure either 31, 32 or 33 SNPS are to be loaded
+    regionStart <- 8
+    buffer <- 2
 
-    not_NA <- pos[, "POS"] >= (regionStart - buffer) & pos[, "POS"] <= (regionEnd + buffer)    
-    expect <- refpack$reference_haplotypes[not_NA, ]
-    keep_samples <- is.na(match(refpack$reference_samples[, "POP"], ref_pops_to_load)) == FALSE
-    expect <- expect[, 2 * rep(which(keep_samples), each = 2) + -1:0]
+    x <- ((regionStart) - (2 * buffer + 1))
+    test_lengths <- c(c(31, 32, 33), 32 + c(31, 32, 33))
+    for(regionEnd in (test_lengths + x)) {
 
-    expect_equal(expect, reference_haps)
-    expect_equal(out[["rhb1"]], out[["rhb2"]])
-
+        refpack <- make_reference_package(
+            n_snps = regionEnd + buffer + 5,
+            n_samples_per_pop = 4,
+            reference_populations = c("CEU", "GBR", "CHB")
+        )
+        ref_pops_to_load <- c("GBR", "CHB")
+        pos <- refpack$pos
+        out <- get_haplotypes_from_reference(
+            reference_haplotype_file = refpack$reference_haplotype_file,
+            reference_legend_file = refpack$reference_legend_file,
+            reference_sample_file = refpack$reference_sample_file,
+            reference_populations = ref_pops_to_load,
+            pos = pos,
+            tempdir = tempdir(),
+            regionName = "test",
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            buffer = buffer
+        )
+        reference_haps <- out[["reference_haps"]]
+        
+        not_NA <- pos[, "POS"] >= (regionStart - buffer) & pos[, "POS"] <= (regionEnd + buffer)    
+        expect <- refpack$reference_haplotypes[not_NA, ]
+        keep_samples <- is.na(match(refpack$reference_samples[, "POP"], ref_pops_to_load)) == FALSE
+        expect <- expect[, 2 * rep(which(keep_samples), each = 2) + -1:0]
+        
+        expect_equal(expect, reference_haps)
+        expect_equal(out[["rhb1"]], out[["rhb2"]])
+        expect_equal(out[["rhb1"]], out[["rhb3"]])
+    }
+    
 })
 
 
