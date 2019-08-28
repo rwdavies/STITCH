@@ -426,7 +426,11 @@ test_that("can do single reference iteration", {
     grid_distances <- test_package$grid_distances
 
     ## close enough!
-    reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))        
+    reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))
+    rhi <- reference_haps
+    rhi_t <- t(rhi)
+    rhb_t <- make_rhb_t_from_rhi_t(rhi_t)
+    rhb <- t(rhb_t)    
     rh_in_L <- which(is.na(reference_haps[ , 1]) == FALSE)
 
     
@@ -437,7 +441,9 @@ test_that("can do single reference iteration", {
     nCores <- 1
     nGen <- 10000
 
-    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, reference_haps = reference_haps, rh_in_L = rh_in_L)
+    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, rhb = rhb, rh_in_L = rh_in_L)
 
+    ## placeholder
+    expect_equal(class(out), "list")
 
 })

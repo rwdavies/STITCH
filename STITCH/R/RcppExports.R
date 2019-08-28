@@ -152,13 +152,18 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
 }
 
 #' @export
-Rcpp_rhb_reader_chunk_process <- function(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line) {
-    invisible(.Call('_STITCH_Rcpp_rhb_reader_chunk_process', PACKAGE = 'STITCH', rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line))
+Rcpp_rhb_reader_chunk_process <- function(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L) {
+    invisible(.Call('_STITCH_Rcpp_rhb_reader_chunk_process', PACKAGE = 'STITCH', rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L))
 }
 
 #' @export
 rcpp_int_expand <- function(hapc, nSNPs) {
     .Call('_STITCH_rcpp_int_expand', PACKAGE = 'STITCH', hapc, nSNPs)
+}
+
+#' @export
+rcpp_int_contract <- function(hap) {
+    .Call('_STITCH_rcpp_int_contract', PACKAGE = 'STITCH', hap)
 }
 
 #' @export
@@ -169,6 +174,11 @@ calc_dist_between_rhb_t_and_hap <- function(rhb_t, hap, nSNPs) {
 #' @export
 inflate_fhb_t <- function(rhb_t, haps_to_get, nSNPs) {
     .Call('_STITCH_inflate_fhb_t', PACKAGE = 'STITCH', rhb_t, haps_to_get, nSNPs)
+}
+
+#' @export
+inflate_fhb <- function(rhb, haps_to_get, nSNPs) {
+    .Call('_STITCH_inflate_fhb', PACKAGE = 'STITCH', rhb, haps_to_get, nSNPs)
 }
 
 #' @export

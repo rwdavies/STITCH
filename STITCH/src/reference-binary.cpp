@@ -18,9 +18,6 @@
 #include <bitset>
 
 
-// does not necessarily need to be the most efficient
-// start with getting logic right
-// later, when it matters, engineer efficient solutions
 
 //' @export
 // [[Rcpp::export]]
@@ -36,7 +33,9 @@ void Rcpp_rhb_reader_chunk_process(
     const Rcpp::IntegerVector& haps_to_get,
     const int& final_snp_to_get,
     const int& n_haps,
-    const Rcpp::LogicalVector& binary_get_line
+    const Rcpp::LogicalVector& binary_get_line,
+    arma::mat& ref_alleleCount,
+    const arma::ivec& rh_in_L
 ) {
     int k, iiSNP;
     iiSNP = -1;
@@ -50,6 +49,10 @@ void Rcpp_rhb_reader_chunk_process(
             for(int i_hap = 0; i_hap < n_haps; i_hap++) {
                 hold(ihold(0), i_hap) = chunk[iiSNP][2 * haps_to_get(i_hap)] - '0';
             }
+            int w = rh_in_L(32 * bs(0) + ihold(0)) - 1;
+            ref_alleleCount(w, 0) = sum(hold.row(ihold(0)));
+            ref_alleleCount(w, 1) = n_haps;
+            ref_alleleCount(w, 2) = ref_alleleCount(w, 0) / ref_alleleCount(w, 1);
             // if full or the final SNP to get, reset bs / ihold
             if ((iSNP == final_snp_to_get) | (ihold(0) == 31)) {
                 //std::cout << "do rbs storage" << std::endl;
@@ -101,6 +104,38 @@ Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, const int nSNPs) {
     }
   }
   return(hap);
+}
+
+
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::IntegerVector rcpp_int_contract(const arma::ivec& hap) {
+    const int nSNPs = hap.size();
+    const int nbSNPs = std::ceil(double(nSNPs) / double(32));
+    Rcpp::IntegerVector hapc(nbSNPs);
+    int imax;
+    for(int bs = 0; bs < nbSNPs; bs++) {
+        int d32_times_bs = 32 * bs;
+        if (bs < (nbSNPs - 1)) {
+            imax = 31;
+        } else {
+            // final one!
+            imax = nSNPs - d32_times_bs - 1;
+        }
+        std::uint32_t itmp = 0;
+        //std::cout << "k = ";
+        for (int k = imax; k >= 0; k--) {
+            // std::cout << k << ", ";
+            itmp <<= 1;
+            int j = hap(d32_times_bs + k);
+            itmp |= j & 0x1;
+        }
+        //std::cout << std::endl;
+        hapc(bs) = itmp;
+        // see reader_chunk_process 
+    }
+    return(hapc);
 }
 
 
@@ -183,3 +218,45 @@ arma::imat inflate_fhb_t(
     }
     return(rhi_t_subset);
 }
+
+
+//' @export
+// [[Rcpp::export]]
+arma::imat inflate_fhb(
+    arma::imat& rhb,
+    Rcpp::IntegerVector& haps_to_get,
+    const int nSNPs
+) {
+    const int K = rhb.n_cols;
+    const int nbSNPs = rhb.n_rows;
+    // i think this function might work without kmax
+    // but probably safer / simpler to keep it in
+    int imax;
+    int n_haps_to_get = haps_to_get.size();    
+    arma::imat rhi_subset(nSNPs, n_haps_to_get);
+    // outer loop is on k, as the columns are "K", i.e. haps
+    for(int ik = 0; ik < n_haps_to_get; ik++) {
+        int k = haps_to_get(ik);
+        for(int bs = 0; bs < nbSNPs; bs++) {
+            int d32_times_bs = 32 * bs;
+            if (bs < (nbSNPs - 1)) {
+                imax = 32;
+            } else {
+                // final one!
+                imax = nSNPs - d32_times_bs;
+            }
+	    std::uint32_t tmp(rhb(bs, k));
+	    // this weird looking code taken largely from R c code
+	    // e.g. search for this in R github
+	    // SEXP attribute_hidden do_intToBits(SEXP call, SEXP op, SEXP args, SEXP env)
+	    for (int i = 0; i < imax; i++, tmp >>= 1) {
+	      // might be inefficient
+	      // might need to work with temporary matrix?
+	      // revisit later if actually slow!
+                rhi_subset(d32_times_bs + i, ik) = tmp & 0x1;
+	    }
+	}
+    }
+    return(rhi_subset);
+}
+

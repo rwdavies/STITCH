@@ -564,8 +564,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // Rcpp_rhb_reader_chunk_process
-void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, Rcpp::IntegerVector& bs, Rcpp::IntegerVector& ihold, const Rcpp::IntegerVector& haps_to_get, const int& final_snp_to_get, const int& n_haps, const Rcpp::LogicalVector& binary_get_line);
-RcppExport SEXP _STITCH_Rcpp_rhb_reader_chunk_process(SEXP rhbSEXP, SEXP holdSEXP, SEXP chunkSEXP, SEXP chunk_lengthSEXP, SEXP start_snpSEXP, SEXP end_snpSEXP, SEXP bsSEXP, SEXP iholdSEXP, SEXP haps_to_getSEXP, SEXP final_snp_to_getSEXP, SEXP n_hapsSEXP, SEXP binary_get_lineSEXP) {
+void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, Rcpp::IntegerVector& bs, Rcpp::IntegerVector& ihold, const Rcpp::IntegerVector& haps_to_get, const int& final_snp_to_get, const int& n_haps, const Rcpp::LogicalVector& binary_get_line, arma::mat& ref_alleleCount, const arma::ivec& rh_in_L);
+RcppExport SEXP _STITCH_Rcpp_rhb_reader_chunk_process(SEXP rhbSEXP, SEXP holdSEXP, SEXP chunkSEXP, SEXP chunk_lengthSEXP, SEXP start_snpSEXP, SEXP end_snpSEXP, SEXP bsSEXP, SEXP iholdSEXP, SEXP haps_to_getSEXP, SEXP final_snp_to_getSEXP, SEXP n_hapsSEXP, SEXP binary_get_lineSEXP, SEXP ref_alleleCountSEXP, SEXP rh_in_LSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::imat& >::type rhb(rhbSEXP);
@@ -580,7 +580,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type final_snp_to_get(final_snp_to_getSEXP);
     Rcpp::traits::input_parameter< const int& >::type n_haps(n_hapsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type binary_get_line(binary_get_lineSEXP);
-    Rcpp_rhb_reader_chunk_process(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line);
+    Rcpp::traits::input_parameter< arma::mat& >::type ref_alleleCount(ref_alleleCountSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type rh_in_L(rh_in_LSEXP);
+    Rcpp_rhb_reader_chunk_process(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L);
     return R_NilValue;
 END_RCPP
 }
@@ -593,6 +595,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::ivec& >::type hapc(hapcSEXP);
     Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_int_expand(hapc, nSNPs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_int_contract
+Rcpp::IntegerVector rcpp_int_contract(const arma::ivec& hap);
+RcppExport SEXP _STITCH_rcpp_int_contract(SEXP hapSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::ivec& >::type hap(hapSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_int_contract(hap));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -619,6 +632,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
     Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
     rcpp_result_gen = Rcpp::wrap(inflate_fhb_t(rhb_t, haps_to_get, nSNPs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inflate_fhb
+arma::imat inflate_fhb(arma::imat& rhb, Rcpp::IntegerVector& haps_to_get, const int nSNPs);
+RcppExport SEXP _STITCH_inflate_fhb(SEXP rhbSEXP, SEXP haps_to_getSEXP, SEXP nSNPsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::imat& >::type rhb(rhbSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
+    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    rcpp_result_gen = Rcpp::wrap(inflate_fhb(rhb, haps_to_get, nSNPs));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -871,10 +897,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
-    {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 12},
+    {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 14},
     {"_STITCH_rcpp_int_expand", (DL_FUNC) &_STITCH_rcpp_int_expand, 2},
+    {"_STITCH_rcpp_int_contract", (DL_FUNC) &_STITCH_rcpp_int_contract, 1},
     {"_STITCH_calc_dist_between_rhb_t_and_hap", (DL_FUNC) &_STITCH_calc_dist_between_rhb_t_and_hap, 3},
     {"_STITCH_inflate_fhb_t", (DL_FUNC) &_STITCH_inflate_fhb_t, 3},
+    {"_STITCH_inflate_fhb", (DL_FUNC) &_STITCH_inflate_fhb, 3},
     {"_STITCH_Rcpp_ref_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_forward_haploid, 7},
     {"_STITCH_Rcpp_ref_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_backward_haploid, 7},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},

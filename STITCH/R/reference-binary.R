@@ -54,14 +54,14 @@ make_rhb_t_from_rhi_t <- function(rhi_t) {
         if (bs < (nbSNPs - 1)) {
             ## do not worry about padding
             for(k in 1:K) {
-                rhb_t[k, bs + 1] <- int_contract(rhi_t[k, w])
+                rhb_t[k, bs + 1] <- rcpp_int_contract(rhi_t[k, w])
             }
         } else {
             x <- integer(32)
             w2 <- 1:length(w)
             for(k in 1:K) {
                 x[w2] <- rhi_t[k, w]
-                rhb_t[k, bs + 1] <- int_contract(x)
+                rhb_t[k, bs + 1] <- rcpp_int_contract(x)
             }
         }
     }
@@ -79,14 +79,14 @@ make_rhb_from_rhi <- function(rhi) {
         if (bs < (nbSNPs - 1)) {
             ## do not worry about padding
             for(k in 1:K) {
-                rhb[bs + 1, k] <- int_contract(rhi[w, k])
+                rhb[bs + 1, k] <- rcpp_int_contract(rhi[w, k])
             }
         } else {
             x <- integer(32)
             w2 <- 1:length(w)
             for(k in 1:K) {
                 x[w2] <- rhi[w, k]
-                rhb[bs + 1, k] <- int_contract(x)
+                rhb[bs + 1, k] <- rcpp_int_contract(x)
             }
         }
     }
@@ -101,6 +101,7 @@ load_rhb_at_positions_no_NAs <- function(
     colClasses,
     nSNPs,
     n_haps_snps,
+    rh_in_L,
     tempdir = tempdir(),
     load_rhb_method = "R"
 ) {
@@ -110,11 +111,18 @@ load_rhb_at_positions_no_NAs <- function(
     ## want non-NULL values
     ## determine columns to get
     h_row_1 <- read.table(reference_haplotype_file, nrow = 1)
-    haps_to_get <- which((colClasses == "integer") & (h_row_1 != "-")) - 1
+    if (!is.na(colClasses[1])) {
+        haps_to_get <- which((colClasses == "integer") & (h_row_1 != "-")) - 1
+    } else {
+        haps_to_get <- which(h_row_1 != "-") - 1
+    }
     n_haps <- length(haps_to_get)
-    nSNPs <- length(lines_to_get)
-    nbSNPs <- ceiling(nSNPs / 32)    
+    nbSNPs <- ceiling(length(lines_to_get) / 32)    
     rhb <- array(as.integer(0), c(nbSNPs, n_haps))
+    ## also, same time, ref_alleleCount
+    ref_alleleCount <- array(-1, c(nSNPs, 3)) ## nSNPs here is the pos nSNPs
+    ## now - need to build this - argh!
+    ## inflate each, add?
     ##
     ## initialize variables needed for processing
     ##
@@ -154,7 +162,9 @@ load_rhb_at_positions_no_NAs <- function(
                 haps_to_get = haps_to_get,
                 final_snp_to_get = final_snp_to_get,
                 n_haps = n_haps,
-                binary_get_line = binary_get_line
+                binary_get_line = binary_get_line,
+                ref_alleleCount = ref_alleleCount,
+                rh_in_L = rh_in_L
             )
             ##
             start_snp <- start_snp + 32
@@ -182,6 +192,10 @@ load_rhb_at_positions_no_NAs <- function(
                     x <- suppressWarnings(as.integer(strsplit(chunk[iiSNP], " ")[[1]]))
                     ## 
                     hold[ihold + 1, ] <- x[haps_to_get + 1]
+                    w <- rh_in_L[32 * bs + ihold + 1] ## which SNP is this, 1-based
+                    ref_alleleCount[w, 1] <- sum(hold[ihold + 1, ])
+                    ref_alleleCount[w, 2] <- n_haps
+                    ref_alleleCount[w, 3] <- ref_alleleCount[w, 1] / ref_alleleCount[w, 2]
                     ## if full or the final SNP to get, reset bs / ihold
                     if (((iSNP - 1) == final_snp_to_get) | (ihold == 31)) {
                         ## overflow or end. note - with reset, should be fine not resetting this
@@ -204,7 +218,14 @@ load_rhb_at_positions_no_NAs <- function(
         }
         close(in.con)
     }
-    return(rhb)
+    ref_alleleCount[ref_alleleCount == -1] <- NA
+    return(
+        list(
+            rhb = rhb,
+            ref_alleleCount = ref_alleleCount
+        )
+    )
     ## 
 }
+
 
