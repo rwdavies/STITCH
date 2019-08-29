@@ -1,3 +1,6 @@
+* v1.6.2
+	* Change internal haplotype format (rhb)
+	* Speed up reference haplotype file loading from disk
 * v1.6.1
 	* Speed up reference haplotype EM considerably
 * v1.6.0
