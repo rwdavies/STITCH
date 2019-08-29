@@ -135,6 +135,7 @@ load_rhb_at_positions_no_NAs <- function(
     binary_get_line <- array(FALSE, n_haps_snps)
     binary_get_line[lines_to_get] <- TRUE
     iSNP <- -1
+    final_snp_gotten <- logical(1) ## defaults to false as desired
     ##
     ##
     ## validate_haps(haps, lines_to_get)
@@ -144,7 +145,7 @@ load_rhb_at_positions_no_NAs <- function(
         in.con <- gzfile(reference_haplotype_file, "r")
         while(TRUE) {
             chunk <- readLines(in.con, n = 32)
-            if (length(chunk) == 0 | final_snp_to_get < iSNP) {
+            if (length(chunk) == 0 | final_snp_gotten[1]) {
                 break;
             }
             chunk_length <- length(chunk)
@@ -164,7 +165,8 @@ load_rhb_at_positions_no_NAs <- function(
                 n_haps = n_haps,
                 binary_get_line = binary_get_line,
                 ref_alleleCount = ref_alleleCount,
-                rh_in_L = rh_in_L
+                rh_in_L = rh_in_L,
+                final_snp_gotten = final_snp_gotten
             )
             ##
             start_snp <- start_snp + 32
@@ -175,7 +177,7 @@ load_rhb_at_positions_no_NAs <- function(
         in.con <- gzfile(reference_haplotype_file, "r")
         while(TRUE) {
             chunk <- readLines(in.con, n = 32)
-            if (length(chunk) == 0 | final_snp_to_get < (iSNP - 1)) {
+            if (length(chunk) == 0 | final_snp_gotten) {
                 break;
             }
             chunk_length <- length(chunk)
@@ -206,6 +208,7 @@ load_rhb_at_positions_no_NAs <- function(
                         bs <- bs + 1
                         ihold <- 0
                         if ((iSNP - 1) == final_snp_to_get) {
+                            final_snp_gotten <- TRUE
                             iiSNP <- 100
                         }
                     } else {

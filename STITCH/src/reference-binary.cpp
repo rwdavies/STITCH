@@ -35,7 +35,8 @@ void Rcpp_rhb_reader_chunk_process(
     const int& n_haps,
     const Rcpp::LogicalVector& binary_get_line,
     arma::mat& ref_alleleCount,
-    const arma::ivec& rh_in_L
+    const arma::ivec& rh_in_L,
+    Rcpp::LogicalVector& final_snp_gotten
 ) {
     int k, iiSNP;
     iiSNP = -1;
@@ -72,6 +73,7 @@ void Rcpp_rhb_reader_chunk_process(
                 ihold(0) = 0; // 0-based
                 if (iSNP == final_snp_to_get) {
                     iiSNP += 100; // end
+                    final_snp_gotten(0) = true;
                 }
 	    } else {
                 ihold(0) += 1;

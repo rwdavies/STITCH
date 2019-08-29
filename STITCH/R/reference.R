@@ -42,7 +42,7 @@ get_and_initialize_from_reference <- function(
     snps_in_grid_1_based,
     plotHapSumDuringIterations
 ) {
-
+    
     print_message("Begin initializing paramters using reference haplotypes")
     ## get reference haplotypes matched to posfile
     ## NA's where there are no match
@@ -71,7 +71,7 @@ get_and_initialize_from_reference <- function(
     ## rh_in_L is 1-based mapping of where reference_haplotypes are in L
     ## i.e. rh_in_L being 1, 3, 5 means that reference_haplotypes has 3 rows,
     ##     mapping to SNPs 1, 3 and 5 in pos (with 2 and 4 not being in the reference)
-    ## 
+    ##
     rhb <- out[["rhb3"]]
     rh_in_L <- out[["rh_in_L"]]
     ref_alleleCount <- out[["ref_alleleCount3"]] ## defined at all SNPs
@@ -146,7 +146,7 @@ get_and_initialize_from_reference <- function(
             )
             ## need to add real noise, otherwise, can cause problem
             eHapsCurrent_tc[, reference_panel_SNPs, s] <-
-                0.95 * inflate_fhb_t(rhb_t = rhb_t, haps_to_get = cols_to_replace - 1, nSNPs = nSNPs) +
+                0.95 * inflate_fhb_t(rhb_t = rhb_t, haps_to_get = cols_to_replace - 1, nSNPs = nRefSNPs) +
                 0.05 * array(runif(prod(K * nRefSNPs)), c(K, nRefSNPs))
             ## do not do e and 1-e here
             if (sum(!reference_panel_SNPs) > 0) {
@@ -178,7 +178,7 @@ get_and_initialize_from_reference <- function(
 
         ## now - recall - reference_panel_SNPs defines SNPs that exist
         ## if there are some that do not, add in noise
-        ## choose some haps using sampling from PCA approach
+        ## need this noise! important
         n1 <- sum(!reference_panel_SNPs)
         if (sum(n1) > 0) {
             ## add in noise at other positions
@@ -192,6 +192,7 @@ get_and_initialize_from_reference <- function(
         }
         
     }
+    
     print_message("Done initializing paramters using reference haplotypes")
 
 

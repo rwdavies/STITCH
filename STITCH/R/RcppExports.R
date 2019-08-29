@@ -152,8 +152,8 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
 }
 
 #' @export
-Rcpp_rhb_reader_chunk_process <- function(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L) {
-    invisible(.Call('_STITCH_Rcpp_rhb_reader_chunk_process', PACKAGE = 'STITCH', rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L))
+Rcpp_rhb_reader_chunk_process <- function(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L, final_snp_gotten) {
+    invisible(.Call('_STITCH_Rcpp_rhb_reader_chunk_process', PACKAGE = 'STITCH', rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L, final_snp_gotten))
 }
 
 #' @export
