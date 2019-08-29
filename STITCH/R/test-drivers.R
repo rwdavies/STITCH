@@ -661,7 +661,7 @@ make_reference_package <- function(
         for (i_hap in 1:2) {
             c <- 2 * (i_sample - 1) + i_hap
             if (is.null(phasemaster )) {
-                g <- sample(c(0, 1), n_snps, replace = TRUE)
+                g <- sample(c(0L, 1L), n_snps, replace = TRUE)
             } else {
                 g <- phasemaster[, sample(1:ncol(phasemaster), 1)]
             }
@@ -674,6 +674,7 @@ make_reference_package <- function(
         w <- 2 * which(reference_samples[, "SEX"] == "male")
         reference_haplotypes[, w] <- "-"
     }
+
     simple_write(reference_haplotypes, reference_haplotype_file, gzip = TRUE, col.names = FALSE)
 
     ## make genetic map as well
@@ -681,6 +682,18 @@ make_reference_package <- function(
     ## assume
     genetic_map <- make_genetic_map_file(L = L, n_snps = n_snps, expRate = expRate)
     simple_write(genetic_map, reference_genetic_map_file, gzip = TRUE, col.names = TRUE)
+
+    ## not sure how important long term    
+    if (is.na(reference_sample_header[1])) {
+        colClasses <- get_reference_colClasses(
+            reference_sample_file = reference_sample_file,
+            reference_populations = reference_populations,
+            chr = chr
+        )
+    } else {
+        ## not NA, these have been set, and will fail the above
+        colClasses <- NULL
+    }
     
     return(
         list(
@@ -692,7 +705,8 @@ make_reference_package <- function(
             pos = pos,
             reference_haplotypes = reference_haplotypes,
             reference_legend = reference_legend,
-            reference_samples = reference_samples
+            reference_samples = reference_samples,
+            colClasses = colClasses
         )
     )
 

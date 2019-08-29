@@ -1,3 +1,21 @@
+if (1 == 0) {
+    
+    library("testthat"); library("STITCH"); library("rrbgen")
+    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    dir <- "~/proj/STITCH/"
+    setwd(paste0(dir, "/STITCH/R"))
+    a <- dir(pattern = "*.R")
+    b <- grep("~", a)
+    if (length(b) > 0) {
+        a <- a[-b]
+    }
+    o <- sapply(a, source)
+    setwd(dir)
+    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+
+}
+
+
 n_snps <- 10
 reads_span_n_snps <- 6
 chr <- 1
@@ -340,35 +358,88 @@ test_that("STITCH can initialize with reference data for certain populations for
 
 
 
-test_that("STITCH can initialize on chromosome X with reference data", {
+test_that("STITCH can initialize with reference data for certain populations for defined regionStart and regionEnd with non-perfect overlap of SNPs", {
 
-    for(output_format in c("bgvcf", "bgen")) {
+    n_snps <- 200
+    L <- 1:200
+    regionStart <- 30
+    regionEnd <- 170
+    buffer <- 7
+    
+    set.seed(90)
 
+    for(i_test in 1:2) {
+        if (i_test == 1) {
+            L_data <- sort(sample(L, 120))
+            L_haps <- sort(sample(L, 60))
+        } else if (i_test == 2) {
+            L_data <- sort(sample(L, 60))
+            L_haps <- sort(sample(L, 120))
+        }
+        
+        phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
+        w <- sample(L, 100)
+        phasemaster[w, ] <- 1 - phasemaster[w, ]
+        w <- sample(L, 10)
+        phasemaster[w, ] <- 0
+        w <- sample(L, 10)
+        phasemaster[w, ] <- 1
+    
+        data_packageL <- make_acceptance_test_data_package(
+            n_samples = 10,
+            n_snps = length(L_data),
+            n_reads = length(L_data) * 4,
+            seed = 3,
+            chr = "chr5",
+            K = 2,
+            L = L_data,
+            reads_span_n_snps = 3,
+            phasemaster = phasemaster[L_data, ]
+        )
+        refpackL <- make_reference_package(
+            n_snps = length(L_haps),
+            n_samples_per_pop = 4,
+            reference_populations = c("CEU", "GBR", "CHB"),
+            chr = "chr5",
+            L = L_haps,
+            phasemaster = phasemaster[L_haps, ]
+        )
+        
+        output_format <- "bgvcf"
         outputdir <- make_unique_tempdir()
-
-        set.seed(621)
-
+        set.seed(621 * i_test)
+        
+        regionName <- paste0(data_packageL$chr, ".", regionStart, ".", regionEnd)
+        
         STITCH(
-            chr = data_packageX$chr,
-            bamlist = data_packageX$bamlist,
-            posfile = data_packageX$posfile,
+            chr = data_packageL$chr,
+            bamlist = data_packageL$bamlist,
+            posfile = data_packageL$posfile,
+            genfile = data_packageL$genfile,
             outputdir = outputdir,
-            reference_haplotype_file = refpackX$reference_haplotype_file,
-            reference_legend_file = refpackX$reference_legend_file,
+            reference_haplotype_file = refpackL$reference_haplotype_file,
+            reference_legend_file = refpackL$reference_legend_file,
+            reference_sample_file = refpackL$reference_sample_file,
+            reference_populations = refpackL$reference_populations[1],
             K = 2,
             nGen = 100,
             nCores = 1,
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            buffer = buffer,
             output_format = output_format
         )
-
+        
         check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_packageX$chr, extension[output_format])),
-            data_packageX,
-            output_format,
-            which_snps = NULL,
+            file = file.path(outputdir, paste0("stitch.", regionName, ".vcf.gz")),
+            data_package = data_packageL,
+            output_format = output_format,
+            which_snps = match(
+                L_data[(regionStart) <= L_data & L_data <= (regionEnd)],
+                L_data
+            ),
             tol = 0.2
         )
-
     }
 
 })

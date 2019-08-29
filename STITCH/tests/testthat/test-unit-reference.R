@@ -53,7 +53,6 @@ test_that("reference sample file requires POP column", {
         reference_sample_header = c("ID", "POPXX", "GROUP", "SEX")
     )
 
-    sink("/dev/null")
     expect_error(
         get_haplotypes_from_reference(
             reference_haplotype_file = refpack$reference_haplotype_file,
@@ -64,7 +63,6 @@ test_that("reference sample file requires POP column", {
         ),
         paste0("Cannot find column POP in reference_sample_file:", refpack$reference_sample_file)
     )
-    sink()
 
 })
 
@@ -77,8 +75,7 @@ test_that("reference data can be loaded for an autosome", {
         n_samples_per_pop = 4,
         reference_populations = c("CEU", "GBR", "CHB")
     )
-    sink("/dev/null")
-    reference_haps <- get_haplotypes_from_reference(
+    out <- get_haplotypes_from_reference(
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
         reference_sample_file = refpack$reference_sample_file,
@@ -87,9 +84,9 @@ test_that("reference data can be loaded for an autosome", {
         tempdir = tempdir(),
         regionName = "test"
     )
-    sink()
-
-    expect_equal(refpack$reference_haplotypes, reference_haps)
+    reference_haps <- out[["reference_haps"]]
+    expect_equal(refpack[["reference_haplotypes"]], reference_haps)
+    expect_equal(out[["rhb1"]], out[["rhb2"]])
 
 })
 
@@ -141,7 +138,7 @@ test_that("reference data can be loaded for chromosome X", {
         reference_populations = c("CEU", "GBR", "CHB"),
         chr = "X"
     )
-    reference_haps <- get_haplotypes_from_reference(
+    out <- get_haplotypes_from_reference(
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
         reference_sample_file = refpack$reference_sample_file,
@@ -150,15 +147,15 @@ test_that("reference data can be loaded for chromosome X", {
         tempdir = tempdir(),
         regionName = "test"
     )
+    reference_haps <- out[["reference_haps"]]
 
     sex <- refpack$reference_samples[, "SEX"]
     keep <- array(TRUE, length(sex) * 2)
     keep[2 * which(sex == "male")] <- FALSE
     expect <- matrix(as.integer(refpack$reference_haplotypes[, keep]), ncol = sum(keep))
-    expect_equal(
-        expect,
-        reference_haps
-    )
+    expect_equal(expect, reference_haps)
+    expect_equal(out[["rhb1"]], out[["rhb2"]])
+    expect_equal(out[["rhb1"]], out[["rhb3"]])
 
 })
 
@@ -173,8 +170,7 @@ test_that("reference data can be loaded for an autosome specifying regionStart, 
         n_samples_per_pop = 4,
         reference_populations = c("CEU", "GBR", "CHB")
     )
-    sink("/dev/null")
-    reference_haps <- get_haplotypes_from_reference(
+    out <- get_haplotypes_from_reference(
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
         reference_sample_file = refpack$reference_sample_file,
@@ -186,16 +182,16 @@ test_that("reference data can be loaded for an autosome specifying regionStart, 
         regionEnd = regionEnd,
         buffer = buffer
     )
-    sink()
+    reference_haps <- out[["reference_haps"]]
 
-    expect <- refpack$reference_haplotypes
+    ##
     not_NA <- refpack$pos[, "POS"] >= (regionStart - buffer) & refpack$pos[, "POS"] <= (regionEnd + buffer)
-    expect[not_NA == FALSE, ] <- NA
-    expect_equal(
-        expect,
-        reference_haps
-    )
-
+    expect <- refpack$reference_haplotypes[not_NA, ]
+    expect_equal(expect, reference_haps)
+    expect_equal(out[["rhb1"]], out[["rhb2"]])
+    expect_equal(out[["rhb1"]], out[["rhb3"]])
+    
+    
 })
 
 
@@ -211,9 +207,8 @@ test_that("reference data can be loaded for chromosome X specifying regionStart,
         chr = "X"
     )
     pos <- refpack$pos
-    sink("/dev/null")
 
-    reference_haps <- get_haplotypes_from_reference(
+    out <- get_haplotypes_from_reference(
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
         reference_sample_file = refpack$reference_sample_file,
@@ -225,62 +220,63 @@ test_that("reference data can be loaded for chromosome X specifying regionStart,
         regionEnd = regionEnd,
         buffer = buffer
     )
+    reference_haps <- out[["reference_haps"]]
 
-    sink()
-
-    expect <- refpack$reference_haplotypes
-    not_NA <- pos[, "POS"] >= (regionStart - buffer) & pos[, "POS"] <= (regionEnd + buffer)
-    expect[not_NA == FALSE, ] <- NA
+    not_NA <- pos[, "POS"] >= (regionStart - buffer) & pos[, "POS"] <= (regionEnd + buffer)    
+    expect <- refpack$reference_haplotypes[not_NA, ]
     sex <- refpack$reference_samples[, "SEX"]
     keep <- array(TRUE, length(sex) * 2)
     keep[2 * which(sex == "male")] <- FALSE
     expect <- matrix(as.integer(expect[, keep]), ncol = sum(keep))
 
-    expect_equal(
-        expect,
-        reference_haps
-    )
+    expect_equal(expect, reference_haps)
+    expect_equal(out[["rhb1"]], out[["rhb2"]])
+    expect_equal(out[["rhb1"]], out[["rhb3"]])
 
+    
 })
 
 test_that("reference data can be loaded for a population", {
 
-    regionStart <- 5
-    regionEnd <- 7
-    buffer <- 1
-    refpack <- make_reference_package(
-        n_snps = 10,
-        n_samples_per_pop = 4,
-        reference_populations = c("CEU", "GBR", "CHB")
-    )
-    ref_pops_to_load <- c("GBR", "CHB")
-    pos <- refpack$pos
-    sink("/dev/null")
-    reference_haps <- get_haplotypes_from_reference(
-        reference_haplotype_file = refpack$reference_haplotype_file,
-        reference_legend_file = refpack$reference_legend_file,
-        reference_sample_file = refpack$reference_sample_file,
-        reference_populations = ref_pops_to_load,
-        pos = pos,
-        tempdir = tempdir(),
-        regionName = "test",
-        regionStart = regionStart,
-        regionEnd = regionEnd,
-        buffer = buffer
-    )
-    sink()
+    ## specifically ensure either 31, 32 or 33 SNPS are to be loaded
+    regionStart <- 8
+    buffer <- 2
 
-    expect <- refpack$reference_haplotypes
-    not_NA <- pos[, "POS"] >= (regionStart - buffer) & pos[, "POS"] <= (regionEnd + buffer)
-    expect[not_NA == FALSE, ] <- NA
-    keep_samples <- is.na(match(refpack$reference_samples[, "POP"], ref_pops_to_load)) == FALSE
-    expect <- expect[, 2 * rep(which(keep_samples), each = 2) + -1:0]
+    x <- ((regionStart) - (2 * buffer + 1))
+    test_lengths <- c(c(31, 32, 33), 32 + c(31, 32, 33))
+    for(regionEnd in (test_lengths + x)) {
 
-    expect_equal(
-        expect,
-        reference_haps
-    )
-
+        refpack <- make_reference_package(
+            n_snps = regionEnd + buffer + 5,
+            n_samples_per_pop = 4,
+            reference_populations = c("CEU", "GBR", "CHB")
+        )
+        ref_pops_to_load <- c("GBR", "CHB")
+        pos <- refpack$pos
+        out <- get_haplotypes_from_reference(
+            reference_haplotype_file = refpack$reference_haplotype_file,
+            reference_legend_file = refpack$reference_legend_file,
+            reference_sample_file = refpack$reference_sample_file,
+            reference_populations = ref_pops_to_load,
+            pos = pos,
+            tempdir = tempdir(),
+            regionName = "test",
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            buffer = buffer
+        )
+        reference_haps <- out[["reference_haps"]]
+        
+        not_NA <- pos[, "POS"] >= (regionStart - buffer) & pos[, "POS"] <= (regionEnd + buffer)    
+        expect <- refpack$reference_haplotypes[not_NA, ]
+        keep_samples <- is.na(match(refpack$reference_samples[, "POP"], ref_pops_to_load)) == FALSE
+        expect <- expect[, 2 * rep(which(keep_samples), each = 2) + -1:0]
+        
+        expect_equal(expect, reference_haps)
+        expect_equal(out[["rhb1"]], out[["rhb2"]])
+        expect_equal(out[["rhb1"]], out[["rhb3"]])
+    }
+    
 })
 
 
@@ -330,10 +326,14 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
             S <- test_package$S
             
             reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))
+            reference_haps_full <- reference_haps
             if (has_NA) {
-                reference_haps[c(4, 7), ] <- NA
+                reference_haps <- reference_haps[-c(4, 7), ]
+                rh_in_L <- (1:nSNPs)[-c(4, 7)]
+            } else {
+                rh_in_L <- 1:nrow(reference_haps)
             }
-            non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)            
+
             grid <- test_package$grid
             eHapsCurrent_tc <- test_package$eHapsCurrent_tc
             
@@ -351,7 +351,6 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
             
             ref_make_ehh(
                 eHapsCurrent_tc = eHapsCurrent_tc,
-                non_NA_cols = non_NA_cols,
                 ehh_h1_S = ehh_h1_S,
                 ehh_h1_D = ehh_h1_D,
                 ehh_h0_S = ehh_h0_S,
@@ -363,7 +362,7 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
             rcpp_ref_make_eMatGrid_t(
                 eMatGrid_t = eMatGrid_t1,
                 reference_hap = reference_hap,
-                non_NA_cols = non_NA_cols,
+                rh_in_L = rh_in_L,
                 eHapsCurrent_tc = eHapsCurrent_tc,
                 grid = grid,
                 reference_phred = reference_phred,
@@ -377,9 +376,9 @@ test_that("can convert a reference hap into eMatGrid_t directly", {
 
             ## compare against old way
             sampleReads <- rcpp_make_sampleReads_from_hap(
-                non_NA_cols = non_NA_cols,
+                rh_in_L = rh_in_L,
                 reference_phred = reference_phred,
-                reference_hap = reference_haps[, iSample + 1]
+                reference_hap = reference_haps_full[, iSample + 1] ## old method, requires full
             )
             ## 
             sampleReads <- snap_sampleReads_to_grid(
@@ -427,8 +426,12 @@ test_that("can do single reference iteration", {
     grid_distances <- test_package$grid_distances
 
     ## close enough!
-    reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))        
-    non_NA_cols <- which(is.na(reference_haps[ , 1]) == FALSE)
+    reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))
+    rhi <- reference_haps
+    rhi_t <- t(rhi)
+    rhb_t <- make_rhb_t_from_rhi_t(rhi_t)
+    rhb <- t(rhb_t)    
+    rh_in_L <- which(is.na(reference_haps[ , 1]) == FALSE)
 
     
     ## dummy up a bit
@@ -438,7 +441,9 @@ test_that("can do single reference iteration", {
     nCores <- 1
     nGen <- 10000
 
-    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, reference_haps = reference_haps, non_NA_cols = non_NA_cols)
+    out <- single_reference_iteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N_haps = N_haps, nCores = nCores, tempdir = tempdir, regionName = regionName, L = L, grid = grid, grid_distances = grid_distances, nGen = nGen, rhb = rhb, rh_in_L = rh_in_L)
 
+    ## placeholder
+    expect_equal(class(out), "list")
 
 })
