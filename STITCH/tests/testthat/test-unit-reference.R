@@ -447,3 +447,66 @@ test_that("can do single reference iteration", {
     expect_equal(class(out), "list")
 
 })
+
+
+test_that("can make reference ematgrid with large grid", {
+
+    test_package <- make_fb_test_package(
+        K = 4,
+        nReads = 8,
+        nSNPs = 1000,
+        gridWindowSize = 1000,
+        S = 2
+    )
+    nSNPs <- test_package$nSNPs
+    nGrids <- test_package$nGrids
+    K <- test_package$K
+    S <- test_package$S
+    grid <- test_package$grid
+    reference_haps <- t(round(test_package$eHapsCurrent_tc[, , 1]))
+    reference_haps_full <- reference_haps
+    rh_in_L <- 1:nrow(reference_haps)
+    eHapsCurrent_tc <- test_package$eHapsCurrent_tc
+            
+    eMatGrid_t1 <- array(1, c(K, nGrids))
+    eMatGrid_t2 <- array(1, c(K, nGrids))        
+    s <- 0
+    iSample <- 0
+    reference_phred <- 20
+    maxEmissionMatrixDifference <- 1e10
+    
+    ehh_h1_S <- array(0, c(K, nSNPs, S))
+    ehh_h1_D <- array(0, c(K, nSNPs, S))
+    ehh_h0_S <- array(0, c(K, nSNPs, S))
+    ehh_h0_D <- array(0, c(K, nSNPs, S))
+    
+    ref_make_ehh(
+        eHapsCurrent_tc = eHapsCurrent_tc,
+        ehh_h1_S = ehh_h1_S,
+        ehh_h1_D = ehh_h1_D,
+        ehh_h0_S = ehh_h0_S,
+        ehh_h0_D = ehh_h0_D,
+        reference_phred = reference_phred
+    )
+
+    ## take bad hap
+    reference_hap <- sample(c(0, 1), nSNPs, replace = TRUE)
+
+    eMatGrid_t <- rcpp_ref_make_eMatGrid_t(
+        eMatGrid_t = eMatGrid_t1,
+        reference_hap = reference_hap,
+        rh_in_L = rh_in_L,
+        eHapsCurrent_tc = eHapsCurrent_tc,
+        grid = grid,
+        reference_phred = reference_phred,
+        s = s,
+        maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+        ehh_h1_S = ehh_h1_S,
+        ehh_h0_S = ehh_h0_S,
+        rescale = TRUE,
+        bound = TRUE
+    )
+    expect_equal(sum(is.na(eMatGrid_t1)), 0)
+    
+    
+})

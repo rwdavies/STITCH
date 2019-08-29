@@ -222,7 +222,7 @@ void rcpp_ref_make_eMatGrid_t(
     //
     // rh_in_L is 1-based, which columns are we running over
     //
-    //const int K = eMatGrid_t.n_rows;
+    const int K = eMatGrid_t.n_rows;
     int iSNP, iGrid, h;
     // double eps = pow(10,(double(-reference_phred) / 10));
     //int k, cur_grid;
@@ -230,6 +230,10 @@ void rcpp_ref_make_eMatGrid_t(
     int nnSNPs = rh_in_L.length();
     //
     //
+    double d2 = 1 / maxEmissionMatrixDifference;
+    double d3 = d2;
+    double rescale_val;
+    //    
     for(int iiSNP = 0; iiSNP < nnSNPs; iiSNP++) {
         iSNP = rh_in_L(iiSNP) - 1; // here, 0-based
 	iGrid = grid(iSNP);
@@ -239,6 +243,32 @@ void rcpp_ref_make_eMatGrid_t(
 	} else {
             eMatGrid_t.col(iGrid) %= ehh_h0_S.slice(s).col(iSNP);
 	}
+        //
+        // now - if this has grid, can overflow. check periodically
+        //
+        if ((rescale | bound) & (iiSNP > 10)) {
+            if (iGrid == grid(rh_in_L(iiSNP - 9) - 1)) {
+                // copy
+                double x = eMatGrid_t.col(iGrid).max();
+                rescale_val = 1 / x;	
+                if (rescale) {
+                    eMatGrid_t.col(iGrid) *= rescale_val;
+                    rescale_val = 1;
+                } else {
+                    d3 = rescale_val / d2;	      
+                }
+                if (bound) {
+                    for (int k = 0; k < K; k++) {
+                        if(eMatGrid_t(k, iGrid) < d3) {
+                            eMatGrid_t(k, iGrid) = d3;
+                        }
+                    }
+                }                
+            }
+        }
+        //
+        // end of period checker
+        //
     }
     if (rescale | bound) {
       rcpp_ref_bound_eMatGrid_t(eMatGrid_t, maxEmissionMatrixDifference, rescale, bound);

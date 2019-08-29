@@ -37,7 +37,18 @@ test_that("binary/integer storage format for reference haps makes sense", {
     
 })
 
+test_that("edge cases for reference haps are OK", {
 
+    nSNPs <- 32
+    hap <- integer(32)
+    hap[32] <- 1L
+    ## omg - NA is an OK value
+    expect_equal(int_contract(hap), rcpp_int_contract(hap))
+    expect_equal(int_expand(int_contract(hap), nSNPs), rcpp_int_expand(rcpp_int_contract(hap), nSNPs))
+
+    ## these tests are less useful! NA is OK
+
+})
 
 test_that("can quickly calculate distance between binary haps and haplotype dosage vector", {
 
