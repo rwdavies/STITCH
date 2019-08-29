@@ -926,10 +926,10 @@ sample_haps_to_use <- function(reference_haps, K, max_snps = 1000, max_samples =
     reference_haps <- reference_haps[!is.na(reference_haps[, 1]), ]
     if (nrow(reference_haps) > max_snps) {
         ## make weight proportional to allele frequency
-        a <- rowSums(haps) / ncol(haps)
+        a <- rowSums(reference_haps) / ncol(reference_haps)
         a[a > 0.5] <- 1 - a[a > 0.5]
         prob <- a / sum(a)
-        keep <- sort(sample(1:nrow(haps), size = max_snps, replace = FALSE, prob = prob))
+        keep <- sort(sample(1:nrow(reference_haps), size = max_snps, replace = FALSE, prob = prob))
         reference_haps <- reference_haps[keep, ]
     }
     ##
