@@ -349,7 +349,7 @@ compare_reference_haps_against_alleleCount <- function(
 ) {
 
     all_cor <- suppressWarnings(
-        cor(alleleCount[, 3], ref_alleleCount, use = "pairwise.complete.obs")
+        cor(alleleCount[, 3], ref_alleleCount[, 3], use = "pairwise.complete.obs")
     )
     low_maf_cor <- NA
     high_maf_cor <- NA
