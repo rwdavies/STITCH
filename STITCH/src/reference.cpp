@@ -244,7 +244,7 @@ void rcpp_ref_make_eMatGrid_t(
             eMatGrid_t.col(iGrid) %= ehh_h0_S.slice(s).col(iSNP);
 	}
         //
-        // now - if this has grid, can overflow. check periodically
+        // now - if this has grid, can overflow. check periodically 
         //
         if ((rescale | bound) & (iiSNP > 10)) {
             if (iGrid == grid(rh_in_L(iiSNP - 9) - 1)) {
