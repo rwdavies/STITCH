@@ -201,49 +201,75 @@ test_that("math for subsetting for start makes sense", {
 
 test_that("can sample haps to use for eHaps start efficiently with binary format", {
 
-    if (1 == 0) {
-        N_haps <- 50000
-        nSNPs <- 2000
-        K <- 100
+    ## 1 - normal - less than all values, snps less than max_snps, haps less than both
+    ## 2 - more SNPs than max_snps
+    ## 3 - more haps than max_haps_to_build, but less than max_haps_to_project
+    ## 4 - more haps to max_haps_to_project
+    ## 5 - test case - massive - not run for tests
+    verbose <- FALSE
+
+    for(i_test in 1:4) {
+
+        N_haps <- 200
+        nSNPs <- 100
         max_snps <- 500
         max_haps_to_build <- 250
-        max_haps_to_project <- 2500
-        nRefSNPs <- nSNPs
-    } else {
-        N_haps <- 500
-        nSNPs <- 200
-        K <- 10
-        max_snps <- 50
-        max_haps_to_build <- 25
-        max_haps_to_project <- 250
-        nRefSNPs <- nSNPs
-    }
-    
-    set.seed(9910)
-    reference_haps <- array(as.integer(runif(nSNPs * N_haps) > 0.5), c(nSNPs, N_haps)) ## 100 SNPs, 600 samples
-    ref_alleleCount <- array(NA, c(nSNPs, 3))
-    rh_in_L <- 1:nSNPs
-    ref_alleleCount[rh_in_L, 1] <- rowSums(reference_haps)
-    ref_alleleCount[rh_in_L, 2] <- ncol(reference_haps)
-    ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
-
-    rhi <- reference_haps
-    rhi_t <- t(rhi)
-    rhb_t <- make_rhb_t_from_rhi_t(rhi_t)
-    rhb <- t(rhb_t)
-    rm(reference_haps, rhi_t, rhi); gc(reset = TRUE); gc(reset = TRUE)
+        max_haps_to_project <- 500
         
-    cols_to_use <- sample_haps_to_use(
-        rhb = rhb,
-        ref_alleleCount = ref_alleleCount,
-        N_haps = N_haps,
-        nRefSNPs = nRefSNPs,
-        K = K,
-        max_snps = max_snps,
-        max_haps_to_build = max_haps_to_build,
-        max_haps_to_project = max_haps_to_project
-    )
-    expect_true(length(cols_to_use) > 0) ## placeholder
+        if (i_test == 2) {
+            max_snps <- round(nSNPs / 2)
+        } else if (i_test == 3) {
+            max_haps_to_build <- round(N_haps / 2)
+        } else if (i_test == 4) {
+            max_haps_to_build <- round(N_haps / 3)
+            max_haps_to_project <- round(N_haps / 2)            
+        } else if (i_test == 5) {
+            N_haps <- 50000
+            nSNPs <- 2000
+            K <- 100
+            max_snps <- 500
+            max_haps_to_build <- 250
+            max_haps_to_project <- 2500
+        }
+
+        if (verbose) {
+            print(paste0("N_haps = ", N_haps))
+            print(paste0("nSNPs = ", nSNPs))
+            print(paste0("max_snps = ", max_snps))
+            print(paste0("max_haps_to_build = ", max_haps_to_build))
+            print(paste0("max_haps_to_project = ", max_haps_to_project))
+        }
+
+        K <- round(N_haps / 2)
+        nRefSNPs <- nSNPs        
+    
+        set.seed(9910)
+        reference_haps <- array(as.integer(runif(nSNPs * N_haps) > 0.5), c(nSNPs, N_haps))
+        ref_alleleCount <- array(NA, c(nSNPs, 3))
+        rh_in_L <- 1:nSNPs
+        ref_alleleCount[rh_in_L, 1] <- rowSums(reference_haps)
+        ref_alleleCount[rh_in_L, 2] <- ncol(reference_haps)
+        ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
+        
+        rhi <- reference_haps
+        rhi_t <- t(rhi)
+        rhb_t <- make_rhb_t_from_rhi_t(rhi_t)
+        rhb <- t(rhb_t)
+        rm(reference_haps, rhi_t, rhi); gc(reset = TRUE); gc(reset = TRUE)
+        
+        cols_to_use <- sample_haps_to_use(
+            rhb = rhb,
+            ref_alleleCount = ref_alleleCount,
+            N_haps = N_haps,
+            nRefSNPs = nRefSNPs,
+            K = K,
+            max_snps = max_snps,
+            max_haps_to_build = max_haps_to_build,
+            max_haps_to_project = max_haps_to_project
+        )
+        expect_true(length(cols_to_use) > 0) ## placeholder
+        
+    }
     ## future concern - make this more efficient / faster
     ## not sure matters - could be kmeans is the bad thing etc
     ## h_all <- inflate_fhb(rhb, haps_to_get = keep_samples - 1, nSNPs = nSNPs)
