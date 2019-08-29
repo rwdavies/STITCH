@@ -268,7 +268,7 @@ get_haplotypes_from_reference <- function(
         load_rhb_method = load_rhb_method
     )
 
-    print_message(paste0("Succesfully extracted ", ncol(out[["haps"]]), " haplotypes from reference data"))
+    print_message(paste0("Succesfully extracted ", ncol(out[["rhb3"]]), " haplotypes from reference data"))
     print_message("End get haplotypes from reference")
 
     return(out)
