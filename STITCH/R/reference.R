@@ -1137,7 +1137,10 @@ sample_haps_to_use <- function(
     b <- round(b, 3)
     b <- b[, colSums(b != 0) > 0, drop = FALSE]
     ## yuck - if K < number of unique, will fail
-    local_K <- min(K, nrow(unique(b)) - 1)
+    local_K <- min(K, nrow(unique(b)))
+    if (local_K == nrow(b)) {
+        local_K <- local_K - 1
+    }
     print_message("Perform K-means")
     kmeans_results <- suppressWarnings(kmeans(b, centers = local_K, iter.max = 100, nstart = 10))
     print_message("Done performing K-means")    
