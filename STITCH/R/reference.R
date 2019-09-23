@@ -42,7 +42,7 @@ get_and_initialize_from_reference <- function(
     snps_in_grid_1_based,
     plotHapSumDuringIterations
 ) {
-    
+
     print_message("Begin initializing paramters using reference haplotypes")
     ## get reference haplotypes matched to posfile
     ## NA's where there are no match
@@ -101,7 +101,7 @@ get_and_initialize_from_reference <- function(
 
         ## hmm, not sure how efficient
         rm(rhb); if (N_haps > 1000) { gc(reset = TRUE); gc(reset = TRUE);}        
-        eHapsCurrent_tc[1:N_haps, reference_panel_SNPs, 1] <- inflate_fhb_t(rhb_t = rhb_t, haps_to_get = 0:(N_haps - 1), nSNPs = nSNPs)
+        eHapsCurrent_tc[1:N_haps, reference_panel_SNPs, 1] <- inflate_fhb_t(rhb_t = rhb_t, haps_to_get = 0:(N_haps - 1), nSNPs = nRefSNPs)
         eHapsCurrent_tc[1:N_haps, reference_panel_SNPs, 1][eHapsCurrent_tc[1:N_haps, reference_panel_SNPs, 1] == 0] <- e
         eHapsCurrent_tc[1:N_haps, reference_panel_SNPs, 1][eHapsCurrent_tc[1:N_haps, reference_panel_SNPs, 1] == 1] <- (1 - e)
 
@@ -118,7 +118,7 @@ get_and_initialize_from_reference <- function(
         print_message("There are exactly as many reference haplotypes as K. Using these haplotypes directly as the initial estimate of the ancestral haplotypes")
         
         rm(rhb); if (N_haps > 1000) { gc(reset = TRUE); gc(reset = TRUE);}
-        eHapsCurrent_tc[, reference_panel_SNPs, 1] <- inflate_fhb_t(rhb_t = rhb_t, haps_to_get = 0:(N_haps - 1), nSNPs = nSNPs)
+        eHapsCurrent_tc[, reference_panel_SNPs, 1] <- inflate_fhb_t(rhb_t = rhb_t, haps_to_get = 0:(N_haps - 1), nSNPs = nRefSNPs)
         eHapsCurrent_tc[, reference_panel_SNPs, 1][eHapsCurrent_tc[, reference_panel_SNPs, 1] == 0] <- e
         eHapsCurrent_tc[, reference_panel_SNPs, 1][eHapsCurrent_tc[, reference_panel_SNPs, 1] == 1] <- (1 - e)
         if (S > 1) {
@@ -136,7 +136,7 @@ get_and_initialize_from_reference <- function(
             ## get new cols each time? inefficient! revisit?
             cols_to_replace <- sample_haps_to_use(
                 rhb = rhb,
-                ref_alleleCount = ref_alleleCount,
+                ref_alleleCount_at_L = ref_alleleCount[rh_in_L, ],
                 N_haps = N_haps,
                 nRefSNPs = nRefSNPs,
                 K = K,
@@ -1056,7 +1056,7 @@ load_haps_at_positions_no_NAs <- function(
 ##
 sample_haps_to_use <- function(
     rhb,
-    ref_alleleCount,
+    ref_alleleCount_at_L,
     N_haps,
     nRefSNPs,
     K,
@@ -1064,7 +1064,7 @@ sample_haps_to_use <- function(
     max_haps_to_build = 2000,
     max_haps_to_project = 20000
 ) {
-
+    
     print_message("Begin determining haplotypes to use for initialization")
     if (max_haps_to_project < K) {
         max_haps_to_project <- K
@@ -1072,7 +1072,7 @@ sample_haps_to_use <- function(
     
     if (nRefSNPs > max_snps) {
         ## make weight proportional to allele frequency, i.e. sample more frequent
-        a <- ref_alleleCount[, 3]
+        a <- ref_alleleCount_at_L[, 3]
         a[a > 0.5] <- 1 - a[a > 0.5]
         prob <- a / sum(a)
         prob[is.na(prob)] <- 0
@@ -1159,7 +1159,13 @@ sample_haps_to_use <- function(
 choose_cols_to_replace <- function(cluster_membership, keep_samples, local_K, K) {
     cols_to_replace <- array(NA, K)
     for(k in 1:local_K) {
-        cols_to_replace[k] <- sample(keep_samples[cluster_membership == k], 1)
+        ## god dammit R, "sample" changes definition on single valued input
+        w <- which(cluster_membership == k)
+        if (length(w) == 1) {
+            cols_to_replace[k] <- w
+        } else {
+            cols_to_replace[k] <- sample(keep_samples[w], size = 1)
+        }
     }
     if (local_K < K) {
         ## remaining, choose at random

@@ -18,7 +18,8 @@ if (1 == 0) {
 
 n_snps <- 10
 reads_span_n_snps <- 6
-chr <- 1
+original_chr <- "chr5"
+chr <- original_chr
 n_reads <- 5 / (reads_span_n_snps / n_snps) ## want about 5X / sample
 extension <- c("bgvcf" = ".vcf.gz", "bgen" = ".bgen")
 
@@ -27,12 +28,13 @@ phasemaster <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
 phasemaster[2, ] <- c(1, 0)
 phasemaster[3, ] <- c(0, 0)
 phasemaster[7, ] <- c(1, 0)
+phasemaster_original <- phasemaster
 data_package <- make_acceptance_test_data_package(
     n_samples = 10,
     n_snps = n_snps,
     n_reads = n_reads,
     seed = 3,
-    chr = "chr5",
+    chr = original_chr,
     K = 2,
     reads_span_n_snps = reads_span_n_snps,
     phasemaster = phasemaster
@@ -46,7 +48,7 @@ refpack <- make_reference_package(
 )
 
 
-chr <- "X"
+
 phasemasterX <- matrix(c(rep(0, n_snps), rep(1, n_snps)), ncol = 2)
 phasemasterX[3, ] <- c(1, 0)
 phasemasterX[5, ] <- c(0, 0)
@@ -180,49 +182,90 @@ test_that("STITCH can initialize with reference data with three sizes of K vs nu
 
     ## these are diploid
     n_samples_per_pop <- 4
-    refpackL <- make_reference_package(
-        n_snps = n_snps,
-        n_samples_per_pop = n_samples_per_pop,
-        reference_populations = c("CEU"),
-        chr = 1,
-        phasemaster = phasemaster
-    )
 
     output_format <- "bgvcf"
-
-    for(i_scenario in 1:3) {
-
-        outputdir <- make_unique_tempdir()
-        plotHapSumDuringIterations <- FALSE
-        ## outputdir <- paste0("~/temp.scenario", i_scenario, "/"); plotHapSumDuringIterations <- TRUE
+    L_modified <- 10 + seq(1, 3 * n_snps, 3)
+    data_packageL <- make_acceptance_test_data_package(
+        n_samples = 10,
+        n_snps = n_snps,
+        n_reads = n_reads,
+        L = L_modified,
+        seed = 3,
+        chr = original_chr,
+        K = 2,
+        reads_span_n_snps = reads_span_n_snps,
+        phasemaster = phasemaster
+    )
+    
+    for(i_ref in 1:2) {
         
-        ## scenarios are: too few, exactly right amount, too many
-        K <- list(n_samples_per_pop * 4, n_samples_per_pop * 2, n_samples_per_pop)[[i_scenario]]
-        STITCH(
-            chr = data_package$chr,
-            bamlist = data_package$bamlist,
-            posfile = data_package$posfile,
-            genfile = data_package$genfile,
-            outputdir = outputdir,
-            reference_haplotype_file = refpackL$reference_haplotype_file,
-            reference_legend_file = refpackL$reference_legend_file,
-            K = K,
-            S = 2,
-            nGen = 100,
-            nCores = 1,
-            output_format = output_format,
-            plotHapSumDuringIterations = plotHapSumDuringIterations
-        )
+        if (i_ref == 1) {
+            ## perfect fit
+            refpackL <- make_reference_package(
+                L = L_modified,
+                n_snps = n_snps,
+                n_samples_per_pop = n_samples_per_pop,
+                reference_populations = c("CEU"),
+                chr = 1,
+                phasemaster = phasemaster
+            )
+        } else if (i_ref == 2) {
+            
+            ## overlap some
+            L_hole <- 10 + seq(1, 3 * (n_snps + 4), 2)
+            n_snps_hole <- length(L_hole)
+            phasemaster_hole <- matrix(c(rep(0, n_snps_hole), rep(1, n_snps_hole)), ncol = 2)
+            phasemaster[c(1, 3, 6), ] <- c(1, 0)
+            phasemaster[c(2, 4, 7), ] <- c(0, 0)
+            phasemaster[c(3, 5, 8), ] <- c(1, 0)
+            t1 <- match(L_hole, L_modified)
+            phasemaster_hole[!is.na(t1), ] <- phasemaster[t1[!is.na(t1)], ]
+            refpackL <- make_reference_package(
+                n_snps = n_snps_hole,
+                L = L_hole,
+                n_samples_per_pop = n_samples_per_pop,
+                reference_populations = c("CEU"),
+                chr = original_chr,
+                phasemaster = phasemaster_hole
+            )
+            
+        }
+        
+        for(i_scenario in 1:3) {
 
-        check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
-            data_package,
-            output_format,
-            which_snps = NULL,
-            tol = 0.2
-        )
+            outputdir <- make_unique_tempdir()
+            plotHapSumDuringIterations <- FALSE
+            ## outputdir <- paste0("~/temp.scenario", i_scenario, "/"); plotHapSumDuringIterations <- TRUE
+            
+            ## scenarios are: too few, exactly right amount, too many
+            K <- list(n_samples_per_pop * 4, n_samples_per_pop * 2, n_samples_per_pop)[[i_scenario]]
+            STITCH(
+                chr = data_packageL$chr,
+                bamlist = data_packageL$bamlist,
+                posfile = data_packageL$posfile,
+                genfile = data_packageL$genfile,
+                outputdir = outputdir,
+                reference_haplotype_file = refpackL$reference_haplotype_file,
+                reference_legend_file = refpackL$reference_legend_file,
+                K = K,
+                S = 2,
+                nGen = 100,
+                nCores = 1,
+                output_format = output_format,
+                plotHapSumDuringIterations = plotHapSumDuringIterations
+            )
+            
+            check_output_against_phase(
+                file.path(outputdir, paste0("stitch.", data_packageL$chr, extension[output_format])),
+                data_packageL,
+                output_format,
+                which_snps = NULL,
+                tol = 0.2
+            )
 
+        }
     }
+    
 })
 
 
@@ -570,56 +613,67 @@ test_that("STITCH can initialize on chromosome X with reference data for certain
 test_that("STITCH can impute with reference panels with only 1 iteration if the initialize with reference data", {
 
     n_snps <- 20
-    chr <- 10
     set.seed(6)
-    refpack <- make_reference_package(
+    n_samples_per_pop <- 4
+    Kbuild <- 4
+    phasemasterL <- array(0, c(n_snps, Kbuild))
+    phasemasterL[, 1] <- rep(c(0, 0, 1, 1), n_snps)[1:n_snps]
+    phasemasterL[, 2] <- rep(c(0, 1), n_snps)[1:n_snps]
+    phasemasterL[, 3] <- rep(c(1, 0), n_snps)[1:n_snps]
+    phasemasterL[, 4] <- rep(c(1, 1, 0, 0), n_snps)[1:n_snps]    
+    ## 
+    refpackL <- make_reference_package(
         n_snps = n_snps,
-        n_samples_per_pop = 1,
-        reference_populations = c("CEU", "GBR"),
-        chr = chr
+        n_samples_per_pop = n_samples_per_pop,
+        reference_populations = c("CEU"),
+        chr = original_chr,
+        phasemaster = phasemasterL
     )
-    phasemaster <- refpack$reference_haplotypes
-    data_package <- make_acceptance_test_data_package(
+    data_packageL <- make_acceptance_test_data_package(
+        reads_span_n_snps = 4,
         n_samples = 10,
         n_snps = n_snps,
-        n_reads = 4,
-        seed = 3,
-        chr = chr,
-        K = 4,
-        phasemaster = phasemaster
+        seed = 5,
+        chr = original_chr,
+        n_reads = n_snps * 2,
+        K = ncol(phasemasterL),
+        phasemaster = phasemasterL
     )
-
-    for(output_format in c("bgvcf", "bgen")) {
+    output_format <- "bgvcf"
+    
+    for(i_scenario in 1:3) {
 
         outputdir <- make_unique_tempdir()
+        Krun <- list(n_samples_per_pop * 4, n_samples_per_pop * 2, n_samples_per_pop)[[i_scenario]]        
 
         STITCH(
-            chr = data_package$chr,
-            bamlist = data_package$bamlist,
-            posfile = data_package$posfile,
+            chr = data_packageL$chr,
+            bamlist = data_packageL$bamlist,
+            posfile = data_packageL$posfile,
+            genfile = data_packageL$genfile,            
             outputdir = outputdir,
-            reference_haplotype_file = refpack$reference_haplotype_file,
-            reference_legend_file = refpack$reference_legend_file,
+            reference_haplotype_file = refpackL$reference_haplotype_file,
+            reference_legend_file = refpackL$reference_legend_file,
             refillIterations = NA,
             shuffleHaplotypeIterations = NA,
-            K = 4,
+            K = Krun,
             nGen = 100,
             nCores = 1,
             niterations = 1,
-            output_format = output_format,
-            outputSNPBlockSize = 4
+            output_format = output_format
         )
-
+        
         check_output_against_phase(
-            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
-            data_package,
+            file.path(outputdir, paste0("stitch.", data_packageL$chr, extension[output_format])),
+            data_packageL,
             output_format,
             which_snps = NULL,
-            tol = 0.3,
-            min_info = 0.75
+            tol = 0.25,
+            min_info = 0.85
         )
 
     }
+
 
 })
 

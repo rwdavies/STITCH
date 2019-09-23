@@ -222,13 +222,14 @@ test_that("can sample haps to use for eHaps start efficiently with binary format
     for(i_test in 1:4) {
 
         N_haps <- 200
-        nSNPs <- 100
+        nRefSNPs <- 100
         max_snps <- 500
         max_haps_to_build <- 250
         max_haps_to_project <- 500
+        nSNPs <- nRefSNPs * 2 ## this is the full set
         
         if (i_test == 2) {
-            max_snps <- round(nSNPs / 2)
+            max_snps <- round(nRefSNPs / 2)
         } else if (i_test == 3) {
             max_haps_to_build <- round(N_haps / 2)
         } else if (i_test == 4) {
@@ -236,7 +237,7 @@ test_that("can sample haps to use for eHaps start efficiently with binary format
             max_haps_to_project <- round(N_haps / 2)            
         } else if (i_test == 5) {
             N_haps <- 50000
-            nSNPs <- 2000
+            nRefSNPs <- 2000
             K <- 100
             max_snps <- 500
             max_haps_to_build <- 250
@@ -245,19 +246,20 @@ test_that("can sample haps to use for eHaps start efficiently with binary format
 
         if (verbose) {
             print(paste0("N_haps = ", N_haps))
-            print(paste0("nSNPs = ", nSNPs))
+            print(paste0("nRefSNPs = ", nRefSNPs))
             print(paste0("max_snps = ", max_snps))
             print(paste0("max_haps_to_build = ", max_haps_to_build))
             print(paste0("max_haps_to_project = ", max_haps_to_project))
         }
 
         K <- round(N_haps / 2)
-        nRefSNPs <- nSNPs        
-    
+        L <- 1:nSNPs
+        L_ref <- 10 + 1:nRefSNPs
+        rh_in_L <- match(L_ref, L)
+        
         set.seed(9910)
-        reference_haps <- array(as.integer(runif(nSNPs * N_haps) > 0.5), c(nSNPs, N_haps))
+        reference_haps <- array(as.integer(runif(nRefSNPs * N_haps) > 0.5), c(nRefSNPs, N_haps))
         ref_alleleCount <- array(NA, c(nSNPs, 3))
-        rh_in_L <- 1:nSNPs
         ref_alleleCount[rh_in_L, 1] <- rowSums(reference_haps)
         ref_alleleCount[rh_in_L, 2] <- ncol(reference_haps)
         ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
@@ -270,7 +272,7 @@ test_that("can sample haps to use for eHaps start efficiently with binary format
         
         cols_to_use <- sample_haps_to_use(
             rhb = rhb,
-            ref_alleleCount = ref_alleleCount,
+            ref_alleleCount_at_L = ref_alleleCount[rh_in_L, ],
             N_haps = N_haps,
             nRefSNPs = nRefSNPs,
             K = K,
@@ -283,7 +285,7 @@ test_that("can sample haps to use for eHaps start efficiently with binary format
     }
     ## future concern - make this more efficient / faster
     ## not sure matters - could be kmeans is the bad thing etc
-    ## h_all <- inflate_fhb(rhb, haps_to_get = keep_samples - 1, nSNPs = nSNPs)
+    ## h_all <- inflate_fhb(rhb, haps_to_get = keep_samples - 1, nRefSNPs = nRefSNPs)
     ## if (!is.na(keep_snps[1])) {
     ##    h_all <- h_all[keep_snps, ] ## meh
     ## }
