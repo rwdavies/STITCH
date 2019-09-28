@@ -538,6 +538,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_determine_where_to_stop
+int rcpp_determine_where_to_stop(const Rcpp::NumericVector& smoothed_rate, const Rcpp::LogicalVector& available, int& snp_best, double& thresh, int& nGrids, bool is_left);
+RcppExport SEXP _STITCH_rcpp_determine_where_to_stop(SEXP smoothed_rateSEXP, SEXP availableSEXP, SEXP snp_bestSEXP, SEXP threshSEXP, SEXP nGridsSEXP, SEXP is_leftSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type smoothed_rate(smoothed_rateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type available(availableSEXP);
+    Rcpp::traits::input_parameter< int& >::type snp_best(snp_bestSEXP);
+    Rcpp::traits::input_parameter< double& >::type thresh(threshSEXP);
+    Rcpp::traits::input_parameter< int& >::type nGrids(nGridsSEXP);
+    Rcpp::traits::input_parameter< bool >::type is_left(is_leftSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_determine_where_to_stop(smoothed_rate, available, snp_best, thresh, nGrids, is_left));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_make_smoothed_rate
 Rcpp::NumericVector rcpp_make_smoothed_rate(const Rcpp::NumericVector& sigma_rate, const Rcpp::IntegerVector& L_grid, const int shuffle_bin_radius, const bool verbose);
 RcppExport SEXP _STITCH_rcpp_make_smoothed_rate(SEXP sigma_rateSEXP, SEXP L_gridSEXP, SEXP shuffle_bin_radiusSEXP, SEXP verboseSEXP) {
@@ -896,6 +912,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_pseudoHaploid_update_model_9", (DL_FUNC) &_STITCH_pseudoHaploid_update_model_9, 8},
     {"_STITCH_forwardBackwardHaploid", (DL_FUNC) &_STITCH_forwardBackwardHaploid, 39},
     {"_STITCH_rcpp_sample_path", (DL_FUNC) &_STITCH_rcpp_sample_path, 9},
+    {"_STITCH_rcpp_determine_where_to_stop", (DL_FUNC) &_STITCH_rcpp_determine_where_to_stop, 6},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
     {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 15},

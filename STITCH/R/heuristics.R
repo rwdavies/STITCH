@@ -531,22 +531,22 @@ choose_points_to_break <- function(
         if (sum(available[snp_best + -1:1]) == 3) {
             ## no matter what, one further away
             ## return 1-based as well
-            snp_left <- determine_where_to_stop(
+            snp_left <- R_determine_where_to_stop(
                 smoothed_rate,
                 available,
                 snp_best,
                 thresh,
                 nGrids,
-                side = "left"
+                is_left = TRUE
             )
             ##
-            snp_right <- determine_where_to_stop(
+            snp_right <- R_determine_where_to_stop(
                 smoothed_rate,
                 available,
                 snp_best,
                 thresh,
                 nGrids,
-                side = "right"
+                is_left = FALSE ## right
             )
             ## store
             ## everything here 1_based coordinates
@@ -637,15 +637,15 @@ get_snps_to_nuke <- function(grid_distances, nGrids, shuffle_bin_radius, snp_bes
 }
 
 
-determine_where_to_stop <- function(
+R_determine_where_to_stop <- function(
     smoothed_rate,
     available,
     snp_best,
     thresh,
     nGrids,
-    side = "left"
+    is_left = TRUE
 ) {
-    if (side == "left") {
+    if (is_left) {
         mult <- 1
     } else {
         mult <- -1

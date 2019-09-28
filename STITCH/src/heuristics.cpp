@@ -17,6 +17,55 @@
 using namespace Rcpp;
 
 
+//' @export
+// [[Rcpp::export]]
+int rcpp_determine_where_to_stop(
+    const Rcpp::NumericVector& smoothed_rate,
+    const Rcpp::LogicalVector& available,
+    int& snp_best, // 0-based here
+    double& thresh,
+    int& nGrids,
+    bool is_left
+) {
+    double mult;
+    if (is_left) {
+        mult = 1;
+    } else {
+        mult = -1;
+    }
+    int snp_consider = snp_best;
+    double val_cur = smoothed_rate(snp_consider);
+    double val_prev = smoothed_rate(snp_best);
+    //
+    int snp_min = snp_consider;
+    double val_min = smoothed_rate(snp_min);
+    int c = 1;
+    bool are_done = false;
+    while(!are_done) {
+        snp_consider = snp_consider + (-1) * mult;
+        val_cur = smoothed_rate(snp_consider);
+        if (5 <= c) {
+            val_prev = smoothed_rate(snp_consider + 5 * mult);
+        }
+        c += 1;
+        if (val_cur < val_min) {
+            snp_min = snp_consider;
+            val_min = val_cur;
+        }
+        // do not continue if would go out of bound
+        if ((snp_consider <= 2) | ((nGrids - 3) <= snp_consider)) {
+            are_done = true;
+        } else if (available(snp_consider + (-1) * mult) == false) {
+            are_done = true;
+        } else if ((3 * val_min) < val_cur) {
+            are_done = true;
+        } else if ((val_cur < thresh) & (val_prev < val_cur)) {
+            are_done = true;
+        }
+    }
+    return(snp_min);
+}
+
 
 //' @export
 // [[Rcpp::export]]

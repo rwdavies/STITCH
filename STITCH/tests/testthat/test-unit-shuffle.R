@@ -384,3 +384,39 @@ test_that("can smooth rate with lots of big peaks", {
     expect_equal(nrow(results), 17) ## can manually interrogate it if breaks, determine if appropriate
 
 })
+
+
+## Not sure where to place this
+test_that("can use determine where to stop in cpp", {
+
+    ## don't bother doing much testing, is simple
+    ## jsut check it works at all
+    smoothed_rate <- runif(100)
+    available <- array(FALSE, 100)
+    available[40:50] <- TRUE
+    snp_best <- 45
+    thresh <- 0.25
+    nGrids <- 100
+    is_left <- TRUE
+
+    expect_equal(
+        rcpp_determine_where_to_stop(
+            smoothed_rate,
+            available,
+            snp_best - 1,
+            thresh,
+            nGrids,
+            is_left
+        ) + 1,
+        R_determine_where_to_stop(
+            smoothed_rate,
+            available,
+            snp_best,
+            thresh,
+            nGrids,
+            is_left
+        )
+    )
+        
+    
+})

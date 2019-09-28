@@ -142,6 +142,11 @@ rcpp_sample_path <- function(read_labels, eMatRead_t, sampleReads, maxDifference
 }
 
 #' @export
+rcpp_determine_where_to_stop <- function(smoothed_rate, available, snp_best, thresh, nGrids, is_left) {
+    .Call('_STITCH_rcpp_determine_where_to_stop', PACKAGE = 'STITCH', smoothed_rate, available, snp_best, thresh, nGrids, is_left)
+}
+
+#' @export
 rcpp_make_smoothed_rate <- function(sigma_rate, L_grid, shuffle_bin_radius, verbose = FALSE) {
     .Call('_STITCH_rcpp_make_smoothed_rate', PACKAGE = 'STITCH', sigma_rate, L_grid, shuffle_bin_radius, verbose)
 }
