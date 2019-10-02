@@ -690,3 +690,48 @@ test_that("STITCH can rebundle inputs", {
     
 
 })
+
+
+test_that("STITCH can avoid rebundling inputs when only one bundle", {
+
+    outputdir <- make_unique_tempdir()
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        inputBundleBlockSize = length(data_package$bam_files)
+    )
+    unlink(file.path(outputdir, paste0("stitch.chr", chr, ".vcf.gz")))
+
+    STITCH(
+        chr = data_package$chr,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        nCores = 3,
+        inputBundleBlockSize = 4,
+        regenerateInput = FALSE,
+        originalRegionName = data_package$chr,
+        regenerateInputWithDefaultValues = TRUE
+    )
+    vcf <- read.table(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+    
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+    
+
+})

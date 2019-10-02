@@ -241,7 +241,7 @@ get_rebundled_files <- function(inputdir, regionName, outputdir) {
     ranges <-  sapply(x, function(x) x[2])
     ranges <- t(sapply(strsplit(ranges, "-"), function(x) as.integer(x)))
     files <- files[order(ranges[, 1])]
-    ranges <- ranges[order(ranges[, 1]), ]
+    ranges <- ranges[order(ranges[, 1]), , drop = FALSE]
     ## also check - range is exact and fully spans
     return(
         list(
