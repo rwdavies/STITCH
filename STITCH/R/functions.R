@@ -4719,7 +4719,7 @@ calculate_pse <- function(
     if (test[1, 1] != truth[1, 1])
         test <- test[, c(2, 1)]
     ## calculate number of differences
-    n_bad <- sum(diff(test[,1] - truth[,1]) != 0)
+    n_bad <- sum(diff(abs(test[,1] - truth[,1])) != 0)
     return(c(n_bad / (nrow(test) - 1)))
 }
 
