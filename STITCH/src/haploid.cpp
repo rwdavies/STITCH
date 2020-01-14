@@ -150,7 +150,8 @@ void rcpp_make_eMatRead_t(
     //
     // new variables
     //
-    double pR, pA, eps, x;
+    double pR, pA, eps, x, d1;
+    double d2 = 1 / maxDifferenceBetweenReads;
     int j, k, J, readSNP, jj, iRead;
     //arma::mat eMatRead_t = arma::ones(K,nReads);
     //
@@ -195,17 +196,30 @@ void rcpp_make_eMatRead_t(
         }
         //
         // cap P(read|k) to be within maxDifferenceBetweenReads orders of magnitude
+        // also, if doing this, reset to be 1 at maximum
         //
         if (rescale_eMatRead_t) {
             x=0;
             for(k=0; k<=K-1; k++)
                 if(eMatRead_t(k,iRead)>x)
                     x=eMatRead_t(k,iRead);
-            x = x / maxDifferenceBetweenReads;
-            // x is the maximum now
-            for(k=0; k<=K-1; k++)
-                if(eMatRead_t(k,iRead)<x)
-                    eMatRead_t(k,iRead) = x;
+            if (x == 0) {
+                // e.g. with extremely long molecule, just ignore, hopefully not frequent
+                // note - could probably get around by doing this on the fly periodically
+                for(k=0; k<=K-1; k++) {                
+                    eMatRead_t(k, iRead) = 1;
+                }
+            } else {
+                // x is the maximum now
+                d1 = 1 / x;
+                // x is the maximum now
+                for(k=0; k<=K-1; k++) {
+                    eMatRead_t(k,iRead) *= d1;
+                    if(eMatRead_t(k,iRead) < d2) {
+                        eMatRead_t(k,iRead) = d2;
+                    }
+                }
+            }
         }
     }
     return;
