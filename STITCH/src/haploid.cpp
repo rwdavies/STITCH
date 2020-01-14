@@ -200,23 +200,33 @@ void rcpp_make_eMatRead_t(
         //
         if (rescale_eMatRead_t) {
             x=0;
-            for(k=0; k<=K-1; k++)
+            for(k=0; k < K; k++)
                 if(eMatRead_t(k,iRead)>x)
                     x=eMatRead_t(k,iRead);
-            if (x == 0) {
-                // e.g. with extremely long molecule, just ignore, hopefully not frequent
-                // note - could probably get around by doing this on the fly periodically
-                for(k=0; k<=K-1; k++) {                
-                    eMatRead_t(k, iRead) = 1;
-                }
+            if (run_pseudo_haploid) {
+                // original behaviour, ignore x == 0, probably unlikely
+                x = x / maxDifferenceBetweenReads;
+                // x is the maximum now
+                for(k=0; k < K; k++)
+                    if(eMatRead_t(k,iRead)<x)
+                        eMatRead_t(k,iRead) = x;
+                //
             } else {
-                // x is the maximum now
-                d1 = 1 / x;
-                // x is the maximum now
-                for(k=0; k<=K-1; k++) {
-                    eMatRead_t(k,iRead) *= d1;
-                    if(eMatRead_t(k,iRead) < d2) {
-                        eMatRead_t(k,iRead) = d2;
+                if (x == 0) {
+                    // e.g. with extremely long molecule, just ignore, hopefully not frequent
+                    // note - could probably get around by doing this on the fly periodically
+                    for(k=0; k < K; k++) {                
+                        eMatRead_t(k, iRead) = 1;
+                    }
+                } else {
+                    // x is the maximum now
+                    d1 = 1 / x;
+                    // x is the maximum now
+                    for(k=0; k < K; k++) {
+                        eMatRead_t(k,iRead) *= d1;
+                        if(eMatRead_t(k,iRead) < d2) {
+                            eMatRead_t(k,iRead) = d2;
+                        }
                     }
                 }
             }
