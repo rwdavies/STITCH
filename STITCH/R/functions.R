@@ -1009,7 +1009,7 @@ remove_buffer_from_variables <- function(
     sigmaCurrent_m <- sigmaCurrent_m[to_keep, , drop = FALSE]
     ##
     ##
-    eHapsCurrent_tc <- eHapsCurrent_tc[, inRegion2, ]
+    eHapsCurrent_tc <- eHapsCurrent_tc[, inRegion2, , drop = FALSE]
     ##
     hwe <- hwe[inRegion2]
     hweCount <- hweCount[inRegion2, , drop = FALSE]
