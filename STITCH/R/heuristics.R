@@ -702,7 +702,9 @@ plot_attempt_to_find_shuffles <- function(
     whichIsBest = NULL,
     is_reference = FALSE,
     s = 1,
-    S = 1
+    S = 1,
+    include_vertical_lines = TRUE,
+    suffix = ""
 ) {
     add_grey_background <- function(L_grid) {
         from <- floor(min(L_grid) / 1e6)
@@ -712,9 +714,9 @@ plot_attempt_to_find_shuffles <- function(
         }
     }
     if (S == 1) {
-        suffix <- ".png"
+        suffix <- paste0(suffix, ".png")
     } else {
-        suffix <- paste0(".s.", s, ".png")
+        suffix <- paste0(suffix, ".s.", s, ".png")
     }
     ##
     ## the commented out bit at the bottom assumes starting at 0
@@ -780,9 +782,11 @@ plot_attempt_to_find_shuffles <- function(
     add_grey_background(L_grid)
     lines(x = x, y = smoothed_rate, lwd = 2)
     for(iBreak in 1:nrow(break_results)) {
-        abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
-        abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
-        abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+        if (include_vertical_lines) {        
+            abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+            abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+            abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+        }
         if (is.null(whichIsBest) == FALSE) {
             col <- c("green", "red")[as.integer(whichIsBest[iBreak]) + 1] ## switch: red = no, green = yes
         } else {
@@ -801,10 +805,12 @@ plot_attempt_to_find_shuffles <- function(
     ##
     plot_fbd_store(fbd_store = fbd_store, xleft2 = xleft2, xright2 = xright2, xlim = xlim)
     ##
-    for(iBreak in 1:nrow(break_results)) {
-        abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
-        abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
-        abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+    if (include_vertical_lines) {
+        for(iBreak in 1:nrow(break_results)) {
+            abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
+            abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
+            abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
+        }
     }
     add_grey_background(L_grid)
     K <- nrow(fbd_store[[1]]$gammaK_t)
@@ -1136,7 +1142,10 @@ apply_better_switches_if_appropriate <- function(
         load(file = file_fbdStore(tempdir, regionName, iteration)) ## to load fbdStore
         for(s in 1:S) {
             if (nbreaks[s] > 0) {
-                plot_attempt_to_find_shuffles(grid_distances = grid_distances, L_grid = L_grid, fbd_store = list_of_fbd_store[[s]], tempdir = tempdir, outputdir = outputdir, regionName = regionName, iteration = iteration, whichIsBest = list_of_whichIsBest[[s]], is_reference = is_reference, s = s, S = S)
+                for(include_vertical_lines in c(TRUE)) { ## set to c(FALSE, TRUE) to get both
+                    suffix <- c("noLines", "")[as.integer(include_vertical_lines) + 1]
+                    plot_attempt_to_find_shuffles(grid_distances = grid_distances, L_grid = L_grid, fbd_store = list_of_fbd_store[[s]], tempdir = tempdir, outputdir = outputdir, regionName = regionName, iteration = iteration, whichIsBest = list_of_whichIsBest[[s]], is_reference = is_reference, s = s, S = S, suffix = suffix, include_vertical_lines = include_vertical_lines)
+                }
             }
         }
     }

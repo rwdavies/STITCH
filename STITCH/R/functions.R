@@ -1547,7 +1547,7 @@ generate_or_refactor_input <- function(
     chrStart,
     chrEnd,
     generateInputOnly,
-     nCores,
+    nCores,
     save_sampleReadsInfo
 ) {
     if (regenerateInput == TRUE) {
@@ -4130,7 +4130,7 @@ calculate_updates <- function(
     emissionThreshold, alphaMatThreshold, L,
     grid_distances, alleleCount = NA
 ) {
-
+    
     d <- dim(out2[[1]][["gammaSum0_tc"]])
     K <- d[1]
     nSNPs <- d[2]
@@ -5052,7 +5052,7 @@ print_message <- function(x, include_mem = FALSE) {
     } else {
         mem <- ""
     }
-    message(
+    print(
         paste0(
             "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", mem, x
         )
