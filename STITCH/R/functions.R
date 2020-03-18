@@ -2201,9 +2201,9 @@ shrinkReads <- function(
         }
         file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
         command1 <- paste0(
-            'cd ', shQuote(inputdir), ' && find . -name "',
+            '(cd ', shQuote(inputdir), ' && find . -name "',
             '', what, regionName, '.RData',
-                '" > ', shQuote(file_with_files_to_transfer)
+                '") > ', shQuote(file_with_files_to_transfer)
         )
         system(command1)
         command2 <- paste0(
