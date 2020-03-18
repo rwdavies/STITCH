@@ -2195,22 +2195,17 @@ shrinkReads <- function(
 
         print_message("Copying files onto tempdir")
         if (is.na(inputBundleBlockSize)) {
-            file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
-            command1 <- paste0(
-                'cd ', shQuote(inputdir), ' && find . -name "',
-                'sample.*.input.', regionName, '.RData',
-                '" > ', shQuote(file_with_files_to_transfer)
-            )
-            system(command1)
+            what <- "sample.*."
         } else {
-            file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
-            command1 <- paste0(
-                'cd ', shQuote(inputdir), ' && find . -name "',
-                'bundledSamples.*-*.', regionName, '.RData',
-                '" > ', shQuote(file_with_files_to_transfer)
-            )
-            system(command1)
+            what <- "bundledSamples.*-*."
         }
+        file_with_files_to_transfer <- file.path(tempdir, "files_to_transfer.txt")
+        command1 <- paste0(
+            'cd ', shQuote(inputdir), ' && find . -name "',
+            '', what, regionName, '.RData',
+                '" > ', shQuote(file_with_files_to_transfer)
+        )
+        system(command1)
         command2 <- paste0(
             "rsync -a --files-from=",
             shQuote(file_with_files_to_transfer),  " ",
@@ -2219,6 +2214,7 @@ shrinkReads <- function(
         )
         system(command2)
         print_message("Done copying files onto tempdir")
+        
     } else {
 
         print_message("Begin shrink reads")

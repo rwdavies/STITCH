@@ -236,6 +236,37 @@ test_that("STITCH diploid works under default parameters when outputdir has a sp
 })
 
 
+test_that("STITCH diploid works under default parameters when tempdir is relative", {
+
+    outputdir <- make_unique_tempdir()
+    setwd(tempdir())    
+    temp_folder <- "temp"
+    system(paste0("mkdir temp"))
+        
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        genfile = data_package$genfile,        
+        outputdir = outputdir,
+        K = 2,
+        nGen = 100,
+        tempdir = temp_folder
+    )
+    
+    check_output_against_phase(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        data_package,
+        output_format,
+        which_snps = NULL,
+        tol = 0.2
+    )
+    
+    unlink(outputdir, recursive = TRUE)
+
+})
+
+
 
 
 
