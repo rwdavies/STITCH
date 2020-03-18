@@ -5048,7 +5048,7 @@ print_message <- function(x, include_mem = FALSE) {
     } else {
         mem <- ""
     }
-    print(
+    message(
         paste0(
             "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", mem, x
         )
