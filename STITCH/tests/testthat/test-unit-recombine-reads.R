@@ -158,7 +158,8 @@ test_that("correctly split a bad read", {
         method = "pseudoHaploid",
         pRgivenH1_m = pRgivenH1_m,
         pRgivenH2_m = pRgivenH2_m,
-        srp = srp
+        srp = srp,
+        check_split_reads = TRUE
     )
     
     expect_equal(out$readsSplit, 1)
@@ -184,6 +185,8 @@ test_that("correctly split a bad read", {
     expect_equal(nrow(pRgivenH1_m), 4)
     expect_equal(nrow(pRgivenH2_m), 4)
     expect_equal(length(srp), 4)
+    expect_equal(srp, unlist(lapply(sampleReads,function(x) x[[2]])))
+    
     if (length(RNGkind()) > 2 && RNGkind()[3] == "Rejection") {
         new_read_2[[2]] <- 3
         ## >= 3.6.0
@@ -261,7 +264,8 @@ test_that("correctly split a bad read with grid mode", {
         sampleReads = sampleReads,
         tempdir = tempdir,
         regionName = regionName,
-        grid = grid
+        grid = grid,
+        check_split_reads = TRUE
     )
     
     expect_equal(out$readsSplit, 1)

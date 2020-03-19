@@ -1204,7 +1204,7 @@ findRecombinedReadsPerSample <- function(
             sampleReads <- out$sampleReads
             pRgivenH1_m <- out$pRgivenH1_m
             pRgivenH2_m <- out$pRgivenH2_m
-            srp <- srp
+            srp <- out$srp
             count <- count + as.integer(out$did_split)
         } # end of loop on reads
         new_order <- order(unlist(lapply(sampleReads,function(x) x[[2]])))        
@@ -1314,10 +1314,10 @@ split_a_read <- function(
         if (method == "pseudoHaploid") {
             pRgivenH1_m[read_to_split, ] <- runif(ncol(pRgivenH1_m))
             pRgivenH2_m[read_to_split, ] <- runif(ncol(pRgivenH2_m))
-            srp[read_to_split] <- sampleReads[[read_to_split]][[2]]
+            srp[read_to_split] <- new_read_1[[2]]
             pRgivenH1_m <- rbind(pRgivenH1_m, runif(ncol(pRgivenH1_m)))
             pRgivenH2_m <- rbind(pRgivenH2_m, runif(ncol(pRgivenH2_m)))
-            srp <- c(srp, sampleReads[[length(sampleReads)]][[2]])
+            srp <- c(srp, new_read_2[[2]])
         }        
     }
 
