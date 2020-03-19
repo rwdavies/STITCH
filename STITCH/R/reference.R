@@ -1071,8 +1071,18 @@ sample_haps_to_use <- function(
     }
     
     if (nRefSNPs > max_snps) {
+        
         ## make weight proportional to allele frequency, i.e. sample more frequent
         a <- ref_alleleCount_at_L[, 3]
+        ## this can error, but I am uncertain how, as it is fairly well tested
+        ## make it throw a better error if it does
+        if (sum(is.na(a)) > 0) {
+            print_message("BEGIN ERROR REPORTING")
+            print_message(paste0("There are ", sum(is.na(a)), " NA reference frequency values out of ", length(a), " SNPs"))
+            print_message(paste0("Here is the first one, occuring in row ", which.max(is.na(a))))
+            print(ref_alleleCount_at_L[which.max(is.na(a)), ])
+            stop("There was an error with sample_haps_to_use. At least one allele frequency for a reference SNP is NA when it should be a 0-1 double. Please report this and the message above")
+        }
         a[a > 0.5] <- 1 - a[a > 0.5]
         prob <- a / sum(a)
         prob[is.na(prob)] <- 0
