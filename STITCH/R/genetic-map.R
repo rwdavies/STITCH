@@ -85,7 +85,7 @@ validate_genetic_map <- function(genetic_map, verbose = TRUE) {
     }
     ## 
     check_col_3 <- fill_in_genetic_map_cm_column(genetic_map)[, 3]
-    x <- (genetic_map[, 3] - check_col_3) > 1e-8
+    x <- (genetic_map[, 3] - check_col_3) > 1e-6
     if (sum(x) > 0) {
         if (verbose) {
             print(genetic_map[c(max(1, x - 1):min(x + 1, nrow(genetic_map))) , ])
