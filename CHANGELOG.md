@@ -1,3 +1,5 @@
+* v1.6.3
+	* Misc minor bug fixes
 * v1.6.2
 	* Change internal haplotype format (rhb)
 	* Speed up reference haplotype file loading from disk
