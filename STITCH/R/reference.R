@@ -1125,8 +1125,8 @@ sample_haps_to_use <- function(
         ls <- out$values[1:eigen_cols_to_keep]
         ds <- diag(ls)
         ds_inv <- diag(1 / ls)
-        ## 
-        keep_samples <- sort(sample(1:N_haps, size = max_haps_to_project, replace = FALSE))
+        ## next line - if many SNPs have been provided with AF 0, this could break. this fixes it
+        keep_snps <- sort(sample(1:nRefSNPs, size = min(sum(prob > 0), max_snps), replace = FALSE, prob = prob))
         print_message("Perform projection")
         h_all <- inflate_fhb(rhb, haps_to_get = keep_samples - 1, nSNPs = nRefSNPs)
         if (!is.na(keep_snps[1])) {
