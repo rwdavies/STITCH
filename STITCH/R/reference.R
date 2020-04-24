@@ -1069,7 +1069,7 @@ sample_haps_to_use <- function(
     if (max_haps_to_project < K) {
         max_haps_to_project <- K
     }
-    
+
     if (nRefSNPs > max_snps) {
         
         ## make weight proportional to allele frequency, i.e. sample more frequent
@@ -1089,6 +1089,7 @@ sample_haps_to_use <- function(
         keep_snps <- sort(sample(1:nRefSNPs, size = max_snps, replace = FALSE, prob = prob))
     } else {
         keep_snps <- NA
+        prob <- rep(1 / nRefSNPs, nRefSNPs)
     }
     ##
     if (N_haps > max_haps_to_build) {
