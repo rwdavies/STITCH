@@ -1086,7 +1086,7 @@ sample_haps_to_use <- function(
         a[a > 0.5] <- 1 - a[a > 0.5]
         prob <- a / sum(a)
         prob[is.na(prob)] <- 0
-        keep_snps <- sort(sample(1:nRefSNPs, size = max_snps, replace = FALSE, prob = prob))
+        keep_snps <- sort(sample(1:nRefSNPs, size = min(sum(prob > 0), max_snps), replace = FALSE, prob = prob))
     } else {
         keep_snps <- NA
         prob <- rep(1 / nRefSNPs, nRefSNPs)
