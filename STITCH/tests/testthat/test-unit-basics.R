@@ -111,3 +111,19 @@ test_that("can validate method", {
     expect_equal(validate_method("diploid-inbred"), NULL)
     expect_error(validate_method("haploid"))
 })
+
+test_that("can validate K", {
+    
+    expect_null(validate_K(1))
+    expect_null(validate_K(10))
+    expect_null(validate_K(100))
+    
+    expect_error(validate_K(0))
+    expect_error(validate_K(0.5))
+    expect_error(validate_K(4.2))
+    expect_error(validate_K(-10))
+    expect_error(validate_K("10"))
+    expect_error(validate_K("word"))
+    
+
+})

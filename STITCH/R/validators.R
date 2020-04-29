@@ -433,6 +433,9 @@ validate_K <- function(K) {
     if (round(K) != K) {
         stop(paste0("K must be an integer but you have selected K=", K))
     }
+    if (K <= 0) {
+       stop(paste0("K must be greater than 0 but you have selected K=", K))
+    }
     return(NULL)
 }
 
