@@ -212,7 +212,9 @@ void rcpp_make_eMatRead_t(
                         eMatRead_t(k,iRead) = x;
                 //
             } else {
-                if (x == 0) {
+                // of course I hit an error where x was defined but d1 was not for a read with x as 4.51168e-311
+                d1 = 1 / x;
+                if ((x == R_NaN) | (x == R_PosInf) | (x == R_NegInf) | (x == 0) | (d1 == R_PosInf) | (d1 == R_NegInf) | (d1 == R_NaN)) {
                     // e.g. with extremely long molecule, just ignore, hopefully not frequent
                     // note - could probably get around by doing this on the fly periodically
                     for(k=0; k < K; k++) {                
@@ -220,7 +222,6 @@ void rcpp_make_eMatRead_t(
                     }
                 } else {
                     // x is the maximum now
-                    d1 = 1 / x;
                     // x is the maximum now
                     for(k=0; k < K; k++) {
                         eMatRead_t(k,iRead) *= d1;
