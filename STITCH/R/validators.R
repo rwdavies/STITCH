@@ -24,7 +24,7 @@ validate_output_format <- function(output_format) {
     return(NULL)
 }
 
-
+#' @export
 validate_output_filename <- function(
     output_filename,
     output_format
@@ -392,6 +392,7 @@ validate_nCores <- function(nCores) {
         stop("nCores must be an integer")
 }
 
+#' @export
 validate_nGen <- function(nGen) {
     nGen_error <- paste0(
         "Please specify nGen, the estimate of the number of generations ",

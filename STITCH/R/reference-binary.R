@@ -28,6 +28,7 @@ int_contract <- function(hap, check = TRUE) {
 }
 
 
+#' @export
 int_expand <- function(hapc, nSNPs = NULL) {
     nbSNPs <- length(hapc)    
     if (is.null(nSNPs)) {
@@ -44,6 +45,7 @@ int_expand <- function(hapc, nSNPs = NULL) {
     return(hap)
 }
 
+#' @export
 make_rhb_t_from_rhi_t <- function(rhi_t) {
     K <- nrow(rhi_t)
     nSNPs <- ncol(rhi_t)

@@ -9,6 +9,7 @@
 ##    smoothed_rate_cM = NULL,
 ##    desired_gridWindowSize = NULL
 
+#' @export
 assign_positions_to_grid <- function(
     L,
     gridWindowSize,

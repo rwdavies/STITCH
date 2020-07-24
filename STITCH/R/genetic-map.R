@@ -1,3 +1,4 @@
+#' @export
 load_validate_and_match_genetic_map <- function(
     genetic_map_file,
     L,
@@ -95,6 +96,7 @@ validate_genetic_map <- function(genetic_map, verbose = TRUE) {
     return(NULL)
 }
 
+#' @export
 get_and_validate_genetic_map <- function(genetic_map_file) {
     ## 
     genetic_map <- read.table(genetic_map_file, header = TRUE)
@@ -161,6 +163,7 @@ fill_in_middle_cM <- function(cM, joint_L) {
 }
 
 
+#' @export
 match_genetic_map_to_L <- function(genetic_map, L, expRate = 0.5) {
     ## create joint set of variants in genetic map
     ## then fill in

@@ -213,6 +213,8 @@ get_and_initialize_from_reference <- function(
 
 
 ## central function controlling the loading of reference haplotypes
+
+#' @export
 get_haplotypes_from_reference <- function(
     reference_haplotype_file,
     reference_legend_file,

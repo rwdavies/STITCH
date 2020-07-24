@@ -97,8 +97,8 @@ make_gammaEK_t_from_gammaK_t <- function(gammaK_t, K, grid, snp_start_1_based, s
 }
 
 #' @export
-Rcpp_run_forward_haploid <- function(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart = 0L, run_fb_subset = FALSE) {
-    invisible(.Call('_STITCH_Rcpp_run_forward_haploid', PACKAGE = 'STITCH', alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset))
+Rcpp_run_forward_haploid <- function(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart = 0L, run_fb_subset = FALSE, initialize_only = FALSE) {
+    invisible(.Call('_STITCH_Rcpp_run_forward_haploid', PACKAGE = 'STITCH', alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset, initialize_only))
 }
 
 #' @export
@@ -179,6 +179,11 @@ calc_dist_between_rhb_t_and_hap <- function(rhb_t, hap, nSNPs) {
 #' @export
 inflate_fhb_t <- function(rhb_t, haps_to_get, nSNPs) {
     .Call('_STITCH_inflate_fhb_t', PACKAGE = 'STITCH', rhb_t, haps_to_get, nSNPs)
+}
+
+#' @export
+inflate_fhb_t_in_place <- function(rhb_t, rhi_t_subset, haps_to_get, nSNPs, ref_error) {
+    invisible(.Call('_STITCH_inflate_fhb_t_in_place', PACKAGE = 'STITCH', rhb_t, rhi_t_subset, haps_to_get, nSNPs, ref_error))
 }
 
 #' @export

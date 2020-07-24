@@ -59,7 +59,8 @@ void Rcpp_run_forward_haploid(
     const arma::mat& priorCurrent_m,
     const int s,
     const Rcpp::NumericVector alphaStart = 0,
-    bool run_fb_subset = false
+    bool run_fb_subset = false,
+    const bool initialize_only = false    
 ) {
     const int K = alphaMatCurrent_tc.n_rows;
     const int nGrids = alphaMatCurrent_tc.n_cols + 1;    
@@ -78,6 +79,9 @@ void Rcpp_run_forward_haploid(
     }
     c(0) = 1 / sum(alphaHat_t.col(0));
     alphaHat_t.col(0) = alphaHat_t.col(0) * c(0);
+    if (initialize_only) {
+        return;
+    }
     //
     //
     for(int iGrid = 1; iGrid < nGrids; iGrid++) {

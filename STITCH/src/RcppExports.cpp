@@ -335,8 +335,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // Rcpp_run_forward_haploid
-void Rcpp_run_forward_haploid(arma::mat& alphaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_H, const arma::mat& priorCurrent_m, const int s, const Rcpp::NumericVector alphaStart, bool run_fb_subset);
-RcppExport SEXP _STITCH_Rcpp_run_forward_haploid(SEXP alphaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP priorCurrent_mSEXP, SEXP sSEXP, SEXP alphaStartSEXP, SEXP run_fb_subsetSEXP) {
+void Rcpp_run_forward_haploid(arma::mat& alphaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrent_tc, const arma::cube& transMatRate_tc_H, const arma::mat& priorCurrent_m, const int s, const Rcpp::NumericVector alphaStart, bool run_fb_subset, const bool initialize_only);
+RcppExport SEXP _STITCH_Rcpp_run_forward_haploid(SEXP alphaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP priorCurrent_mSEXP, SEXP sSEXP, SEXP alphaStartSEXP, SEXP run_fb_subsetSEXP, SEXP initialize_onlySEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat& >::type alphaHat_t(alphaHat_tSEXP);
@@ -348,7 +348,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type s(sSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type alphaStart(alphaStartSEXP);
     Rcpp::traits::input_parameter< bool >::type run_fb_subset(run_fb_subsetSEXP);
-    Rcpp_run_forward_haploid(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset);
+    Rcpp::traits::input_parameter< const bool >::type initialize_only(initialize_onlySEXP);
+    Rcpp_run_forward_haploid(alphaHat_t, c, eMatGrid_t, alphaMatCurrent_tc, transMatRate_tc_H, priorCurrent_m, s, alphaStart, run_fb_subset, initialize_only);
     return R_NilValue;
 END_RCPP
 }
@@ -652,6 +653,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// inflate_fhb_t_in_place
+void inflate_fhb_t_in_place(arma::imat& rhb_t, arma::cube& rhi_t_subset, Rcpp::IntegerVector& haps_to_get, const int nSNPs, const double ref_error);
+RcppExport SEXP _STITCH_inflate_fhb_t_in_place(SEXP rhb_tSEXP, SEXP rhi_t_subsetSEXP, SEXP haps_to_getSEXP, SEXP nSNPsSEXP, SEXP ref_errorSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::imat& >::type rhb_t(rhb_tSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type rhi_t_subset(rhi_t_subsetSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
+    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< const double >::type ref_error(ref_errorSEXP);
+    inflate_fhb_t_in_place(rhb_t, rhi_t_subset, haps_to_get, nSNPs, ref_error);
+    return R_NilValue;
+END_RCPP
+}
 // inflate_fhb
 arma::imat inflate_fhb(arma::imat& rhb, Rcpp::IntegerVector& haps_to_get, const int nSNPs);
 RcppExport SEXP _STITCH_inflate_fhb(SEXP rhbSEXP, SEXP haps_to_getSEXP, SEXP nSNPsSEXP) {
@@ -903,7 +918,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
     {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 11},
     {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 10},
-    {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 9},
+    {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
     {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 6},
     {"_STITCH_rcpp_make_eMatRead_t", (DL_FUNC) &_STITCH_rcpp_make_eMatRead_t, 15},
     {"_STITCH_rcpp_make_eMatGrid_t", (DL_FUNC) &_STITCH_rcpp_make_eMatGrid_t, 15},
@@ -920,6 +935,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_int_contract", (DL_FUNC) &_STITCH_rcpp_int_contract, 1},
     {"_STITCH_calc_dist_between_rhb_t_and_hap", (DL_FUNC) &_STITCH_calc_dist_between_rhb_t_and_hap, 3},
     {"_STITCH_inflate_fhb_t", (DL_FUNC) &_STITCH_inflate_fhb_t, 3},
+    {"_STITCH_inflate_fhb_t_in_place", (DL_FUNC) &_STITCH_inflate_fhb_t_in_place, 5},
     {"_STITCH_inflate_fhb", (DL_FUNC) &_STITCH_inflate_fhb, 3},
     {"_STITCH_Rcpp_ref_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_forward_haploid, 7},
     {"_STITCH_Rcpp_ref_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_backward_haploid, 7},

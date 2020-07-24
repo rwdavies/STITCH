@@ -2002,6 +2002,8 @@ get_chromosome_length <- function(iBam, bam_files, cram_files, chr) {
 ## converts a BAM file for one subject
 ## into sampleReads, saved into
 ## file_sampleReads(inputdir, iBam, regionName)
+
+#' @export
 loadBamAndConvert <- function(
     iBam,
     L,
@@ -2720,6 +2722,8 @@ getOutputBlockRange <- function(
 
 ## basically, replicate how I mclapply
 ## used to be manual, not basically uses cut and reformats
+
+#' @export
 getSampleRange <- function(
     N,
     nCores
@@ -3752,7 +3756,7 @@ subset_of_complete_iteration <- function(
 
 
 
-
+#' @export
 get_transMatRate_m <- function(method, sigmaCurrent_m) {
     S <- ncol(sigmaCurrent_m)
     if (method == "diploid") {
@@ -5066,6 +5070,7 @@ get_reads_at_SNP <- function(sampleReads, nSNPs) {
 }
 
 
+#' @export
 snap_sampleReads_to_grid <- function(sampleReads, grid) {
     sampleReads <- lapply(sampleReads, function(sampleRead) {
         sampleRead[[2]] <- grid[sampleRead[[2]] + 1]

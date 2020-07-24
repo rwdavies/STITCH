@@ -719,6 +719,7 @@ make_reference_package <- function(
 ##154753 1.13654510133156 0.00525858634803186
 ##168567 1.58657526542862 0.0209588203778261
 
+#' @export
 make_genetic_map_file <- function(L, n_snps, expRate = 0.5) {
     if (is.na(L[1])) {
         L <- 1:n_snps
@@ -946,4 +947,5 @@ random_R_version_checker <- function() {
         }
     }
 }
+
 

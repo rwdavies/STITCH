@@ -224,6 +224,46 @@ arma::imat inflate_fhb_t(
 
 //' @export
 // [[Rcpp::export]]
+void inflate_fhb_t_in_place(
+    arma::imat& rhb_t,
+    arma::cube& rhi_t_subset,
+    Rcpp::IntegerVector& haps_to_get,
+    const int nSNPs,
+    const double ref_error
+) {
+    const int K = rhb_t.n_rows;
+    const int nbSNPs = rhb_t.n_cols;
+    double one_minus_ref_error = 1 - ref_error;    
+    // i think this function might work without kmax
+    // but probably safer / simpler to keep it in
+    int imax;
+    int n_haps_to_get = haps_to_get.size();    
+    //arma::imat rhi_t_subset(n_haps_to_get, nSNPs);
+    // outer loop is on bs / "SNPs"
+    for(int bs = 0; bs < nbSNPs; bs++) {
+	if (bs < (nbSNPs - 1)) {
+	  imax = 32;
+	} else {
+	  // final one!
+	  imax = nSNPs - 32 * bs;
+	}
+	for(int ik = 0; ik < n_haps_to_get; ik++) {
+  	    int k = haps_to_get(ik);
+	    std::uint32_t tmp(rhb_t(k, bs));
+	    for (int i = 0; i < imax; i++, tmp >>= 1) {
+                if ((tmp & 0x1) == 0) {
+                    rhi_t_subset(ik, 32 * bs + i, 0) = ref_error;
+                } else {
+                    rhi_t_subset(ik, 32 * bs + i, 0) = one_minus_ref_error;
+                }
+	    }
+	}
+    }
+    return;
+}
+
+//' @export
+// [[Rcpp::export]]
 arma::imat inflate_fhb(
     arma::imat& rhb,
     Rcpp::IntegerVector& haps_to_get,
