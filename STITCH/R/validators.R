@@ -603,7 +603,7 @@ validate_inputBundleBlockSize <- function(inputBundleBlockSize, readAware) {
 
 
 
-
+#' @export
 validate_reference_files <- function(reference_haplotype_file, reference_legend_file, reference_sample_file, reference_populations, niterations) {
     if (reference_haplotype_file == "" &
         reference_legend_file != "")
