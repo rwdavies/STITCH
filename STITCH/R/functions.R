@@ -923,13 +923,13 @@ initialize_chrStart_and_chrEnd <- function(chrStart, chrEnd, L, iSizeUpperLimit)
 }
 
 
-## throw an error if dependencies are not installed
-check_program_dependency <- function(program) {
+#' @export
+check_program_dependency <- function(program, my_program = "STITCH") {
     check <- Sys.which(program)
     if (check == "")
         stop(paste0(
             "The program ", program, " is not available in the PATH. ",
-            "STITCH requires ", program, " to function. ",
+            my_program, " requires ", program, " to function. ",
             "Please make ", program, " available from the PATH"
         ))
     return(NULL)
@@ -3776,6 +3776,7 @@ get_transMatRate_m <- function(method, sigmaCurrent_m) {
     return(transMatRate_tc)
 }
 
+
 check_mclapply_OK <- function(out, stop_message = "An error occured during STITCH. The first such error is above") {
     te <- sapply(out, class) == "try-error"
     if (sum(te) > 0) {
@@ -4554,6 +4555,7 @@ calculate_hwe_p <- function(x) {
 
 
 
+#' @export
 generate_hwe_on_counts <- function(
     hweCount,
     nSNPs,

@@ -472,6 +472,7 @@ check_output_against_phase <- function(
     return(NULL)
 }
 
+#' @export
 check_vcf_info_scores <- function(vcf, min_info = 0.98) {
     info_scores <- sapply(1:nrow(vcf), function(i_snp) {
         x <- strsplit(vcf[i_snp, 8], ";")[[1]]

@@ -828,6 +828,8 @@ make_column_of_vcf_from_pl_and_rd <- function(
 
 
 ## now works on transpose, i.e. 3 x nSNPs, find max id per-col
+
+#' @export
 get_max_gen_rapid <- function(x) {
     ## assume matrix 3 columns >1 row
     z <- rep(1, ncol(x))
@@ -942,7 +944,16 @@ make_var_info <- function(pos, start_and_end_minus_buffer) {
     return(var_info)
 }
 
-make_and_write_vcf_header <- function(output_vcf_header, annot_header, method, sampleNames, output_haplotype_dosages, K) {
+
+
+make_and_write_vcf_header <- function(
+    output_vcf_header,
+    annot_header,
+    method,
+    sampleNames,
+    output_haplotype_dosages,
+    K
+) {
     header <- paste0(
         '##fileformat=VCFv4.0\n',
         annot_header,        
