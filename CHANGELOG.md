@@ -1,3 +1,5 @@
+* v1.6.4
+	* Export more functions for library use
 * v1.6.3
 	* Misc minor bug fixes
 * v1.6.2
