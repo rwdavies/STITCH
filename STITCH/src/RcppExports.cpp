@@ -69,8 +69,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_sampleReadsRaw_from_SeqLib
-Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, const std::vector<std::string>& ref, const std::vector<std::string>& alt, const int nSNPs, const std::vector<int>& L, std::string region, std::string file_name, std::string reference, const bool save_sampleReadsInfo);
-RcppExport SEXP _STITCH_get_sampleReadsRaw_from_SeqLib(SEXP useSoftClippedBasesSEXP, SEXP bqFilterSEXP, SEXP iSizeUpperLimitSEXP, SEXP refSEXP, SEXP altSEXP, SEXP nSNPsSEXP, SEXP LSEXP, SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP, SEXP save_sampleReadsInfoSEXP) {
+Rcpp::List get_sampleReadsRaw_from_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, const std::vector<std::string>& ref, const std::vector<std::string>& alt, const int nSNPs, const std::vector<int>& L, std::string region, std::string file_name, std::string reference, const bool save_sampleReadsInfo, const bool use_bx_tag);
+RcppExport SEXP _STITCH_get_sampleReadsRaw_from_SeqLib(SEXP useSoftClippedBasesSEXP, SEXP bqFilterSEXP, SEXP iSizeUpperLimitSEXP, SEXP refSEXP, SEXP altSEXP, SEXP nSNPsSEXP, SEXP LSEXP, SEXP regionSEXP, SEXP file_nameSEXP, SEXP referenceSEXP, SEXP save_sampleReadsInfoSEXP, SEXP use_bx_tagSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -85,7 +85,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type file_name(file_nameSEXP);
     Rcpp::traits::input_parameter< std::string >::type reference(referenceSEXP);
     Rcpp::traits::input_parameter< const bool >::type save_sampleReadsInfo(save_sampleReadsInfoSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_sampleReadsRaw_from_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference, save_sampleReadsInfo));
+    Rcpp::traits::input_parameter< const bool >::type use_bx_tag(use_bx_tagSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_sampleReadsRaw_from_SeqLib(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference, save_sampleReadsInfo, use_bx_tag));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -293,15 +294,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_evaluate_bxtag
+Rcpp::LogicalVector rcpp_evaluate_bxtag(const arma::ivec& qnameInteger_ord, Rcpp::CharacterVector& bxtag_ord);
+RcppExport SEXP _STITCH_rcpp_evaluate_bxtag(SEXP qnameInteger_ordSEXP, SEXP bxtag_ordSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::ivec& >::type qnameInteger_ord(qnameInteger_ordSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector& >::type bxtag_ord(bxtag_ordSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_evaluate_bxtag(qnameInteger_ord, bxtag_ord));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_read_reassign
-List cpp_read_reassign(const arma::ivec& ord, const arma::ivec& qnameInteger_ord, const Rcpp::CharacterVector& qname, const Rcpp::CharacterVector& strand, const Rcpp::List& sampleReadsRaw, const arma::ivec& readStart_ord, const arma::ivec& readEnd_ord, const arma::ivec& readStart, const arma::ivec& readEnd, int iSizeUpperLimit, bool save_sampleReadsInfo);
-RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP qnameSEXP, SEXP strandSEXP, SEXP sampleReadsRawSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP iSizeUpperLimitSEXP, SEXP save_sampleReadsInfoSEXP) {
+List cpp_read_reassign(const arma::ivec& ord, const arma::ivec& qnameInteger_ord, const arma::ivec& bxtagInteger_ord, const Rcpp::LogicalVector& bxtag_bad_ord, const Rcpp::CharacterVector& qname, const Rcpp::CharacterVector& bxtag, const Rcpp::CharacterVector& strand, const Rcpp::List& sampleReadsRaw, const arma::ivec& readStart_ord, const arma::ivec& readEnd_ord, const arma::ivec& readStart, const arma::ivec& readEnd, int iSizeUpperLimit, int bxTagUpperLimit, bool use_bx_tag, bool save_sampleReadsInfo);
+RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP bxtagInteger_ordSEXP, SEXP bxtag_bad_ordSEXP, SEXP qnameSEXP, SEXP bxtagSEXP, SEXP strandSEXP, SEXP sampleReadsRawSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP iSizeUpperLimitSEXP, SEXP bxTagUpperLimitSEXP, SEXP use_bx_tagSEXP, SEXP save_sampleReadsInfoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::ivec& >::type ord(ordSEXP);
     Rcpp::traits::input_parameter< const arma::ivec& >::type qnameInteger_ord(qnameInteger_ordSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type bxtagInteger_ord(bxtagInteger_ordSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type bxtag_bad_ord(bxtag_bad_ordSEXP);
     Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type qname(qnameSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type bxtag(bxtagSEXP);
     Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type strand(strandSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sampleReadsRaw(sampleReadsRawSEXP);
     Rcpp::traits::input_parameter< const arma::ivec& >::type readStart_ord(readStart_ordSEXP);
@@ -309,8 +325,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::ivec& >::type readStart(readStartSEXP);
     Rcpp::traits::input_parameter< const arma::ivec& >::type readEnd(readEndSEXP);
     Rcpp::traits::input_parameter< int >::type iSizeUpperLimit(iSizeUpperLimitSEXP);
+    Rcpp::traits::input_parameter< int >::type bxTagUpperLimit(bxTagUpperLimitSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_bx_tag(use_bx_tagSEXP);
     Rcpp::traits::input_parameter< bool >::type save_sampleReadsInfo(save_sampleReadsInfoSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, qname, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, save_sampleReadsInfo));
+    rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -904,7 +922,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_cpp_cigar_split_many", (DL_FUNC) &_STITCH_cpp_cigar_split_many, 1},
     {"_STITCH_cpp_deal_with_soft_clipped_bases", (DL_FUNC) &_STITCH_cpp_deal_with_soft_clipped_bases, 5},
     {"_STITCH_get_sample_data_from_SeqLib", (DL_FUNC) &_STITCH_get_sample_data_from_SeqLib, 3},
-    {"_STITCH_get_sampleReadsRaw_from_SeqLib", (DL_FUNC) &_STITCH_get_sampleReadsRaw_from_SeqLib, 11},
+    {"_STITCH_get_sampleReadsRaw_from_SeqLib", (DL_FUNC) &_STITCH_get_sampleReadsRaw_from_SeqLib, 12},
     {"_STITCH_collapse_diploid_gamma", (DL_FUNC) &_STITCH_collapse_diploid_gamma, 6},
     {"_STITCH_rcpp_make_and_bound_eMatGrid_diploid_t", (DL_FUNC) &_STITCH_rcpp_make_and_bound_eMatGrid_diploid_t, 10},
     {"_STITCH_sample_diploid_path", (DL_FUNC) &_STITCH_sample_diploid_path, 7},
@@ -916,7 +934,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_min_from_position", (DL_FUNC) &_STITCH_get_min_from_position, 5},
     {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
-    {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 11},
+    {"_STITCH_rcpp_evaluate_bxtag", (DL_FUNC) &_STITCH_rcpp_evaluate_bxtag, 2},
+    {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 16},
     {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 10},
     {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
     {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 6},

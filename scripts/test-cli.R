@@ -34,7 +34,9 @@ if (cli_function_build != "") {
 cli_output_file <- "STITCH.R"
 make_STITCH_cli(
     function_file = function_file,
-    cli_output_file = cli_output_file
+    cli_output_file = cli_output_file,
+    other_logical_params = "use_bx_tag",
+    other_integer_params = "bxTagUpperLimit"
 )
 system(paste0("chmod +x ", cli_output_file))
 

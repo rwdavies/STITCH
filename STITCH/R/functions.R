@@ -75,6 +75,8 @@
 #' @param keepSampleReadsInRAM Whether to (generally) keep sampleReads in RAM or store them in the temporary directory. STITCH is substantially faster if this is FALSE at the expense of RAM
 #' @param useTempdirWhileWriting Whether to use temporary directory while writing output file (TRUE), or to keep result in RAM (FALSE). Using temporary directory is slower but uses less RAM
 #' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
+#' @param use_bx_tag Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule
+#' @param bxTagUpperLimit When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -155,7 +157,9 @@ STITCH <- function(
     shuffle_bin_radius = 5000,
     keepSampleReadsInRAM = FALSE,
     useTempdirWhileWriting = FALSE,
-    output_haplotype_dosages = FALSE
+    output_haplotype_dosages = FALSE,
+    use_bx_tag = TRUE,
+    bxTagUpperLimit = 50000
 ) {
 
     ## capture command line
@@ -369,7 +373,7 @@ STITCH <- function(
     ##
     ## either generate the data, or load it from before
     ##
-    generate_or_refactor_input(regenerateInput = regenerateInput, bundling_info = bundling_info, L = L, pos = pos, nSNPs = nSNPs, bam_files = bam_files, cram_files = cram_files, reference = reference, iSizeUpperLimit = iSizeUpperLimit, bqFilter = bqFilter, chr = chr, outputdir = outputdir, N = N, downsampleToCov = downsampleToCov, sampleNames = sampleNames, inputdir = inputdir, useSoftClippedBases = useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, generateInputOnly = generateInputOnly, nCores = nCores, save_sampleReadsInfo = save_sampleReadsInfo)
+    generate_or_refactor_input(regenerateInput = regenerateInput, bundling_info = bundling_info, L = L, pos = pos, nSNPs = nSNPs, bam_files = bam_files, cram_files = cram_files, reference = reference, iSizeUpperLimit = iSizeUpperLimit, bqFilter = bqFilter, chr = chr, outputdir = outputdir, N = N, downsampleToCov = downsampleToCov, sampleNames = sampleNames, inputdir = inputdir, useSoftClippedBases = useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, generateInputOnly = generateInputOnly, nCores = nCores, save_sampleReadsInfo = save_sampleReadsInfo, use_bx_tag = use_bx_tag, bxTagUpperLimit = bxTagUpperLimit)
     ## if only generating input data, we are done
     if (generateInputOnly)
         return(NULL)
@@ -1548,11 +1552,13 @@ generate_or_refactor_input <- function(
     chrEnd,
     generateInputOnly,
     nCores,
-    save_sampleReadsInfo
+    save_sampleReadsInfo,
+    use_bx_tag,
+    bxTagUpperLimit
 ) {
     if (regenerateInput == TRUE) {
         ## handles both bundled and unbundled inputs
-        out <- generate_input(bundling_info = bundling_info, L = L, pos = pos, nSNPs = nSNPs, bam_files = bam_files, cram_files = cram_files, reference = reference, iSizeUpperLimit = iSizeUpperLimit, bqFilter = bqFilter, chr = chr, N = N, downsampleToCov = downsampleToCov, sampleNames = sampleNames, inputdir = inputdir, useSoftClippedBases = useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, nCores = nCores, save_sampleReadsInfo = save_sampleReadsInfo)
+        out <- generate_input(bundling_info = bundling_info, L = L, pos = pos, nSNPs = nSNPs, bam_files = bam_files, cram_files = cram_files, reference = reference, iSizeUpperLimit = iSizeUpperLimit, bqFilter = bqFilter, chr = chr, N = N, downsampleToCov = downsampleToCov, sampleNames = sampleNames, inputdir = inputdir, useSoftClippedBases = useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, nCores = nCores, save_sampleReadsInfo = save_sampleReadsInfo, use_bx_tag = use_bx_tag, bxTagUpperLimit = bxTagUpperLimit)
         if(generateInputOnly==TRUE) {
             save(
                 pos,
@@ -1592,27 +1598,29 @@ generate_or_refactor_input <- function(
 ## decide whether it is on a server or a cluster
 ## that's it!
 generate_input <- function(
-  bundling_info,
-  L,
-  pos,
-  nSNPs,
-  bam_files,
-  cram_files,
-  reference,
-  iSizeUpperLimit,
-  bqFilter,
-  chr,
-  N,
-  downsampleToCov,
-  sampleNames,
-  inputdir,
-  useSoftClippedBases,
-  regionName,
-  tempdir,
-  chrStart,
-  chrEnd,
-  nCores,
-  save_sampleReadsInfo
+    bundling_info,
+    L,
+    pos,
+    nSNPs,
+    bam_files,
+    cram_files,
+    reference,
+    iSizeUpperLimit,
+    bqFilter,
+    chr,
+    N,
+    downsampleToCov,
+    sampleNames,
+    inputdir,
+    useSoftClippedBases,
+    regionName,
+    tempdir,
+    chrStart,
+    chrEnd,
+    nCores,
+    save_sampleReadsInfo,
+    use_bx_tag,
+    bxTagUpperLimit
 ) {
     print_message("Generate inputs")
     chrLength <- NA
@@ -1621,44 +1629,47 @@ generate_input <- function(
         chrLength <- get_chromosome_length(iBam = 1, bam_files, cram_files, chr)
     }
     sampleRanges <- getSampleRange(N = N, nCores = nCores)
-    out <- mclapply(1:length(sampleRanges), mc.cores=nCores, FUN=loadBamAndConvert_across_a_range,sampleRanges = sampleRanges,bundling_info=bundling_info,L=L,pos=pos, nSNPs = nSNPs,bam_files = bam_files,cram_files = cram_files,reference=reference,iSizeUpperLimit=iSizeUpperLimit,bqFilter=bqFilter,chr=chr,N=N,downsampleToCov=downsampleToCov,sampleNames=sampleNames,inputdir=inputdir,useSoftClippedBases=useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, chrLength = chrLength, save_sampleReadsInfo = save_sampleReadsInfo)
+    out <- mclapply(1:length(sampleRanges), mc.cores=nCores, FUN=loadBamAndConvert_across_a_range,sampleRanges = sampleRanges,bundling_info=bundling_info,L=L,pos=pos, nSNPs = nSNPs,bam_files = bam_files,cram_files = cram_files,reference=reference,iSizeUpperLimit=iSizeUpperLimit,bqFilter=bqFilter,chr=chr,N=N,downsampleToCov=downsampleToCov,sampleNames=sampleNames,inputdir=inputdir,useSoftClippedBases=useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, chrLength = chrLength, save_sampleReadsInfo = save_sampleReadsInfo, use_bx_tag = use_bx_tag, bxTagUpperLimit = bxTagUpperLimit)
     check_mclapply_OK("There has been an error generating the input. Please see error message above")
     print_message("Done generating inputs")
     return(NULL)
 }
 
 
-# loadBams over a range
-# if appropriate, dump to disk
+## loadBams over a range
+## if appropriate, dump to disk
 loadBamAndConvert_across_a_range <- function(
-  iCore,
-  sampleRanges,
-  bundling_info,
-  L,
-  pos,
-  nSNPs,
-  bam_files,
-  cram_files,
-  reference,
-  iSizeUpperLimit,
-  bqFilter,
-  chr,
-  N,
-  downsampleToCov,
-  sampleNames,
-  inputdir,
-  useSoftClippedBases,
-  regionName,
-  tempdir,
-  chrStart,
-  chrEnd,
-  chrLength,
-  save_sampleReadsInfo
+    iCore,
+    sampleRanges,
+    bundling_info,
+    L,
+    pos,
+    nSNPs,
+    bam_files,
+    cram_files,
+    reference,
+    iSizeUpperLimit,
+    bqFilter,
+    chr,
+    N,
+    downsampleToCov,
+    sampleNames,
+    inputdir,
+    useSoftClippedBases,
+    regionName,
+    tempdir,
+    chrStart,
+    chrEnd,
+    chrLength,
+    save_sampleReadsInfo,
+    use_bx_tag,
+    bxTagUpperLimit
 ) {
-    ##print_message(paste0("Convert inputs for iCore=", iCore))
+    ##
     sampleRange <- sampleRanges[[iCore]]
+    ##
     for(iBam in sampleRange[1]:sampleRange[2]) {
-        loadBamAndConvert(iBam = iBam, L=L,pos=pos, nSNPs = nSNPs,bam_files = bam_files,cram_files = cram_files,reference=reference,iSizeUpperLimit=iSizeUpperLimit,bqFilter=bqFilter,chr=chr,N=N,downsampleToCov=downsampleToCov,sampleNames=sampleNames,inputdir=inputdir,useSoftClippedBases=useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, chrLength = chrLength, save_sampleReadsInfo = save_sampleReadsInfo)
+        loadBamAndConvert(iBam = iBam, L=L,pos=pos, nSNPs = nSNPs,bam_files = bam_files,cram_files = cram_files,reference=reference,iSizeUpperLimit=iSizeUpperLimit,bqFilter=bqFilter,chr=chr,N=N,downsampleToCov=downsampleToCov,sampleNames=sampleNames,inputdir=inputdir,useSoftClippedBases=useSoftClippedBases, regionName = regionName, tempdir = tempdir, chrStart = chrStart, chrEnd = chrEnd, chrLength = chrLength, save_sampleReadsInfo = save_sampleReadsInfo, use_bx_tag = use_bx_tag, bxTagUpperLimit = bxTagUpperLimit)
         ## if a bundle iteration, scoop up samples, dump to disk
         if (length(bundling_info) > 0) {
             last_in_bundle <- bundling_info$matrix[iBam, "last_in_bundle"]
@@ -1859,20 +1870,86 @@ merge_reads_from_sampleReadsRaw <- function(
     readStart,
     readEnd,
     iSizeUpperLimit,
+    bxtag = integer(0),
+    use_bx_tag = FALSE,    
+    bxTagUpperLimit = 50000,
     save_sampleReadsInfo = FALSE,
-    qname_all,
-    readStart_all,
-    readEnd_all
+    qname_all = NULL,
+    readStart_all = NULL,
+    readEnd_all = NULL
 ) {
+
+    ## print("WWWWWWWWWWWWWWWWWER")
+    ## save(
+    ## sampleReadsRaw,
+    ## qname,
+    ## bxtag,    
+    ## strand,
+    ## readStart,
+    ## readEnd,
+    ## iSizeUpperLimit,
+    ## use_bx_tag,
+    ## bxTagUpperLimit,
+    ## save_sampleReadsInfo,
+    ## qname_all,
+    ## readStart_all,
+    ## readEnd_all,
+    ## file = "~/temp.RData")
+
+    ## print(qname)
+    ## stop("WER")
+
+    ##load("~/temp.RData")
+    ##bxtagORI <- bxtag
+    
     ## wif: 1-based which read it came from
     wif <- sapply(sampleReadsRaw, function(x) x[[5]]) + 1
     qnameUnique <- unique(qname[wif])
     qnameInteger <- match(qname[wif], qnameUnique)
+    ##
     ord <- order(qnameInteger) - 1 ## 0-based for C++
+    if (use_bx_tag) {
+        ## first sort by qname
+        qname_ord <- qname[ord + 1]
+        qnameInteger_ord <- c(qnameInteger[ord + 1], - 2)
+        ## now, so same thing for bxtag
+        bxtag_ord <- bxtag[ord + 1]
+        bxtagUnique <- unique(bxtag[wif])
+        bxtagInteger <- match(bxtag[wif], bxtagUnique)
+        ## now - perform fix on these
+        ## notably, nuke if they disagree, or rescue if possible!
+        bxtag_bad_ord <- rcpp_evaluate_bxtag(
+            qnameInteger_ord = qnameInteger_ord,
+            bxtag_ord = bxtag_ord
+        )
+        ## annoyingly need to de-order both of these
+        bxtag_bad <- array(FALSE, length(bxtag_bad_ord))
+        bxtag_bad[ord + 1] <- bxtag_bad_ord
+        ## 
+        bxtag <- array("", length(bxtag_ord))
+        bxtag[ord + 1] <- bxtag_ord
+        ## again re-do this
+        bxtagUnique <- unique(bxtag[wif])
+        bxtagInteger <- match(bxtag[wif], bxtagUnique)
+        ## NOW - finally - have order
+        ord <- order(bxtagInteger, qnameInteger) - 1 ## 0-based for C++
+    }
     qname_ord <- qname[ord + 1]
     qnameInteger_ord <- c(qnameInteger[ord + 1], - 2)
+    if (use_bx_tag) {
+        bxtag_ord <- bxtag[ord + 1]
+        bxtag_bad_ord <- bxtag_bad[ord + 1]
+        bxtagInteger_ord <- bxtagInteger[ord + 1]
+    } else {
+        bxtag_ord <- character(0)
+        bxtag_bad_ord <- integer(0)
+        bxtagInteger_ord <- integer(0)
+    }
     readStart_ord <- readStart[ord + 1]
     readEnd_ord <- readEnd[ord + 1]
+
+    ## print(cbind(qname_ord, bxtagORI[ord + 1], bxtag_ord, bxtag_bad_ord, readStart_ord, readEnd_ord))
+
     ## qnameUnique is unique read names of used reads
     ## qnameInteger is integer version of that
     ## ord is 0-based ordered version of qnameInteger
@@ -1880,7 +1957,10 @@ merge_reads_from_sampleReadsRaw <- function(
     out <- cpp_read_reassign(
         ord = ord,
         qnameInteger_ord = qnameInteger_ord,
+        bxtagInteger_ord = bxtagInteger_ord,
+        bxtag_bad_ord = bxtag_bad_ord,
         qname = qname,
+        bxtag = bxtag,
         strand = strand,
         sampleReadsRaw = sampleReadsRaw,
         readStart_ord = readStart_ord,
@@ -1888,10 +1968,13 @@ merge_reads_from_sampleReadsRaw <- function(
         readStart = readStart,
         readEnd = readEnd,
         iSizeUpperLimit = iSizeUpperLimit,
+        bxTagUpperLimit = bxTagUpperLimit,
+        use_bx_tag = use_bx_tag,
         save_sampleReadsInfo = save_sampleReadsInfo
     )
     sampleReads <- out$sampleReads
     sampleReadsInfo <- out$sampleReadsInfo
+
     ##
     if (save_sampleReadsInfo) {
         ##
@@ -2025,7 +2108,9 @@ loadBamAndConvert <- function(
     chrStart,
     chrEnd,
     chrLength = NA,
-    save_sampleReadsInfo = FALSE
+    save_sampleReadsInfo = FALSE,
+    use_bx_tag = FALSE,
+    bxTagUpperLimit = 50000
 ) {
 
     sampleReadsInfo <- NULL ## unless otherwise created
@@ -2068,10 +2153,12 @@ loadBamAndConvert <- function(
         region = paste0(chr, ":", chrStart, "-", chrEnd),
         file_name = file_name,
         reference = reference,
-        save_sampleReadsInfo = save_sampleReadsInfo
+        save_sampleReadsInfo = save_sampleReadsInfo,
+        use_bx_tag = use_bx_tag
     )
     sampleReadsRaw <- out$sampleReadsRaw
     qname <- out$qname
+    bxtag <- out$bxtag
     strand <- out$strand
     readStart <- out$readStart
     readEnd <- out$readEnd
@@ -2079,6 +2166,13 @@ loadBamAndConvert <- function(
     qname_all <- out$qname_all
     readStart_all <- out$readStart_all
     readEnd_all <- out$readEnd_all
+
+    ## here can override if always blank
+    if (use_bx_tag) {
+        if (sum(bxtag != "") == 0) {
+            use_bx_tag <- FALSE
+        }
+    }
 
     if (length(sampleReadsRaw) == 0) {
         sampleReads <- get_fake_sampleReads(
@@ -2089,10 +2183,13 @@ loadBamAndConvert <- function(
         out <- merge_reads_from_sampleReadsRaw(
             sampleReadsRaw = sampleReadsRaw,
             qname = qname,
+            bxtag = bxtag,
             strand = strand,
             readStart = readStart,
             readEnd = readEnd,
             iSizeUpperLimit = iSizeUpperLimit,
+            use_bx_tag = use_bx_tag,
+            bxTagUpperLimit = bxTagUpperLimit,
             save_sampleReadsInfo = save_sampleReadsInfo,
             qname_all = qname_all,
             readStart_all = readStart_all,

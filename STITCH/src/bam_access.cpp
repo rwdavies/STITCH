@@ -119,7 +119,7 @@ std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<int>,
 }
 
 
-std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int nSNPs, std::vector<int> L, std::string region, std::string file_name, std::string reference, const bool save_sampleReadsInfo) {
+std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<std::string>, std::vector<std::string>, std::vector<int>, std::vector<int>, std::vector<std::string>, std::vector<int>, std::vector<int>> get_sampleReadsRaw_using_SeqLib(const bool useSoftClippedBases, const int bqFilter, const int iSizeUpperLimit, std::vector<std::string> ref, std::vector<std::string> alt, const int nSNPs, std::vector<int> L, std::string region, std::string file_name, std::string reference, const bool save_sampleReadsInfo, const bool use_bx_tag) {
     //
     // initialize SeqLib stuff
     //
@@ -145,6 +145,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     std::vector<int> out_readEnd; // 1-based end of read
     // slightly separate
     std::vector<std::string> qname; // read name for reads with SNPs in them
+    std::vector<std::string> bxtag; // for recording bx tag
     std::vector<std::string> strand; // strand for reads with SNPs in them
     //
     // if save_sampleReadsInfo
@@ -169,6 +170,12 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     char s;
     std::string cigarType;
     int whileVar, localbq;
+    //
+    // for bx tag
+    //
+    const std::string bx_string_tag = "BX";
+    std::string for_bx_tag_s;
+    bool string_z_tag_result;
     //
     // begin
     //
@@ -343,7 +350,25 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	// save result if it is worth saving!
 	//
       if(nSNPInRead > -1) {
-	  qname.push_back(record.Qname());	
+	  qname.push_back(record.Qname());
+	  // from seqlib cpp
+	  //   /** Get a string (Z) tag 
+	  //   * @param tag Name of the tag. eg "XP"
+	  //   * @param s The string to be filled in with the tag information
+	  //   * @return Returns true if the tag is present, even if empty. Return false if no tag or not a Z tag.
+	  //  */
+          if (use_bx_tag) {
+	      string_z_tag_result = record.GetZTag(bx_string_tag, for_bx_tag_s);
+	      if (string_z_tag_result) {
+                  bxtag.push_back(for_bx_tag_s);
+	      } else {
+		  bxtag.push_back("");
+	      }
+	  }
+	  //std::cout << "qname = " << record.Qname() << std::endl;	  
+	  //std::cout << "bx_string_tag = " << bx_string_tag << std::endl;
+	  //std::cout << "for_bx_tag_s = " << for_bx_tag_s << std::endl;	  
+	  //
 	  bool ss = record.ReverseFlag();
 	  if (ss) {
 	    strand.push_back("-");
@@ -361,5 +386,5 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	  }
 	}
     } // end of loop on read
-    return std::make_tuple(out_num_SNPs, out_BQs, out_SNP_pos, out_iRead, qname, strand, out_readStart, out_readEnd, qname_all, out_readStart_all, out_readEnd_all);
+    return std::make_tuple(out_num_SNPs, out_BQs, out_SNP_pos, out_iRead, qname, bxtag, strand, out_readStart, out_readEnd, qname_all, out_readStart_all, out_readEnd_all);
 }

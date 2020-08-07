@@ -235,7 +235,8 @@ make_acceptance_test_data_package <- function(
     samples_are_inbred = FALSE,
     phred_bq = 25,
     regionName = NA,
-    write_row_as_NA = NULL
+    write_row_as_NA = NULL,
+    use_bx_tag = FALSE
 ) {
 
     if (length(n_reads) == 1) {
@@ -321,7 +322,7 @@ make_acceptance_test_data_package <- function(
 
     sample_files <- lapply(1:n_samples, function(i_sample) {
         to_sample <- 1:(n_snps - reads_span_n_snps + 1)
-        reads <- mclapply(
+        out <- mclapply(
             1:n_reads[i_sample],
             mc.cores = n_cores,
             simulate_a_read,
@@ -340,7 +341,31 @@ make_acceptance_test_data_package <- function(
             pos = pos,
             L = L
         )
-        reads <- reads[order(as.integer(sapply(reads, function(x) x[[4]])))]
+        reads <- lapply(out, function(x) x[["sam_bit"]])
+        o <- order(as.integer(sapply(reads, function(x) x[[4]])))
+        reads <- reads[o]
+        if (use_bx_tag) {
+            ## combine a few of them
+            hap <- sapply(out, function(x) x[["ihap"]])
+            hap <- hap[o]
+            for(ihap in 1:2) {
+                ## hmm, choose 2 groups of >= 4, to have 2 qnames, and 2 bx tagsb
+                g <- sample(which(hap == ihap), 8)
+                for(j in 1:2) {
+                    off <- 4 * (j - 1)
+                    bxtag <- paste0("BX:A0", j, "B0", ihap)
+                    reads[[g[off + 1]]][1] <- paste0("read", j, "_", ihap)
+                    reads[[g[off + 1]]][12] <- bxtag
+                    reads[[g[off + 1 + 1]]][1] <- paste0("read", j, "_", ihap)
+                    reads[[g[off + 1 + 1]]][12] <- bxtag
+                    ##
+                    reads[[g[off + 1 + 2]]][1] <- paste0("read", j, "B_", ihap)
+                    reads[[g[off + 1 + 2]]][12] <- bxtag
+                    reads[[g[off + 1 + 1 + 2]]][1] <- paste0("read", j, "B_", ihap)
+                    reads[[g[off + 1 + 1 + 2]]][12] <- bxtag
+                }
+            }
+        }
         sample_name <- sample_names[i_sample]
         key <- round(10e4 * runif(1))
         file_stem <- file.path(rawdir, paste0(sample_name, ".", key))
@@ -757,7 +782,8 @@ simulate_a_read <- function(
     ## choose which SNP to intersect, then choose a position
     if (L_is_simple) {
         w <- sample(1:(n_snps - reads_span_n_snps + 1), 1) + 0:(reads_span_n_snps - 1)
-        h <- phase[w, i_sample, (i_read %% 2) + 1]
+        ihap <- (i_read %% 2) + 1
+        h <- phase[w, i_sample, ihap]
         seq <- r[w]
         seq[h == 1] <- a[w][h == 1]
         seq <- paste0(seq, collapse = "")
@@ -782,7 +808,8 @@ simulate_a_read <- function(
         }
         ## w is 1-based sampling of start to end
         ## w <- sample(to_sample, 1) + 0:(reads_span_n_snps - 1)
-        h <- phase[w, i_sample, sample(2, 1)]
+        ihap <- sample(2, 1)
+        h <- phase[w, i_sample, ihap]
         ## make "A" otherwise
         seq <- rep("A", tail(L[w], 1) - head(L[w], 1) + 1)
         seq_w <- L[w] - min(L[w]) + 1
@@ -794,9 +821,12 @@ simulate_a_read <- function(
         local_cigar <- paste0(n, "M")
     }
     return(
-        c(paste0("r00", i_read), "0", chr, pos[w[1], 2], "60",
-          local_cigar, "*", "0", "0",
-          seq, local_bq)
+        list(
+            sam_bit = c(paste0("r00", i_read), "0", chr, pos[w[1], 2], "60",
+              local_cigar, "*", "0", "0",
+              seq, local_bq),
+            ihap = ihap
+        )
     )
 }
 

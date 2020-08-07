@@ -185,6 +185,8 @@ test_that("sample names can be properly retrieved, even if @RG is found somewher
 
 
 
+
+
 test_that("BAM with one read can be properly interpreted", {
 
     ## recall - whole ref is A otherwise
@@ -1209,4 +1211,44 @@ test_that("can properly save qname in light of iSizeUpperLimit", {
         }
 
     }
+})
+
+
+test_that("can use the merge reads function on a simple example", {
+
+    ## so, do the following
+    ## 1) for reads with the same read name, if using qname
+    ##    a) if all have 00 tag, keep qname as original
+    ##    b) if one or more have non-00 tag and are consistent, replace name with this
+    ## 
+    
+    ## for reads with the same read
+    ## format
+    ## 1: nSNPInRead, 0-based
+    ## 2: 0
+    ## 3: qR - base qualities
+    ## 4: pR - positions
+    ## 5: iRead_out - unique integer about what read this is
+    sampleReadsRaw <- list(
+        list(0, 0, matrix(25, ncol = 1), matrix(0, ncol = 1), 0),
+        list(0, 0, matrix(25, ncol = 1), matrix(1, ncol = 1), 1)
+    )
+    qname <- c("r1", "r1")
+    strand <- c("+", "+")
+    readStart <- c(1, 5)
+    readEnd <- c(20, 25)
+    iSizeUpperLimit <- 100
+
+    out <- merge_reads_from_sampleReadsRaw(
+        sampleReadsRaw = sampleReadsRaw,
+        qname = qname,
+        strand = strand,
+        readStart = readStart,
+        readEnd = readEnd,
+        iSizeUpperLimit = 100
+    )
+
+    ## pretty weak test, could expand, but covered in other tests mostly
+    expect_equal(out$sampleReads[[1]][[4]], matrix(c(0, 1), ncol = 1))
+
 })

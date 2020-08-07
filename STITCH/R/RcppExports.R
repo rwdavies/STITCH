@@ -27,8 +27,8 @@ get_sample_data_from_SeqLib <- function(region, file_name, reference = "") {
 }
 
 #' @export
-get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference = "", save_sampleReadsInfo = FALSE) {
-    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference, save_sampleReadsInfo)
+get_sampleReadsRaw_from_SeqLib <- function(useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference = "", save_sampleReadsInfo = FALSE, use_bx_tag = FALSE) {
+    .Call('_STITCH_get_sampleReadsRaw_from_SeqLib', PACKAGE = 'STITCH', useSoftClippedBases, bqFilter, iSizeUpperLimit, ref, alt, nSNPs, L, region, file_name, reference, save_sampleReadsInfo, use_bx_tag)
 }
 
 #' @export
@@ -87,8 +87,13 @@ rcpp_make_fb_snp_offsets <- function(alphaHat_t, betaHat_t, blocks_for_output) {
 }
 
 #' @export
-cpp_read_reassign <- function(ord, qnameInteger_ord, qname, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, save_sampleReadsInfo = FALSE) {
-    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, qname, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, save_sampleReadsInfo)
+rcpp_evaluate_bxtag <- function(qnameInteger_ord, bxtag_ord) {
+    .Call('_STITCH_rcpp_evaluate_bxtag', PACKAGE = 'STITCH', qnameInteger_ord, bxtag_ord)
+}
+
+#' @export
+cpp_read_reassign <- function(ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo = FALSE) {
+    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo)
 }
 
 #' @export
