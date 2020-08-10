@@ -44,6 +44,57 @@ test_that("reference position SNPs are ignored for niterations > 1", {
 
 
 
+
+test_that("sensible error message thrown when asked to load reference out of range", {
+
+    refpack <- make_reference_package(
+        n_snps = 10,
+        L = 11:20,
+        n_samples_per_pop = 4,
+        reference_populations = c("CEU", "GBR", "CHB")    ,
+        reference_sample_header = c("ID", "POPXX", "GROUP", "SEX")
+    )
+
+
+    reference_legend_file <- refpack$reference_legend_file
+    regionStart <- 30
+    regionEnd <- 40
+    buffer <- 3
+    
+    legend_header <- as.character(unlist(read.table(reference_legend_file, nrow = 1, sep = " ")))
+    validate_legend_header(legend_header)
+
+    ## no error for >=1 variant loaded
+    out <- load_reference_legend(
+        legend_header = legend_header,
+        reference_legend_file = reference_legend_file,
+        regionStart = 14,
+        regionEnd = 15,
+        buffer = 6
+    )
+    expect_true(length(out) > 0)
+
+
+    ## error for out of range
+    expect_error(
+        load_reference_legend(
+            legend_header = legend_header,
+            reference_legend_file = reference_legend_file,
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            buffer = buffer
+        )
+    )
+
+
+})
+
+
+
+
+
+
+
 test_that("reference sample file requires POP column", {
 
     refpack <- make_reference_package(

@@ -846,6 +846,9 @@ load_reference_legend <- function(
         ), intern = TRUE
     )
     a <- strsplit(legend_and_range, " ")
+    if (length(a) == 0) {
+        stop(paste0("No SNPs were loaded from the reference_legend_file:", reference_legend_file, " for region with regionStart=", regionStart, ", regionEnd=", regionEnd, " and buffer=", buffer, ". Perhaps the reference legend file does not span the region requested?"))
+    }
     col <- as.integer(sapply(a, function(x) x[1]))
     legend <- t(sapply(a, function(x) x[-1]))
     colnames(legend) <- legend_header
