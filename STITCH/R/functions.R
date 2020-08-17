@@ -1123,7 +1123,8 @@ get_sample_names <- function(
     originalRegionName = NULL,
     save = TRUE,
     verbose = TRUE,
-    sampleNames_file = ""
+    sampleNames_file = "",
+    duplicate_name_behaviour = "stop"
 ) {
 
     bam_files <- NULL
@@ -1159,7 +1160,12 @@ get_sample_names <- function(
         }
 
         if(length(unique(sampleNames))!=length(sampleNames)) {
-            stop("There are repeat sample names")
+            if (duplicate_name_behaviour == "stop") {
+                stop("There are repeat sample names")
+            }
+            if (duplicate_name_behaviour == "warn") {
+                print_message("Warning, there are repeat sample names")
+            }
         }
 
         ## save sample names
@@ -1738,8 +1744,8 @@ get_sample_name_from_bam_file_using_SeqLib <- function(file) {
 
 
 
-## for a set of bam or cram files
-## use samtools to get the names of the samples
+
+#' @export
 get_sample_names_from_bam_or_cram_files <- function(
     files,
     nCores,
@@ -1974,7 +1980,16 @@ merge_reads_from_sampleReadsRaw <- function(
     )
     sampleReads <- out$sampleReads
     sampleReadsInfo <- out$sampleReadsInfo
-
+    ## for security - cut these to size now!
+    x <- sapply(sampleReads, is.null)
+    if (sum(x) > 0) {    
+        to_remove <- which.max(x):length(sampleReads)
+        if (length(to_remove) > 0) {
+            sampleReads <- sampleReads[-to_remove]
+            sampleReadsInfo <- sampleReadsInfo[-to_remove, , drop = FALSE]
+        }
+    }
+    
     ##
     if (save_sampleReadsInfo) {
         ##
@@ -1995,6 +2010,8 @@ merge_reads_from_sampleReadsRaw <- function(
         sampleReadsInfo[, "minReadStart"] <- readMin
         sampleReadsInfo[, "maxReadEnd"] <- readMax
     }
+
+    
     ##
     ## which reads are saved (i.e. do not violate iSizeUpperLimit)
     ##    save_read <-  head(out$save_read, length(qnameUnique))
@@ -2162,6 +2179,7 @@ loadBamAndConvert <- function(
     strand <- out$strand
     readStart <- out$readStart
     readEnd <- out$readEnd
+    
     ## relevant if save_sampleReadsInfo = TRUE
     qname_all <- out$qname_all
     readStart_all <- out$readStart_all

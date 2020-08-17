@@ -612,8 +612,8 @@ validate_reference_files <- function(reference_haplotype_file, reference_legend_
     if (reference_haplotype_file != "" &
         reference_legend_file == "")
         stop("If you specify reference_haplotype_file you must also specify reference_legend_file")
-    if (reference_sample_file != "" & is.na(reference_populations[1]) == TRUE)
-        stop("The reference sample file has been provided but you are not specifying any populations to retain. If you want to use all reference haplotypes, please omit this file")
+    ##if (reference_sample_file != "" & is.na(reference_populations[1]) == TRUE)
+    ##    stop("The reference sample file has been provided but you are not specifying any populations to retain. If you want to use all reference haplotypes, please omit this file")
     if (reference_sample_file != "" & file.exists(reference_sample_file) == FALSE)
         stop(paste0("Cannot find reference_sample_file:", reference_sample_file))
     if (reference_legend_file != "" & file.exists(reference_legend_file) == FALSE)

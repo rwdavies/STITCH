@@ -14,8 +14,10 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
     const arma::mat& gp_t,
     const bool use_read_proportions,
     const bool use_state_probabilities,
+    const bool add_x_2_cols,
     const arma::mat& read_proportions,
-    const arma::mat& q_t
+    const arma::mat& q_t,
+    const arma::mat& x_t    
 ) {
     // ## write out genotype, genotype likelihood, and dosage
     // ##GT:GL:DS
@@ -79,6 +81,18 @@ Rcpp::StringVector rcpp_make_column_of_vcf(
 	for(k = 0; k < K; k++) {
 	  // add to string
 	  sprintf(buffer, "%.3f", q_t(k, t));
+	  output(t) += buffer;
+	  // add comma is not last one
+	  if (k < (K - 1)) {
+	    output(t) += ",";	    
+	  }
+	}
+      }
+      if (add_x_2_cols) {
+	output(t) += ":";
+	for(k = 0; k < 2; k++) {
+	  // add to string
+	  sprintf(buffer, "%.3f", x_t(k, t));
 	  output(t) += buffer;
 	  // add comma is not last one
 	  if (k < (K - 1)) {

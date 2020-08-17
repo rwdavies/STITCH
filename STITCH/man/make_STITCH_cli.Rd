@@ -4,14 +4,19 @@
 \alias{make_STITCH_cli}
 \title{Make STITCH command line interface}
 \usage{
-make_STITCH_cli(function_file, cli_output_file,
-  integer_vectors = c("shuffleHaplotypeIterations",
-  "splitReadIterations", "refillIterations",
-  "reference_shuffleHaplotypeIterations"),
+make_STITCH_cli(
+  function_file,
+  cli_output_file,
+  integer_vectors = c("shuffleHaplotypeIterations", "splitReadIterations",
+    "refillIterations", "reference_shuffleHaplotypeIterations"),
   character_vectors = c("reference_populations"),
-  other_logical_params = NULL, other_integer_params = NULL,
-  other_double_params = NULL, other_character_params = NULL,
-  function_name = "STITCH", library_name = "STITCH")
+  other_logical_params = NULL,
+  other_integer_params = NULL,
+  other_double_params = NULL,
+  other_character_params = NULL,
+  function_name = "STITCH",
+  library_name = "STITCH"
+)
 }
 \arguments{
 \item{function_file}{to main STITCH function file}

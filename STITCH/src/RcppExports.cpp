@@ -901,17 +901,19 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_column_of_vcf
-Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const bool use_read_proportions, const bool use_state_probabilities, const arma::mat& read_proportions, const arma::mat& q_t);
-RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP use_state_probabilitiesSEXP, SEXP read_proportionsSEXP, SEXP q_tSEXP) {
+Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const bool use_read_proportions, const bool use_state_probabilities, const bool add_x_2_cols, const arma::mat& read_proportions, const arma::mat& q_t, const arma::mat& x_t);
+RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP use_state_probabilitiesSEXP, SEXP add_x_2_colsSEXP, SEXP read_proportionsSEXP, SEXP q_tSEXP, SEXP x_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type gp_t(gp_tSEXP);
     Rcpp::traits::input_parameter< const bool >::type use_read_proportions(use_read_proportionsSEXP);
     Rcpp::traits::input_parameter< const bool >::type use_state_probabilities(use_state_probabilitiesSEXP);
+    Rcpp::traits::input_parameter< const bool >::type add_x_2_cols(add_x_2_colsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type read_proportions(read_proportionsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type q_t(q_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp_t, use_read_proportions, use_state_probabilities, read_proportions, q_t));
+    Rcpp::traits::input_parameter< const arma::mat& >::type x_t(x_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_column_of_vcf(gp_t, use_read_proportions, use_state_probabilities, add_x_2_cols, read_proportions, q_t, x_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -967,7 +969,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_alphaMatSumX_tc", (DL_FUNC) &_STITCH_rcpp_make_alphaMatSumX_tc, 3},
     {"_STITCH_rcpp_finalize_alphaMatSum_tc", (DL_FUNC) &_STITCH_rcpp_finalize_alphaMatSum_tc, 3},
     {"_STITCH_test_eHaps_options", (DL_FUNC) &_STITCH_test_eHaps_options, 8},
-    {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 5},
+    {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 7},
     {NULL, NULL, 0}
 };
 

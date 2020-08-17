@@ -528,8 +528,10 @@ per_core_get_results <- function(
                 gp_t = gp_t,
                 use_read_proportions = FALSE,
                 use_state_probabilities = output_haplotype_dosages,
+                add_x_2_cols = FALSE,
                 read_proportions = matrix(),
-                q_t = q_t
+                q_t = q_t,
+                x_t = matrix()
             )
         } else if (output_format == "bgen") {
             rrbgen::rcpp_place_gp_t_into_output(

@@ -146,7 +146,9 @@ test_that("can write out VCF column with expected read counts", {
         use_read_proportions = TRUE,
         use_state_probabilities = FALSE,
         read_proportions = read_proportions,
-        q_t = matrix()
+        q_t = matrix(),
+        add_x_2_cols = FALSE,
+        x_t = matrix()
     )    
     expect_equal(test1, truth)
     expect_equal(test2, truth)    

@@ -252,7 +252,7 @@ test_eHaps_options <- function(cube_eHaps_t, list_of_eHaps_t, gamma_t, eHaps_inp
 }
 
 #' @export
-rcpp_make_column_of_vcf <- function(gp_t, use_read_proportions, use_state_probabilities, read_proportions, q_t) {
-    .Call('_STITCH_rcpp_make_column_of_vcf', PACKAGE = 'STITCH', gp_t, use_read_proportions, use_state_probabilities, read_proportions, q_t)
+rcpp_make_column_of_vcf <- function(gp_t, use_read_proportions, use_state_probabilities, add_x_2_cols, read_proportions, q_t, x_t) {
+    .Call('_STITCH_rcpp_make_column_of_vcf', PACKAGE = 'STITCH', gp_t, use_read_proportions, use_state_probabilities, add_x_2_cols, read_proportions, q_t, x_t)
 }
 

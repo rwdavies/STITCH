@@ -307,7 +307,7 @@ List cpp_read_reassign(
     arma::ivec posL;
     int to_add, k;
     long int minReadStart, maxReadEnd;
-    std::string strand_to_out;
+    std::string strand_to_out, qname_store;
     
     // first loop, define which reads to save
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
@@ -337,23 +337,30 @@ List cpp_read_reassign(
     // second loop, use pre-defined sampleReads
     Rcpp::List sampleReads(nReadsToSave);
     Rcpp::CharacterVector sri_qname(nReadsToSave);
+    Rcpp::CharacterVector sri_bxtag(nReadsToSave);
     Rcpp::CharacterVector sri_strand(nReadsToSave);    
     Rcpp::IntegerVector sri_minReadStart(nReadsToSave);
     Rcpp::IntegerVector sri_maxReadEnd(nReadsToSave);
-    bool change_qname, save_condition_met, bx_tag_not_ok_to_continue, bx_tag_distance_exceeded;
+    bool change_qname, save_condition_met, bx_tag_not_ok_to_continue, bx_tag_distance_exceeded, change_bx_tag;
+    
     
     curRead = qnameInteger_ord[0];
     curbxtag = bxtagInteger_ord[0];
     count = 0;
     iReadStart = 0;
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
-        //std::cout << "------------------------" << std::endl;        
-        //std::cout << "iRead = " << iRead << std::endl;
-        //std::cout << "curRead = " << curRead << std::endl;                        
-        //std::cout << "qnameInteger_ord[iRead + 1] = " << qnameInteger_ord[iRead + 1] << std::endl;
+        // if ((206 <= iRead) & (iRead <= 212)) {
+        // std::cout << "------------------------" << std::endl;
+        // std::cout << "iRead = " << iRead << std::endl;
+        // std::cout << "iReadStart = " << iReadStart << std::endl;        
+        // std::cout << "curRead = " << curRead << std::endl;                        
+        // std::cout << "qnameInteger_ord[iRead + 1] = " << qnameInteger_ord[iRead + 1] << std::endl;
+        // }
         //
         change_qname = qnameInteger_ord[iRead + 1] != curRead;
-        //std::cout << "change_qname = " << change_qname << std::endl;        
+        // if ((206 <= iRead) & (iRead <= 212)) {        
+        //     std::cout << "change_qname = " << change_qname << std::endl;
+        // }
         if (!use_bx_tag) {
             save_condition_met = change_qname;
         } else {
@@ -364,15 +371,20 @@ List cpp_read_reassign(
             //   bx tag distance unacceptable (if qnames change AND distance exceeded)
             bx_tag_distance_exceeded = (change_qname) &                     \
                 ((readStart_ord[iRead + 1] - readEnd_ord[iRead]) > bxTagUpperLimit);
-            bx_tag_not_ok_to_continue = (bxtagInteger_ord[iRead + 1] != curbxtag) | \
+            change_bx_tag = bxtagInteger_ord[iRead + 1] != curbxtag;
+            bx_tag_not_ok_to_continue = (change_bx_tag) | \
                 (bxtag_bad_ord[iRead]) | (bx_tag_distance_exceeded);
             save_condition_met = change_qname & bx_tag_not_ok_to_continue;
-            //std::cout << "curbxtag = " << curbxtag << std::endl;                        
-            //std::cout << "bxtagInteger_ord[iRead + 1] = " << bxtagInteger_ord[iRead + 1] << std::endl;
-            //std::cout << "bxtag_bad_ord[iRead] = " << bxtag_bad_ord[iRead] << std::endl;
-            //std::cout << "bx_tag_distance_exceeded = " << bx_tag_distance_exceeded << std::endl;
-            //std::cout << "change_qname = " << change_qname << std::endl;
-            //std::cout << "save_condition_met = " << save_condition_met << std::endl;                
+        // if ((206 <= iRead) & (iRead <= 212)) {        
+        //     std::cout << "curbxtag = " << curbxtag << std::endl;                        
+        //     std::cout << "bxtagInteger_ord[iRead + 1] = " << bxtagInteger_ord[iRead + 1] << std::endl;
+        //     std::cout << "change_bx_tag = " << change_bx_tag << std::endl;
+        //     std::cout << "bxtag_bad_ord[iRead] = " << bxtag_bad_ord[iRead] << std::endl;
+        //     std::cout << "bx_tag_distance_exceeded = " << bx_tag_distance_exceeded << std::endl;
+        //     std::cout << "bx_tag_not_ok_to_continue = " << bx_tag_not_ok_to_continue << std::endl;            
+        //     std::cout << "change_qname = " << change_qname << std::endl;
+        //     std::cout << "save_condition_met = " << save_condition_met << std::endl;
+        // }
         }
         if (change_qname) {
             curRead = qnameInteger_ord[iRead + 1]; // + 1
@@ -383,11 +395,21 @@ List cpp_read_reassign(
             minReadStart = 2147483647;
             maxReadEnd = -1;
             strand_to_out = "";
+            if (use_bx_tag) {
+                qname_store="";
+            }
             for(j = iReadStart; j <= iRead; j++) {
                 // check if we should be saving this bit
                 //std::cout << "j = " << j << ", save_this_read_check(j) = " << save_this_read_check(j) << std::endl;
                 if (save_this_read_check(j)) {
                     r = ord[j];
+                    if (use_bx_tag) {
+                        if (qname_store == "") {
+                            qname_store = qname[r];
+                        } else {
+                            qname_store = qname_store + "," + qname[r];
+                        }
+                    }
                     // so say first read is 0-based 0:2
                     // want to take reads from ord[0:2]
                     Rcpp::List readData = as<Rcpp::List>(sampleReadsRaw[r]);
@@ -429,11 +451,20 @@ List cpp_read_reassign(
                 sampleReads[count] = Rcpp::List::create(nSNPsInRead, 0, bqL, posL);
                 // can draw from ord(iRead);
                 if (save_sampleReadsInfo) {
-                    sri_qname[count] = qname[r];
+                    if (!use_bx_tag) {
+                        sri_qname[count] = qname[r];
+                    } else {
+                        sri_qname[count] = qname_store;
+                        sri_bxtag[count] = bxtag[r];
+                    }
                     sri_minReadStart[count] = minReadStart;
                     sri_maxReadEnd[count] = maxReadEnd;
                     sri_strand[count] = strand_to_out;
                 }
+                // if ((206 <= iRead) & (iRead <= 212)) {
+                //     std::cout << " saving bit" << std::endl;
+                //     std::cout << "count = " << count << std::endl;                    
+                // }
                 count++;
             }
             iReadStart = iRead + 1;
@@ -443,12 +474,22 @@ List cpp_read_reassign(
 
     Rcpp::DataFrame sampleReadsInfo;
     if (save_sampleReadsInfo) {
-        sampleReadsInfo = Rcpp::DataFrame::create(
-            Rcpp::Named("qname") = sri_qname,
-            Rcpp::Named("strand") = sri_strand,
-            Rcpp::Named("minReadStart") = sri_minReadStart,
-            Rcpp::Named("maxReadEnd") = sri_maxReadEnd
-        );
+        if (!use_bx_tag) {
+            sampleReadsInfo = Rcpp::DataFrame::create(
+                Rcpp::Named("qname") = sri_qname,
+                Rcpp::Named("strand") = sri_strand,
+                Rcpp::Named("minReadStart") = sri_minReadStart,
+                Rcpp::Named("maxReadEnd") = sri_maxReadEnd
+            );
+        } else {
+            sampleReadsInfo = Rcpp::DataFrame::create(
+                Rcpp::Named("qname") = sri_qname,
+                Rcpp::Named("bxtag") = sri_bxtag,                
+                Rcpp::Named("strand") = sri_strand,
+                Rcpp::Named("minReadStart") = sri_minReadStart,
+                Rcpp::Named("maxReadEnd") = sri_maxReadEnd
+            );
+        }
     }
     Rcpp::List to_return = Rcpp::List::create(
         Rcpp::Named("sampleReads") = sampleReads,

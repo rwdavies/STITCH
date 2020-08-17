@@ -220,6 +220,7 @@ test_that("can make sampleReadsRaw incorporate bx tag properly for complicated e
         f("r2_A04", "121", "BX:Z:A04", 24), ## this is far beyond the 10 (11) of above
         f("r2_A04", "125", "BX:Z:A04", 25)
     )
+    expected_bxtags <- c("A01", "A02B01", "A03B00", "A04", "A04") ## 2 of last one as broken up
     to_sam <- to_sam[order(as.numeric(sapply(to_sam, function(x) x[[4]])))]
     
     bam_file <- make_simple_bam(
@@ -249,7 +250,8 @@ test_that("can make sampleReadsRaw incorporate bx tag properly for complicated e
          bqFilter = 5,
         use_bx_tag = TRUE,
         iSizeUpperLimit = iSizeUpperLimit,
-        bxTagUpperLimit = bxTagUpperLimit
+        bxTagUpperLimit = bxTagUpperLimit,
+        save_sampleReadsInfo = TRUE
     )
 
     load(file_sampleReads(tempdir(), 1, regionName))
@@ -262,6 +264,9 @@ test_that("can make sampleReadsRaw incorporate bx tag properly for complicated e
          expected_sample_reads
      )
 
+    load(file_sampleReadsInfo(tempdir(), 1, regionName))
+    expect_equal(sum(sampleReadsInfo[, "bxtag"] != expected_bxtags), 0)
+    
     ## save(sampleReads,          expected_sample_reads, file = "~/temp2.RData")
 
     ## load("~/temp2.RData")

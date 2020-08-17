@@ -37,7 +37,9 @@ test_that("can write column of VCF output in C++", {
         use_read_proportions = FALSE,
         use_state_probabilities = FALSE,
         read_proportions = matrix(),
-        q_t = matrix()
+        q_t = matrix(),
+        add_x_2_cols = FALSE,
+        x_t = matrix()
     )    
     expect_equal(out1, out2)
 
@@ -62,7 +64,9 @@ test_that("can write column of VCF output in C++ with posterior state probabilit
         use_read_proportions = FALSE,
         use_state_probabilities = TRUE,
         read_proportions = matrix(),
-        q_t = q_t
+        q_t = q_t,
+        add_x_2_cols = FALSE,
+        x_t = matrix()
     )    
     expect_equal(out1, out2)
 
