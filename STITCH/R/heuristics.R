@@ -637,6 +637,7 @@ get_snps_to_nuke <- function(grid_distances, nGrids, shuffle_bin_radius, snp_bes
 }
 
 
+#' @export
 R_determine_where_to_stop <- function(
     smoothed_rate,
     available,
