@@ -465,6 +465,7 @@ option_list <- list(
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
 suppressPackageStartupMessages(library(STITCH))
 Sys.setenv(PATH = paste0(Sys.getenv("PATH"), ":", getwd()))
+sessionInfo()
 STITCH(
     chr = opt$chr,
     posfile = opt$posfile,
