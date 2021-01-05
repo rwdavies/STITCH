@@ -800,7 +800,7 @@ get_reference_colClasses <- function(
     chr
 ) {
     colClasses <- NA
-    if (reference_sample_file != "") {
+    if (reference_sample_file != "" & !is.na(reference_populations[1])) {
         reference_samples <- read.table(reference_sample_file, header = TRUE)
         validate_reference_sample_file(reference_samples, reference_sample_file)
         keep_samples <- which(

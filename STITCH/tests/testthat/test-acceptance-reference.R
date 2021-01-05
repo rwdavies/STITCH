@@ -319,6 +319,37 @@ test_that("STITCH can initialize with reference data with defined regionStart an
 
 })
 
+test_that("STITCH can initialize with reference sample file, without population specified", {
+
+    output_format <- "bgvcf"
+    outputdir <- make_unique_tempdir()
+
+    set.seed(579)
+
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = outputdir,
+        reference_haplotype_file = refpack$reference_haplotype_file,
+        reference_legend_file = refpack$reference_legend_file,
+        reference_sample_file = refpack$reference_sample_file,
+        K = 2,
+        nGen = 100,
+        nCores = 1,
+        output_format = output_format
+    )
+    
+    check_output_against_phase(
+        file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+        data_package,
+        output_format,
+        which_snps = NULL,
+        tol = 0.2
+    )
+
+})
+
 test_that("STITCH can initialize with reference data for certain populations", {
 
     for(output_format in c("bgvcf", "bgen")) {
