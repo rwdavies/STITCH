@@ -77,8 +77,8 @@ test_that("can run getBetterSwitchesSimple with / without grid", {
             grid = grid,
             snps_in_grid_1_based = snps_in_grid_1_based
         )
-        test_that(ncol(out$eHapsCurrent_t), nSNPs)
-        test_that(ncol(out$alphaMatCurrent_t), nGrids - 1)
+        expect_equal(ncol(out$eHapsFuture), nSNPs)
+        expect_equal(ncol(out$alphaMatFuture_t), nGrids - 1)
 
     }
 
