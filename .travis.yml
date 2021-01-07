@@ -1,5 +1,9 @@
 language: r
 
+addons:
+  apt:
+    packages:
+      - libgit2-dev
 os:
   - linux
 
