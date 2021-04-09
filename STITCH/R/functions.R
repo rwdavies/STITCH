@@ -2127,7 +2127,8 @@ loadBamAndConvert <- function(
     chrLength = NA,
     save_sampleReadsInfo = FALSE,
     use_bx_tag = FALSE,
-    bxTagUpperLimit = 50000
+    bxTagUpperLimit = 50000,
+    default_sample_no_read_behaviour = "fake_reads"
 ) {
 
     sampleReadsInfo <- NULL ## unless otherwise created
@@ -2193,10 +2194,27 @@ loadBamAndConvert <- function(
     }
 
     if (length(sampleReadsRaw) == 0) {
-        sampleReads <- get_fake_sampleReads(
-            name = sampleNames[iBam],
-            mess = "has no informative reads"
-        )
+        if (default_sample_no_read_behaviour == "fake_reads") {
+            sampleReads <- get_fake_sampleReads(
+                name = sampleNames[iBam],
+                mess = "has no informative reads"
+            )
+        } else if (default_sample_no_read_behaviour == "return_null") {
+            sampleReads <- NULL
+            save(
+                sampleReads,
+                file = file_sampleReads(inputdir, iBam, regionName),
+                compress = FALSE
+            )
+            if (save_sampleReadsInfo) {
+                save(
+                    sampleReadsInfo,
+                    file = file_sampleReadsInfo(inputdir, iBam, regionName),
+                    compress = FALSE
+                )
+            }
+            return(NULL)
+        }
     } else {
         out <- merge_reads_from_sampleReadsRaw(
             sampleReadsRaw = sampleReadsRaw,
