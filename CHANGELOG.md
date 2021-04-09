@@ -1,3 +1,5 @@
+* v1.6.6
+	* Export more functions for library use
 * v1.6.5
 	* Be able to use bx tag to link reads
 	* Export yet more functions for library use
