@@ -7,8 +7,7 @@ Release date: April 9, 2021
 
 Changes in latest version
 
-1. Be able to use bx tag to link reads
-2. Export yet more functions for library use
+1. Export more functions for library use
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
