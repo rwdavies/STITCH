@@ -57,7 +57,7 @@ if [ "`which bcftools | wc -l`" == "0" ] || [ "$force_install" == "bcftools" ]
 then
     echo install bcftools
     cd dependencies
-    get_url "https://github.com/samtools/bcftools/releases/download/${bcftoolsv}/bcftools-${samv}.tar.bz2"    
+    get_url "https://github.com/samtools/bcftools/releases/download/${bcftoolsv}/bcftools-${bcftoolsv}.tar.bz2"    
     bzip2 -df bcftools-${bcftoolsv}.tar.bz2
     tar -xvf bcftools-${bcftoolsv}.tar
     cd bcftools-${bcftoolsv}
