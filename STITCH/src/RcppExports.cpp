@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // get_header_using_SeqLib
 std::string get_header_using_SeqLib(std::string file_name);
 RcppExport SEXP _STITCH_get_header_using_SeqLib(SEXP file_nameSEXP) {

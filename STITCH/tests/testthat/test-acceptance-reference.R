@@ -39,12 +39,14 @@ data_package <- make_acceptance_test_data_package(
     reads_span_n_snps = reads_span_n_snps,
     phasemaster = phasemaster
 )
+refpack_expRate <- 1
 refpack <- make_reference_package(
     n_snps = n_snps,
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
     chr = chr,
-    phasemaster = phasemaster
+    phasemaster = phasemaster,
+    expRate = refpack_expRate
 )
 
 
@@ -143,36 +145,53 @@ test_that("STITCH can initialize with reference data for S > 1", {
 })
 
 
-test_that("STITCH can initialize with reference data including genetic map", {
+test_that("STITCH can initialize with reference data including genetic map, and that data is used precisely", {
 
     output_format <- "bgvcf"
     outputdir <- make_unique_tempdir()
-    set.seed(3393)
 
-    STITCH(
-        chr = data_package$chr,
-        bamlist = data_package$bamlist,
-        posfile = data_package$posfile,
-        genfile = data_package$genfile,
-        outputdir = outputdir,
-        reference_haplotype_file = refpack$reference_haplotype_file,
-        reference_legend_file = refpack$reference_legend_file,
-        genetic_map_file = refpack$reference_genetic_map_file,
-        K = 2,
-        S = 3,
-        gridWindowSize = 3,
-        nGen = 100,
-        nCores = 1,
-        output_format = output_format
-    )
+    nGen <- 100
+    for(genetic_map_file in list("", refpack$reference_genetic_map_file)) {
     
-    check_output_against_phase(
-        file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
-        data_package,
-        output_format,
-        which_snps = NULL,
-        tol = 0.2
-    )
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = outputdir,
+            reference_haplotype_file = refpack$reference_haplotype_file,
+            reference_legend_file = refpack$reference_legend_file,
+            genetic_map_file = genetic_map_file,
+            K = ncol(refpack$reference_haplotypes),
+            S = 1,
+            gridWindowSize = NA,
+            nGen = nGen,
+            nCores = 1,
+            output_format = output_format,
+            expRate = refpack_expRate * 2,
+            niterations = 1,
+            refillIterations = NA,
+            shuffleHaplotypeIterations = NA
+        )
+        
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package$chr, extension[output_format])),
+            data_package,
+            output_format,
+            which_snps = NULL,
+            tol = 0.2
+        )
+
+        load(file.path(outputdir, "RData", paste0("EM.all.", data_package$chr, ".RData")))
+
+        dl <- diff(data_package$L)[1]
+        if (genetic_map_file == "") {
+            expect_equal(sigmaCurrent_m[1, 1], exp(-nGen * (refpack_expRate * 2) / 100 / 1e6 * dl))
+        } else {
+            expect_equal(sigmaCurrent_m[1, 1], exp(-nGen * (refpack_expRate * 1) / 100 / 1e6 * dl))
+        }
+
+    }
 
 
 })
