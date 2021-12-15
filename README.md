@@ -35,7 +35,7 @@ For the old website, please see https://www.well.ox.ac.uk/~rwdavies/stitch.html
 13. [What method to run](#paragraph-time-ram-memory)
 14. [How to choose K and nGen](#paragraph-k-ngen)
 15. [About plotting](#paragraph-plots)
-
+16. [About reference panels](#paragraph-reference-panels)
 
 ## Installation <a name="paragraph-installation"></a>
 
@@ -74,7 +74,7 @@ You can confirm the installation worked using the quick start run below.
 
 ### missing libraries <a name="paragraph-installation-missing-libraries"></a>
 
-If you experience a problem with installation, you can either try conda below. Alternatively, if you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
+If you experience a problem with installation, you can either try conda above. Alternatively, if you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
 ```
 ./scripts/install-package-dependencies.sh
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`/install/lib/
@@ -108,12 +108,12 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 
 ## Interactive start <a name="paragraph-interactive-start"></a>
 
-It is recommended you follow the instructions above, specifically `./scripts/install-dependencies.sh`, but if you run into problems, or want to install in a more manual fashion, the below should work
+It is recommended you follow the instructions above, specifically `./scripts/install-dependencies.sh` to install the dependencies, but if you run into problems, or want to install in a more manual fashion, the below should work
 
 1. Install R if not already installed.
 2. Install R dependencies parallel, Rcpp and RcppArmadillo from CRAN (using the "install.packages" option within R)
 3. Install [bgzip](http://www.htslib.org/) and make it available to your [PATH](https://en.wikipedia.org/wiki/PATH_(variable)). This can be done using a system installation, or doing a local installation and either modifying the PATH variable using code like ```export PATH=/path/to/dir-with-bgzip-binary/:$PATH```, or through R, doing something like ```Sys.setenv( PATH = paste0("/path/to/dir-with-bgzip-binary/:", Sys.getenv("PATH")))```. You'll know samtools is available if you run something like ```system("which bgzip")``` in R and get the path to bgzip
-4. Install STITCH. First, download the latest STITCH tar.gz from the releases folder above. Second, install by opening R and using install.packages, giving install.packages the path to the downloaded STITCH tar.gz. This should install SeqLib automatically as well.
+4. Install STITCH. First, download the latest STITCH tar.gz from the releases folder above (or more ideally the releases section of the github page). Second, install by opening R and using install.packages, giving install.packages the path to the downloaded STITCH tar.gz. This should install SeqLib automatically as well.
 5. Download example dataset [STITCH_example_2016_05_10.tgz](https://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_example_2016_05_10.tgz).
 6. Run STITCH. Open R, change your working directory using setwd() to the directory where the example tar.gz was unzipped, and then run ```STITCH(tempdir = tempdir(), chr = "chr19", bamlist = "bamlist.txt", posfile = "pos.txt", genfile = "gen.txt", outputdir = paste0(getwd(), "/"), K = 4, nGen = 100, nCores = 1)```. Once complete, a VCF should appear in the current working directory named stitch.chr19.vcf.gz
 
@@ -182,4 +182,30 @@ nGen controls recombination rate between the sequenced samples and the ancestral
 ## About plotting <a name="paragraph-plots"></a>
 
 STITCH generates some plots while running. They are not meant to substitute for a more in depth investigation of imputation performance in your setting, but can be a useful first start to understanding your data and parameter choices. They are described in [plots.md](plots.md), in decreasing order of usefulness. Note that it can be quite useful to set `plot_shuffle_haplotype_attempts=TRUE` to visualize switching in the model.
+
+## About reference panels <a name="paragraph-reference-panels"></a>
+
+STITCH is designed to impute samples without a reference panel. However, STITCH can take as input reference haplotype information. Below the reference panel format is described, and then how certain options affect how the reference haplotype information is used.
+
+The reference panel format used by STITCH is the same as used by QUILT. Please see the QUILT web page [here](https://github.com/rwdavies/QUILT) for specific details of the format. Alternatively, you can download minimal example human data formatted for STITCH from this link `https://www.well.ox.ac.uk/~rwdavies/ancillary/STITCH_human_reference_example_2018_07_11.tgz` and check out the files `1000GP_Phase3_20.1000000.1100000.legend.gz` and `1000GP_Phase3_20.1000000.1100000.hap.gz`.
+
+Reference panel information is used depending on the following options
+
+`niterations>1`: the reference haplotypes are used to initialize the ancestral haplotypes. After the first iteration, only information from the samples will be used to update the ancestral haplotypes in the EM algorithm.
+
+`niterations==1`: the reference haplotypes are used to initialize the ancestral haplotypes, and the samples are imputed directly from this. Note that in this case, all posfile SNPs must be found in the reference SNPs, as otherwise you would be imputing SNPs with no reference information and hence no information about how to impute them. Note that this condition does not exist for `niterations>1`, as after the first iteration, you fill the ancestral haplotypes with sample information.
+
+Let `nhaps` be the number of reference haplotypes in the haplotype reference file.
+
+`nhaps > K`: A haplotype EM algorithm is run to initialize the ancestral haplotypes using the reference haplotypes.
+
+`nhaps == K`: There are exactly as many reference haplotypes as ancestral haplotypes, and they are used directly.
+
+`nhaps < K`: There are fewer available haplotypes than desired ones, so the available ones are used to fill in the corresponding number of ancestral haplotypes directly, and the remaining ones are filled with noise.
+
+If you have `niterations==1` and `nhaps == K`, each sample will be imputed independently of each other sample without causing batch effects, as they are only imputed from the reference. Note that in general, if you're doing this, you should strongly consider using QUILT if K is large, as this is the specific situation QUILT is designed for. However for small K, STITCH is more accurate, though doesn't directly output phased information.
+
+
+
+
 
