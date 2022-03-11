@@ -3140,7 +3140,7 @@ run_forward_backwards <- function(
         snp_end_1_based <- length(grid)
     }
 
-    ## re-declare obvious stuff
+
     if (length(nor) == 0) {
         if (method == "pseudoHaploid") {
             nor <- 2

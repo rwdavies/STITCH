@@ -36,6 +36,7 @@ make_simple_sam_text <- function(
     return(out)
 }
 
+#' @export
 make_simple_bam <- function(
     file_stem,
     sam
