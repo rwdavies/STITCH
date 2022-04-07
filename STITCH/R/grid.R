@@ -12,12 +12,29 @@
 #' @export
 assign_positions_to_grid <- function(
     L,
-    gridWindowSize,
+    gridWindowSize = NA,
     cM = NULL,
     grid32 = FALSE
 ) {
     cM_grid <- NULL
-    if (is.na(gridWindowSize)) {
+    if (grid32) {
+        nSNPs <- length(L)
+        grid <- rep(0:(nSNPs - 1), each = 32, length.out = length(L))
+        ## this is average in each
+        L_grid <- array(NA, max(grid) + 1)
+        for(i in min(grid):max(grid)) {
+            s <- 32 * i + 1
+            e <- min(32 * (i + 1), nSNPs)
+            L_grid[i + 1] <- round(mean(L[s:e]))
+        }
+        nGrids <- length(L_grid)
+        grid_distances <- diff(L_grid)
+        ## L_grid is average within the grid
+        snps_in_grid_1_based <- cbind(
+            snps_start = match(unique(grid), grid),
+            snps_end = length(grid) - match(unique(grid), grid[length(grid):1]) + 1
+        )
+    } else if (is.na(gridWindowSize)) {
         ## simple case - no gridding
         grid <- 0:(length(L) - 1)
         grid_distances <- diff(L)
