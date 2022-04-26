@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  test-all:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+ 
+      - name: Manually install dependency
+        run: sudo apt-get update -y && sudo apt-get install -y libcurl4-openssl-dev && which pkg-config
+
+      - uses: r-lib/actions/setup-r@v1
+        with:
+          use-public-rspm: true
+
+      - name: Install dependencies
+        run: ./scripts/install-dependencies.sh
+
+      - name: Unit tests
+        run: ./scripts/test-unit.sh
+
+      - name: Acceptance tests
+        run: ./scripts/test-acceptance.sh
+
+      - name: Test the build
+        run: ./scripts/build-and-install.R
+        
+      - name: Test the CLI
+        run: ./scripts/test-cli.R
+ 
+      - name: Example test
+        run:  ./scripts/test-compare-vcf.sh
