@@ -25,7 +25,7 @@ export PATH=`pwd`/:${PATH}
 # suppressPackageStartupMessages
 # --slave
 # add new load_all step to ensure compilation is printed properly
-R -e 'devtools::document("STITCH"); devtools::load_all("STITCH", quiet = FALSE); devtools::test("STITCH", filter = "'${what_to_test}'", reporter = "summary")' 2>&1 | tee ${logfile}
+R -e 'devtools::document("STITCH"); devtools::load_all("STITCH", quiet = FALSE); options(warn = 2);devtools::test("STITCH", filter = "'${what_to_test}'", reporter = "summary")' 2>&1 | tee ${logfile}
 
 # print(getwd()); library(devtools); load_all("STITCH", quiet = FALSE);
 
