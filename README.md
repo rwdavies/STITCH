@@ -3,7 +3,7 @@ STITCH - Sequencing To Imputation Through Constructing Haplotypes
 **__Current Version: 1.6.6__**
 Release date: April 9, 2021
 
-![Build Status](https://github.com/rwdavies/STITCH/actions/workflows/main.yml/badge.svg)
+![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
 
 
 Changes in latest version
