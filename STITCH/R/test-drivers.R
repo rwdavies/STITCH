@@ -42,7 +42,7 @@ make_simple_bam <- function(
     sam
 ) {
     cat(sam, file = paste0(file_stem, ".sam"))
-    system2(
+    out <- system2(
         "samtools",
         args = c(
             "view", "-bS", shQuote(paste0(file_stem, ".sam")),
@@ -237,7 +237,9 @@ make_acceptance_test_data_package <- function(
     phred_bq = 25,
     regionName = NA,
     write_row_as_NA = NULL,
-    use_bx_tag = FALSE
+    use_bx_tag = FALSE,
+    refs = NA,
+    alts = NA
 ) {
 
     if (length(n_reads) == 1) {
@@ -281,7 +283,14 @@ make_acceptance_test_data_package <- function(
         L_is_simple <- FALSE
     }
     posfile <- file.path(outputdir, paste0("pos.", regionName, ".txt"))
-    pos <- make_posfile(posfile, L = L, n_snps = n_snps, chr = chr)
+    pos <- make_posfile(
+        posfile,
+        L = L,
+        n_snps = n_snps,
+        chr = chr,
+        refs = refs,
+        alts = alts
+    )
     L <- pos[, 2]
 
     phasefile <- file.path(outputdir, paste0("phase.", regionName, ".txt"))

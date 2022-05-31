@@ -142,6 +142,20 @@ test_that("pos file with other character in alt throws an error", {
     )
 })
 
+test_that("pos file with same character twice an error", {
+    posfile <- tempfile()
+    pos <- make_posfile(
+        posfile,
+        refs = c("A", "C"),
+        alts = c("A", "G"),
+        n_snps = 2
+    )
+    expect_error(
+        get_and_validate_pos(posfile, chr = 1),
+        "pos file row 1 has reference base A which is the same as alternate base A, which is not a bi-allelic SNP"
+    )
+})
+
 
 
 ### test gen

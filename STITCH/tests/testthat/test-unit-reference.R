@@ -135,6 +135,7 @@ test_that("reference data can be loaded for an autosome", {
         tempdir = tempdir(),
         regionName = "test"
     )
+    
     reference_haps <- out[["reference_haps"]]
     expect_equal(refpack[["reference_haplotypes"]], reference_haps)
     expect_equal(out[["rhb1"]], out[["rhb2"]])

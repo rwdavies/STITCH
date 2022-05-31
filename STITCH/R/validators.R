@@ -175,6 +175,14 @@ validate_pos <- function(
             ))
         }
     }
+    x <- as.character(pos[, 3]) == as.character(pos[,4])
+    if (sum(x) > 0) {
+        y <- which(x)[1]
+        stop(paste0(
+            stop_file_name, " row ", y, " has reference base ", pos[y, 3],
+            " which is the same as alternate base ", pos[y, 4], ", which is not a bi-allelic SNP"
+        ))
+    }
     return(NULL)
 }
 

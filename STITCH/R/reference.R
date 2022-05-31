@@ -288,26 +288,31 @@ validate_reference_legend <- function(
         legend[, "position"], legend[,"a0"], legend[, "a1"],
         sep = "-"
     )
-    x <- as.numeric(as.character(legend[, "position"])) <= 0
+    position <- as.numeric(as.character(legend[, "position"]))
+    x <- position <= 0
     if (sum(x) > 0) {
         stop(paste0("There are variants with position <= 0 in the reference legend file ", reference_legend_file, ". One such example is ", legend[which.max(x), "position"], " which occurs at entry ", which.max(x)))
     }
-    t <- table(legend_snps)
-    if (sum(t > 1) > 0) {
-        ## argh R - get character not factor
-        m <- match(names(t[t>1])[1], legend_snps)
-        example <- sapply(
-            legend[m, c("position", "a0", "a1")],
-            as.character
-        )
-        stop(
-            paste0(
-                "There are ", sum(t > 1), " duplicate row ids. ",
-                "One such example is ",
-                paste0(example, collapse = " ")
-            )
-        )
-    }
+    ## re-use previous functionality
+    chr <- "dummy"
+    decoy_legend <- data.frame(chr, position, legend[,"a0"], legend[, "a1"])
+    validate_pos(decoy_legend, chr = chr, stop_file_name = paste0("The reference legend file ", reference_legend_file, " "))
+    ## t <- table(legend_snps)
+    ## if (sum(t > 1) > 0) {
+    ##     ## argh R - get character not factor
+    ##     m <- match(names(t[t>1])[1], legend_snps)
+    ##     example <- sapply(
+    ##         legend[m, c("position", "a0", "a1")],
+    ##         as.character
+    ##     )
+    ##     stop(
+    ##         paste0(
+    ##             "There are ", sum(t > 1), " duplicate row ids. ",
+    ##             "One such example is ",
+    ##             paste0(example, collapse = " ")
+    ##         )
+    ##     )
+    ## }
     return(NULL)
 }
 
