@@ -5,8 +5,8 @@ test_that("reference legend file with duplicate entries throws an error", {
         a1 = c("A", "A", "G")
     )
     expect_error(
-        validate_reference_legend(reference_legend),
-        "There are 1 duplicate row ids. One such example is 10 A A"
+        validate_reference_legend(reference_legend, "dummy.txt"),
+        "The reference legend file dummy.txt  column 2 needs to be sorted on position with increasing positions between rows but row number 1 has position 10 and row number 2 has position 10"
     )
 })
 
@@ -17,8 +17,8 @@ test_that("reference legend file with duplicate physical positions throws an err
         a1 = c("A", "A", "G")
     )
     expect_error(
-        validate_reference_legend(reference_legend),
-        "There are 1 duplicate row ids. One such example is 10 A A"
+        validate_reference_legend(reference_legend, "dummy.txt"),
+        "The reference legend file dummy.txt  column 2 needs to be sorted on position with increasing positions between rows but row number 1 has position 10 and row number 2 has position 10"
     )
 })
 
