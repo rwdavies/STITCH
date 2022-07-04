@@ -81,3 +81,66 @@ test_that("can change sample names and have them match genfile", {
     )
 
 })
+
+
+test_that("can change sample names using regenerateInput and have them match genfile", {
+
+    sampleNames_file <- tempfile()
+    sampleNames <- data_package$sample_names
+    sampleNames[2] <- "newname2"
+    write.table(
+        sampleNames,
+        file = sampleNames_file,
+        row.names = FALSE,
+        col.names = FALSE,
+        quote = FALSE
+    )
+    
+    outputdir <- make_unique_tempdir()    
+    STITCH(
+        chr = data_package$chr,
+        bamlist = data_package$bamlist,
+        posfile = data_package$posfile,
+        outputdir = outputdir,
+        K = 2,
+        S = 2,
+        nGen = 100,
+        nCores = 1,
+        generateInputOnly = TRUE
+    )
+
+    genfile <- tempfile()
+    system(paste0("sed 's/samp2/newname2/' ", shQuote(data_package$genfile), " > ", genfile))
+
+    ## now need to modify manually
+    load(file.path(outputdir, "RData", paste0("sampleNames.", data_package$chr, ".RData")))
+    sampleNames[2] <- "newname2"
+    save(sampleNames, file = file.path(outputdir, "RData", paste0("sampleNames.", data_package$chr, ".RData")))
+    
+    STITCH(
+        chr = data_package$chr,
+        posfile = data_package$posfile,
+        genfile = genfile,
+        outputdir = outputdir,
+        K = 2,
+        S = 2,
+        nGen = 100,
+        nCores = 1,
+        regenerateInput = FALSE,
+        regenerateInputWithDefaultValues = TRUE,
+        originalRegionName = data_package$chr
+    )
+    
+    vcf <- read.table(
+        file.path(outputdir, paste0("stitch.", data_package$chr, ".vcf.gz")),
+        header = FALSE,
+        stringsAsFactors = FALSE
+    )
+
+    check_vcf_against_phase(
+        vcf = vcf,
+        phase = data_package$phase,
+        tol = 0.2
+    )
+
+})
