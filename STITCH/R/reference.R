@@ -881,7 +881,7 @@ extract_validate_and_load_haplotypes <- function(
     tempdir,
     colClasses,
     niterations,
-    extraction_method = "both",
+    extraction_method = "all",
     load_rhb_method = "R"
 ) {
 
