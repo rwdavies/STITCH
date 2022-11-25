@@ -10,17 +10,6 @@ test_that("reference legend file with duplicate entries throws an error", {
     )
 })
 
-test_that("reference legend file with duplicate physical positions throws an error", {
-    reference_legend <- data.frame(
-        position = c(10, 10, 20),
-        a0 = c("A", "A", "T"),
-        a1 = c("A", "A", "G")
-    )
-    expect_error(
-        validate_reference_legend(reference_legend, "dummy.txt"),
-        "The reference legend file dummy.txt  column 2 needs to be sorted on position with increasing positions between rows but row number 1 has position 10 and row number 2 has position 10"
-    )
-})
 
 
 test_that("dependency checker works", {
