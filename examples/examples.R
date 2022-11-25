@@ -25,12 +25,8 @@ for(key in c("--file=", "--f=")) {
 }
 Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
 
-## optionally, move this to a different directory
-if (!(Sys.getenv("TEST_DIR") == "")) {
-    setwd(Sys.getenv("TEST_DIR"))
-}
-
 library("STITCH")
+
 
 
 ###
@@ -52,13 +48,13 @@ inputBundleBlockSize <- NA
 # Set directories for testing
 # IMPORTANT NOTE - make these new directories, as they are over-written before being written to
 mouse_datadir <- file.path(getwd(), "test-data/mouse_data/")
-dir.create(mouse_datadir, recursive = TRUE)
+dir.create(mouse_datadir)
 mouse_resultsdir <- file.path(getwd(), "test-results/mouse_tests/")
 human_datadir <- file.path(getwd(), "test-data/human_data/")
 human_matched_to_reference_datadir <- file.path(getwd(), "test-data/human_data_matched_to_reference/")
 human_resultsdir <- file.path(getwd(), "test-results/human_tests/")
 dir.create(mouse_datadir)
-dir.create(mouse_resultsdir, recursive = TRUE)
+dir.create(mouse_resultsdir)
 dir.create(human_datadir)
 dir.create(human_resultsdir)
 dir.create(human_matched_to_reference_datadir)
@@ -170,6 +166,7 @@ if (file.exists("mm10_2016_10_02.fa") == FALSE | file.exists("mm10_2016_10_02.fa
 ###
 ### Section D - Mouse Examples
 ###
+
 
 
 

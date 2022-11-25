@@ -12,11 +12,6 @@ set -e
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
 
-if [ "${1}" != "" ]
-then
-    export TEST_DIR="${1}"
-fi
-
 ## remove directories, specified in the below file
 rm -r -f test-results/human_tests
 rm -r -f test-results/mouse_tests
