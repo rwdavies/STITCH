@@ -1882,31 +1882,9 @@ merge_reads_from_sampleReadsRaw <- function(
     save_sampleReadsInfo = FALSE,
     qname_all = NULL,
     readStart_all = NULL,
-    readEnd_all = NULL
+    readEnd_all = NULL,
+    maxnSNPInRead = 1000
 ) {
-
-    ## print("WWWWWWWWWWWWWWWWWER")
-    ## save(
-    ## sampleReadsRaw,
-    ## qname,
-    ## bxtag,    
-    ## strand,
-    ## readStart,
-    ## readEnd,
-    ## iSizeUpperLimit,
-    ## use_bx_tag,
-    ## bxTagUpperLimit,
-    ## save_sampleReadsInfo,
-    ## qname_all,
-    ## readStart_all,
-    ## readEnd_all,
-    ## file = "~/temp.RData")
-
-    ## print(qname)
-    ## stop("WER")
-
-    ##load("~/temp.RData")
-    ##bxtagORI <- bxtag
     
     ## wif: 1-based which read it came from
     wif <- sapply(sampleReadsRaw, function(x) x[[5]]) + 1
@@ -1945,7 +1923,7 @@ merge_reads_from_sampleReadsRaw <- function(
     if (use_bx_tag) {
         bxtag_ord <- bxtag[ord + 1]
         bxtag_bad_ord <- bxtag_bad[ord + 1]
-        bxtagInteger_ord <- bxtagInteger[ord + 1]
+        bxtagInteger_ord <- c(bxtagInteger[ord + 1], -2) ## also pad this out
     } else {
         bxtag_ord <- character(0)
         bxtag_bad_ord <- integer(0)
@@ -1976,8 +1954,10 @@ merge_reads_from_sampleReadsRaw <- function(
         iSizeUpperLimit = iSizeUpperLimit,
         bxTagUpperLimit = bxTagUpperLimit,
         use_bx_tag = use_bx_tag,
-        save_sampleReadsInfo = save_sampleReadsInfo
+        save_sampleReadsInfo = save_sampleReadsInfo,
+        maxnSNPInRead = maxnSNPInRead
     )
+
     sampleReads <- out$sampleReads
     sampleReadsInfo <- out$sampleReadsInfo
     ## for security - cut these to size now!
@@ -2128,9 +2108,10 @@ loadBamAndConvert <- function(
     save_sampleReadsInfo = FALSE,
     use_bx_tag = FALSE,
     bxTagUpperLimit = 50000,
-    default_sample_no_read_behaviour = "fake_reads"
+    default_sample_no_read_behaviour = "fake_reads",
+    maxnSNPInRead = 1000
 ) {
-
+    
     sampleReadsInfo <- NULL ## unless otherwise created
 
     if ((iBam %% 100) == 0) {

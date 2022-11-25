@@ -277,3 +277,104 @@ test_that("can make sampleReadsRaw incorporate bx tag properly for complicated e
     ## print(expected_sample_reads[[iRead]])
     
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+test_that("can resize appropriately", {
+
+    chr <- 10
+    chrStart <- 1
+    chrEnd <- 130
+    L <- seq(chrStart, chrEnd, 2)
+    pos <- cbind(
+        CHR = rep(chr, length(L)),
+        POS = L,
+        REF = rep("A", length(L)),
+        ALT = rep("C", length(L))
+    )
+    ## 
+
+    ## make three reads, all same bx tag
+    make_expect_read <- function(bqs, poss) {
+        stopifnot(length(bqs) == length(poss))
+        return(list(
+            length(bqs) - 1, 7,
+            matrix(bqs, ncol = 1),
+            matrix(match(poss, L) - 1, ncol = 1)
+        ))
+    }
+    expected_sample_reads <- list(
+        make_expect_read(c(-9, -9, -10, -10, -11, -11), 1 + c(10, 12, 14, 16, 18, 20))
+    )
+    
+    bxTagUpperLimit <- 20
+    iSizeUpperLimit <- 15
+    f <- function(read_name, start, tag, bq) {
+        return(
+            c(read_name, "0", chr, start, "60",
+              "4M", "*", "0", "0",
+              "AAAA", paste0(rep(rawToChar(as.raw(bq + 33)), 4), collapse = ""), tag)
+        )
+    }
+
+    to_sam <- list(
+        f("r1_A01", "10", "BX:Z:A01", 9),
+        f("r1_A01", "14", "BX:Z:A01", 10), 
+        f("r1_A01", "18", "BX:Z:A01", 11)
+    )
+    expected_bxtags <- c("A01", "A01", "A01")
+    to_sam <- to_sam[order(as.numeric(sapply(to_sam, function(x) x[[4]])))]
+
+    bam_file <- make_simple_bam(
+        file_stem = file.path(tempdir(), "simple"),
+        sam = make_simple_sam_text(
+            to_sam,
+            chr
+        )
+    )
+
+    set.seed(919)
+    regionName <- "region-name"
+    loadBamAndConvert(
+        iBam = 1,
+        L = as.integer(pos[, 2]),
+        pos = pos,
+        nSNPs = as.integer(nrow(pos)),
+        bam_files = bam_file,
+        N = 1,
+        sampleNames = "test-name-0",
+        inputdir = tempdir(),
+        regionName = regionName,
+        tempdir = tempdir(),
+        chr = chr,
+        chrStart = chrStart,
+        chrEnd = chrEnd,
+         bqFilter = 5,
+        use_bx_tag = TRUE,
+        iSizeUpperLimit = iSizeUpperLimit,
+        bxTagUpperLimit = bxTagUpperLimit,
+        save_sampleReadsInfo = TRUE,
+        maxnSNPInRead = 3
+    )
+
+    load(file_sampleReads(tempdir(), 1, regionName))
+
+    ## check here
+    expect_equal(
+         sampleReads,
+         expected_sample_reads
+    )
+
+})

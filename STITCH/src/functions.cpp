@@ -281,7 +281,8 @@ List cpp_read_reassign(
     int iSizeUpperLimit,
     int bxTagUpperLimit,
     bool use_bx_tag,
-    bool save_sampleReadsInfo = false
+    bool save_sampleReadsInfo = false,
+    int maxnSNPInRead = 1000
 ) {
     // ord is 0-based original ordering
     // qnameInteger_ord is (ordered) integer representing reads
@@ -291,7 +292,6 @@ List cpp_read_reassign(
     int curbxtag = bxtagInteger_ord[0];
     int iReadStart = 0;
     int nRawReads = sampleReadsRaw.size();
-    int maxnSNPInRead = 1000;
     std::vector<int> base_bq(maxnSNPInRead);
     std::vector<int> base_pos(maxnSNPInRead); // there shouldnt be this many SNPs
     //Rcpp::IntegerVector save_read(nRawReads); // over-sized
@@ -308,7 +308,7 @@ List cpp_read_reassign(
     int to_add, k;
     long int minReadStart, maxReadEnd;
     std::string strand_to_out, qname_store;
-    
+
     // first loop, define which reads to save
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
         if (qnameInteger_ord[iRead + 1] != curRead) {
@@ -342,8 +342,7 @@ List cpp_read_reassign(
     Rcpp::IntegerVector sri_minReadStart(nReadsToSave);
     Rcpp::IntegerVector sri_maxReadEnd(nReadsToSave);
     bool change_qname, save_condition_met, bx_tag_not_ok_to_continue, bx_tag_distance_exceeded, change_bx_tag;
-    
-    
+
     curRead = qnameInteger_ord[0];
     curbxtag = bxtagInteger_ord[0];
     count = 0;
@@ -375,16 +374,15 @@ List cpp_read_reassign(
             bx_tag_not_ok_to_continue = (change_bx_tag) | \
                 (bxtag_bad_ord[iRead]) | (bx_tag_distance_exceeded);
             save_condition_met = change_qname & bx_tag_not_ok_to_continue;
-        // if ((206 <= iRead) & (iRead <= 212)) {        
-        //     std::cout << "curbxtag = " << curbxtag << std::endl;                        
-        //     std::cout << "bxtagInteger_ord[iRead + 1] = " << bxtagInteger_ord[iRead + 1] << std::endl;
-        //     std::cout << "change_bx_tag = " << change_bx_tag << std::endl;
-        //     std::cout << "bxtag_bad_ord[iRead] = " << bxtag_bad_ord[iRead] << std::endl;
-        //     std::cout << "bx_tag_distance_exceeded = " << bx_tag_distance_exceeded << std::endl;
-        //     std::cout << "bx_tag_not_ok_to_continue = " << bx_tag_not_ok_to_continue << std::endl;            
-        //     std::cout << "change_qname = " << change_qname << std::endl;
-        //     std::cout << "save_condition_met = " << save_condition_met << std::endl;
-        // }
+            //std::cout << "                      iRead = " << iRead << std::endl;
+            //std::cout << "bxtagInteger_ord[iRead + 1] = " << bxtagInteger_ord[iRead + 1] << std::endl;            
+            //std::cout << "                   curbxtag = " << curbxtag << std::endl;                        
+            // std::cout << "change_bx_tag = " << change_bx_tag << std::endl;
+            // std::cout << "bxtag_bad_ord[iRead] = " << bxtag_bad_ord[iRead] << std::endl;
+            // std::cout << "bx_tag_distance_exceeded = " << bx_tag_distance_exceeded << std::endl;
+            //std::cout << "  bx_tag_not_ok_to_continue = " << bx_tag_not_ok_to_continue << std::endl;            
+            // std::cout << "change_qname = " << change_qname << std::endl;
+            //std::cout << "         save_condition_met = " << save_condition_met << std::endl;
         }
         if (change_qname) {
             curRead = qnameInteger_ord[iRead + 1]; // + 1
@@ -416,7 +414,7 @@ List cpp_read_reassign(
                     arma::ivec bqU = as<arma::ivec>(readData[2]);
                     arma::ivec pRU = as<arma::ivec>(readData[3]);
                     to_add = int(bqU.size());
-                    while ((nSNPsInRead + to_add) > maxnSNPInRead) {
+                    while ((nSNPsInRead + 1 + to_add) > maxnSNPInRead) {
                         base_bq.resize(maxnSNPInRead * 2);
                         base_pos.resize(maxnSNPInRead * 2);
                         maxnSNPInRead *= 2;

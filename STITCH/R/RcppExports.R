@@ -92,8 +92,8 @@ rcpp_evaluate_bxtag <- function(qnameInteger_ord, bxtag_ord) {
 }
 
 #' @export
-cpp_read_reassign <- function(ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo = FALSE) {
-    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo)
+cpp_read_reassign <- function(ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo = FALSE, maxnSNPInRead = 1000L) {
+    .Call('_STITCH_cpp_read_reassign', PACKAGE = 'STITCH', ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo, maxnSNPInRead)
 }
 
 #' @export

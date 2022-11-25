@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // get_header_using_SeqLib
 std::string get_header_using_SeqLib(std::string file_name);
 RcppExport SEXP _STITCH_get_header_using_SeqLib(SEXP file_nameSEXP) {
@@ -307,8 +312,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_read_reassign
-List cpp_read_reassign(const arma::ivec& ord, const arma::ivec& qnameInteger_ord, const arma::ivec& bxtagInteger_ord, const Rcpp::LogicalVector& bxtag_bad_ord, const Rcpp::CharacterVector& qname, const Rcpp::CharacterVector& bxtag, const Rcpp::CharacterVector& strand, const Rcpp::List& sampleReadsRaw, const arma::ivec& readStart_ord, const arma::ivec& readEnd_ord, const arma::ivec& readStart, const arma::ivec& readEnd, int iSizeUpperLimit, int bxTagUpperLimit, bool use_bx_tag, bool save_sampleReadsInfo);
-RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP bxtagInteger_ordSEXP, SEXP bxtag_bad_ordSEXP, SEXP qnameSEXP, SEXP bxtagSEXP, SEXP strandSEXP, SEXP sampleReadsRawSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP iSizeUpperLimitSEXP, SEXP bxTagUpperLimitSEXP, SEXP use_bx_tagSEXP, SEXP save_sampleReadsInfoSEXP) {
+List cpp_read_reassign(const arma::ivec& ord, const arma::ivec& qnameInteger_ord, const arma::ivec& bxtagInteger_ord, const Rcpp::LogicalVector& bxtag_bad_ord, const Rcpp::CharacterVector& qname, const Rcpp::CharacterVector& bxtag, const Rcpp::CharacterVector& strand, const Rcpp::List& sampleReadsRaw, const arma::ivec& readStart_ord, const arma::ivec& readEnd_ord, const arma::ivec& readStart, const arma::ivec& readEnd, int iSizeUpperLimit, int bxTagUpperLimit, bool use_bx_tag, bool save_sampleReadsInfo, int maxnSNPInRead);
+RcppExport SEXP _STITCH_cpp_read_reassign(SEXP ordSEXP, SEXP qnameInteger_ordSEXP, SEXP bxtagInteger_ordSEXP, SEXP bxtag_bad_ordSEXP, SEXP qnameSEXP, SEXP bxtagSEXP, SEXP strandSEXP, SEXP sampleReadsRawSEXP, SEXP readStart_ordSEXP, SEXP readEnd_ordSEXP, SEXP readStartSEXP, SEXP readEndSEXP, SEXP iSizeUpperLimitSEXP, SEXP bxTagUpperLimitSEXP, SEXP use_bx_tagSEXP, SEXP save_sampleReadsInfoSEXP, SEXP maxnSNPInReadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -328,7 +333,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type bxTagUpperLimit(bxTagUpperLimitSEXP);
     Rcpp::traits::input_parameter< bool >::type use_bx_tag(use_bx_tagSEXP);
     Rcpp::traits::input_parameter< bool >::type save_sampleReadsInfo(save_sampleReadsInfoSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo));
+    Rcpp::traits::input_parameter< int >::type maxnSNPInRead(maxnSNPInReadSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_read_reassign(ord, qnameInteger_ord, bxtagInteger_ord, bxtag_bad_ord, qname, bxtag, strand, sampleReadsRaw, readStart_ord, readEnd_ord, readStart, readEnd, iSizeUpperLimit, bxTagUpperLimit, use_bx_tag, save_sampleReadsInfo, maxnSNPInRead));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -937,7 +943,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_get_random_values", (DL_FUNC) &_STITCH_get_random_values, 1},
     {"_STITCH_rcpp_make_fb_snp_offsets", (DL_FUNC) &_STITCH_rcpp_make_fb_snp_offsets, 3},
     {"_STITCH_rcpp_evaluate_bxtag", (DL_FUNC) &_STITCH_rcpp_evaluate_bxtag, 2},
-    {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 16},
+    {"_STITCH_cpp_read_reassign", (DL_FUNC) &_STITCH_cpp_read_reassign, 17},
     {"_STITCH_make_gammaEK_t_from_gammaK_t", (DL_FUNC) &_STITCH_make_gammaEK_t_from_gammaK_t, 10},
     {"_STITCH_Rcpp_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_forward_haploid, 10},
     {"_STITCH_Rcpp_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_run_backward_haploid, 6},
