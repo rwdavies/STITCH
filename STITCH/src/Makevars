@@ -16,7 +16,7 @@ LDFLAGS=$(shell "R CMD config LDFLAGS")
 ## 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
 
 SeqLib:
-	(cd SeqLib && \
+	(cd SeqLib && autoreconf -i && \
 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
 	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
-	cd htslib && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
+	cd htslib && autoreconf -i && ./configure --disable-libcurl && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
