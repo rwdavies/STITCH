@@ -1,6 +1,6 @@
 SEQLIB_ROOT=./SeqLib/
 PKG_CPPFLAGS = -I$(SEQLIB_ROOT)/ -I$(SEQLIB_ROOT)/htslib/
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a -fPIC -lz
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a -fPIC -lz -lbz2 -llzma -lcurl
 
 .PHONY: SeqLib all
 
@@ -19,4 +19,4 @@ SeqLib:
 	(cd SeqLib && autoreconf -i && \
 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
 	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
-	cd htslib && autoreconf -i && ./configure --disable-libcurl && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
+	cd htslib && autoreconf -i && ./configure && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
