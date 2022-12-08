@@ -1,3 +1,5 @@
+* v1.6.7
+	* Fix bugs, change seqlib library
 * v1.6.6
 	* Export more functions for library use
 * v1.6.5
