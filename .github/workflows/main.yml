@@ -26,6 +26,7 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y libdeflate-dev libdeflate-tools
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libdeflate.so /usr/lib/libdeflate.so
           sudo apt-get install -y libcurl4-openssl-dev
           sudo apt-get install -y libharfbuzz-dev
           sudo apt-get install -y libfribidi-dev
