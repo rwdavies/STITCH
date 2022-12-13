@@ -23,7 +23,13 @@ jobs:
           submodules: recursive
  
       - name: Manually install dependency
-        run: sudo apt-get update -y && sudo apt-get install -y libcurl4-openssl-dev && sudo apt-get install -y libharfbuzz-dev && sudo apt-get install -y libfribidi-dev && which pkg-config
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libdeflate-dev libdeflate-tools
+          sudo apt-get install -y libcurl4-openssl-dev
+          sudo apt-get install -y libharfbuzz-dev
+          sudo apt-get install -y libfribidi-dev
+          which pkg-config
 
       - uses: r-lib/actions/setup-r@v2
         with:
