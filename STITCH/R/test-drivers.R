@@ -761,8 +761,10 @@ make_and_write_reference_vcf <- function(pos, reference_haplotypes, reference_sa
     reference_vcf_file_unzipped <- gsub(".gz", "", reference_vcf_file)
     sampleNames <- reference_samples[, 1]
     header <- paste0(
-        '##fileformat=VCFv4.1',
-        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased Genotype">\n'
+        '##fileformat=VCFv4.1\n',
+        '##FILTER=<ID=PASS,Description="All filters passed">\n',
+        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased Genotype">\n',
+        paste0('##contig=<ID=', pos[1, 1], '>', sep = ""), "\n"
     )
     header2 <- paste("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", paste(sampleNames, collapse = "\t", sep="\t"), sep="\t")
     cat(header, header2, "\n", sep="", file = reference_vcf_file_unzipped)
