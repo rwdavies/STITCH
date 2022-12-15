@@ -19,4 +19,4 @@ SeqLib:
 	(cd SeqLib && autoreconf -i && \
 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
 	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
-	cd htslib && autoreconf -i && ./configure && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
+	cd htslib && autoreconf -i && ./configure --with-libdeflate=no && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
