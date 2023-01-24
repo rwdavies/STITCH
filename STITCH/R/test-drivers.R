@@ -170,7 +170,8 @@ make_phasefile <- function(
     K = NA,
     phasemaster = NULL,
     samples_are_inbred = FALSE,
-    write_row_as_NA = NULL ## boolean vector when defined
+    write_row_as_NA = NULL, ## boolean vector when defined
+    haps_to_sample_all = NULL
 ) {
     set.seed(seed)
     if (is.na(K)) {
@@ -183,10 +184,14 @@ make_phasefile <- function(
             phasemaster <- array(round(sample(vals, size = n_snps * K, replace = TRUE)), c(n_snps, K))
         phase <- array(0, c(n_snps, n_samples, 2))
         for(i_sample in 1:n_samples) {
-            if (samples_are_inbred) {
-                haps_to_sample <- rep(sample(K, 1), 2)
+            if (!is.null(haps_to_sample_all)) {
+                haps_to_sample <- haps_to_sample_all[i_sample, ]
             } else {
-                haps_to_sample <- c(sample(K, 1), sample(K, 1))
+                if (samples_are_inbred) {
+                    haps_to_sample <- rep(sample(K, 1), 2)
+                } else {
+                    haps_to_sample <- c(sample(K, 1), sample(K, 1))
+                }
             }
             for(i_hap in 1:2) {
                 phase[, i_sample, i_hap] <- phasemaster[, haps_to_sample[i_hap]]
@@ -239,7 +244,8 @@ make_acceptance_test_data_package <- function(
     write_row_as_NA = NULL,
     use_bx_tag = FALSE,
     refs = NA,
-    alts = NA
+    alts = NA,
+    haps_to_sample_all = NULL
 ) {
 
     if (length(n_reads) == 1) {
@@ -303,7 +309,8 @@ make_acceptance_test_data_package <- function(
         seed = seed,
         phasemaster = phasemaster,
         samples_are_inbred = samples_are_inbred,
-        write_row_as_NA = write_row_as_NA
+        write_row_as_NA = write_row_as_NA,
+        haps_to_sample_all = haps_to_sample_all
     )
 
     genfile <- file.path(outputdir, paste0("gen.", regionName, ".file.txt"))
