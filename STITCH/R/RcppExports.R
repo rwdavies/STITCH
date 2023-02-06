@@ -197,8 +197,8 @@ inflate_fhb <- function(rhb, haps_to_get, nSNPs) {
 }
 
 #' @export
-get_rhb_from_vcf <- function(vcffile, samples, region) {
-    .Call('_STITCH_get_rhb_from_vcf', PACKAGE = 'STITCH', vcffile, samples, region)
+get_rhb_from_vcf <- function(vcffile, region, samples = "-") {
+    .Call('_STITCH_get_rhb_from_vcf', PACKAGE = 'STITCH', vcffile, region, samples)
 }
 
 #' @export

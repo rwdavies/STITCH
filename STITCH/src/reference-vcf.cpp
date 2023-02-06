@@ -4,11 +4,11 @@
 using namespace Rcpp;
 using namespace vcfpp;
 
+
 //' @export
 // [[Rcpp::export]]
-IntegerMatrix get_rhb_from_vcf(const std::string &vcffile,
-                               const std::string &samples,
-                               const std::string &region) {
+IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region,
+                               std::string samples = "-") {
 
   BcfReader br(vcffile, samples, region);
   BcfRecord var(br.header);
@@ -25,7 +25,7 @@ IntegerMatrix get_rhb_from_vcf(const std::string &vcffile,
   const int B = 32;
   int nGrids = (nsnps + B - 1) / B;
   IntegerMatrix rhb(nhaps, nGrids);
-  int i, s, t = 0;
+  int i, s = 0, t = 0;
   while (br.getNextVariant(var)) {
     var.getGenotypes(gt);
     if (!var.isNoneMissing() || !var.allPhased())

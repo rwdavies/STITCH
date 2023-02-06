@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // get_header_using_SeqLib
 std::string get_header_using_SeqLib(std::string file_name);
 RcppExport SEXP _STITCH_get_header_using_SeqLib(SEXP file_nameSEXP) {
@@ -700,15 +705,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_rhb_from_vcf
-IntegerMatrix get_rhb_from_vcf(const std::string& vcffile, const std::string& samples, const std::string& region);
-RcppExport SEXP _STITCH_get_rhb_from_vcf(SEXP vcffileSEXP, SEXP samplesSEXP, SEXP regionSEXP) {
+IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples);
+RcppExport SEXP _STITCH_get_rhb_from_vcf(SEXP vcffileSEXP, SEXP regionSEXP, SEXP samplesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type vcffile(vcffileSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_rhb_from_vcf(vcffile, samples, region));
+    Rcpp::traits::input_parameter< std::string >::type vcffile(vcffileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< std::string >::type samples(samplesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_rhb_from_vcf(vcffile, region, samples));
     return rcpp_result_gen;
 END_RCPP
 }
