@@ -46,10 +46,10 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region,
     s++;
     if (s % B == 0) {
       for (i = 0; i < nhaps; i++) {
-        X[i] &= ~(1 << 31);
-        rhb(i, t) = (int32_t)X[i];
-        if (!ihold[i])
-          rhb(i, t) |= 1 << 31; // set the 32 bit to 1
+        X[i] &= ~(1 << 31);  // clear the 32th bit
+        rhb(i, t) = (int32_t)X[i]; // now make it as int safely
+        if (ihold[i])
+          rhb(i, t) |= 1 << 31; // set the 32th bit to 1
       }
       t++; // update next grid
       std::fill(X.begin(), X.end(), 0);
@@ -61,7 +61,7 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region,
       X[i] <<= nGrids * B - nsnps;
       X[i] &= ~(1 << 31);
       rhb(i, t) = (int32_t)X[i];
-      if (!ihold[i])
+      if (ihold[i])
         rhb(i, t) |= 1 << 31;
     }
   } else if (nGrids == t) {
