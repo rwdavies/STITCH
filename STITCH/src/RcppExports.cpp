@@ -704,6 +704,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_rhb_from_vcf
+IntegerMatrix get_rhb_from_vcf(const std::string& vcffile, const std::string& samples, const std::string& region);
+RcppExport SEXP _STITCH_get_rhb_from_vcf(SEXP vcffileSEXP, SEXP samplesSEXP, SEXP regionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type vcffile(vcffileSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_rhb_from_vcf(vcffile, samples, region));
+    return rcpp_result_gen;
+END_RCPP
+}
 // Rcpp_ref_run_forward_haploid
 void Rcpp_ref_run_forward_haploid(arma::mat& alphaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrentX_tc, const arma::cube& transMatRate_tc_H, const arma::mat& priorCurrent_m, const int s);
 RcppExport SEXP _STITCH_Rcpp_ref_run_forward_haploid(SEXP alphaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrentX_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP priorCurrent_mSEXP, SEXP sSEXP) {
@@ -964,6 +977,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_inflate_fhb_t", (DL_FUNC) &_STITCH_inflate_fhb_t, 3},
     {"_STITCH_inflate_fhb_t_in_place", (DL_FUNC) &_STITCH_inflate_fhb_t_in_place, 5},
     {"_STITCH_inflate_fhb", (DL_FUNC) &_STITCH_inflate_fhb, 3},
+    {"_STITCH_get_rhb_from_vcf", (DL_FUNC) &_STITCH_get_rhb_from_vcf, 3},
     {"_STITCH_Rcpp_ref_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_forward_haploid, 7},
     {"_STITCH_Rcpp_ref_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_backward_haploid, 7},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},

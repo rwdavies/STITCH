@@ -197,6 +197,11 @@ inflate_fhb <- function(rhb, haps_to_get, nSNPs) {
 }
 
 #' @export
+get_rhb_from_vcf <- function(vcffile, samples, region) {
+    .Call('_STITCH_get_rhb_from_vcf', PACKAGE = 'STITCH', vcffile, samples, region)
+}
+
+#' @export
 Rcpp_ref_run_forward_haploid <- function(alphaHat_t, c, eMatGrid_t, alphaMatCurrentX_tc, transMatRate_tc_H, priorCurrent_m, s) {
     invisible(.Call('_STITCH_Rcpp_ref_run_forward_haploid', PACKAGE = 'STITCH', alphaHat_t, c, eMatGrid_t, alphaMatCurrentX_tc, transMatRate_tc_H, priorCurrent_m, s))
 }
