@@ -64,25 +64,39 @@ test_that("STITCH diploid works under default parameters using CRAM files", {
     file.copy(data_package_crams$ref, tempdir())
     
     unlink(data_package_crams$ref)
-    ref <- file.path(tempdir(), basename(data_package_crams$ref))
 
-    STITCH(
-        chr = data_package_crams$chr,
-        cramlist = data_package_crams$cramlist,
-        reference = ref,
-        posfile = data_package_crams$posfile,
-        outputdir = outputdir,
-        K = 2,
-        nGen = 100,
-        nCores = 1
-    )
+    for(ref_location in c("original", "moved")) {
+        
+        ref <- file.path(tempdir(), basename(data_package_crams$ref))
 
-    check_output_against_phase(
-        file.path(outputdir, paste0("stitch.", data_package_crams$chr, ".vcf.gz")),
-        data_package_crams,
-        output_format,
-        which_snps = NULL,
-        tol = 0.2
-    )
+        if (ref_location == "moved") {
+
+            new_ref <- gsub(".fa", ".moved.fa", ref)
+            file.copy(from = ref, to = new_ref)
+            unlink(ref)
+            ref <- new_ref
+
+        }
+
+        STITCH(
+            chr = data_package_crams$chr,
+            cramlist = data_package_crams$cramlist,
+            reference = ref,
+            posfile = data_package_crams$posfile,
+            outputdir = outputdir,
+            K = 2,
+            nGen = 100,
+            nCores = 1
+        )
+        
+        check_output_against_phase(
+            file.path(outputdir, paste0("stitch.", data_package_crams$chr, ".vcf.gz")),
+            data_package_crams,
+            output_format,
+            which_snps = NULL,
+            tol = 0.2
+        )
+
+    }
 
 })
