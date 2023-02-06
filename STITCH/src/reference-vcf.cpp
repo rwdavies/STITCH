@@ -28,7 +28,7 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region,
   }
   const int B = 32;
   int nGrids = (nsnps + B - 1) / B;
-  IntegerMatrix rhb(nhaps, nGrids);
+  IntegerMatrix rhb_t(nGrids, nhaps);
   int d32_times_bs, imax, ihap, k;
 
   // check rcpp_int_contract
@@ -47,9 +47,9 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region,
         int j = X[d32_times_bs + k][ihap];
         itmp |= j & 0x1;
       }
-      rhb(ihap, bs) = itmp;
+      rhb(bs, ihap) = itmp;
     }
   }
 
-  return rhb;
+  return rhb_t;
 }
