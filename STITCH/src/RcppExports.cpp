@@ -705,15 +705,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_rhb_from_vcf
-IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples);
-RcppExport SEXP _STITCH_get_rhb_from_vcf(SEXP vcffileSEXP, SEXP regionSEXP, SEXP samplesSEXP) {
+IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples, bool is_check);
+RcppExport SEXP _STITCH_get_rhb_from_vcf(SEXP vcffileSEXP, SEXP regionSEXP, SEXP samplesSEXP, SEXP is_checkSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type vcffile(vcffileSEXP);
     Rcpp::traits::input_parameter< std::string >::type region(regionSEXP);
     Rcpp::traits::input_parameter< std::string >::type samples(samplesSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_rhb_from_vcf(vcffile, region, samples));
+    Rcpp::traits::input_parameter< bool >::type is_check(is_checkSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_rhb_from_vcf(vcffile, region, samples, is_check));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -977,7 +978,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_inflate_fhb_t", (DL_FUNC) &_STITCH_inflate_fhb_t, 3},
     {"_STITCH_inflate_fhb_t_in_place", (DL_FUNC) &_STITCH_inflate_fhb_t_in_place, 5},
     {"_STITCH_inflate_fhb", (DL_FUNC) &_STITCH_inflate_fhb, 3},
-    {"_STITCH_get_rhb_from_vcf", (DL_FUNC) &_STITCH_get_rhb_from_vcf, 3},
+    {"_STITCH_get_rhb_from_vcf", (DL_FUNC) &_STITCH_get_rhb_from_vcf, 4},
     {"_STITCH_Rcpp_ref_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_forward_haploid, 7},
     {"_STITCH_Rcpp_ref_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_backward_haploid, 7},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},
