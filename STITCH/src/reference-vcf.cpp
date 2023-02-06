@@ -16,58 +16,39 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region,
   int nhaps = br.nsamples * 2;
   int nsnps = 0;
   std::vector<bool> gt;
-  while (br.getNextVariant(var)) {
-    if (is_check) {
-      var.getGenotypes(gt);
-      if (!var.isNoneMissing() || !var.allPhased())
-        continue; // skip var with missing values and non-phased
-    }
-    nsnps++;
-  }
-  br.setRegion(region); // seek back to region
-  const int B = 32;
-  int nGrids = (nsnps + B - 1) / B;
-  IntegerMatrix rhb(nhaps, nGrids);
-  std::vector<uint32_t> X(nhaps);
-  std::vector<bool> ihold(nhaps);
-  int i, s = 0, t = 0;
+  std::vector<std::vector<bool>> X;
   while (br.getNextVariant(var)) {
     var.getGenotypes(gt);
     if (is_check) {
       if (!var.isNoneMissing() || !var.allPhased())
         continue; // skip var with missing values and non-phased
     }
-    // update current grids
-    for (i = 0; i < nhaps; i++) {
-      if (t % B == 0)
-        ihold[i] = gt[i];
-      X[i] = (X[i] << 1) | (gt[i] != 0);
-    }
-    s++;
-    if (s % B == 0) {
-      for (i = 0; i < nhaps; i++) {
-        X[i] &= ~(1 << 31);  // clear the 32th bit
-        rhb(i, t) = (int32_t)X[i]; // now make it as int safely
-        if (ihold[i])
-          rhb(i, t) |= 1 << 31; // set the 32th bit to 1
-      }
-      t++; // update next grid
-      std::fill(X.begin(), X.end(), 0);
-    }
+    X.push_back(gt);
+    nsnps++;
   }
-  if (nGrids == t + 1) {
-    // padding 0s at the end
-    for (i = 0; i < nhaps; i++) {
-      X[i] <<= nGrids * B - nsnps;
-      X[i] &= ~(1 << 31);
-      rhb(i, t) = (int32_t)X[i];
-      if (ihold[i])
-        rhb(i, t) |= 1 << 31;
+  const int B = 32;
+  int nGrids = (nsnps + B - 1) / B;
+  IntegerMatrix rhb(nhaps, nGrids);
+  int d32_times_bs, imax, ihap, k;
+
+  // check rcpp_int_contract
+  for (int bs = 0; bs < nGrids; bs++) {
+    for (ihap = 0; ihap < nhaps; ihap++) {
+      d32_times_bs = 32 * bs;
+      if (bs < (nGrids - 1)) {
+        imax = 31;
+      } else {
+        // final one!
+        imax = nsnps - d32_times_bs - 1;
+      }
+      std::uint32_t itmp = 0;
+      for (k = imax; k >= 0; k--) {
+        itmp <<= 1;
+        int j = X[d32_times_bs + k][ihap];
+        itmp |= j & 0x1;
+      }
+      rhb(ihap, bs) = itmp;
     }
-  } else if (nGrids == t) {
-    std::cerr << "no need padding\n";
-  } else {
-    throw std::runtime_error("something wrong!");
   }
 
   return rhb;
