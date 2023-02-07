@@ -1,3 +1,5 @@
+* v1.6.8
+	* Fix bugs relating to installation
 * v1.6.7
 	* Fix bugs, change seqlib library
 * v1.6.6
