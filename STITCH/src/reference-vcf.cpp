@@ -1,24 +1,28 @@
 #include "vcfpp/vcfpp.h"
 #include <Rcpp.h>
+#include <string>
 #include <vector>
 
 using namespace Rcpp;
 using namespace vcfpp;
+using namespace std;
 
 //' @export
 // [[Rcpp::export]]
-IntegerMatrix get_rhb_from_vcf(std::string vcffile,
-                               std::string region,
-                               std::string samples = "-",
-                               bool is_check = false)
+List get_rhb_from_vcf(std::string vcffile,
+                      std::string region,
+                      std::string samples = "-",
+                      bool is_check = false)
 {
 
     BcfReader br(vcffile, samples, region);
     BcfRecord var(br.header);
     int nhaps = br.nsamples * 2;
     int nsnps = 0;
-    std::vector<bool> gt;
-    std::vector<std::vector<bool>> X;
+    NumericVector rowsum;
+    vector<bool> gt;
+    vector<vector<bool>> X;
+    vector<string> legend_snps;
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
@@ -27,7 +31,11 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile,
             if(!var.isNoneMissing() || !var.allPhased())
                 continue; // skip var with missing values and non-phased
         }
+        int s = 0;
+        for(auto g : gt) s += g;
+        rowsum.push_back(s);
         X.push_back(gt);
+        legend_snps.push_back(std::to_string(var.POS()) + "-" + var.REF() + "-" + var.ALT());
         nsnps++;
     }
     const int B = 32;
@@ -61,5 +69,6 @@ IntegerMatrix get_rhb_from_vcf(std::string vcffile,
         }
     }
 
-    return rhb_t;
+    return List::create(Named("rhb") = rhb_t, Named("legend") = legend_snps, Named("hapRowsum") = rowsum,
+                        Named("nhaps") = nhaps);
 }

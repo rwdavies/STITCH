@@ -211,6 +211,68 @@ get_and_initialize_from_reference <- function(
 
 }
 
+## central function controlling the loading of reference haplotypes
+
+#' @export
+get_haplotypes_from_vcf <- function(
+    chr,
+    pos,
+    reference_vcf_file,
+    reference_sample_file =  "",
+    regionStart = NA,
+    regionEnd = NA,
+    buffer = NA,
+    niterations = 40,
+    extraction_method = "all", ## both for
+    load_rhb_method = "R"
+) {
+    if (reference_sample_file == "") {
+        subsamples <- "-" ## all samples
+    }
+    else if (reference_exclude_samplelist_file == "") {
+        s1 <- read.table(reference_sample_file, h = T)[,1]
+        subsamples <- paste(s1, collapse = ",")
+    }
+    else {
+        s1 <- read.table(reference_sample_file, h = T)[,1]
+        s2 <- read.table(reference_exclude_samplelist_file, h = F)[,1]
+        subsamples <- paste(s1[-which(s2%in%s1)], collapse = ",")
+    }
+    if(is.na(regionStart) | is.na(regionEnd) | is.na(buffer))
+    {
+        subregion <- chr
+    } else {
+        ifelse(regionStart-buffer<1, subregion <- paste0(chr, ":", 1, "-", regionEnd+buffer), subregion <- paste0(chr, ":", regionStart-buffer, "-", regionEnd+buffer) )
+    }
+
+    vcfpack <- get_rhb_from_vcf(reference_vcf_file, subregion, subsamples)
+    legend_snps <- vcfpack$legend
+    pos_snps <- paste(pos[,2], pos[,3], pos[,4], sep = "-")
+    both_snps <- intersect(legend_snps, pos_snps)
+
+    validate_pos_and_legend_snps_for_niterations_equals_1(legend_snps, pos_snps, niterations)
+    print_and_validate_reference_snp_stats(pos_snps, legend_snps, both_snps)
+
+    ## only extract those we need
+    ## note - legend_snps validated - so no duplicate legend SNPs
+    hap_snps_to_extract <- is.na(match(legend_snps, both_snps)) == FALSE
+    hap_snps_position_in_pos <- is.na(match(pos_snps, both_snps)) == FALSE
+    lines_to_get <- position_in_haps_file[hap_snps_to_extract]
+    rh_in_L <- which(hap_snps_position_in_pos)
+    nSNPs <- nrow(pos)
+    ref_alleleCount <- array(NA, c(nSNPs, 3))
+    ref_alleleCount[rh_in_L, 1] <- vcfpack$hapRowsum
+    ref_alleleCount[rh_in_L, 2] <- vcfpack$nhaps
+    ref_alleleCount[, 3] <- ref_alleleCount[, 1] / ref_alleleCount[, 2]
+    return(
+        list(
+            rh_in_L = rh_in_L,
+            rhb = vcfpack$rhb,
+            ref_alleleCount = ref_alleleCount
+        )
+    )
+
+}
 
 ## central function controlling the loading of reference haplotypes
 

@@ -705,7 +705,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_rhb_from_vcf
-IntegerMatrix get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples, bool is_check);
+List get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples, bool is_check);
 RcppExport SEXP _STITCH_get_rhb_from_vcf(SEXP vcffileSEXP, SEXP regionSEXP, SEXP samplesSEXP, SEXP is_checkSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
