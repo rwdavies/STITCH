@@ -219,6 +219,7 @@ get_haplotypes_from_vcf <- function(
     pos,
     reference_vcf_file,
     reference_sample_file =  "",
+    reference_exclude_samplelist_file =  "",
     regionStart = NA,
     regionEnd = NA,
     buffer = NA,
