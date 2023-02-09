@@ -247,7 +247,8 @@ get_haplotypes_from_vcf <- function(
     }
 
     vcfpack <- get_rhb_from_vcf(reference_vcf_file, subregion, subsamples)
-    legend_snps <- vcfpack$legend
+    position_in_haps_file <- vcfpack$pos
+    legend_snps <- paste(vcfpack$pos, vcfpack$ref, vcfpack$alt, sep = "-")
     pos_snps <- paste(pos[,2], pos[,3], pos[,4], sep = "-")
     both_snps <- intersect(legend_snps, pos_snps)
 

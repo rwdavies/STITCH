@@ -20,9 +20,10 @@ List get_rhb_from_vcf(std::string vcffile,
     int nhaps = br.nsamples * 2;
     int nsnps = 0;
     NumericVector rowsum;
+    IntegerVector pos;
     vector<bool> gt;
     vector<vector<bool>> X;
-    vector<string> legend_snps;
+    vector<string> ref, alt;
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
@@ -35,7 +36,9 @@ List get_rhb_from_vcf(std::string vcffile,
         for(auto g : gt) s += g;
         rowsum.push_back(s);
         X.push_back(gt);
-        legend_snps.push_back(std::to_string(var.POS()) + "-" + var.REF() + "-" + var.ALT());
+        ref.push_back(var.REF());
+        alt.push_back(var.ALT());
+        pos.push_back(var.POS());
         nsnps++;
     }
     const int B = 32;
@@ -69,6 +72,6 @@ List get_rhb_from_vcf(std::string vcffile,
         }
     }
 
-    return List::create(Named("rhb") = rhb_t, Named("legend") = legend_snps, Named("hapRowsum") = rowsum,
-                        Named("nhaps") = nhaps);
+    return List::create(Named("rhb") = rhb_t, Named("pos") = pos, Named("ref") = ref, Named("alt") = alt,
+                        Named("hapRowsum") = rowsum, Named("nhaps") = nhaps);
 }
