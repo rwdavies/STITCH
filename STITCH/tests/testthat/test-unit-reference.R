@@ -220,8 +220,10 @@ test_that("reference data can be loaded for an autosome specifying regionStart, 
     refpack <- make_reference_package(
         n_snps = 10,
         n_samples_per_pop = 4,
+        chr = "1",
         reference_populations = c("CEU", "GBR", "CHB")
     )
+
     out <- get_haplotypes_from_reference(
         reference_haplotype_file = refpack$reference_haplotype_file,
         reference_legend_file = refpack$reference_legend_file,
@@ -236,12 +238,24 @@ test_that("reference data can be loaded for an autosome specifying regionStart, 
     )
     reference_haps <- out[["reference_haps"]]
 
+    vcf <- get_haplotypes_from_vcf(chr = "1",
+                                   pos = refpack$pos,
+                                   reference_vcf_file = refpack$reference_vcf_file,
+                                   regionStart = regionStart,
+                                   regionEnd = regionEnd,
+                                   buffer = buffer
+                                   )
+
+
     ##
     not_NA <- refpack$pos[, "POS"] >= (regionStart - buffer) & refpack$pos[, "POS"] <= (regionEnd + buffer)
     expect <- refpack$reference_haplotypes[not_NA, ]
     expect_equal(expect, reference_haps)
     expect_equal(out[["rhb1"]], out[["rhb2"]])
     expect_equal(out[["rhb1"]], out[["rhb3"]])
+    expect_equal(out[["rhb1"]], vcf[["rhb"]])
+    expect_equal(out[["ref_alleleCount1"]], vcf[["ref_alleleCount"]])
+    expect_equal(out[["rh_in_L"]], vcf[["rh_in_L"]])
     
     
 })
