@@ -430,16 +430,18 @@ per_core_get_results <- function(
         bundledAlphaBetaBlocks <- out$bundledAlphaBetaBlocks
 
         ## note, inefficient in current form
-        out <- get_phasing_from_dir_for_sample(
-            dir = tempdir,
-            regionName = regionName,
-            iSample = iSample,
-            bundling_info = bundling_info,
-            bundledPhasing = bundledPhasing,
-            allPhasing = allPhasing
-        )
-        phasing <- out$phasing
-        bundledPhasing <- out$bundledPhasing
+        if (do_phasing) {
+            out <- get_phasing_from_dir_for_sample(
+                dir = tempdir,
+                regionName = regionName,
+                iSample = iSample,
+                bundling_info = bundling_info,
+                bundledPhasing = bundledPhasing,
+                allPhasing = allPhasing
+            )
+            phasing <- out$phasing
+            bundledPhasing <- out$bundledPhasing
+        }
 
         if (method == "pseudoHaploid") {
             out <- get_sampleProbs_from_dir_for_sample(
