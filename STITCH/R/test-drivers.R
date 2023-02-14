@@ -461,7 +461,8 @@ check_output_against_phase <- function(
     which_snps = NULL,
     tol = 0.2,
     who = NULL,
-    min_info = 0.98
+    min_info = 0.98,
+    allowed_pse = 0
 ) {
     if (is.null(which_snps)) {
         which_snps <- 1:length(data_package$L)
@@ -504,7 +505,8 @@ check_output_against_phase <- function(
             data_package$phase,
             which_snps,
             tol = tol,
-            who = who
+            who = who,
+            allowed_pse = allowed_pse 
         )
         check_vcf_info_scores(
             vcf = vcf,
@@ -523,6 +525,10 @@ check_vcf_info_scores <- function(vcf, min_info = 0.98) {
         info_score <- as.numeric(strsplit(x[y], "INFO_SCORE=")[[1]][2])
         return(info_score)
     })
+    if (sum(info_scores < min_info) > 0) {
+        print(paste0("min_info = ", min_info))
+        print(paste0(info_scores[info_scores < min_info], collapse = ", "))
+    }
     expect_equal(info_scores >= min_info, rep(TRUE, length(info_scores)))
 }
 
@@ -531,7 +537,8 @@ check_vcf_against_phase <- function(
     phase,
     which_snps,
     who = NULL,
-    tol = 0.2
+    tol = 0.2,
+    allowed_pse = 0
 ) {
     if (length(unique(vcf[, 9])) > 1) {
         stop("not written for this")
@@ -544,6 +551,24 @@ check_vcf_against_phase <- function(
         vcf_col <- vcf[, i_sample]
         vcf_col_split <- t(sapply(strsplit(vcf_col, ":"), I))
         colnames(vcf_col_split) <- gt_names
+        ## check phasing if appropriate
+        gt <- vcf_col_split[, "GT"]
+        if (substr(gt[1], 2, 2) == "|") {
+            hap1 <- as.integer(substr(gt, 1, 1))
+            hap2 <- as.integer(substr(gt, 3, 3))            
+            thap1 <- phase[, i_sample - 9, 1]
+            thap2 <- phase[, i_sample - 9, 2]
+            LL <- 1:nrow(phase)
+            pse <- modified_calculate_pse(cbind(hap1, hap2), cbind(thap1, thap2), LL)
+            if (!is.na(pse[1])) {
+                pse <- pse$values["phase_errors_def1"]
+                if (! (pse <= allowed_pse)) {
+                    print(paste0("i_sample = ", i_sample, ", n pse = ", pse))
+                    print(cbind(hap1 = hap1, hap2 = hap2, thap1 = thap1, thap2 = thap2))
+                }
+                expect_true(pse <= allowed_pse)
+            }
+        }
         ## check dosage
         dosage <- as.numeric(vcf_col_split[, "DS"])
         truth_dosage <- phase[which_snps, i_sample - 9, 1] + phase[which_snps, i_sample - 9, 2]
@@ -553,6 +578,7 @@ check_vcf_against_phase <- function(
         if (sum(abs(dosage - truth_dosage) > tol) > 0) {
             print(paste0("i_sample = ", i_sample))
             print(cbind("dosage" = dosage, "truth_dosage" = truth_dosage))
+            print(table(round(dosage), round(truth_dosage)))
         }
         expect_equal(max(abs(dosage - truth_dosage)) <= tol, TRUE)
         ## check genotype probability

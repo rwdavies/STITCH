@@ -59,6 +59,33 @@ file_alphaBetaBlocks <- function(
 }
 
 
+file_phasing <- function(
+    dir,
+    iBam,
+    regionName
+) {
+    return(
+        file.path(
+            dir,
+            paste0("phasing.", iBam , ".", regionName, ".RData")
+        )
+    )
+}
+
+file_bundledPhasing <- function(
+    dir,
+    start,
+    end,
+    regionName
+) {
+    return(
+        file.path(
+            dir,
+            paste0("bundledPhasing.", start, "-", end, ".", regionName, ".RData")
+        )
+    )
+}
+
 file_bundledSampleReads <- function(
   dir,
   start,

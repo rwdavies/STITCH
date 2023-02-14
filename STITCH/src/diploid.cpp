@@ -720,6 +720,7 @@ Rcpp::List forwardBackwardDiploid(
     const Rcpp::IntegerVector grid = 0, // end of things needed for genProbs and dosage
     const bool return_gamma = false, // full gamma, K * K rows
     const bool return_gammaK = false,
+    const bool return_c = false,
     const bool return_extra = false, // whether to return stuff useful for debugging
     const bool update_in_place = false, // update directly into output variables
     const bool pass_in_alphaBeta = false, // whether to pass in pre-made alphaHat, betaHat
@@ -896,6 +897,9 @@ Rcpp::List forwardBackwardDiploid(
       to_return.push_back(betaHat_t, "betaHat_t");
       to_return.push_back(eMatRead_t, "eMatRead_t");      
       to_return.push_back(eMatGrid_t, "eMatGrid_t");
+      to_return.push_back(c, "c");
+  }
+  if (return_c) {
       to_return.push_back(c, "c");
   }
   if (run_fb_subset) {

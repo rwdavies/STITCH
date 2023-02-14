@@ -136,6 +136,54 @@ get_alphaBetaBlocks_from_dir_for_sample <- function(
 }
 
 
+get_phasing_from_dir_for_sample <- function(
+    dir,
+    regionName,
+    iSample,
+    bundling_info,
+    bundledPhasing = NULL,
+    what = "alphaPhasing",
+    allPhasing = NULL
+) {
+    if (is.null(allPhasing) == FALSE) {
+        return(
+            list(
+                phasing = allPhasing[[iSample]],
+                bundledPhasing = NULL
+            )
+        )
+    }
+    file_loader <- file_phasing
+    file_bundled_loader <- file_bundledPhasing
+    if (length(bundling_info) == 0) {
+        load(file_loader(dir, iSample, regionName))
+    } else {
+        x <- bundling_info$matrix[iSample, ]
+        iC <- x["iCore"]
+        iB <- x["iBundle"]
+        iP <- x["iPosition"]
+        y <- bundling_info$list[[iC]][[iB]]
+        s <- y[1]
+        e <- y[2]
+        file <- file_bundled_loader(dir, s, e, regionName)
+        if (length(bundledAlphaBetaBlocks) == 0) {
+            load(file)
+        } else {
+            if (bundledPhasing$name != paste0(s, "_", e)) {
+                load(file)
+            }
+        }
+        phasing <- bundledPhasing[[iP]]
+    }
+    return(
+        list(
+            phasing = phasing,
+            bundledPhasing = bundledPhasing
+        )
+    )
+}
+
+
 bundle_inputs_after_generation <- function(
     bundling_info,
     iBam,
@@ -152,6 +200,8 @@ bundle_inputs_after_generation <- function(
         file_samples <- file_referenceSampleReads
     } else if (what == "alphaBetaBlocks") {
         file_samples <- file_alphaBetaBlocks
+    } else if (what == "phasing") {
+        file_samples <- file_phasing
     } else {
         stop("bad bundle choice")
     }
@@ -178,6 +228,10 @@ bundle_inputs_after_generation <- function(
                 file <- file_referenceSampleReads(dir, iBam, regionName)
                 load(file = file)
                 return(sampleReads)
+            } else if (what == "phasing") {
+                file <- file_phasing(dir, iBam, regionName)
+                load(file = file)
+                return(phasing)
             } else if (what == "alphaBetaBlocks") {
                 file <- file_alphaBetaBlocks(dir, iBam, regionName)
                 load(file = file)
@@ -212,6 +266,13 @@ bundle_inputs_after_generation <- function(
         save(
             bundledAlphaBetaBlocks,
             file = file_bundledAlphaBetaBlocks(dir, s, e, regionName),
+            compress = TRUE
+        )
+    } else if (what == "phasing") {
+        bundledPhasing <- bundledSampleObject
+        save(
+            bundledPhasing,
+            file = file_bundledPhasing(dir, s, e, regionName),
             compress = TRUE
         )
     }
