@@ -244,11 +244,11 @@ STITCH(
 
 \item{bxTagUpperLimit}{When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules}
 
+\item{do_phasing}{Whether to perform phasing (experimental)}
+
 \item{phasing_method}{What phasing method to perform}
 
 \item{phasing_n_votes}{For voting phasing, how many votes to use}
-
-\item{phase}{Whether to perform phasing (experimental)}
 }
 \value{
 Results in properly formatted version
