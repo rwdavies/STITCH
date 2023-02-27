@@ -14,7 +14,6 @@ List get_rhb_from_vcf(std::string vcffile,
                       std::string samples = "-",
                       bool is_check = false)
 {
-
     BcfReader br(vcffile, samples, region);
     BcfRecord var(br.header);
     int nhaps = br.nsamples * 2;
@@ -45,7 +44,6 @@ List get_rhb_from_vcf(std::string vcffile,
     int nGrids = (nsnps + B - 1) / B;
     IntegerMatrix rhb_t(nGrids, nhaps);
     int d32_times_bs, imax, ihap, k;
-
     // check rcpp_int_contract
     for(int bs = 0; bs < nGrids; bs++)
     {
@@ -58,8 +56,7 @@ List get_rhb_from_vcf(std::string vcffile,
             }
             else
             {
-                // final one!
-                imax = nsnps - d32_times_bs - 1;
+                imax = nsnps - d32_times_bs - 1; // final one!
             }
             std::uint32_t itmp = 0;
             for(k = imax; k >= 0; k--)
