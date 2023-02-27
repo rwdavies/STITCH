@@ -604,6 +604,48 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mspbwt_build
+void mspbwt_build(const std::string& binfile, const std::string& vcfpanel, const std::string& samples, const std::string& region, int nindices, int mspbwtB, double maf);
+RcppExport SEXP _STITCH_mspbwt_build(SEXP binfileSEXP, SEXP vcfpanelSEXP, SEXP samplesSEXP, SEXP regionSEXP, SEXP nindicesSEXP, SEXP mspbwtBSEXP, SEXP mafSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type vcfpanel(vcfpanelSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< int >::type nindices(nindicesSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    Rcpp::traits::input_parameter< double >::type maf(mafSEXP);
+    mspbwt_build(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf);
+    return R_NilValue;
+END_RCPP
+}
+// mspbwt_load
+SEXP mspbwt_load(const std::string& binfile, int mspbwtB);
+RcppExport SEXP _STITCH_mspbwt_load(SEXP binfileSEXP, SEXP mspbwtBSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    rcpp_result_gen = Rcpp::wrap(mspbwt_load(binfile, mspbwtB));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mspbwt_report
+List mspbwt_report(SEXP xp_, const IntegerVector& z, int pbwtL, int mspbwtB);
+RcppExport SEXP _STITCH_mspbwt_report(SEXP xp_SEXP, SEXP zSEXP, SEXP pbwtLSEXP, SEXP mspbwtBSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xp_(xp_SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< int >::type pbwtL(pbwtLSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    rcpp_result_gen = Rcpp::wrap(mspbwt_report(xp_, z, pbwtL, mspbwtB));
+    return rcpp_result_gen;
+END_RCPP
+}
 // Rcpp_rhb_reader_chunk_process
 void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, Rcpp::IntegerVector& bs, Rcpp::IntegerVector& ihold, const Rcpp::IntegerVector& haps_to_get, const int& final_snp_to_get, const int& n_haps, const Rcpp::LogicalVector& binary_get_line, arma::mat& ref_alleleCount, const arma::ivec& rh_in_L, Rcpp::LogicalVector& final_snp_gotten);
 RcppExport SEXP _STITCH_Rcpp_rhb_reader_chunk_process(SEXP rhbSEXP, SEXP holdSEXP, SEXP chunkSEXP, SEXP chunk_lengthSEXP, SEXP start_snpSEXP, SEXP end_snpSEXP, SEXP bsSEXP, SEXP iholdSEXP, SEXP haps_to_getSEXP, SEXP final_snp_to_getSEXP, SEXP n_hapsSEXP, SEXP binary_get_lineSEXP, SEXP ref_alleleCountSEXP, SEXP rh_in_LSEXP, SEXP final_snp_gottenSEXP) {
@@ -971,6 +1013,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_determine_where_to_stop", (DL_FUNC) &_STITCH_rcpp_determine_where_to_stop, 6},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_mspbwt_build", (DL_FUNC) &_STITCH_mspbwt_build, 7},
+    {"_STITCH_mspbwt_load", (DL_FUNC) &_STITCH_mspbwt_load, 2},
+    {"_STITCH_mspbwt_report", (DL_FUNC) &_STITCH_mspbwt_report, 4},
     {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 15},
     {"_STITCH_rcpp_int_expand", (DL_FUNC) &_STITCH_rcpp_int_expand, 2},
     {"_STITCH_rcpp_int_contract", (DL_FUNC) &_STITCH_rcpp_int_contract, 1},
