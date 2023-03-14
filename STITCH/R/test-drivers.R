@@ -556,8 +556,8 @@ check_vcf_against_phase <- function(
         if (substr(gt[1], 2, 2) == "|") {
             hap1 <- as.integer(substr(gt, 1, 1))
             hap2 <- as.integer(substr(gt, 3, 3))            
-            thap1 <- phase[, i_sample - 9, 1]
-            thap2 <- phase[, i_sample - 9, 2]
+            thap1 <- phase[which_snps, i_sample - 9, 1]
+            thap2 <- phase[which_snps, i_sample - 9, 2]
             LL <- 1:nrow(phase)
             pse <- modified_calculate_pse(cbind(hap1, hap2), cbind(thap1, thap2), LL)
             if (!is.na(pse[1])) {

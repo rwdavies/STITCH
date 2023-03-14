@@ -556,13 +556,18 @@ per_core_get_results <- function(
                 x_t = matrix()
             )
             if (do_phasing) {
-                hap1 <- rcpp_int_expand(phasing[, 1], nSNPs)
-                hap2 <- rcpp_int_expand(phasing[, 2], nSNPs)                
+
+                ##
+                w <- first_snp_in_region:last_snp_in_region
+                hap1 <- rcpp_int_expand(phasing[, 1], nSNPs)[w]
+                hap2 <- rcpp_int_expand(phasing[, 2], nSNPs)[w]
+
                 vcf_matrix_to_out[, iiSample] <-
                     paste0(
                         hap1, "|", hap2, 
                         substring(vcf_matrix_to_out[, iiSample], first = 4, last = 100L)
                     )
+
             }
             
         } else if (output_format == "bgen") {
