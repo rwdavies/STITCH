@@ -1124,7 +1124,7 @@ public:
         for (iind = 0; iind < nindices; iind++)
         {
             auto gv = seq_by(iind, G - 1, nindices);
-            impute_setmaximal(iind, haplens, hapends, hapnindicies, zg, gv, step);
+            real_setmaximal(iind, haplens, hapends, hapnindicies, zg, gv, step);
             step += gv.size();
         }
     }

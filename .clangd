@@ -1,4 +1,4 @@
 
 CompileFlags:                     # Tweak the parse settings
-  Add: [-std=c++11, -I/Library/Frameworks/R.framework/Versions/4.1/Resources/include, -I/Library/Frameworks/R.framework/Versions/4.1/Resources/library/RcppArmadillo/include, -I/Library/Frameworks/R.framework/Versions/4.1/Resources/library/Rcpp/include, -I./SeqLib]
+  Add: [-std=c++11, -I/Library/Frameworks/R.framework/Versions/4.1/Resources/include, -I/Library/Frameworks/R.framework/Versions/4.1/Resources/library/RcppArmadillo/include, -I/Library/Frameworks/R.framework/Versions/4.1/Resources/library/Rcpp/include, -I/Users/zilong/Project/github/rwdavies/STITCH/STITCH/inst/include]
   Remove: -W*                     # strip all other warning-related flags

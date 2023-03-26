@@ -272,6 +272,21 @@ test_eHaps_options <- function(cube_eHaps_t, list_of_eHaps_t, gamma_t, eHaps_inp
 }
 
 #' @export
+sypbwt_build <- function(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf) {
+    invisible(.Call('_STITCH_sypbwt_build', PACKAGE = 'STITCH', binfile, vcfpanel, samples, region, nindices, mspbwtB, maf))
+}
+
+#' @export
+sypbwt_load <- function(binfile, mspbwtB) {
+    .Call('_STITCH_sypbwt_load', PACKAGE = 'STITCH', binfile, mspbwtB)
+}
+
+#' @export
+sypbwt_report <- function(xp_, z, mspbwtL, mspbwtB) {
+    .Call('_STITCH_sypbwt_report', PACKAGE = 'STITCH', xp_, z, mspbwtL, mspbwtB)
+}
+
+#' @export
 rcpp_make_column_of_vcf <- function(gp_t, use_read_proportions, use_state_probabilities, add_x_2_cols, read_proportions, q_t, x_t) {
     .Call('_STITCH_rcpp_make_column_of_vcf', PACKAGE = 'STITCH', gp_t, use_read_proportions, use_state_probabilities, add_x_2_cols, read_proportions, q_t, x_t)
 }

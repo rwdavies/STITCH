@@ -962,6 +962,48 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sypbwt_build
+void sypbwt_build(const std::string& binfile, const std::string& vcfpanel, const std::string& samples, const std::string& region, int nindices, int mspbwtB, double maf);
+RcppExport SEXP _STITCH_sypbwt_build(SEXP binfileSEXP, SEXP vcfpanelSEXP, SEXP samplesSEXP, SEXP regionSEXP, SEXP nindicesSEXP, SEXP mspbwtBSEXP, SEXP mafSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type vcfpanel(vcfpanelSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< int >::type nindices(nindicesSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    Rcpp::traits::input_parameter< double >::type maf(mafSEXP);
+    sypbwt_build(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf);
+    return R_NilValue;
+END_RCPP
+}
+// sypbwt_load
+SEXP sypbwt_load(const std::string& binfile, int mspbwtB);
+RcppExport SEXP _STITCH_sypbwt_load(SEXP binfileSEXP, SEXP mspbwtBSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    rcpp_result_gen = Rcpp::wrap(sypbwt_load(binfile, mspbwtB));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sypbwt_report
+List sypbwt_report(SEXP xp_, const IntegerVector& z, int mspbwtL, int mspbwtB);
+RcppExport SEXP _STITCH_sypbwt_report(SEXP xp_SEXP, SEXP zSEXP, SEXP mspbwtLSEXP, SEXP mspbwtBSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xp_(xp_SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtL(mspbwtLSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    rcpp_result_gen = Rcpp::wrap(sypbwt_report(xp_, z, mspbwtL, mspbwtB));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_make_column_of_vcf
 Rcpp::StringVector rcpp_make_column_of_vcf(const arma::mat& gp_t, const bool use_read_proportions, const bool use_state_probabilities, const bool add_x_2_cols, const arma::mat& read_proportions, const arma::mat& q_t, const arma::mat& x_t);
 RcppExport SEXP _STITCH_rcpp_make_column_of_vcf(SEXP gp_tSEXP, SEXP use_read_proportionsSEXP, SEXP use_state_probabilitiesSEXP, SEXP add_x_2_colsSEXP, SEXP read_proportionsSEXP, SEXP q_tSEXP, SEXP x_tSEXP) {
@@ -1035,6 +1077,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_make_alphaMatSumX_tc", (DL_FUNC) &_STITCH_rcpp_make_alphaMatSumX_tc, 3},
     {"_STITCH_rcpp_finalize_alphaMatSum_tc", (DL_FUNC) &_STITCH_rcpp_finalize_alphaMatSum_tc, 3},
     {"_STITCH_test_eHaps_options", (DL_FUNC) &_STITCH_test_eHaps_options, 8},
+    {"_STITCH_sypbwt_build", (DL_FUNC) &_STITCH_sypbwt_build, 7},
+    {"_STITCH_sypbwt_load", (DL_FUNC) &_STITCH_sypbwt_load, 2},
+    {"_STITCH_sypbwt_report", (DL_FUNC) &_STITCH_sypbwt_report, 4},
     {"_STITCH_rcpp_make_column_of_vcf", (DL_FUNC) &_STITCH_rcpp_make_column_of_vcf, 7},
     {NULL, NULL, 0}
 };

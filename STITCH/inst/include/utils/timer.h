@@ -16,23 +16,23 @@ public:
   unsigned int abstime();
 };
 
-Timer::Timer() {
+inline Timer::Timer() {
   start_timing_clock = std::chrono::high_resolution_clock::now();
 }
 
-Timer::~Timer() {}
+inline Timer::~Timer() {}
 
-void Timer::clock() {
+inline void Timer::clock() {
   prev_timing_clock = std::chrono::high_resolution_clock::now();
 }
 
-unsigned int Timer::reltime() {
+inline unsigned int Timer::reltime() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
              std::chrono::high_resolution_clock::now() - prev_timing_clock)
       .count();
 }
 
-unsigned int Timer::abstime() {
+inline unsigned int Timer::abstime() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
              std::chrono::high_resolution_clock::now() - start_timing_clock)
       .count();
