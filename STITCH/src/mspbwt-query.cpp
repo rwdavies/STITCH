@@ -93,25 +93,29 @@ List mspbwt_report(SEXP xp_, const IntegerVector& z, int pbwtL, int mspbwtB)
     {
         Rcpp::XPtr<msPBWT<uint16_t>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
     }
     else if (mspbwtB == 32)
     {
         Rcpp::XPtr<msPBWT<uint32_t>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
     }
     else if (mspbwtB == 64)
     {
         Rcpp::XPtr<msPBWT<uint64_t>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
     }
     else if (mspbwtB == 128)
     {
         Rcpp::XPtr<msPBWT<unsigned __int128>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
     }
     else
     {
