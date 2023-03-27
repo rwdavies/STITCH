@@ -82,40 +82,40 @@ SEXP mspbwt_load(const std::string& binfile, int mspbwtB)
 
 //' @export
 // [[Rcpp::export]]
-List mspbwt_report(SEXP xp_, const IntegerVector& z, int pbwtL, int mspbwtB)
+List mspbwt_report(SEXP xp_, const NumericVector& gp_, double maf, int mspbwtL, int mspbwtB)
 {
     Timer tm;
     tm.clock();
+    vector<double> gp = as<vector<double>>(gp_);
 
-    vector<int> zc = as<vector<int>>(z);
     IntMapU haplens, hapends, hapnindicies;
     if (mspbwtB == 16)
     {
         Rcpp::XPtr<msPBWT<uint16_t>> xp(xp_);
-        auto zg = xp->encodezg(zc);
+        auto zg = xp->encodegp(gp, maf);
         // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
-        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, mspbwtL);
     }
     else if (mspbwtB == 32)
     {
         Rcpp::XPtr<msPBWT<uint32_t>> xp(xp_);
-        auto zg = xp->encodezg(zc);
+        auto zg = xp->encodegp(gp, maf);
         // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
-        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, mspbwtL);
     }
     else if (mspbwtB == 64)
     {
         Rcpp::XPtr<msPBWT<uint64_t>> xp(xp_);
-        auto zg = xp->encodezg(zc);
+        auto zg = xp->encodegp(gp, maf);
         // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
-        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, mspbwtL);
     }
     else if (mspbwtB == 128)
     {
         Rcpp::XPtr<msPBWT<unsigned __int128>> xp(xp_);
-        auto zg = xp->encodezg(zc);
+        auto zg = xp->encodegp(gp, maf);
         // xp->report_setmaximal(haplens, hapends, hapnindicies, zg);
-        xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
+        xp->report_neighourings(haplens, hapends, hapnindicies, zg, mspbwtL);
     }
     else
     {

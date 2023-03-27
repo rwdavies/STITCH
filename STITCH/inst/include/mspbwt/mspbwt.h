@@ -72,7 +72,6 @@ class msPBWT
     IntVec2D C;
     IntVec2D A; // nindices x Grids x Haps
     IntVec2D D; // nindices x Grids x Haps
-    vector<int> reorder; // (M) reorder SNPs or just subset SNPs
 
   public:
     msPBWT(int nindices_ = 4) : nindices(nindices_) {}
@@ -81,6 +80,7 @@ class msPBWT
 
     bool verbose{0};
     bool debug{0};
+    vector<float> AF; // minor allele frequency
 
     IntVec1D randhapz()
     {
@@ -95,15 +95,31 @@ class msPBWT
         return z;
     }
 
-    GridVec encodezg(const vector<int> & z_)
+    GridVec encodegp(const vector<double> & gp, double maf = 0.0002)
     {
-        assert(z_.size() == M);
-        int k{0};
+        assert(gp.size() == M);
         GridVec zg(G);
-        vector<bool> z(M);
-        for(k = 0; k < M; k++) z[k] = z_[reorder[k]] != 0;
-        k = 0;
-        for(size_t m = 0; m < z.size(); m++)
+        vector<int> z(M);
+        for(int m = 0; m < M; m++)
+        {
+            if(AF[m] <= maf)
+            {
+                z[m] = gp[m] > 0.7 ? 1 : 0;
+            }
+            else
+            {
+                z[m] = gp[m] > 0.5 ? 1 : 0;
+            }
+        }
+        return encodezg(z);
+    }
+
+    GridVec encodezg(const vector<int> & z)
+    {
+        assert(z.size() == M);
+        GridVec zg(G);
+        int m, k;
+        for(m = 0, k = 0; m < M; m++)
         {
             zg[k] = (zg[k] << 1) | (z[m] != 0);
             if((m + 1) % B == 0)
@@ -233,48 +249,21 @@ class msPBWT
         N = vcf.nsamples * 2;
         M = 0;
         vector<bool> gt;
-        vector<vector<bool>> allgts, gt_rares, gt_commons;
-        vector<int> snp_rares, snp_commons;
+        vector<vector<bool>> allgts;
         double af;
         while(vcf.getNextVariant(var))
         {
             var.getGenotypes(gt);
-            if(!var.isNoneMissing() || !var.allPhased()) continue;
+            if(!var.isNoneMissing() || !var.allPhased())
+                throw runtime_error("there is a site with non-phased or missing value!\n");
             // keep track of snp index with AF < minaf
             af = 0;
             for(auto g : gt) af += g;
             af /= N;
-            if(af < maf)
-            {
-                snp_rares.push_back(M);
-                gt_rares.push_back(gt);
-            }
-            else
-            {
-                snp_commons.push_back(M);
-                gt_commons.push_back(gt);
-            }
-            if((M + 1) % B == 0)
-            {
-                reorder.insert(reorder.end(), snp_rares.begin(), snp_rares.end());
-                snp_rares.clear();
-                reorder.insert(reorder.end(), snp_commons.begin(), snp_commons.end());
-                snp_commons.clear();
-                allgts.insert(allgts.cend(), gt_rares.begin(), gt_rares.end());
-                gt_rares.clear();
-                allgts.insert(allgts.cend(), gt_commons.begin(), gt_commons.end());
-                gt_commons.clear();
-            }
+            AF.push_back(af);
+            allgts.push_back(gt);
             M++;
         }
-        reorder.insert(reorder.end(), snp_rares.begin(), snp_rares.end());
-        snp_rares.clear();
-        reorder.insert(reorder.end(), snp_commons.begin(), snp_commons.end());
-        snp_commons.clear();
-        allgts.insert(allgts.cend(), gt_rares.begin(), gt_rares.end());
-        gt_rares.clear();
-        allgts.insert(allgts.cend(), gt_commons.begin(), gt_commons.end());
-        gt_commons.clear();
         G = (M + B - 1) / B;
         if(verbose)
             cerr << "N:" << N << ",M:" << M << ",G:" << G << ",B:" << B << ",nindices:" << nindices << endl;
@@ -446,9 +435,8 @@ class msPBWT
         out.write((char *)&N, sizeof(N));
         out.write((char *)&G, sizeof(G));
         out.write((char *)&nindices, sizeof(nindices));
-        // write reorder (M)
         int n, k, m;
-        for(m = 0; m < M; m++) out.write((char *)&reorder[m], sizeof(int));
+        for(m = 0; m < M; m++) out.write((char *)&AF[m], sizeof(float));
         if(is_save_X)
         {
             // write X
@@ -510,10 +498,10 @@ class msPBWT
         if(!in.read((char *)&G, sizeof(G))) return 2;
         if(!in.read((char *)&nindices, sizeof(nindices))) return 2;
         cerr << "N: " << N << ",M: " << M << ",G: " << G << ",B: " << B << ",nindices " << nindices << endl;
-        // read reorder (M)
-        reorder.resize(M);
+        // read AF
         int n, m, k;
-        for(m = 0; m < M; m++) in.read((char *)&reorder[m], sizeof(int));
+        AF.resize(M);
+        for(m = 0; m < M; m++) in.read((char *)&AF[m], sizeof(float));
         if(is_save_X)
         {
             // read X
@@ -1093,8 +1081,7 @@ class msPBWT
 
                 if(zg[k] == S[ni][s])
                 {
-                    if (first_valid_grid_start)
-                        valid_grid_start = ki;
+                    if(first_valid_grid_start) valid_grid_start = ki;
                     first_valid_grid_start = false;
                 }
                 else if(zg[k] != S[ni][s] && first_valid_grid_start)

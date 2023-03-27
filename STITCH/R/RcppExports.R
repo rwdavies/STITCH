@@ -172,8 +172,8 @@ mspbwt_load <- function(binfile, mspbwtB) {
 }
 
 #' @export
-mspbwt_report <- function(xp_, z, pbwtL, mspbwtB) {
-    .Call('_STITCH_mspbwt_report', PACKAGE = 'STITCH', xp_, z, pbwtL, mspbwtB)
+mspbwt_report <- function(xp_, gp_, maf, mspbwtL, mspbwtB) {
+    .Call('_STITCH_mspbwt_report', PACKAGE = 'STITCH', xp_, gp_, maf, mspbwtL, mspbwtB)
 }
 
 #' @export
