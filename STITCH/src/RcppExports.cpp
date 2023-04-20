@@ -605,102 +605,121 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_phase_sample_paths_method_3
+NumericMatrix rcpp_phase_sample_paths_method_3(arma::cube& alphaMatCurrent_tc, arma::cube& transMatRate_tc_H, NumericMatrix alphaHat_t, NumericMatrix betaHat_t, NumericMatrix gamma_t, NumericMatrix eMatGrid_t, NumericVector c, int phasing_n_votes, arma::cube unifs_tc);
+RcppExport SEXP _STITCH_rcpp_phase_sample_paths_method_3(SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP gamma_tSEXP, SEXP eMatGrid_tSEXP, SEXP cSEXP, SEXP phasing_n_votesSEXP, SEXP unifs_tcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::cube& >::type alphaMatCurrent_tc(alphaMatCurrent_tcSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type transMatRate_tc_H(transMatRate_tc_HSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type alphaHat_t(alphaHat_tSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type betaHat_t(betaHat_tSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gamma_t(gamma_tSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type eMatGrid_t(eMatGrid_tSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type c(cSEXP);
+    Rcpp::traits::input_parameter< int >::type phasing_n_votes(phasing_n_votesSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type unifs_tc(unifs_tcSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_phase_sample_paths_method_3(alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc));
+    return rcpp_result_gen;
+END_RCPP
+}
 // Rcpp_rhb_reader_chunk_process
-void Rcpp_rhb_reader_chunk_process(arma::imat& rhb, arma::imat& hold, const Rcpp::StringVector& chunk, const int& chunk_length, const int& start_snp, const int& end_snp, Rcpp::IntegerVector& bs, Rcpp::IntegerVector& ihold, const Rcpp::IntegerVector& haps_to_get, const int& final_snp_to_get, const int& n_haps, const Rcpp::LogicalVector& binary_get_line, arma::mat& ref_alleleCount, const arma::ivec& rh_in_L, Rcpp::LogicalVector& final_snp_gotten);
+void Rcpp_rhb_reader_chunk_process(Rcpp::IntegerMatrix& rhb, arma::imat& hold, Rcpp::StringVector& chunk, int& chunk_length, int& start_snp, int& end_snp, Rcpp::IntegerVector& bs, Rcpp::IntegerVector& ihold, Rcpp::IntegerVector& haps_to_get, int& final_snp_to_get, int& n_haps, Rcpp::LogicalVector& binary_get_line, arma::mat& ref_alleleCount, arma::ivec& rh_in_L, Rcpp::LogicalVector& final_snp_gotten);
 RcppExport SEXP _STITCH_Rcpp_rhb_reader_chunk_process(SEXP rhbSEXP, SEXP holdSEXP, SEXP chunkSEXP, SEXP chunk_lengthSEXP, SEXP start_snpSEXP, SEXP end_snpSEXP, SEXP bsSEXP, SEXP iholdSEXP, SEXP haps_to_getSEXP, SEXP final_snp_to_getSEXP, SEXP n_hapsSEXP, SEXP binary_get_lineSEXP, SEXP ref_alleleCountSEXP, SEXP rh_in_LSEXP, SEXP final_snp_gottenSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::imat& >::type rhb(rhbSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix& >::type rhb(rhbSEXP);
     Rcpp::traits::input_parameter< arma::imat& >::type hold(holdSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::StringVector& >::type chunk(chunkSEXP);
-    Rcpp::traits::input_parameter< const int& >::type chunk_length(chunk_lengthSEXP);
-    Rcpp::traits::input_parameter< const int& >::type start_snp(start_snpSEXP);
-    Rcpp::traits::input_parameter< const int& >::type end_snp(end_snpSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector& >::type chunk(chunkSEXP);
+    Rcpp::traits::input_parameter< int& >::type chunk_length(chunk_lengthSEXP);
+    Rcpp::traits::input_parameter< int& >::type start_snp(start_snpSEXP);
+    Rcpp::traits::input_parameter< int& >::type end_snp(end_snpSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type bs(bsSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type ihold(iholdSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
-    Rcpp::traits::input_parameter< const int& >::type final_snp_to_get(final_snp_to_getSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n_haps(n_hapsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type binary_get_line(binary_get_lineSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
+    Rcpp::traits::input_parameter< int& >::type final_snp_to_get(final_snp_to_getSEXP);
+    Rcpp::traits::input_parameter< int& >::type n_haps(n_hapsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector& >::type binary_get_line(binary_get_lineSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type ref_alleleCount(ref_alleleCountSEXP);
-    Rcpp::traits::input_parameter< const arma::ivec& >::type rh_in_L(rh_in_LSEXP);
+    Rcpp::traits::input_parameter< arma::ivec& >::type rh_in_L(rh_in_LSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector& >::type final_snp_gotten(final_snp_gottenSEXP);
     Rcpp_rhb_reader_chunk_process(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L, final_snp_gotten);
     return R_NilValue;
 END_RCPP
 }
 // rcpp_int_expand
-Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, const int nSNPs);
+Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, int nSNPs);
 RcppExport SEXP _STITCH_rcpp_int_expand(SEXP hapcSEXP, SEXP nSNPsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::ivec& >::type hapc(hapcSEXP);
-    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< int >::type nSNPs(nSNPsSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_int_expand(hapc, nSNPs));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_int_contract
-Rcpp::IntegerVector rcpp_int_contract(const arma::ivec& hap);
+Rcpp::IntegerVector rcpp_int_contract(arma::ivec& hap);
 RcppExport SEXP _STITCH_rcpp_int_contract(SEXP hapSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::ivec& >::type hap(hapSEXP);
+    Rcpp::traits::input_parameter< arma::ivec& >::type hap(hapSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_int_contract(hap));
     return rcpp_result_gen;
 END_RCPP
 }
 // calc_dist_between_rhb_t_and_hap
-arma::colvec calc_dist_between_rhb_t_and_hap(arma::imat& rhb_t, arma::vec& hap, const int nSNPs);
+arma::colvec calc_dist_between_rhb_t_and_hap(arma::imat& rhb_t, arma::vec& hap, int nSNPs);
 RcppExport SEXP _STITCH_calc_dist_between_rhb_t_and_hap(SEXP rhb_tSEXP, SEXP hapSEXP, SEXP nSNPsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::imat& >::type rhb_t(rhb_tSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type hap(hapSEXP);
-    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< int >::type nSNPs(nSNPsSEXP);
     rcpp_result_gen = Rcpp::wrap(calc_dist_between_rhb_t_and_hap(rhb_t, hap, nSNPs));
     return rcpp_result_gen;
 END_RCPP
 }
 // inflate_fhb_t
-arma::imat inflate_fhb_t(arma::imat& rhb_t, Rcpp::IntegerVector& haps_to_get, const int nSNPs);
+arma::imat inflate_fhb_t(arma::imat& rhb_t, Rcpp::IntegerVector& haps_to_get, int nSNPs);
 RcppExport SEXP _STITCH_inflate_fhb_t(SEXP rhb_tSEXP, SEXP haps_to_getSEXP, SEXP nSNPsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::imat& >::type rhb_t(rhb_tSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
-    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< int >::type nSNPs(nSNPsSEXP);
     rcpp_result_gen = Rcpp::wrap(inflate_fhb_t(rhb_t, haps_to_get, nSNPs));
     return rcpp_result_gen;
 END_RCPP
 }
 // inflate_fhb_t_in_place
-void inflate_fhb_t_in_place(arma::imat& rhb_t, arma::cube& rhi_t_subset, Rcpp::IntegerVector& haps_to_get, const int nSNPs, const double ref_error);
+void inflate_fhb_t_in_place(arma::imat& rhb_t, arma::cube& rhi_t_subset, Rcpp::IntegerVector& haps_to_get, int nSNPs, double ref_error);
 RcppExport SEXP _STITCH_inflate_fhb_t_in_place(SEXP rhb_tSEXP, SEXP rhi_t_subsetSEXP, SEXP haps_to_getSEXP, SEXP nSNPsSEXP, SEXP ref_errorSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::imat& >::type rhb_t(rhb_tSEXP);
     Rcpp::traits::input_parameter< arma::cube& >::type rhi_t_subset(rhi_t_subsetSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
-    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
-    Rcpp::traits::input_parameter< const double >::type ref_error(ref_errorSEXP);
+    Rcpp::traits::input_parameter< int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< double >::type ref_error(ref_errorSEXP);
     inflate_fhb_t_in_place(rhb_t, rhi_t_subset, haps_to_get, nSNPs, ref_error);
     return R_NilValue;
 END_RCPP
 }
 // inflate_fhb
-arma::imat inflate_fhb(arma::imat& rhb, Rcpp::IntegerVector& haps_to_get, const int nSNPs);
+arma::imat inflate_fhb(arma::imat& rhb, Rcpp::IntegerVector& haps_to_get, int nSNPs);
 RcppExport SEXP _STITCH_inflate_fhb(SEXP rhbSEXP, SEXP haps_to_getSEXP, SEXP nSNPsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::imat& >::type rhb(rhbSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type haps_to_get(haps_to_getSEXP);
-    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< int >::type nSNPs(nSNPsSEXP);
     rcpp_result_gen = Rcpp::wrap(inflate_fhb(rhb, haps_to_get, nSNPs));
     return rcpp_result_gen;
 END_RCPP
@@ -958,6 +977,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_determine_where_to_stop", (DL_FUNC) &_STITCH_rcpp_determine_where_to_stop, 6},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_rcpp_phase_sample_paths_method_3", (DL_FUNC) &_STITCH_rcpp_phase_sample_paths_method_3, 9},
     {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 15},
     {"_STITCH_rcpp_int_expand", (DL_FUNC) &_STITCH_rcpp_int_expand, 2},
     {"_STITCH_rcpp_int_contract", (DL_FUNC) &_STITCH_rcpp_int_contract, 1},
