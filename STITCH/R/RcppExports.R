@@ -161,6 +161,10 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
 }
 
+rcpp_phase_sample_paths_method_3 <- function(alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc) {
+    .Call('_STITCH_rcpp_phase_sample_paths_method_3', PACKAGE = 'STITCH', alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc)
+}
+
 #' @export
 Rcpp_rhb_reader_chunk_process <- function(rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L, final_snp_gotten) {
     invisible(.Call('_STITCH_Rcpp_rhb_reader_chunk_process', PACKAGE = 'STITCH', rhb, hold, chunk, chunk_length, start_snp, end_snp, bs, ihold, haps_to_get, final_snp_to_get, n_haps, binary_get_line, ref_alleleCount, rh_in_L, final_snp_gotten))
