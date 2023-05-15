@@ -158,18 +158,18 @@ test_that("can write out VCF column with expected read counts", {
 
 test_that("can do method 3 phasing in R and Rcpp", {
 
-    library("testthat"); library("STITCH"); library("rrbgen")
-    ##    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
-    dir <- "~/proj/STITCH/"
-    setwd(paste0(dir, "/STITCH/R"))
-    a <- dir(pattern = "*R")
-    b <- grep("~", a)
-    if (length(b) > 0) {
-        a <- a[-b]
-    }
-    o <- sapply(a, source)
-    setwd(dir)
-    Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+    ## library("testthat"); library("STITCH"); library("rrbgen")
+    ## ##    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    ## dir <- "~/proj/STITCH/"
+    ## setwd(paste0(dir, "/STITCH/R"))
+    ## a <- dir(pattern = "*R")
+    ## b <- grep("~", a)
+    ## if (length(b) > 0) {
+    ##     a <- a[-b]
+    ## }
+    ## o <- sapply(a, source)
+    ## setwd(dir)
+    ## Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
     
     ##
     test_package <- make_fb_test_package(
