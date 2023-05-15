@@ -943,7 +943,8 @@ make_fb_test_package <- function(
     nReads = 8,
     nSNPs = 10,
     S = 2,
-    gridWindowSize = 3
+    gridWindowSize = 3,
+    run_fb = FALSE
 ) {
     set.seed(4916)
     L <- 1:nSNPs
@@ -1041,35 +1042,68 @@ make_fb_test_package <- function(
         return(eMatGrid_t)
     })
     ##
-    return(
-        list(
-            eHapsCurrent_tc = eHapsCurrent_tc,
-            alphaMatCurrent_tc = alphaMatCurrent_tc,
-            sigmaCurrent_m = sigmaCurrent_m,
-            priorCurrent_m = priorCurrent_m,
-            transMatRate_tc_D = transMatRate_tc_D,
-            transMatRate_tc_H = transMatRate_tc_H,
-            S = S,
-            K = K,
-            gridWindowSize = gridWindowSize,
-            nReads = nReads,
-            nSNPs = nSNPs,
-            L = L,
-            N = N,
-            grid = grid,
-            grid_distances = grid_distances,
-            L_grid = L_grid,
-            nGrids = nGrids,
-            snps_in_grid_1_based = snps_in_grid_1_based,
-            sampleReads = sampleReads,
-            true_H = true_H,
-            maxDifferenceBetweenReads = maxDifferenceBetweenReads,
-            Jmax_local = Jmax_local,
-            maxEmissionMatrixDifference = maxEmissionMatrixDifference,
-            list_of_eMatRead_t = list_of_eMatRead_t,
-            list_of_eMatGrid_t = list_of_eMatGrid_t
-        )
+    to_return <- list(
+        eHapsCurrent_tc = eHapsCurrent_tc,
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        sigmaCurrent_m = sigmaCurrent_m,
+        priorCurrent_m = priorCurrent_m,
+        transMatRate_tc_D = transMatRate_tc_D,
+        transMatRate_tc_H = transMatRate_tc_H,
+        S = S,
+        K = K,
+        gridWindowSize = gridWindowSize,
+        nReads = nReads,
+        nSNPs = nSNPs,
+        L = L,
+        N = N,
+        grid = grid,
+        grid_distances = grid_distances,
+        L_grid = L_grid,
+        nGrids = nGrids,
+        snps_in_grid_1_based = snps_in_grid_1_based,
+        sampleReads = sampleReads,
+        true_H = true_H,
+        maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+        Jmax_local = Jmax_local,
+        maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+        list_of_eMatRead_t = list_of_eMatRead_t,
+        list_of_eMatGrid_t = list_of_eMatGrid_t
     )
+    ##
+    if (run_fb) {
+        method <- "diploid"
+        pRgivenH1_m <- array(0)
+        pRgivenH2_m <- array(0)
+        outputSNPBlockSize <- 1000
+        start_and_end_minus_buffer <- c(1, nSNPs)
+        blocks_for_output <- determine_snp_and_grid_blocks_for_output(
+            grid = grid,
+            start_and_end_minus_buffer = start_and_end_minus_buffer,
+            outputSNPBlockSize = outputSNPBlockSize
+        )
+        ## 
+        fbsoL <- run_forward_backwards(
+            sampleReads = sampleReads,
+            pRgivenH1_m = pRgivenH1_m,
+            pRgivenH2_m = pRgivenH2_m,
+            method = method,
+            priorCurrent_m = priorCurrent_m,
+            alphaMatCurrent_tc = alphaMatCurrent_tc,
+            eHapsCurrent_tc = eHapsCurrent_tc,
+            transMatRate_tc_H = transMatRate_tc_H,
+            transMatRate_tc_D = transMatRate_tc_D,
+            blocks_for_output = blocks_for_output,
+            generate_fb_snp_offsets = TRUE,
+            return_genProbs = TRUE, ## might not be for all methods
+            return_hapDosage = TRUE,
+            return_gamma = TRUE,
+            return_extra = TRUE,                    
+            grid = grid,
+            output_haplotype_dosages = TRUE
+        )
+        to_return <- append(to_return, fbsoL[[1]])
+    }
+    return(to_return)
 }
 
 

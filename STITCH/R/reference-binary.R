@@ -118,9 +118,11 @@ load_rhb_at_positions_no_NAs <- function(
     } else {
         haps_to_get <- which(h_row_1 != "-") - 1
     }
+    haps_to_get <- as.integer(haps_to_get)
     n_haps <- length(haps_to_get)
     nbSNPs <- ceiling(length(lines_to_get) / 32)    
-    rhb <- array(as.integer(0), c(nbSNPs, n_haps))
+    ## rhb <- array(as.integer(0), c(nbSNPs, n_haps))
+    rhb <- matrix(0L, nrow = nbSNPs, ncol = n_haps)
     ## also, same time, ref_alleleCount
     ref_alleleCount <- array(-1, c(nSNPs, 3)) ## nSNPs here is the pos nSNPs
     ## now - need to build this - argh!
