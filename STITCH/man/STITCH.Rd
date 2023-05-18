@@ -83,10 +83,7 @@ STITCH(
   useTempdirWhileWriting = FALSE,
   output_haplotype_dosages = FALSE,
   use_bx_tag = TRUE,
-  bxTagUpperLimit = 50000,
-  do_phasing = FALSE,
-  phasing_method = 3,
-  phasing_n_votes = 20
+  bxTagUpperLimit = 50000
 )
 }
 \arguments{
@@ -243,12 +240,6 @@ STITCH(
 \item{use_bx_tag}{Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule}
 
 \item{bxTagUpperLimit}{When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules}
-
-\item{do_phasing}{Whether to perform phasing (experimental)}
-
-\item{phasing_method}{What phasing method to perform}
-
-\item{phasing_n_votes}{For voting phasing, how many votes to use}
 }
 \value{
 Results in properly formatted version

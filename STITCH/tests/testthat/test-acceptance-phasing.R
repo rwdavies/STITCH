@@ -21,6 +21,8 @@ if (1 == 0) {
 ## one single test, useful for basic acceptance tests
 test_that("simple diploid method can phase", {
 
+    skip("not currently exposed")
+    
     n_snps <- 50
     L <- 31:80
     reads_span_n_snps <- 6
@@ -83,6 +85,7 @@ test_that("simple diploid method can phase", {
 
 test_that("something related to phasing", {
 
+    skip("not currently exposed")
     ##
     ## simulate some data
     ##
