@@ -2,8 +2,8 @@ Package: STITCH
 Type: Package
 Title: STITCH - Sequencing To Imputation Through Constructing
         Haplotypes
-Version: 1.6.8
-Date: 2023-02-07
+Version: 1.6.9
+Date: 2023-05-19
 Author: Robert William Davies
 Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
 Description: STITCH performs imputation of individuals sequenced to low coverage

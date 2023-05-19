@@ -1,3 +1,5 @@
+* v1.6.9
+	* More small bug fixes
 * v1.6.8
 	* Fix bugs relating to installation
 * v1.6.7
