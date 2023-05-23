@@ -154,3 +154,68 @@ test_that("can write out VCF column with expected read counts", {
     expect_equal(test2, truth)    
 
 })
+
+
+test_that("can do method 3 phasing in R and Rcpp", {
+
+    ## library("testthat"); library("STITCH"); library("rrbgen")
+    ## ##    dir <- "/data/smew1/rdavies/stitch_development/STITCH_github_latest/STITCH"
+    ## dir <- "~/proj/STITCH/"
+    ## setwd(paste0(dir, "/STITCH/R"))
+    ## a <- dir(pattern = "*R")
+    ## b <- grep("~", a)
+    ## if (length(b) > 0) {
+    ##     a <- a[-b]
+    ## }
+    ## o <- sapply(a, source)
+    ## setwd(dir)
+    ## Sys.setenv(PATH = paste0(getwd(), ":", Sys.getenv("PATH")))
+    
+    ##
+    test_package <- make_fb_test_package(
+        K = 4,
+        nReads = 8,
+        nSNPs = 10,
+        gridWindowSize = 3,
+        S = 1,
+        run_fb = TRUE
+    )
+    
+    alphaMatCurrent_tc <- test_package$alphaMatCurrent_tc
+    transMatRate_tc_H <- test_package$transMatRate_tc_H    
+    alphaHat_t <- test_package$alphaHat_t
+    betaHat_t <- test_package$betaHat_t
+    gamma_t <- test_package$list_of_gamma_t$gamma_t
+    eMatGrid_t <- test_package$eMatGrid_t
+    c <- test_package$c
+    phasing_n_votes <- 100
+    nGrids <- ncol(eMatGrid_t)
+    unifs_tc <- array(runif(phasing_n_votes * nGrids * 2), c(phasing_n_votes, nGrids, 2))
+    
+    out1 <- phase_sample_paths_method_3(    
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        transMatRate_tc_H = transMatRate_tc_H,
+        alphaHat_t = alphaHat_t,
+        betaHat_t = betaHat_t,
+        gamma_t = gamma_t,
+        eMatGrid_t = eMatGrid_t,
+        c = c,
+        phasing_n_votes = phasing_n_votes,
+        unifs_tc = unifs_tc
+    )
+
+    out2 <- rcpp_phase_sample_paths_method_3(    
+        alphaMatCurrent_tc = alphaMatCurrent_tc,
+        transMatRate_tc_H = transMatRate_tc_H,
+        alphaHat_t = alphaHat_t,
+        betaHat_t = betaHat_t,
+        gamma_t = gamma_t,
+        eMatGrid_t = eMatGrid_t,
+        c = c,
+        phasing_n_votes = phasing_n_votes,
+        unifs_tc = unifs_tc
+    )
+
+    expect_equal(out1, out2)
+
+})

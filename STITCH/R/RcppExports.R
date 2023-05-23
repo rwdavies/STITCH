@@ -57,8 +57,8 @@ rcpp_calculate_fbd_dosage <- function(genProbs_t, eHapsCurrent_tc, s, gamma_t, g
 }
 
 #' @export
-forwardBackwardDiploid <- function(sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_D, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta = 0L, generate_fb_snp_offsets = FALSE, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_gammaK = FALSE, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE, rescale_eMatGrid_t = TRUE) {
-    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_D, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta, generate_fb_snp_offsets, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_gammaK, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, rescale_eMatGrid_t)
+forwardBackwardDiploid <- function(sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_D, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta = 0L, generate_fb_snp_offsets = FALSE, return_a_sampled_path = FALSE, run_fb_subset = FALSE, run_fb_grid_offset = 0L, return_genProbs = FALSE, snp_start_1_based = -1L, snp_end_1_based = -1L, grid = 0L, return_gamma = FALSE, return_gammaK = FALSE, return_c = FALSE, return_extra = FALSE, update_in_place = FALSE, pass_in_alphaBeta = FALSE, output_haplotype_dosages = FALSE, rescale_eMatGrid_t = TRUE) {
+    .Call('_STITCH_forwardBackwardDiploid', PACKAGE = 'STITCH', sampleReads, eHapsCurrent_tc, alphaMatCurrent_tc, transMatRate_tc_D, priorCurrent_m, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, maxDifferenceBetweenReads, maxEmissionMatrixDifference, Jmax, suppressOutput, blocks_for_output, gammaSum0_tc, gammaSum1_tc, alphaMatSum_tc, hapSum_tc, priorSum_m, prev_list_of_alphaBetaBlocks, i_snp_block_for_alpha_beta, generate_fb_snp_offsets, return_a_sampled_path, run_fb_subset, run_fb_grid_offset, return_genProbs, snp_start_1_based, snp_end_1_based, grid, return_gamma, return_gammaK, return_c, return_extra, update_in_place, pass_in_alphaBeta, output_haplotype_dosages, rescale_eMatGrid_t)
 }
 
 #' @export
@@ -161,19 +161,8 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
 }
 
-#' @export
-mspbwt_build <- function(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf) {
-    invisible(.Call('_STITCH_mspbwt_build', PACKAGE = 'STITCH', binfile, vcfpanel, samples, region, nindices, mspbwtB, maf))
-}
-
-#' @export
-mspbwt_load <- function(binfile, mspbwtB) {
-    .Call('_STITCH_mspbwt_load', PACKAGE = 'STITCH', binfile, mspbwtB)
-}
-
-#' @export
-mspbwt_report <- function(xp_, gp_, maf, mspbwtL, mspbwtB) {
-    .Call('_STITCH_mspbwt_report', PACKAGE = 'STITCH', xp_, gp_, maf, mspbwtL, mspbwtB)
+rcpp_phase_sample_paths_method_3 <- function(alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc) {
+    .Call('_STITCH_rcpp_phase_sample_paths_method_3', PACKAGE = 'STITCH', alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc)
 }
 
 #' @export
@@ -269,21 +258,6 @@ rcpp_finalize_alphaMatSum_tc <- function(alphaMatSum_tc, transMatRate_tc_H, alph
 #' @export
 test_eHaps_options <- function(cube_eHaps_t, list_of_eHaps_t, gamma_t, eHaps_input, option, nSNPs, K, S) {
     .Call('_STITCH_test_eHaps_options', PACKAGE = 'STITCH', cube_eHaps_t, list_of_eHaps_t, gamma_t, eHaps_input, option, nSNPs, K, S)
-}
-
-#' @export
-sypbwt_build <- function(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf) {
-    invisible(.Call('_STITCH_sypbwt_build', PACKAGE = 'STITCH', binfile, vcfpanel, samples, region, nindices, mspbwtB, maf))
-}
-
-#' @export
-sypbwt_load <- function(binfile, mspbwtB) {
-    .Call('_STITCH_sypbwt_load', PACKAGE = 'STITCH', binfile, mspbwtB)
-}
-
-#' @export
-sypbwt_report <- function(xp_, z, mspbwtL, mspbwtB) {
-    .Call('_STITCH_sypbwt_report', PACKAGE = 'STITCH', xp_, z, mspbwtL, mspbwtB)
 }
 
 #' @export

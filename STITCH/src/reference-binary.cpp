@@ -19,23 +19,42 @@
 
 
 
+// this one OK
+//     Rcpp::IntegerVector haps_to_get
+// this one OK
+//     Rcpp::IntegerVector& haps_to_get
+// this one bad
+//     const Rcpp::IntegerVector& haps_to_get
+
+                // std::cout << "haps_to_get(k):";                
+                // for(k = 0; k < 5; k++) {
+                //     std::cout << haps_to_get(k) << ", ";
+                // }
+                // std::cout << std::endl;
+                // if (i_hap < 10 | i_hap > 976620) {
+                //     std::cout << "i_hap=" << i_hap << std::endl;
+                //     std::cout << "haps_to_get(i_hap)=" << haps_to_get(i_hap) << std::endl;
+                //     std::cout << "2 * haps_to_get(i_hap) = " << 2 * haps_to_get(i_hap) << std::endl;                    
+                //     std::cout << "c = " << chunk[iiSNP][2 * haps_to_get(i_hap)] << std::endl;
+                // }
+
 //' @export
 // [[Rcpp::export]]
 void Rcpp_rhb_reader_chunk_process(
-    arma::imat& rhb,
+    Rcpp::IntegerMatrix& rhb,
     arma::imat& hold,
-    const Rcpp::StringVector& chunk,
-    const int& chunk_length,
-    const int& start_snp,
-    const int& end_snp,
+    Rcpp::StringVector& chunk,
+    int& chunk_length,
+    int& start_snp,
+    int& end_snp,
     Rcpp::IntegerVector& bs,
     Rcpp::IntegerVector& ihold,
-    const Rcpp::IntegerVector& haps_to_get,
-    const int& final_snp_to_get,
-    const int& n_haps,
-    const Rcpp::LogicalVector& binary_get_line,
+    Rcpp::IntegerVector& haps_to_get,
+    int& final_snp_to_get,
+    int& n_haps,
+    Rcpp::LogicalVector& binary_get_line,
     arma::mat& ref_alleleCount,
-    const arma::ivec& rh_in_L,
+    arma::ivec& rh_in_L,
     Rcpp::LogicalVector& final_snp_gotten
 ) {
     int k, iiSNP;
@@ -87,8 +106,8 @@ void Rcpp_rhb_reader_chunk_process(
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, const int nSNPs) {
-  const int nbSNPs = hapc.size();
+Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, int nSNPs) {
+  int nbSNPs = hapc.size();
   //const int nSNPs = nbSNPs * 32;
   Rcpp::IntegerVector hap(nSNPs);
   int j = 0;
@@ -112,9 +131,9 @@ Rcpp::IntegerVector rcpp_int_expand(arma::ivec& hapc, const int nSNPs) {
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::IntegerVector rcpp_int_contract(const arma::ivec& hap) {
-    const int nSNPs = hap.size();
-    const int nbSNPs = std::ceil(double(nSNPs) / double(32));
+Rcpp::IntegerVector rcpp_int_contract(arma::ivec& hap) {
+    int nSNPs = hap.size();
+    int nbSNPs = std::ceil(double(nSNPs) / double(32));
     Rcpp::IntegerVector hapc(nbSNPs);
     int imax;
     for(int bs = 0; bs < nbSNPs; bs++) {
@@ -146,10 +165,10 @@ Rcpp::IntegerVector rcpp_int_contract(const arma::ivec& hap) {
 arma::colvec calc_dist_between_rhb_t_and_hap(
     arma::imat& rhb_t,
     arma::vec& hap,
-    const int nSNPs
+    int nSNPs
 ) {
-    const int K = rhb_t.n_rows;
-    const int nbSNPs = rhb_t.n_cols;
+    int K = rhb_t.n_rows;
+    int nbSNPs = rhb_t.n_cols;
     arma::colvec out(K);
     out.fill(0);
     // i think this function might work without kmax
@@ -187,10 +206,10 @@ arma::colvec calc_dist_between_rhb_t_and_hap(
 arma::imat inflate_fhb_t(
     arma::imat& rhb_t,
     Rcpp::IntegerVector& haps_to_get,
-    const int nSNPs
+    int nSNPs
 ) {
-    const int K = rhb_t.n_rows;
-    const int nbSNPs = rhb_t.n_cols;
+    int K = rhb_t.n_rows;
+    int nbSNPs = rhb_t.n_cols;
     // i think this function might work without kmax
     // but probably safer / simpler to keep it in
     int imax;
@@ -228,11 +247,11 @@ void inflate_fhb_t_in_place(
     arma::imat& rhb_t,
     arma::cube& rhi_t_subset,
     Rcpp::IntegerVector& haps_to_get,
-    const int nSNPs,
-    const double ref_error
+    int nSNPs,
+    double ref_error
 ) {
-    const int K = rhb_t.n_rows;
-    const int nbSNPs = rhb_t.n_cols;
+    int K = rhb_t.n_rows;
+    int nbSNPs = rhb_t.n_cols;
     double one_minus_ref_error = 1 - ref_error;    
     // i think this function might work without kmax
     // but probably safer / simpler to keep it in
@@ -267,10 +286,10 @@ void inflate_fhb_t_in_place(
 arma::imat inflate_fhb(
     arma::imat& rhb,
     Rcpp::IntegerVector& haps_to_get,
-    const int nSNPs
+    int nSNPs
 ) {
-    const int K = rhb.n_cols;
-    const int nbSNPs = rhb.n_rows;
+    int K = rhb.n_cols;
+    int nbSNPs = rhb.n_rows;
     // i think this function might work without kmax
     // but probably safer / simpler to keep it in
     int imax;

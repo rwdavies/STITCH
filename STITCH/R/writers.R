@@ -6,6 +6,7 @@ make_and_write_output_file <- function(
     output_format,
     blocks_for_output,
     allAlphaBetaBlocks,
+    allPhasing,
     reference_panel_SNPs,
     priorCurrent_m,
     sigmaCurrent_m,
@@ -32,7 +33,8 @@ make_and_write_output_file <- function(
     maxDifferenceBetweenReads,
     Jmax,
     useTempdirWhileWriting,
-    output_haplotype_dosages
+    output_haplotype_dosages,
+    do_phasing
 ) {
 
     
@@ -147,6 +149,7 @@ make_and_write_output_file <- function(
             bundling_info = bundling_info,
             K = K,
             allAlphaBetaBlocks = allAlphaBetaBlocks,
+            allPhasing = allPhasing,
             alphaMatCurrentLocal_tc = alphaMatCurrentLocal_tc,
             eHapsCurrent_tc = eHapsCurrent_tc,
             transMatRateLocal_tc_H = transMatRateLocal_tc_H,
@@ -170,6 +173,7 @@ make_and_write_output_file <- function(
             Jmax = Jmax,
             useTempdirWhileWriting = useTempdirWhileWriting,
             output_haplotype_dosages = output_haplotype_dosages,
+            do_phasing = do_phasing,
             FUN = per_core_get_results
         )
 
@@ -338,6 +342,7 @@ per_core_get_results <- function(
     bundling_info,
     K,
     allAlphaBetaBlocks,
+    allPhasing,
     alphaMatCurrentLocal_tc,
     eHapsCurrent_tc,
     transMatRateLocal_tc_H,
@@ -360,12 +365,14 @@ per_core_get_results <- function(
     maxDifferenceBetweenReads,
     Jmax,
     useTempdirWhileWriting,
-    output_haplotype_dosages
+    output_haplotype_dosages,
+    do_phasing
 ) {
 
     bundledSampleReads <- NULL
     bundledSampleProbs <- NULL
     bundledAlphaBetaBlocks <- NULL
+    bundledPhasing <- NULL
     
     ## load sample
     ## load pRgivenH1
@@ -421,6 +428,20 @@ per_core_get_results <- function(
         )
         alphaBetaBlocks <- out$alphaBetaBlocks
         bundledAlphaBetaBlocks <- out$bundledAlphaBetaBlocks
+
+        ## note, inefficient in current form
+        if (do_phasing) {
+            out <- get_phasing_from_dir_for_sample(
+                dir = tempdir,
+                regionName = regionName,
+                iSample = iSample,
+                bundling_info = bundling_info,
+                bundledPhasing = bundledPhasing,
+                allPhasing = allPhasing
+            )
+            phasing <- out$phasing
+            bundledPhasing <- out$bundledPhasing
+        }
 
         if (method == "pseudoHaploid") {
             out <- get_sampleProbs_from_dir_for_sample(
@@ -491,6 +512,7 @@ per_core_get_results <- function(
             
         }
 
+        
         gp_t <- calculate_gp_t_from_fbsoL(
             fbsoL = fbsoL,
             method = method
@@ -533,6 +555,21 @@ per_core_get_results <- function(
                 q_t = q_t,
                 x_t = matrix()
             )
+            if (do_phasing) {
+
+                ##
+                w <- first_snp_in_region:last_snp_in_region
+                hap1 <- rcpp_int_expand(phasing[, 1], nSNPs)[w]
+                hap2 <- rcpp_int_expand(phasing[, 2], nSNPs)[w]
+
+                vcf_matrix_to_out[, iiSample] <-
+                    paste0(
+                        hap1, "|", hap2, 
+                        substring(vcf_matrix_to_out[, iiSample], first = 4, last = 100L)
+                    )
+
+            }
+            
         } else if (output_format == "bgen") {
             rrbgen::rcpp_place_gp_t_into_output(
                 gp_t,
@@ -954,12 +991,18 @@ make_and_write_vcf_header <- function(
     method,
     sampleNames,
     output_haplotype_dosages,
-    K
-) {
+    K,
+    do_phasing = FALSE
+    ) {
+    if (do_phasing) {
+        gt_annot <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased genotypes">\n'
+    } else {
+        gt_annot <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Best Guessed Genotype with posterior probability threshold of 0.9">\n'
+    }
     header <- paste0(
         '##fileformat=VCFv4.0\n',
         annot_header,        
-        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Best Guessed Genotype with posterior probability threshold of 0.9">\n',
+        gt_annot,
         '##FORMAT=<ID=GP,Number=3,Type=Float,Description="Posterior genotype probability of 0/0, 0/1, and 1/1">\n',
         '##FORMAT=<ID=DS,Number=1,Type=Float,Description="Dosage">\n'
     )

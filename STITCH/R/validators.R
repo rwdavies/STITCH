@@ -708,3 +708,11 @@ validate_output_haplotype_dosages <- function(output_haplotype_dosages, output_f
     return(NULL)
 }
 
+
+
+validate_phasing <- function(do_phasing, S) {
+    if (S > 1 && do_phasing) {
+        stop("STITCH does not currently support S > 1 with phasing")
+    }
+    NULL
+}

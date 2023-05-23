@@ -289,7 +289,10 @@ List cpp_read_reassign(
   
     // initialize
     int curRead = qnameInteger_ord[0];
-    int curbxtag = bxtagInteger_ord[0];
+    int curbxtag = 0;
+    if (use_bx_tag) {
+        curbxtag = bxtagInteger_ord[0];
+    }
     int iReadStart = 0;
     int nRawReads = sampleReadsRaw.size();
     std::vector<int> base_bq(maxnSNPInRead);
@@ -344,7 +347,9 @@ List cpp_read_reassign(
     bool change_qname, save_condition_met, bx_tag_not_ok_to_continue, bx_tag_distance_exceeded, change_bx_tag;
 
     curRead = qnameInteger_ord[0];
-    curbxtag = bxtagInteger_ord[0];
+    if (use_bx_tag) {
+        curbxtag = bxtagInteger_ord[0];
+    }
     count = 0;
     iReadStart = 0;
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
@@ -466,7 +471,9 @@ List cpp_read_reassign(
                 count++;
             }
             iReadStart = iRead + 1;
-            curbxtag = bxtagInteger_ord[iRead + 1]; // + 1
+            if (use_bx_tag) {
+                curbxtag = bxtagInteger_ord[iRead + 1]; // + 1
+            }
         }
     }
 
