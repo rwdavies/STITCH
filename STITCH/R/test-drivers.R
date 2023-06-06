@@ -655,6 +655,8 @@ make_reference_package <- function(
     n_samples_per_pop = 4,
     reference_populations = c("CEU", "GBR", "CHB"),
     L = NA,
+    refs = NA,
+    alts = NA,
     chr = 1,
     reference_sample_header = NA,
     reference_genders = c("male", "female"),
@@ -697,7 +699,9 @@ make_reference_package <- function(
         n_snps = n_snps,
         seed = 1,
         L = L,
-        chr = chr
+        chr = chr,
+        refs = refs,
+        alts = alts
     )
 
     ##ID POP GROUP SEX

@@ -11,7 +11,17 @@ R_get_hap_info_from_vcf <- function(
     ##  - at rare sites: an object that somehow can be used to rebuild
     cmd <- paste0("bcftools view ", shQuote(vcffile), " ", region)
     haps <- data.table::fread(cmd = cmd, stringsAsFactors = FALSE, data.table = FALSE)
+    ## skip if don't meet the conditions
+    keep <-
+        (nchar(haps[, 4]) == 1) &
+        (nchar(haps[, 5]) == 1)
+    ## remove second (and more) if position the same
+    keep[ which(diff(haps[, 2]) == 0) + 1] <- FALSE
+    n_skipped <- sum(!keep)
+    haps <- haps[keep, ]
+    ## now do stuff    
     pos <- haps[, c(2, 4, 5)] ## simpler, add back in later
+    rownames(pos) <- 1:nrow(pos)
     LAll <- haps[, 2]
     h <- haps[, -(1:9)]
     h <- as.matrix(h)
@@ -20,8 +30,10 @@ R_get_hap_info_from_vcf <- function(
     rhi <- array(as.integer(NA), c(nSNPsAll, K)) ## reference haplotype integers
     rhi[, seq(1, K, 2)] <- matrix(as.integer(substr(h, 1, 1)), nrow = nSNPsAll)
     rhi[, seq(2, K, 2)] <- matrix(as.integer(substr(h, 3, 3)), nrow = nSNPsAll)
+    x <- rowSums(rhi)
+    ref_alleleCount <- cbind(x, K, x / K)
+    colnames(ref_alleleCount) <- NULL
     ## filtering 
-    ref_alleleCount <- cbind(rowSums(rhi), K, rowSums(rhi) / K)
     snp_is_common <- !(ref_alleleCount[, 3] < af_cutoff)
     L <- LAll[snp_is_common]
     nSNPs <- sum(snp_is_common)
@@ -52,7 +64,9 @@ R_get_hap_info_from_vcf <- function(
             pos = pos,
             rhb_t = rhb_t,
             rare_per_hap_info = rare_per_hap_info,
-            snp_is_common = snp_is_common
+            snp_is_common = snp_is_common,
+            ref_alleleCount = ref_alleleCount,
+            n_skipped = n_skipped
         )
     )
 }

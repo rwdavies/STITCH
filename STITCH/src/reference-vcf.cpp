@@ -104,17 +104,20 @@ List Rcpp_get_hap_info_from_vcf(
     NumericVector rowsum;
     IntegerVector L;
     LogicalVector snp_is_common;
-    double af;
+    double local_af;
+    NumericVector count_af;
     vector<bool> gt;
     vector<vector<bool>> X;
     vector<vector<int>> rare_per_hap_info(nhaps);
     //vector<string> ref, alt;
-    CharacterVector ref, alt;    
-
+    CharacterVector ref, alt;
+    
   if (verbose) {
     std::cout << "process" << std::endl;
   }
-    
+
+  int n_skipped = 0;
+  int prev_pos = -1;
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
@@ -123,14 +126,27 @@ List Rcpp_get_hap_info_from_vcf(
             if(!var.isNoneMissing() || !var.allPhased())
                 continue; // skip var with missing values and non-phased
         }
+	// only keep if meets conditions
+	//  - bi-allelic
+	//  - snp
+	//  - position increased from previous site
+	if (!(
+	      (var.REF().length() == 1) &
+	      (var.ALT().length() == 1) &
+	      ((var.POS() - prev_pos) > 0)
+	      )) {
+	  n_skipped += 1;
+	  continue;
+	}
         int s = 0;
         for(auto g : gt) s += g;
         rowsum.push_back(s);
         ref.push_back(var.REF());
         alt.push_back(var.ALT());
         L.push_back(var.POS());
-	af = double(s) / double(nhaps);
-	if (af < af_cutoff) {
+	local_af = double(s) / double(nhaps);
+	count_af.push_back(double(s));
+	if (local_af < af_cutoff) {
 	  snp_is_common.push_back(false);
 	  n_rare_snps++;
 	  // store the indices here
@@ -145,6 +161,7 @@ List Rcpp_get_hap_info_from_vcf(
           X.push_back(gt);
 	}
         nsnps++;
+	prev_pos=var.POS();
     }
 
   if (verbose) {
@@ -189,7 +206,15 @@ List Rcpp_get_hap_info_from_vcf(
       Rcpp::Named("REF") = clone(ref),
       Rcpp::Named("ALT") = clone(alt)
   );
-    
+
+  Rcpp::NumericMatrix ref_alleleCount(nsnps, 3);
+  double nhapsd = double(nhaps);
+  for(int is = 0; is < nsnps; is++) {
+    ref_alleleCount(is, 0) = count_af(is);
+    ref_alleleCount(is, 1) = nhapsd;
+  }
+  ref_alleleCount.column(2) = ref_alleleCount.column(0)  / ref_alleleCount.column(1);
+  
   if (verbose) {
     std::cout << "return" << std::endl;
   }
@@ -199,7 +224,9 @@ List Rcpp_get_hap_info_from_vcf(
 	Named("pos") = pos,
         Named("rhb_t") = rhb_t,
 	Named("rare_per_hap_info") = rare_per_hap_info,
-	Named("snp_is_common") = snp_is_common
+	Named("snp_is_common") = snp_is_common,
+	Named("ref_alleleCount") = ref_alleleCount,
+	Named("n_skipped") = n_skipped
     );
 }
 
