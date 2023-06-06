@@ -72,3 +72,136 @@ List get_rhb_from_vcf(std::string vcffile,
     return List::create(Named("rhb") = rhb_t, Named("pos") = pos, Named("ref") = ref, Named("alt") = alt,
                         Named("hapRowsum") = rowsum, Named("nhaps") = nhaps);
 }
+
+
+
+
+
+
+
+
+
+//' @export
+// [[Rcpp::export]]
+List Rcpp_get_hap_info_from_vcf(
+    std::string vcffile,
+    double af_cutoff,
+    std::string region,
+    std::string samples = "-",
+    bool is_check = false,
+    bool verbose = false
+)
+{
+  if (verbose) {
+    std::cout << "inside" << std::endl;
+  }
+  BcfReader br(vcffile, samples, region);
+    BcfRecord var(br.header);
+    int nhaps = br.nsamples * 2;
+    int nsnps = 0;
+    int n_common_snps = 0;
+    int n_rare_snps = 0;        
+    NumericVector rowsum;
+    IntegerVector L;
+    LogicalVector snp_is_common;
+    double af;
+    vector<bool> gt;
+    vector<vector<bool>> X;
+    vector<vector<int>> rare_per_hap_info(nhaps);
+    //vector<string> ref, alt;
+    CharacterVector ref, alt;    
+
+  if (verbose) {
+    std::cout << "process" << std::endl;
+  }
+    
+    while(br.getNextVariant(var))
+    {
+        var.getGenotypes(gt);
+        if(is_check)
+        {
+            if(!var.isNoneMissing() || !var.allPhased())
+                continue; // skip var with missing values and non-phased
+        }
+        int s = 0;
+        for(auto g : gt) s += g;
+        rowsum.push_back(s);
+        ref.push_back(var.REF());
+        alt.push_back(var.ALT());
+        L.push_back(var.POS());
+	af = double(s) / double(nhaps);
+	if (af < af_cutoff) {
+	  snp_is_common.push_back(false);
+	  n_rare_snps++;
+	  // store the indices here
+	  for (int i = 0; i != gt.size(); ++i) {
+	    if (gt[i]) {
+	      rare_per_hap_info[i].push_back(nsnps + 1); // 1-based
+	    }
+	  }
+	} else {
+	  snp_is_common.push_back(true);
+	  n_common_snps++;
+          X.push_back(gt);
+	}
+        nsnps++;
+    }
+
+  if (verbose) {
+    std::cout << "reorder" << std::endl;
+  }
+    
+    // operate on common herre
+    const int B = 32;
+    int nGrids = (n_common_snps + B - 1) / B;
+    IntegerMatrix rhb_t(nhaps, nGrids); // X above stores efficiently this way
+    int d32_times_bs, imax, ihap, k;
+    // check rcpp_int_contract
+    for(int bs = 0; bs < nGrids; bs++)
+    {
+        for(ihap = 0; ihap < nhaps; ihap++)
+        {
+            d32_times_bs = 32 * bs;
+            if(bs < (nGrids - 1))
+            {
+                imax = 31;
+            }
+            else
+            {
+                imax = n_common_snps - d32_times_bs - 1; // final one!
+            }
+            std::uint32_t itmp = 0;
+            for(k = imax; k >= 0; k--)
+            {
+                itmp <<= 1;
+                int j = X[d32_times_bs + k][ihap];
+                itmp |= j & 0x1;
+            }
+            rhb_t(ihap, bs) = itmp;
+        }
+    }
+  if (verbose) {
+    std::cout << "dataframe" << std::endl;
+  }
+    
+  Rcpp::DataFrame pos = Rcpp::DataFrame::create(
+      Rcpp::Named("POS") = clone(L),
+      Rcpp::Named("REF") = clone(ref),
+      Rcpp::Named("ALT") = clone(alt)
+  );
+    
+  if (verbose) {
+    std::cout << "return" << std::endl;
+  }
+    
+
+    return List::create(
+	Named("pos") = pos,
+        Named("rhb_t") = rhb_t,
+	Named("rare_per_hap_info") = rare_per_hap_info,
+	Named("snp_is_common") = snp_is_common
+    );
+}
+
+
+

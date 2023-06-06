@@ -738,6 +738,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Rcpp_get_hap_info_from_vcf
+List Rcpp_get_hap_info_from_vcf(std::string vcffile, double af_cutoff, std::string region, std::string samples, bool is_check, bool verbose);
+RcppExport SEXP _STITCH_Rcpp_get_hap_info_from_vcf(SEXP vcffileSEXP, SEXP af_cutoffSEXP, SEXP regionSEXP, SEXP samplesSEXP, SEXP is_checkSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type vcffile(vcffileSEXP);
+    Rcpp::traits::input_parameter< double >::type af_cutoff(af_cutoffSEXP);
+    Rcpp::traits::input_parameter< std::string >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< std::string >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< bool >::type is_check(is_checkSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(Rcpp_get_hap_info_from_vcf(vcffile, af_cutoff, region, samples, is_check, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // Rcpp_ref_run_forward_haploid
 void Rcpp_ref_run_forward_haploid(arma::mat& alphaHat_t, arma::rowvec& c, const arma::mat& eMatGrid_t, const arma::cube& alphaMatCurrentX_tc, const arma::cube& transMatRate_tc_H, const arma::mat& priorCurrent_m, const int s);
 RcppExport SEXP _STITCH_Rcpp_ref_run_forward_haploid(SEXP alphaHat_tSEXP, SEXP cSEXP, SEXP eMatGrid_tSEXP, SEXP alphaMatCurrentX_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP priorCurrent_mSEXP, SEXP sSEXP) {
@@ -1000,6 +1016,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_inflate_fhb_t_in_place", (DL_FUNC) &_STITCH_inflate_fhb_t_in_place, 5},
     {"_STITCH_inflate_fhb", (DL_FUNC) &_STITCH_inflate_fhb, 3},
     {"_STITCH_get_rhb_from_vcf", (DL_FUNC) &_STITCH_get_rhb_from_vcf, 4},
+    {"_STITCH_Rcpp_get_hap_info_from_vcf", (DL_FUNC) &_STITCH_Rcpp_get_hap_info_from_vcf, 6},
     {"_STITCH_Rcpp_ref_run_forward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_forward_haploid, 7},
     {"_STITCH_Rcpp_ref_run_backward_haploid", (DL_FUNC) &_STITCH_Rcpp_ref_run_backward_haploid, 7},
     {"_STITCH_rcpp_make_sampleReads_from_hap", (DL_FUNC) &_STITCH_rcpp_make_sampleReads_from_hap, 3},

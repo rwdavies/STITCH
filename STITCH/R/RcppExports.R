@@ -206,6 +206,11 @@ get_rhb_from_vcf <- function(vcffile, region, samples = "-", is_check = FALSE) {
 }
 
 #' @export
+Rcpp_get_hap_info_from_vcf <- function(vcffile, af_cutoff, region, samples = "-", is_check = FALSE, verbose = FALSE) {
+    .Call('_STITCH_Rcpp_get_hap_info_from_vcf', PACKAGE = 'STITCH', vcffile, af_cutoff, region, samples, is_check, verbose)
+}
+
+#' @export
 Rcpp_ref_run_forward_haploid <- function(alphaHat_t, c, eMatGrid_t, alphaMatCurrentX_tc, transMatRate_tc_H, priorCurrent_m, s) {
     invisible(.Call('_STITCH_Rcpp_ref_run_forward_haploid', PACKAGE = 'STITCH', alphaHat_t, c, eMatGrid_t, alphaMatCurrentX_tc, transMatRate_tc_H, priorCurrent_m, s))
 }

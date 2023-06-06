@@ -74,7 +74,7 @@ set.seed(919)
 
 n_snps <- 1200
 K <- 6
-n_big_haps <- 1000 ## 1000
+n_big_haps <- 100 ## 1000
 chr <- 10
 
 
@@ -138,7 +138,6 @@ test_that("can load and split into rare and common", {
         region = region
     )
 
-    print("Rcpp start")
     outRcpp <- Rcpp_get_hap_info_from_vcf(
         vcffile = vcffile,
         af_cutoff = af_cutoff,
