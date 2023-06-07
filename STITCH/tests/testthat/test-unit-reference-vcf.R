@@ -14,56 +14,6 @@ if ( 1 == 0 ) {
 }
 
 
-test_that("speed check", {
-
-    af_cutoff <- 0.01 ## here, 1%. note maf < 1% corresponding to af > 99% is very rare so could ignore for simplicity?
-    ref_error <- 0.001
-    vcffile <- "/data/smew1/rdavies/ukbb_gel_2023_01_26/ukbb.20.20000000.20100000.vcf.gz"
-    start <- 20000000
-
-
-    ## check computational complexity
-    ## check here
-    for(iii in 1:3) {
-        if (iii == 1) {af_cutoff <- 0.01} ## make ALL of them common
-        if (iii == 2) {af_cutoff <- 0} ## make ALL of them common
-        if (iii == 3) {af_cutoff <- 1} ## make ALL of them rare
-    widths <- round(10 ** seq(2, 4, length.out = 5))
-    out <- mclapply(widths, mc.cores = 10, function(width) {
-        print(paste0("width = ", width, ", ", date()))
-        region <- paste0("20:", start, "-", start + width)
-        c(
-            system.time({
-            outRcpp <- Rcpp_get_hap_info_from_vcf(
-                vcffile = vcffile,
-                af_cutoff = af_cutoff,
-                region = region
-            )
-            })[["elapsed"]],
-            w = width,
-               n_c = sum(outRcpp$snp_is_common),
-            n_r = sum(!outRcpp$snp_is_common),
-            n_s = outRcpp[["n_skipped"]],
-            sapply(outRcpp, object.size)
-            )
-    })
-    mat <- t(sapply(out, I))
-
-        mat <- cbind(mat, mat[, 1] / mat[, 2])
-        mat <- cbind(mat, mat[, 1] / mat[, 3])
-        print(mat)
-
-    }
-    ## seems OK at first glance
-    ## 10 minutes for 100,000 at scale
-
-    ## OK, seems to work
-    ## no problems yet with push back stuff, would eventually kick in, maybe?
-    ## might need some more testing at some point
-    
-    
-})
-
 
 
 
@@ -124,8 +74,7 @@ refpack <- make_reference_package(
 ## TODO
 ##
 ## ?be able to use only SNPs in desired SNP list
-## ?be able to skip unwanted SNPs on the fly
-
+## done - be able to skip unwanted SNPs on the fly
 
 
 ## mostly for QUILT
@@ -164,6 +113,68 @@ test_that("can load and split into rare and common", {
 
 
 })
+
+
+
+test_that("speed check", {
+
+    skip("is speed check")
+    
+    af_cutoff <- 0.01 ## here, 1%. note maf < 1% corresponding to af > 99% is very rare so could ignore for simplicity?
+    ref_error <- 0.001
+    vcffile <- "/data/smew1/rdavies/ukbb_gel_2023_01_26/ukbb.20.20000000.20100000.vcf.gz"
+    start <- 20000000
+
+
+    ## check computational complexity
+    ## check here
+    for(iii in 1:3) {
+        if (iii == 1) {af_cutoff <- 0.01} ## make ALL of them common
+        if (iii == 2) {af_cutoff <- 0} ## make ALL of them common
+        if (iii == 3) {af_cutoff <- 1} ## make ALL of them rare
+    widths <- round(10 ** seq(2, 4, length.out = 5))
+    out <- mclapply(widths, mc.cores = 10, function(width) {
+        print(paste0("width = ", width, ", ", date()))
+        region <- paste0("20:", start, "-", start + width)
+        c(
+            system.time({
+            outRcpp <- Rcpp_get_hap_info_from_vcf(
+                vcffile = vcffile,
+                af_cutoff = af_cutoff,
+                region = region
+            )
+            })[["elapsed"]],
+            w = width,
+               n_c = sum(outRcpp$snp_is_common),
+            n_r = sum(!outRcpp$snp_is_common),
+            n_s = outRcpp[["n_skipped"]],
+            sapply(outRcpp, object.size)
+            )
+    })
+    mat <- t(sapply(out, I))
+
+        mat <- cbind(mat, mat[, 1] / mat[, 2])
+        mat <- cbind(mat, mat[, 1] / mat[, 3])
+        print(mat)
+
+    }
+    ## seems OK at first glance
+    ## 10 minutes for 100,000 at scale
+
+    ## OK, seems to work
+    ## no problems yet with push back stuff, would eventually kick in, maybe?
+    ## might need some more testing at some point
+
+    a <- system("bcftools view -H /data/smew1/rdavies/ukbb_gel_2023_01_26/ukbb.20.20000000.20100000.vcf.gz | cut -b1-100 | cut -f1-10 | head -n 100 ", intern = TRUE)
+    b <- t(sapply(strsplit(a, "\t"), I))
+    head(b)
+    sum(nchar(b[, 4]) > 1)
+    sum(nchar(b[, 5]) > 1)
+    sum(diff(as.integer(b[, 2])) == 0)
+    ## so lose about 10%
+    
+})
+
 
 
 ## speed check?
