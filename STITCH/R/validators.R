@@ -660,6 +660,7 @@ validate_hapProb <- function(initial_min_hapProb, initial_max_hapProb) {
 }
 
 ## note - require two SNPs - otherwise imputation is just genotyping!
+#' @export
 validate_region_to_impute_when_using_regionStart <- function(L, regionStart, regionEnd, buffer) {
     for(i in 1:3) {
         if (i == 1) {

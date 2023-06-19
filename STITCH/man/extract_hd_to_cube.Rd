@@ -8,8 +8,8 @@ extract_hd_to_cube(
   vcf_file,
   ref,
   bcftools = "bcftools",
- 
-    gatk_jar = "/data/smew1/rdavies/stitch_richard_paper/bin/gatk/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar",
+  gatk_jar =
+    "/data/smew1/rdavies/stitch_richard_paper/bin/gatk/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar",
   samples = NULL,
   pos = NULL,
   ram = "-Xmx4g",
