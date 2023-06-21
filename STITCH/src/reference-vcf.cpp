@@ -73,34 +73,25 @@ List get_rhb_from_vcf(std::string vcffile,
                         Named("hapRowsum") = rowsum, Named("nhaps") = nhaps);
 }
 
-
-
-
-
-
-
-
-
 //' @export
 // [[Rcpp::export]]
-List Rcpp_get_hap_info_from_vcf(
-    std::string vcffile,
-    double af_cutoff,
-    std::string region,
-    std::string samples = "-",
-    bool is_check = false,
-    bool verbose = false
-)
+List Rcpp_get_hap_info_from_vcf(std::string vcffile,
+                                double af_cutoff,
+                                std::string region,
+                                std::string samples = "-",
+                                bool is_check = false,
+                                bool verbose = false)
 {
-  if (verbose) {
-    std::cout << "inside" << std::endl;
-  }
-  BcfReader br(vcffile, samples, region);
+    if(verbose)
+    {
+        std::cout << "inside" << std::endl;
+    }
+    BcfReader br(vcffile, samples, region);
     BcfRecord var(br.header);
     int nhaps = br.nsamples * 2;
     int nsnps = 0;
     int n_common_snps = 0;
-    int n_rare_snps = 0;        
+    int n_rare_snps = 0;
     NumericVector rowsum;
     IntegerVector L;
     LogicalVector snp_is_common;
@@ -109,65 +100,65 @@ List Rcpp_get_hap_info_from_vcf(
     vector<bool> gt;
     vector<vector<bool>> X;
     vector<vector<int>> rare_per_hap_info(nhaps);
-    //vector<string> ref, alt;
+    // vector<string> ref, alt;
     CharacterVector ref, alt;
-    
-  if (verbose) {
-    std::cout << "process" << std::endl;
-  }
 
-  int n_skipped = 0;
-  int prev_pos = -1;
+    if(verbose)
+    {
+        std::cout << "process" << std::endl;
+    }
+
+    int n_skipped = 0;
+    int prev_pos = -1;
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
-        if(is_check)
+        if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased()) continue;
+        // only keep if meets conditions
+        //  - bi-allelic
+        //  - snp
+        //  - position increased from previous site
+        if(!((var.POS() - prev_pos) > 0))
         {
-            if(!var.isNoneMissing() || !var.allPhased())
-                continue; // skip var with missing values and non-phased
+            n_skipped += 1;
+            continue;
         }
-	// only keep if meets conditions
-	//  - bi-allelic
-	//  - snp
-	//  - position increased from previous site
-	if (!(
-	      (var.REF().length() == 1) &
-	      (var.ALT().length() == 1) &
-	      ((var.POS() - prev_pos) > 0)
-	      )) {
-	  n_skipped += 1;
-	  continue;
-	}
         int s = 0;
         for(auto g : gt) s += g;
         rowsum.push_back(s);
         ref.push_back(var.REF());
         alt.push_back(var.ALT());
         L.push_back(var.POS());
-	local_af = double(s) / double(nhaps);
-	count_af.push_back(double(s));
-	if (local_af < af_cutoff) {
-	  snp_is_common.push_back(false);
-	  n_rare_snps++;
-	  // store the indices here
-	  for (int i = 0; i != gt.size(); ++i) {
-	    if (gt[i]) {
-	      rare_per_hap_info[i].push_back(nsnps + 1); // 1-based
-	    }
-	  }
-	} else {
-	  snp_is_common.push_back(true);
-	  n_common_snps++;
-          X.push_back(gt);
-	}
+        local_af = double(s) / double(nhaps);
+        count_af.push_back(double(s));
+        if(local_af < af_cutoff)
+        {
+            snp_is_common.push_back(false);
+            n_rare_snps++;
+            // store the indices here
+            for(int i = 0; i != gt.size(); ++i)
+            {
+                if(gt[i])
+                {
+                    rare_per_hap_info[i].push_back(nsnps + 1); // 1-based
+                }
+            }
+        }
+        else
+        {
+            snp_is_common.push_back(true);
+            n_common_snps++;
+            X.push_back(gt);
+        }
         nsnps++;
-	prev_pos=var.POS();
+        prev_pos = var.POS();
     }
 
-  if (verbose) {
-    std::cout << "reorder" << std::endl;
-  }
-    
+    if(verbose)
+    {
+        std::cout << "reorder" << std::endl;
+    }
+
     // operate on common herre
     const int B = 32;
     int nGrids = (n_common_snps + B - 1) / B;
@@ -197,38 +188,30 @@ List Rcpp_get_hap_info_from_vcf(
             rhb_t(ihap, bs) = itmp;
         }
     }
-  if (verbose) {
-    std::cout << "dataframe" << std::endl;
-  }
-    
-  Rcpp::DataFrame pos = Rcpp::DataFrame::create(
-      Rcpp::Named("POS") = clone(L),
-      Rcpp::Named("REF") = clone(ref),
-      Rcpp::Named("ALT") = clone(alt)
-  );
+    if(verbose)
+    {
+        std::cout << "dataframe" << std::endl;
+    }
 
-  Rcpp::NumericMatrix ref_alleleCount(nsnps, 3);
-  double nhapsd = double(nhaps);
-  for(int is = 0; is < nsnps; is++) {
-    ref_alleleCount(is, 0) = count_af(is);
-    ref_alleleCount(is, 1) = nhapsd;
-  }
-  ref_alleleCount.column(2) = ref_alleleCount.column(0)  / ref_alleleCount.column(1);
-  
-  if (verbose) {
-    std::cout << "return" << std::endl;
-  }
-    
+    Rcpp::DataFrame pos = Rcpp::DataFrame::create(
+        Rcpp::Named("POS") = clone(L), Rcpp::Named("REF") = clone(ref), Rcpp::Named("ALT") = clone(alt));
 
-    return List::create(
-	Named("pos") = pos,
-        Named("rhb_t") = rhb_t,
-	Named("rare_per_hap_info") = rare_per_hap_info,
-	Named("snp_is_common") = snp_is_common,
-	Named("ref_alleleCount") = ref_alleleCount,
-	Named("n_skipped") = n_skipped
-    );
+    Rcpp::NumericMatrix ref_alleleCount(nsnps, 3);
+    double nhapsd = double(nhaps);
+    for(int is = 0; is < nsnps; is++)
+    {
+        ref_alleleCount(is, 0) = count_af(is);
+        ref_alleleCount(is, 1) = nhapsd;
+    }
+    ref_alleleCount.column(2) = ref_alleleCount.column(0) / ref_alleleCount.column(1);
+
+    if(verbose)
+    {
+        std::cout << "return" << std::endl;
+    }
+
+    return List::create(Named("pos") = pos, Named("rhb_t") = rhb_t,
+                        Named("rare_per_hap_info") = rare_per_hap_info,
+                        Named("snp_is_common") = snp_is_common, Named("ref_alleleCount") = ref_alleleCount,
+                        Named("n_skipped") = n_skipped);
 }
-
-
-
