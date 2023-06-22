@@ -133,7 +133,13 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
         L.push_back(var.POS());
         local_af = double(s) / double(nhaps);
         count_af.push_back(double(s));
-        if(local_af < af_cutoff)
+        if(local_af >= af_cutoff)
+        {
+            snp_is_common.push_back(true);
+            n_common_snps++;
+            X.push_back(gt);
+	}
+	else 	    
         {
             snp_is_common.push_back(false);
             n_rare_snps++;
@@ -145,12 +151,6 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
                     rare_per_hap_info[i].push_back(nsnps + 1); // 1-based
                 }
             }
-        }
-        else
-        {
-            snp_is_common.push_back(true);
-            n_common_snps++;
-            X.push_back(gt);
         }
         nsnps++;
         prev_pos = var.POS();
