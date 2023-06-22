@@ -161,6 +161,21 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
     .Call('_STITCH_rcpp_calculate_hwe_p', PACKAGE = 'STITCH', reference_hap)
 }
 
+#' @export
+mspbwt_build <- function(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf) {
+    invisible(.Call('_STITCH_mspbwt_build', PACKAGE = 'STITCH', binfile, vcfpanel, samples, region, nindices, mspbwtB, maf))
+}
+
+#' @export
+mspbwt_load <- function(binfile, mspbwtB) {
+    .Call('_STITCH_mspbwt_load', PACKAGE = 'STITCH', binfile, mspbwtB)
+}
+
+#' @export
+mspbwt_report <- function(xp_, z, pbwtL, mspbwtB) {
+    .Call('_STITCH_mspbwt_report', PACKAGE = 'STITCH', xp_, z, pbwtL, mspbwtB)
+}
+
 rcpp_phase_sample_paths_method_3 <- function(alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc) {
     .Call('_STITCH_rcpp_phase_sample_paths_method_3', PACKAGE = 'STITCH', alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc)
 }

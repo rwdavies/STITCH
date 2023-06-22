@@ -1,5 +1,5 @@
 SEQLIB_ROOT=./SeqLib/
-PKG_CPPFLAGS = -I$(SEQLIB_ROOT)/ -I$(SEQLIB_ROOT)/htslib/ -I../inst/include/
+PKG_CPPFLAGS = -I$(SEQLIB_ROOT)/ -I$(SEQLIB_ROOT)/htslib/
 PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a -fPIC -lz -lbz2 -llzma -lcurl
 
 .PHONY: SeqLib all
