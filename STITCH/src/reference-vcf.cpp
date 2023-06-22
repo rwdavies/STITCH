@@ -113,7 +113,10 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
-        if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased()) continue;
+        if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased()) {
+	  n_skipped += 1;	  
+	  continue;
+	}
         // only keep if meets conditions
         //  - bi-allelic
         //  - snp

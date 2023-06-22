@@ -96,7 +96,6 @@ test_that("can load and split into rare and common", {
         af_cutoff = af_cutoff,
         region = region
     )
-    
 
     outRcpp <- Rcpp_get_hap_info_from_vcf(
         vcffile = vcffile,
