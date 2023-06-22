@@ -1,3 +1,5 @@
+// -*- compile-command: "clang-format -i reference-vcf.cpp" -*-
+
 #include "vcfpp/vcfpp.h"
 #include <Rcpp.h>
 #include <string>
@@ -9,10 +11,7 @@ using namespace std;
 
 //' @export
 // [[Rcpp::export]]
-List get_rhb_from_vcf(std::string vcffile,
-                      std::string region,
-                      std::string samples = "-",
-                      bool is_check = false)
+List get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples = "-", bool is_check = false)
 {
     BcfReader br(vcffile, samples, region);
     BcfRecord var(br.header);
@@ -28,8 +27,7 @@ List get_rhb_from_vcf(std::string vcffile,
         var.getGenotypes(gt);
         if(is_check)
         {
-            if(!var.isNoneMissing() || !var.allPhased())
-                continue; // skip var with missing values and non-phased
+            if(!var.isNoneMissing() || !var.allPhased()) continue; // skip var with missing values and non-phased
         }
         int s = 0;
         for(auto g : gt) s += g;
@@ -113,10 +111,11 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
-        if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased()) {
-	  n_skipped += 1;	  
-	  continue;
-	}
+        if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased())
+        {
+            n_skipped += 1;
+            continue;
+        }
         // only keep if meets conditions
         //  - bi-allelic
         //  - snp
@@ -196,8 +195,8 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
         std::cout << "dataframe" << std::endl;
     }
 
-    Rcpp::DataFrame pos = Rcpp::DataFrame::create(
-        Rcpp::Named("POS") = clone(L), Rcpp::Named("REF") = clone(ref), Rcpp::Named("ALT") = clone(alt));
+    Rcpp::DataFrame pos = Rcpp::DataFrame::create(Rcpp::Named("POS") = clone(L), Rcpp::Named("REF") = clone(ref),
+                                                  Rcpp::Named("ALT") = clone(alt));
 
     Rcpp::NumericMatrix ref_alleleCount(nsnps, 3);
     double nhapsd = double(nhaps);
@@ -213,8 +212,7 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
         std::cout << "return" << std::endl;
     }
 
-    return List::create(Named("pos") = pos, Named("rhb_t") = rhb_t,
-                        Named("rare_per_hap_info") = rare_per_hap_info,
+    return List::create(Named("pos") = pos, Named("rhb_t") = rhb_t, Named("rare_per_hap_info") = rare_per_hap_info,
                         Named("snp_is_common") = snp_is_common, Named("ref_alleleCount") = ref_alleleCount,
                         Named("n_skipped") = n_skipped);
 }
