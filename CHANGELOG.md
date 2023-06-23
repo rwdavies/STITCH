@@ -1,3 +1,5 @@
+* v1.6.10
+	* Further VCF parsing capabilities
 * v1.6.9
 	* More small bug fixes
 * v1.6.8
