@@ -22,13 +22,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using namespace std;
-using namespace vcfpp;
-
-using IntMapU = unordered_map<int, int>;
-using IntVec1D = vector<int>;
-using IntVec2D = vector<IntVec1D>;
-using IntVec3D = vector<IntVec2D>;
+using IntMapU = std::unordered_map<int, int>;
+using Int1D = std::vector<int>;
+using Int2D = std::vector<Int1D>;
+using Int3D = std::vector<Int2D>;
+using Bool1D = std::vector<bool>;
+using Bool2D = std::vector<Bool1D>;
 
 template<typename T>
 T reverseBits(T n, size_t B = sizeof(T) * 8)
@@ -40,10 +39,10 @@ T reverseBits(T n, size_t B = sizeof(T) * 8)
 }
 
 // 0-based
-inline vector<int> seq_by(int start, int end, int by)
+inline Int1D seq_by(int start, int end, int by)
 {
     int n = (end - start + 1) % by == 0 ? (end - start + 1) / by : ((end - start + 1) / by + 1);
-    vector<int> seq(n);
+    Int1D seq(n);
     int i{0}, x;
     for(x = start; x <= end; x = x + by) seq[i++] = x;
     return seq;
@@ -55,25 +54,25 @@ class MSPBWT
 {
   private:
     using grid_t = T;
-    using GridVec = vector<grid_t>;
-    using GridVec2D = vector<GridVec>;
-    using GridVec3D = vector<GridVec2D>;
-    using GridSetU = unordered_set<grid_t>;
-    using GridMapU = unordered_map<grid_t, int>; // {symbol : index}
-    using GridVecMapU = unordered_map<grid_t, std::vector<int>>; // {symbol : vec(index)}
-    using SymbolIdxMap = map<int, int, less<int>>; // {index: rank}
-    using WgSymbolMap = map<grid_t, SymbolIdxMap, less<grid_t>>; // {symbol:{index:rank}}
+    using GridVec = std::vector<grid_t>;
+    using GridVec2D = std::vector<GridVec>;
+    using GridVec3D = std::vector<GridVec2D>;
+    using GridSetU = std::unordered_set<grid_t>;
+    using GridMapU = std::unordered_map<grid_t, int>; // {symbol : index}
+    using GridVecMapU = std::unordered_map<grid_t, std::vector<int>>; // {symbol : vec(index)}
+    using SymbolIdxMap = std::map<int, int, std::less<int>>; // {index: rank}
+    using WgSymbolMap = std::map<grid_t, SymbolIdxMap, std::less<grid_t>>; // {symbol:{index:rank}}
 
-    int B{sizeof(T) * 8}, N{0}, M{0}, G{0}, G1{0}, G2{0}, nindices{4};
-    bool is_save_X{1}, is_save_D{0};
-    vector<GridMapU> GMV; // for debug purpose
+    int B{sizeof(T) * 8}, N{0}, M{0}, G{0}, nindices{4};
+    bool is_save_X{1}, is_save_D{0}, is_rhb_t{0};
     GridVec2D X; // Grids x Haps
     GridVec2D S; // Grids x Sorted and Unique symbols
-    IntVec3D W;
-    IntVec2D C;
-    IntVec2D A; // nindices x Grids x Haps
-    IntVec2D D; // nindices x Grids x Haps
-    vector<int> keep;
+    Int3D W;
+    Int2D C;
+    Int2D A; // nindices x Grids x Haps
+    Int2D D; // nindices x Grids x Haps
+    Int1D keep; // keep only index of common variants
+    Int1D pos;
 
   public:
     MSPBWT(int nindices_ = 4) : nindices(nindices_) {}
@@ -83,17 +82,17 @@ class MSPBWT
     bool verbose{0};
     bool debug{0};
 
-    IntVec1D randhapz()
+    Int1D randhapz()
     {
         std::random_device rd; // Will be used to obtain a seed for the random number engine
         std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
         std::uniform_int_distribution<> dist(0, 101);
-        IntVec1D z(M);
+        Int1D z(M);
         for(int i = 0; i < M; i++) z[i] = dist(gen) > 95;
         return z;
     }
 
-    GridVec encodezg(const vector<int> & z)
+    GridVec encodezg(const Int1D & z)
     {
         bool is_z_commom;
         if(z.size() == M)
@@ -101,7 +100,7 @@ class MSPBWT
         else if(z.size() > M)
             is_z_commom = false;
         else
-            throw runtime_error("something wrong! can't encode z as a grid!");
+            throw std::runtime_error("something wrong! can't encode z as a grid!");
 
         int k{0}, m{0};
         GridVec zg(G);
@@ -124,7 +123,7 @@ class MSPBWT
         }
         else if(G == k)
         {
-            if(verbose) cerr << "no need padding\n";
+            if(verbose) std::cerr << "no need padding\n";
         }
         else
         {
@@ -171,10 +170,10 @@ class MSPBWT
         return W;
     }
 
-    IntVec1D save_C(const GridVec & y, const GridVec & s)
+    Int1D save_C(const GridVec & y, const GridVec & s)
     {
         int c{0}, i{0};
-        vector<int> C(s.size());
+        Int1D C(s.size());
         for(const auto & si : s)
         {
             c = 0;
@@ -188,10 +187,10 @@ class MSPBWT
         return C;
     }
 
-    IntVec2D save_Occ(const GridVec & y, const GridVec & s)
+    Int2D save_Occ(const GridVec & y, const GridVec & s)
     {
-        vector<vector<int>> Occ(s.size());
-        vector<int> idx;
+        Int2D Occ(s.size());
+        Int1D idx;
         size_t i{0};
         int k{0};
         for(const auto & si : s)
@@ -215,7 +214,7 @@ class MSPBWT
         GridVecMapU W;
         for(const auto & si : s)
         {
-            W[si] = vector<int>(y.size());
+            W[si] = Int1D(y.size());
             c = 0;
             for(i = 0; i < y.size(); i++)
             {
@@ -230,13 +229,13 @@ class MSPBWT
     void build(const std::string & vcfpanel, const std::string & samples, const std::string & region, double maf = 0)
     {
         int k{0}, m{0}, i{0};
-        BcfReader vcf(vcfpanel, samples, region);
-        BcfRecord var(vcf.header);
+        vcfpp::BcfReader vcf(vcfpanel, samples, region);
+        vcfpp::BcfRecord var(vcf.header);
         N = vcf.nsamples * 2;
         M = 0;
         {
-            vector<bool> gt;
-            vector<vector<bool>> allgts;
+            Bool1D gt;
+            Bool2D allgts;
             double af;
             int prev_pos = -1;
             while(vcf.getNextVariant(var))
@@ -264,7 +263,7 @@ class MSPBWT
 
             M = keep.size();
             G = (M + B - 1) / B;
-            if(verbose) cerr << "N:" << N << ",M:" << M << ",G:" << G << ",B:" << B << ",nindices:" << nindices << endl;
+            if(verbose) std::cerr << "N:" << N << ",M:" << M << ",G:" << G << ",B:" << B << ",nindices:" << nindices << std::endl;
             X.resize(G, GridVec(N));
             k = 0;
             for(m = 0; m < M; m++)
@@ -286,7 +285,7 @@ class MSPBWT
             }
             else if(G == k)
             {
-                if(verbose) cerr << "no need padding\n";
+                if(verbose) std::cerr << "no need padding\n";
             }
             else
             {
@@ -301,14 +300,14 @@ class MSPBWT
         W.resize(G);
         if(is_save_D) D.resize(G);
         // create some intermediate varibales
-        vector<int> Occ;
-        vector<vector<int>> kas; // for building A
-        vector<vector<int>> kds; // for building D
-        vector<int> sqp; // for building D
+        Int1D Occ;
+        Int1D sqp; // for building D
+        Int2D kas; // for building A
+        Int2D kds; // for building D
         GridSetU symbols; // keep track of unique symbols at k
         GridVec y1(N);
-        vector<int> a0(N); // initilize a[k]
-        vector<int> d0(N + 1); // sentinels, d[0],d[N] = k + 1
+        Int1D a0(N); // initilize a[k]
+        Int1D d0(N + 1); // sentinels, d[0],d[N] = k + 1
         int Gi, ki, ni{-1};
         for(i = 0; i < nindices; i++)
         {
@@ -336,14 +335,14 @@ class MSPBWT
                          GridVec & xk,
                          GridVec & yk,
                          GridVec & sk,
-                         vector<int> & ck,
-                         vector<vector<int>> & wk,
-                         vector<int> & Occ,
-                         vector<vector<int>> & kas,
-                         vector<vector<int>> & kds,
-                         vector<int> & sqp,
-                         vector<int> & a0,
-                         vector<int> & d0,
+                         Int1D & ck,
+                         Int2D & wk,
+                         Int1D & Occ,
+                         Int2D & kas,
+                         Int2D & kds,
+                         Int1D & sqp,
+                         Int1D & a0,
+                         Int1D & d0,
                          GridSetU & symbols)
     {
         int s, n, c, e, i;
@@ -444,448 +443,6 @@ class MSPBWT
             sqp.clear();
             D[ni][N] = ki + 1; // add sentinel
             d0 = D[ni];
-        }
-    }
-
-    int save(const std::string & filename)
-    {
-        ofstream out(filename, ios::out | ios::binary);
-        if(out.fail()) return 1;
-        out.write((char *)&B, sizeof(B));
-        out.write((char *)&M, sizeof(M));
-        out.write((char *)&N, sizeof(N));
-        out.write((char *)&G, sizeof(G));
-        out.write((char *)&nindices, sizeof(nindices));
-        // write reorder (M)
-        int n, k, m;
-        for(m = 0; m < M; m++) out.write((char *)&keep[m], sizeof(int));
-        if(is_save_X)
-        {
-            // write X
-            for(k = 0; k < G; k++)
-            {
-                for(n = 0; n < N; n++) out.write((char *)&X[k][n], sizeof(T));
-            }
-        }
-        // write S
-        for(k = 0; k < G; k++)
-        {
-            size_t sz = S[k].size();
-            out.write((char *)&sz, sizeof(sz));
-            for(size_t i = 0; i < sz; i++) out.write((char *)&S[k][i], sizeof(T));
-        }
-        // write A
-        for(k = 0; k < G; k++)
-        {
-            for(n = 0; n < N; n++) out.write((char *)&A[k][n], sizeof(int));
-        }
-        if(is_save_D)
-        {
-            // write D
-            for(k = 0; k < G; k++)
-            {
-                for(n = 0; n < N + 1; n++) out.write((char *)&D[k][n], sizeof(int));
-            }
-        }
-        // write C
-        for(k = 0; k < G; k++)
-        {
-            size_t sz = C[k].size();
-            out.write((char *)&sz, sizeof(sz));
-            for(size_t i = 0; i < sz; i++) out.write((char *)&C[k][i], sizeof(int));
-        }
-        // write W
-        for(k = 0; k < G; k++)
-        {
-            size_t sz = W[k].size();
-            out.write((char *)&sz, sizeof(sz));
-            for(size_t i = 0; i < sz; i++)
-            {
-                size_t sz1 = W[k][i].size();
-                out.write((char *)&sz1, sizeof(sz1));
-                for(size_t j = 0; j < sz1; j++) out.write((char *)&W[k][i][j], sizeof(int));
-            }
-        }
-        return 0;
-    }
-
-    int load(const std::string & filename)
-    {
-        ifstream in(filename, ios::in | ios::binary);
-        if(in.fail()) return 1;
-        if(!in.read((char *)&B, sizeof(B))) return 2;
-        if(B != sizeof(T) * 8) throw invalid_argument("the binary file may be created with different B!\n");
-        if(!in.read((char *)&M, sizeof(M))) return 2;
-        if(!in.read((char *)&N, sizeof(N))) return 2;
-        if(!in.read((char *)&G, sizeof(G))) return 2;
-        if(!in.read((char *)&nindices, sizeof(nindices))) return 2;
-        cerr << "N: " << N << ",M: " << M << ",G: " << G << ",B: " << B << ",nindices " << nindices << endl;
-        keep.resize(M);
-        int n, m, k;
-        for(m = 0; m < M; m++) in.read((char *)&keep[m], sizeof(int));
-        if(is_save_X)
-        {
-            // read X
-            X.resize(G, GridVec(N));
-            for(k = 0; k < G; k++)
-            {
-                for(n = 0; n < N; n++)
-                {
-                    if(!in.read((char *)&X[k][n], sizeof(T))) return 2;
-                }
-            }
-            if(verbose) cerr << "load X done" << endl;
-        }
-        // read S
-        S.resize(G);
-        if(debug) GMV.resize(G);
-        for(k = 0; k < G; k++)
-        {
-            size_t sz;
-            if(!in.read((char *)&sz, sizeof(sz)) || sz < 1) return 2;
-            S[k].resize(sz);
-            for(size_t i = 0; i < sz; i++)
-            {
-                if(!in.read((char *)&S[k][i], sizeof(T))) return 2;
-                if(debug) GMV[k][S[k][i]] = i;
-            }
-        }
-        if(verbose) cerr << "load S done" << endl;
-        // read A
-        A.resize(G, vector<int>(N));
-        for(k = 0; k < G; k++)
-        {
-            for(n = 0; n < N; n++)
-            {
-                if(!in.read((char *)&A[k][n], sizeof(int))) return 2;
-            }
-        }
-        if(verbose) cerr << "load A done" << endl;
-        if(is_save_D)
-        {
-            // read D
-            D.resize(G, vector<int>(N + 1));
-            for(k = 0; k < G; k++)
-            {
-                for(n = 0; n < N + 1; n++)
-                {
-                    if(!in.read((char *)&D[k][n], sizeof(int))) return 2;
-                }
-            }
-            if(verbose) cerr << "load D done" << endl;
-            // for (int i = 0; i < N + 1; i++)
-            // {
-            //     for (int j = 0; j < G; j++)
-            //         cerr << D[j][i] << ",";
-            //     cerr << endl;
-            // }
-        }
-        // read C
-        C.resize(G);
-        for(k = 0; k < G; k++)
-        {
-            size_t sz;
-            if(!in.read((char *)&sz, sizeof(sz)) || sz < 1) return 2;
-            C[k].resize(sz);
-            for(size_t i = 0; i < sz; i++)
-            {
-                if(!in.read((char *)&C[k][i], sizeof(int))) return 2;
-            }
-        }
-        if(verbose) cerr << "load C done" << endl;
-        // read W
-        W.resize(G);
-        for(k = 0; k < G; k++)
-        {
-            size_t sz;
-            if(!in.read((char *)&sz, sizeof(sz)) || sz < 1) return 2;
-            W[k].resize(sz);
-            for(size_t i = 0; i < sz; i++)
-            {
-                size_t sz1;
-                if(!in.read((char *)&sz1, sizeof(sz1)) || sz1 < 1) return 2;
-                W[k][i].resize(sz1);
-                for(size_t j = 0; j < sz1; j++)
-                {
-                    if(!in.read((char *)&W[k][i][j], sizeof(int))) return 2;
-                }
-            }
-        }
-        if(verbose) cerr << "load W done" << endl;
-
-        return 0;
-    }
-
-    void query(const std::string & vcfquery, const std::string & samples, const std::string & region, int viewk = 0)
-    {
-        BcfReader vcf(vcfquery, samples, region);
-        BcfRecord var(vcf.header);
-        vector<bool> gt;
-        vector<GridVec> Z(vcf.nsamples * 2, GridVec(G));
-        size_t i{0};
-        int k{0}, m{0};
-        while(vcf.getNextVariant(var))
-        {
-            var.getGenotypes(gt);
-            if(!var.isNoneMissing() || !var.allPhased()) continue;
-            for(i = 0; i < gt.size(); i++) Z[i][k] = (Z[i][k] << 1) | (gt[i] != 0);
-            m++;
-            if(m % B == 0)
-            {
-                for(i = 0; i < gt.size(); i++) Z[i][k] = reverseBits(Z[i][k]); // reverset bits
-                k++; // update next grid
-            }
-        }
-        assert(m == M);
-        if(G == k + 1)
-        {
-            for(i = 0; i < gt.size(); i++)
-            {
-                Z[i][k] <<= G * B - M;
-                Z[i][k] = reverseBits(Z[i][k]); // reverset bits
-            }
-        }
-        else if(G == k)
-        {
-            if(verbose) cerr << "no need padding\n";
-        }
-        else
-        {
-            throw std::runtime_error("something wrong\n");
-        }
-        IntMapU haplens, hapends, hapnindicies;
-        report_setmaximal(haplens, hapends, hapnindicies, Z[1], viewk);
-    }
-
-    void find_setmaximal(int iind,
-                         IntMapU & haplens,
-                         IntMapU & hapends,
-                         IntMapU & hapnindicies,
-                         GridVec & zg,
-                         const IntVec1D & gv,
-                         int step,
-                         int viewk = -1)
-    {
-        int klen, ks, k, s, n, i, e, f, g, e1, f1, g1, valid_grid_start{0};
-        bool matches_lower, matches_upper;
-        IntMapU ghost;
-        // bool first_valid_grid_start = true;
-        for(k = 0; k < gv.size(); k++)
-        {
-            ks = k + step;
-            auto kzs = std::lower_bound(S[ks].begin(), S[ks].end(), zg[gv[k]]);
-            s = std::fmin(std::distance(S[ks].begin(), kzs), S[ks].size() - 1);
-            if(S[ks][s] != zg[gv[k]])
-            {
-                ghost[k] = k;
-                cerr << "ghost symbol at k: " << k << endl;
-                // // what to do if having ghost symbols
-                // if (kzs == S[ks].end() || s == 0)
-                //     zg[gv[k]] = S[ks][s]; // already lower bound!
-                // else
-                //     zg[gv[k]] = S[ks][s - 1]; // corce to be lower bound!
-            }
-
-            if(k == valid_grid_start)
-            {
-                f1 = C[ks][s];
-                g1 = C[ks][s] + W[ks][s].size(); // could be N
-                e1 = valid_grid_start;
-            }
-            else if(k > valid_grid_start)
-            {
-                // assume symbol exists
-                // g1 >= f1 >= C[ks][s] if g >= f
-                auto fzk = std::lower_bound(W[ks][s].begin(), W[ks][s].end(), f);
-                auto gzk = std::lower_bound(W[ks][s].begin(), W[ks][s].end(), g);
-                f1 = C[ks][s] + std::fmin(std::distance(W[ks][s].begin(), fzk), W[ks][s].size());
-                g1 = C[ks][s] + std::fmin(std::distance(W[ks][s].begin(), gzk), W[ks][s].size());
-                if(f1 == g1)
-                {
-
-                    if(debug && viewk == ks)
-                    {
-                        for(i = 0; i < N; i++)
-                        {
-                            if(i == f)
-                            {
-                                cout << "zg is below" << endl;
-                                for(int j = 0; j < k; j++)
-                                    if(GMV[j + step].count(zg[gv[j]]))
-                                        cout << GMV[j + step][zg[gv[j]]] << " ";
-                                    else
-                                        cout << "-1 ";
-                                cout << endl;
-                                cout << "f is below - " << f << endl;
-                            }
-                            for(int j = 0; j < k; j++) cout << GMV[j + step][X[j][A[ks - 1][i]]] << " ";
-                            cout << endl;
-                            if(i == g - 1) cout << "g - 1 is above - " << g - 1 << endl;
-                            if(i == g)
-                            {
-                                cout << "g is above - " << g << endl;
-                                for(int j = 0; j < k; j++)
-                                    if(GMV[j + step].count(zg[gv[j]]))
-                                        cout << GMV[j + step][zg[gv[j]]] << " ";
-                                    else
-                                        cout << "-1 ";
-                                cout << endl;
-                                cout << "zg is above" << endl;
-                            }
-                        }
-                    }
-
-                    // report matches from e to k for [f, g)
-                    for(i = f; i < g; i++)
-                    {
-                        n = A[ks - 1][i];
-                        klen = k - e;
-                        // check if all equals
-                        if(debug)
-                        {
-                            int j = 0, count = 0;
-                            while(k >= ++j && X[gv[k - j]][n] == zg[gv[k - j]]) count++;
-                            cerr << k << "," << i << "," << klen << "," << count << "," << n << endl;
-                        }
-                        if(haplens.count(n) == 0)
-                        {
-                            haplens[n] = klen;
-                            hapends[n] = k - 1;
-                            hapnindicies[n] = 1;
-                        }
-                        else if(klen > haplens[n])
-                        {
-                            haplens[n] = klen;
-                            hapends[n] = k - 1;
-                        }
-                        if(hapnindicies.count(n))
-                            hapnindicies[n] = iind >= hapnindicies[n] ? (iind + 1) : hapnindicies[n];
-                    }
-                    // finding new e1, f1, g1
-                    e1 = D[ks][f1] - 1; // y[f1] and y[f1-1] diverge here, so upper bound for e
-                    if(f1 == N && e1 == k) // recall sentinels d0[N] = k + 1;
-                        e1 = k - 1;
-
-                    // cerr << X[gv[e1]][A[ks][f1]] << "," << X[gv[e1]][A[ks][f1 - 1]] << endl;
-                    // cerr << std::bitset<sizeof(T) * 8>(reverseBits(X[gv[e1]][A[ks][f1 - 1]])) << ","
-                    //      << std::bitset<sizeof(T) * 8>(reverseBits(X[gv[e1]][A[ks][f1]])) << endl;
-
-                    matches_lower = false;
-                    matches_upper = false;
-                    // if there is a ghost symbol in zg, e1++ will continue forever so add e1 < k
-                    while((e1 < k) && (!matches_lower) && (!matches_upper))
-                    {
-                        if(f1 > 0)
-                            matches_upper = (zg[gv[e1]] == X[gv[e1]][A[ks][f1 - 1]]);
-                        else
-                            matches_upper = false;
-                        if(f1 < N)
-                            matches_lower = (zg[gv[e1]] == X[gv[e1]][A[ks][f1]]);
-                        else
-                            matches_lower = false;
-                        // if matches neither y[f1] or y[f1-1], eg. symbol missing or just happens, e1++
-                        if((!matches_lower) && (!matches_upper)) ++e1;
-                    }
-
-                    // if ghost symbols exists and loop --e1 stops as it is
-                    // this will shorten the potential longest matches
-                    if(matches_upper)
-                    {
-                        --f1;
-                        // make sure e1 > 0
-                        while(e1 > valid_grid_start && zg[gv[e1 - 1]] == X[gv[e1 - 1]][A[ks][f1]]) --e1;
-                        // we can't skip missing symbols otherwise here is not true
-                        while(f1 > 0 && D[ks][f1] <= e1) --f1;
-                    }
-                    if(matches_lower)
-                    {
-                        ++g1;
-                        // make sure e1 > 0
-                        while(e1 > valid_grid_start && zg[gv[e1 - 1]] == X[gv[e1 - 1]][A[ks][f1]]) --e1;
-                        while(g1 < N && D[ks][g1] <= e1) ++g1;
-                    }
-
-                    if(debug && (matches_lower) && (matches_upper))
-                    {
-                        cerr << "matches both upper and lower: " << e1 << "," << f1 << "," << g1 << endl;
-                        for(i = 0; i < N; i++)
-                        {
-                            if(i == f1)
-                            {
-                                cout << "zg is below" << endl;
-                                for(int j = 0; j < k; j++)
-                                    if(GMV[j + step].count(zg[gv[j]]))
-                                        cout << GMV[j + step][zg[gv[j]]] << " ";
-                                    else
-                                        cout << "-1 ";
-                                cout << endl;
-                                cout << "f1 is below - " << f << endl;
-                            }
-                            for(int j = 0; j < k; j++) cout << GMV[j + step][X[j][A[ks][i]]] << " ";
-                            cout << endl;
-                            if(i == g1 - 1) cout << "g1 - 1 is above - " << g1 - 1 << endl;
-                            if(i == g1)
-                            {
-                                cout << "g1 is above - " << g1 << endl;
-                                for(int j = 0; j < k; j++)
-                                    if(GMV[j + step].count(zg[gv[j]]))
-                                        cout << GMV[j + step][zg[gv[j]]] << " ";
-                                    else
-                                        cout << "-1 ";
-                                cout << endl;
-                                cout << "zg is above" << endl;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    assert(f1 < g1);
-                    // nothing to do
-                    e1 = e;
-                }
-            }
-            // update for ext run
-            f = f1;
-            g = g1;
-            e = e1;
-        }
-
-        // final report matches from e to k for [f, g)
-        assert(ks == gv.size() - 1 + step);
-        klen = k - e;
-        for(i = f; i < g; i++)
-        {
-            n = A[ks][i];
-            if(debug)
-            {
-                int j = 0, count = 0;
-                while(k >= ++j && X[gv[k - j]][n] == zg[gv[k - j]]) count++;
-                cerr << k << "," << i << "," << klen << "," << count << "," << n << endl;
-            }
-            if(haplens.count(n) == 0)
-            {
-                haplens[n] = klen;
-                hapends[n] = k;
-                hapnindicies[n] = 1;
-            }
-            else if(klen > haplens[n])
-            {
-                haplens[n] = klen;
-                hapends[n] = k;
-            }
-            if(hapnindicies.count(n)) hapnindicies[n] = iind >= hapnindicies[n] ? (iind + 1) : hapnindicies[n];
-        }
-    }
-
-    void report_setmaximal(IntMapU & haplens, IntMapU & hapends, IntMapU & hapnindicies, GridVec & zg, int viewk = -1)
-    {
-        int iind, step{0};
-        for(iind = 0; iind < nindices; iind++)
-        {
-            auto gv = seq_by(iind, G - 1, nindices);
-            find_setmaximal(iind, haplens, hapends, hapnindicies, zg, gv, step, viewk);
-            step += gv.size();
         }
     }
 
@@ -1018,160 +575,173 @@ class MSPBWT
         }
     }
 
-    IntVec1D insert_and_match(const GridVec & zg)
+    int save(const std::string & filename)
     {
-        vector<int> za(G);
-        size_t i, s;
-        int k;
+        std::ofstream out(filename, std::ios::out | std::ios::binary);
+        if(out.fail()) return 1;
+        out.write((char *)&B, sizeof(B));
+        out.write((char *)&M, sizeof(M));
+        out.write((char *)&N, sizeof(N));
+        out.write((char *)&G, sizeof(G));
+        out.write((char *)&nindices, sizeof(nindices));
+        // write reorder (M)
+        int n, k, m;
+        for(m = 0; m < M; m++) out.write((char *)&keep[m], sizeof(int));
+        if(is_save_X)
+        {
+            // write X
+            for(k = 0; k < G; k++)
+            {
+                for(n = 0; n < N; n++) out.write((char *)&X[k][n], sizeof(T));
+            }
+        }
+        // write S
         for(k = 0; k < G; k++)
         {
-            auto kzs = std::lower_bound(S[k].begin(), S[k].end(), zg[k]);
-            s = std::fmin(std::distance(S[k].begin(), kzs), S[k].size() - 1);
-            za[k] = C[k][s];
-            if(k > 0)
-            {
-                if(za[k - 1] >= za[k])
-                {
-                    auto kzi = std::lower_bound(W[k][s].begin(), W[k][s].end(), za[k - 1]);
-                    za[k] += std::fmin(std::distance(W[k][s].begin(), kzi), W[k][s].size() - 1);
-                }
-                i = 1;
-                while(k >= i && X[k - i + 1][A[k][za[k]]] == zg[k - i + 1] && X[k - i][A[k][za[k]]] < zg[k - i])
-                {
-                    za[k]++;
-                    if(X[k - i][A[k][za[k]]] == zg[k - i]) i++;
-                }
-                cerr << k << "," << i << endl;
-            }
+            size_t sz = S[k].size();
+            out.write((char *)&sz, sizeof(sz));
+            for(size_t i = 0; i < sz; i++) out.write((char *)&S[k][i], sizeof(T));
         }
-        return za;
-    }
-
-    IntVec1D insert_at_last(const GridVec & zg, bool start_with_last = false)
-    {
-        IntVec1D za(G);
-        int k, s;
+        // write A
         for(k = 0; k < G; k++)
         {
-            auto kzs = std::lower_bound(S[k].begin(), S[k].end(), zg[k]);
-            s = std::fmin(std::distance(S[k].begin(), kzs), S[k].size() - 1);
-            if(start_with_last && k == 0)
-                za[k] = C[k][s] + W[k][s].size() - 1;
-            else
-                za[k] = C[k][s] + 1;
-            if(k > 0)
+            for(n = 0; n < N; n++) out.write((char *)&A[k][n], sizeof(int));
+        }
+        if(is_save_D)
+        {
+            // write D
+            for(k = 0; k < G; k++)
             {
-                if(za[k - 1] >= za[k])
-                {
-                    auto kzi = std::lower_bound(W[k][s].begin(), W[k][s].end(), za[k - 1]);
-                    za[k] += std::fmin(std::distance(W[k][s].begin(), kzi), W[k][s].size() - 1);
-                }
+                for(n = 0; n < N + 1; n++) out.write((char *)&D[k][n], sizeof(int));
             }
         }
-        return za;
-    }
-
-    IntVec1D insert(const GridVec & zg)
-    {
-        IntVec1D za(G);
-        int k, s;
+        // write C
         for(k = 0; k < G; k++)
         {
-            auto kzs = std::lower_bound(S[k].begin(), S[k].end(), zg[k]);
-            s = std::fmin(std::distance(S[k].begin(), kzs), S[k].size() - 1);
-            za[k] = C[k][s];
-            if(k > 0)
+            size_t sz = C[k].size();
+            out.write((char *)&sz, sizeof(sz));
+            for(size_t i = 0; i < sz; i++) out.write((char *)&C[k][i], sizeof(int));
+        }
+        // write W
+        for(k = 0; k < G; k++)
+        {
+            size_t sz = W[k].size();
+            out.write((char *)&sz, sizeof(sz));
+            for(size_t i = 0; i < sz; i++)
             {
-                if(za[k - 1] >= za[k])
-                {
-                    auto kzi = std::lower_bound(W[k][s].begin(), W[k][s].end(), za[k - 1]);
-                    za[k] += std::fmin(std::distance(W[k][s].begin(), kzi), W[k][s].size() - 1);
-                }
+                size_t sz1 = W[k][i].size();
+                out.write((char *)&sz1, sizeof(sz1));
+                for(size_t j = 0; j < sz1; j++) out.write((char *)&W[k][i][j], sizeof(int));
             }
         }
-        return za;
+        return 0;
     }
 
-    void view_panel(int k, bool bit = true)
+    int load(const std::string & filename)
     {
-        for(size_t i = 0; i < X[0].size(); i++)
+        std::ifstream in(filename, std::ios::in | std::ios::binary);
+        if(in.fail()) return 1;
+        if(!in.read((char *)&B, sizeof(B))) return 2;
+        if(B != sizeof(T) * 8) throw std::invalid_argument("the binary file may be created with different B!\n");
+        if(!in.read((char *)&M, sizeof(M))) return 2;
+        if(!in.read((char *)&N, sizeof(N))) return 2;
+        if(!in.read((char *)&G, sizeof(G))) return 2;
+        if(!in.read((char *)&nindices, sizeof(nindices))) return 2;
+        std::cerr << "N: " << N << ",M: " << M << ",G: " << G << ",B: " << B << ",nindices " << nindices << std::endl;
+        keep.resize(M);
+        int n, m, k;
+        for(m = 0; m < M; m++) in.read((char *)&keep[m], sizeof(int));
+        if(is_save_X)
         {
-            for(int j = 0; j <= k + 1; j++)
+            // read X
+            X.resize(G, GridVec(N));
+            for(k = 0; k < G; k++)
             {
-                if(bit)
+                for(n = 0; n < N; n++)
                 {
-                    auto rb = reverseBits(X[j][A[k][i]]);
-                    cout << std::bitset<sizeof(T) * 8>(rb) << " ";
-                }
-                else
-                {
-                    cout << X[j][A[k][i]] << " ";
+                    if(!in.read((char *)&X[k][n], sizeof(T))) return 2;
                 }
             }
-            cout << endl;
+            if(verbose) std::cerr << "load X done" << std::endl;
         }
+        // read S
+        S.resize(G);
+        for(k = 0; k < G; k++)
+        {
+            size_t sz;
+            if(!in.read((char *)&sz, sizeof(sz)) || sz < 1) return 2;
+            S[k].resize(sz);
+            for(size_t i = 0; i < sz; i++)
+            {
+                if(!in.read((char *)&S[k][i], sizeof(T))) return 2;
+            }
+        }
+        if(verbose) std::cerr << "load S done" << std::endl;
+        // read A
+        A.resize(G, Int1D(N));
+        for(k = 0; k < G; k++)
+        {
+            for(n = 0; n < N; n++)
+            {
+                if(!in.read((char *)&A[k][n], sizeof(int))) return 2;
+            }
+        }
+        if(verbose) std::cerr << "load A done" << std::endl;
+        if(is_save_D)
+        {
+            // read D
+            D.resize(G, Int1D(N + 1));
+            for(k = 0; k < G; k++)
+            {
+                for(n = 0; n < N + 1; n++)
+                {
+                    if(!in.read((char *)&D[k][n], sizeof(int))) return 2;
+                }
+            }
+            if(verbose) std::cerr << "load D done" << std::endl;
+            // for (int i = 0; i < N + 1; i++)
+            // {
+            //     for (int j = 0; j < G; j++)
+            //         cerr << D[j][i] << ",";
+            //     cerr << endl;
+            // }
+        }
+        // read C
+        C.resize(G);
+        for(k = 0; k < G; k++)
+        {
+            size_t sz;
+            if(!in.read((char *)&sz, sizeof(sz)) || sz < 1) return 2;
+            C[k].resize(sz);
+            for(size_t i = 0; i < sz; i++)
+            {
+                if(!in.read((char *)&C[k][i], sizeof(int))) return 2;
+            }
+        }
+        if(verbose) std::cerr << "load C done" << std::endl;
+        // read W
+        W.resize(G);
+        for(k = 0; k < G; k++)
+        {
+            size_t sz;
+            if(!in.read((char *)&sz, sizeof(sz)) || sz < 1) return 2;
+            W[k].resize(sz);
+            for(size_t i = 0; i < sz; i++)
+            {
+                size_t sz1;
+                if(!in.read((char *)&sz1, sizeof(sz1)) || sz1 < 1) return 2;
+                W[k][i].resize(sz1);
+                for(size_t j = 0; j < sz1; j++)
+                {
+                    if(!in.read((char *)&W[k][i][j], sizeof(int))) return 2;
+                }
+            }
+        }
+        if(verbose) std::cerr << "load W done" << std::endl;
+
+        return 0;
     }
 
-    void view_zg(const GridVec & zg, int k, bool bit = true, int L = 0)
-    {
-        auto za1 = insert(zg);
-        auto za2 = insert_and_match(zg);
-        for(size_t i = 0; i < X[0].size(); i++)
-        {
-            if(((i < za1[k] - L) || (i > za1[k] + L)) && L != 0) continue;
-            for(int j = 0; j <= k + 2; j++)
-            {
-                if(bit)
-                {
-                    auto rb = reverseBits(X[j][A[k][i]]);
-                    cout << std::bitset<sizeof(T) * 8>(rb) << " ";
-                }
-                else
-                {
-                    cout << X[j][A[k][i]] << " ";
-                }
-            }
-            cout << endl;
-            if(i == za1[k])
-            {
-                // print out original Z bits
-                cout << "========= fisrt zg is inserting here ========  k=" << k << ", za1[k]=" << za1[k] << endl;
-                for(int j = 0; j <= k + 2; j++)
-                {
-                    if(bit)
-                    {
-                        auto rb = reverseBits(zg[j]);
-                        cout << std::bitset<sizeof(T) * 8>(rb) << " ";
-                    }
-                    else
-                    {
-                        cout << zg[j] << " ";
-                    }
-                }
-                cout << endl;
-                cout << "========= fisrt zg is inserting here ========  k=" << k << ", za1[k]=" << za1[k] << endl;
-            }
-            if(i == za2[k])
-            {
-                // print out original Z bits
-                cout << "========= last zg is inserting here ========  k=" << k << ", za2[k]=" << za2[k] << endl;
-                for(int j = 0; j <= k + 2; j++)
-                {
-                    if(bit)
-                    {
-                        auto rb = reverseBits(zg[j]);
-                        cout << std::bitset<sizeof(T) * 8>(rb) << " ";
-                    }
-                    else
-                    {
-                        cout << zg[j] << " ";
-                    }
-                }
-                cout << endl;
-                cout << "========= last zg is inserting here ========  k=" << k << ", za2[k]=" << za2[k] << endl;
-            }
-        }
-    }
 };
 
 #endif // MSPBWT_H_
