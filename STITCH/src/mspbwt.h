@@ -19,6 +19,7 @@
 #include <numeric>
 #include <random>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -28,6 +29,7 @@ using Int2D = std::vector<Int1D>;
 using Int3D = std::vector<Int2D>;
 using Bool1D = std::vector<bool>;
 using Bool2D = std::vector<Bool1D>;
+using String1D = std::vector<std::string>;
 
 template<typename T>
 T reverseBits(T n, size_t B = sizeof(T) * 8)
@@ -48,6 +50,16 @@ inline Int1D seq_by(int start, int end, int by)
     return seq;
 }
 
+struct QUILT_RHB
+{
+    Int2D rhb_t; // nhaps x ngrids for quilt
+    Int2D rare_per_hap_info; // store rare SNP index for each hap, 1-based
+    Int1D pos, ac;
+    String1D ref, alt;
+    Bool1D snp_is_common;
+    int n_skipped = 0;
+};
+
 // C++11 compatible
 template<typename T, typename = typename std::enable_if<std::is_unsigned<T>::value>::type>
 class MSPBWT
@@ -63,8 +75,8 @@ class MSPBWT
     using SymbolIdxMap = std::map<int, int, std::less<int>>; // {index: rank}
     using WgSymbolMap = std::map<grid_t, SymbolIdxMap, std::less<grid_t>>; // {symbol:{index:rank}}
 
-    int B{sizeof(T) * 8}, N{0}, M{0}, G{0}, nindices{4};
-    bool is_save_X{1}, is_save_D{0}, is_rhb_t{0};
+    int B{sizeof(T) * 8}, N{0}, M{0}, Mtotal{0}, G{0}, nindices{4};
+    bool is_save_X{1}, is_save_D{0};
     GridVec2D X; // Grids x Haps
     GridVec2D S; // Grids x Sorted and Unique symbols
     Int3D W;
@@ -81,6 +93,9 @@ class MSPBWT
 
     bool verbose{0};
     bool debug{0};
+    bool is_quilt_rhb{0};
+
+    QUILT_RHB quilt;
 
     Int1D randhapz()
     {
@@ -232,38 +247,91 @@ class MSPBWT
         vcfpp::BcfReader vcf(vcfpanel, samples, region);
         vcfpp::BcfRecord var(vcf.header);
         N = vcf.nsamples * 2;
-        M = 0;
+        Mtotal = 0;
         {
             Bool1D gt;
             Bool2D allgts;
             double af;
-            int prev_pos = -1;
+            int n_skipped = 0, prev_pos = -1;
             while(vcf.getNextVariant(var))
             {
                 var.getGenotypes(gt);
-                if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased()) continue;
                 // only keep if meets conditions
                 //  - bi-allelic
                 //  - snp
                 //  - position increased from previous site
-                if(!((var.POS() - prev_pos) > 0)) continue;
-
+                if(!var.isSNP() || !var.isNoneMissing() || !var.allPhased() || !(var.POS() > prev_pos))
+                {
+                    n_skipped += 1;
+                    continue;
+                }
                 // keep track of snp index with AF < minaf
-                af = 0;
-                for(auto g : gt) af += g;
-                af /= N;
+                int ac = 0, i = 0;
+                for(bool g : gt)
+                {
+                    ac += g;
+                    if(g && is_quilt_rhb) quilt.rare_per_hap_info[i].push_back(Mtotal + 1); // 1-based
+                    i++;
+                }
+                af = (double)ac / N;
                 if(af >= maf)
                 {
                     keep.push_back(M);
                     allgts.push_back(gt);
                 }
-                M++;
+                Mtotal++;
+                if(is_quilt_rhb)
+                {
+                    quilt.pos.push_back(var.POS());
+                    quilt.ref.push_back(var.REF());
+                    quilt.alt.push_back(var.ALT());
+                    if(af >= maf)
+                        quilt.snp_is_common.push_back(true);
+                    else
+                        quilt.snp_is_common.push_back(false);
+                }
                 prev_pos = var.POS();
             }
 
-            M = keep.size();
+            if(is_quilt_rhb)
+            {
+                quilt.n_skipped = n_skipped;
+                const int QB = 32;
+                const int n_common_snps = keep.size();
+                const int nGrids = (n_common_snps + QB - 1) / QB; // keep grids of common SNPs only
+                quilt.rhb_t.resize(N, Int1D(nGrids));
+                int d32_times_bs, imax, ihap, k;
+                // check rcpp_int_contract
+                for(int bs = 0; bs < nGrids; bs++)
+                {
+                    for(ihap = 0; ihap < N; ihap++)
+                    {
+                        d32_times_bs = 32 * bs;
+                        if(bs < (nGrids - 1))
+                        {
+                            imax = 31;
+                        }
+                        else
+                        {
+                            imax = n_common_snps - d32_times_bs - 1; // final one!
+                        }
+                        std::uint32_t itmp = 0;
+                        for(k = imax; k >= 0; k--)
+                        {
+                            itmp <<= 1;
+                            int j = X[d32_times_bs + k][ihap];
+                            itmp |= j & 0x1;
+                        }
+                        quilt.rhb_t[ihap][bs] = itmp;
+                    }
+                }
+            }
+
+            M = keep.size(); // common SNPs only
             G = (M + B - 1) / B;
-            if(verbose) std::cerr << "N:" << N << ",M:" << M << ",G:" << G << ",B:" << B << ",nindices:" << nindices << std::endl;
+            if(verbose)
+                std::cerr << "N:" << N << ",M:" << M << ",G:" << G << ",B:" << B << ",nindices:" << nindices
+                          << std::endl;
             X.resize(G, GridVec(N));
             k = 0;
             for(m = 0; m < M; m++)
@@ -741,7 +809,6 @@ class MSPBWT
 
         return 0;
     }
-
 };
 
 #endif // MSPBWT_H_

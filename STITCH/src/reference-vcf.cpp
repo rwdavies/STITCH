@@ -90,7 +90,6 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
     int nsnps = 0;
     int n_common_snps = 0;
     int n_rare_snps = 0;
-    NumericVector rowsum;
     IntegerVector L;
     LogicalVector snp_is_common;
     double local_af;
@@ -127,7 +126,6 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
         }
         int s = 0;
         for(auto g : gt) s += g;
-        rowsum.push_back(s);
         ref.push_back(var.REF());
         alt.push_back(var.ALT());
         L.push_back(var.POS());
@@ -138,8 +136,8 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
             snp_is_common.push_back(true);
             n_common_snps++;
             X.push_back(gt);
-	}
-	else 	    
+        }
+        else
         {
             snp_is_common.push_back(false);
             n_rare_snps++;
