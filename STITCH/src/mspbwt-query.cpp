@@ -5,6 +5,68 @@
 using namespace Rcpp;
 using namespace std;
 
+List get_quilt_rhb_in_mspbwt(const QUILT_RHB & q)
+{
+    Rcpp::NumericMatrix ref_alleleCount(q.nsnps, 3);
+    for(int is = 0; is < q.nsnps; is++)
+    {
+        ref_alleleCount(is, 0) = q.ac[is];
+        ref_alleleCount(is, 1) = q.nhaps;
+    }
+    ref_alleleCount.column(2) = ref_alleleCount.column(0) / ref_alleleCount.column(1);
+
+    // turn Int2D into matrix/array type in R to make make_rhb_t_equality happy
+    IntegerMatrix rhb_t(q.nhaps, q.nGrids);
+    for(int i = 0; i < q.nhaps; i++) std::copy(q.rhb_t[i].begin(), q.rhb_t[i].end(), rhb_t(i, Rcpp::_).begin());
+
+    Rcpp::DataFrame pos =
+        Rcpp::DataFrame::create(Rcpp::Named("POS") = q.pos, Rcpp::Named("REF") = q.ref, Rcpp::Named("ALT") = q.alt);
+
+    return List::create(Named("pos") = pos, Named("rhb_t") = rhb_t, Named("rare_per_hap_info") = q.rare_per_hap_info,
+                        Named("snp_is_common") = q.snp_is_common, Named("ref_alleleCount") = ref_alleleCount,
+                        Named("n_skipped") = q.n_skipped);
+}
+
+//' @export
+// [[Rcpp::export]]
+List quilt_mspbwt_build(const std::string & binfile,
+                        const std::string & vcfpanel,
+                        const std::string & samples,
+                        const std::string & region,
+                        int nindices,
+                        int mspbwtB,
+                        double maf)
+{
+    if(mspbwtB == 32)
+    {
+        MSPBWT<uint32_t> msp(nindices);
+        msp.is_quilt_rhb = true;
+        msp.build(vcfpanel, samples, region, maf);
+        msp.save(binfile);
+        return get_quilt_rhb_in_mspbwt(msp.quilt);
+    }
+    else if(mspbwtB == 64)
+    {
+        MSPBWT<uint64_t> msp(nindices);
+        msp.is_quilt_rhb = true;
+        msp.build(vcfpanel, samples, region, maf);
+        msp.save(binfile);
+        return get_quilt_rhb_in_mspbwt(msp.quilt);
+    }
+    else if(mspbwtB == 128)
+    {
+        MSPBWT<unsigned __int128> msp(nindices);
+        msp.is_quilt_rhb = true;
+        msp.build(vcfpanel, samples, region, maf);
+        msp.save(binfile);
+        return get_quilt_rhb_in_mspbwt(msp.quilt);
+    }
+    else
+    {
+        throw invalid_argument("mspbwtB must be one of 32, 64 or 128\n");
+    }
+}
+
 //' @export
 // [[Rcpp::export]]
 void mspbwt_build(const std::string & binfile,
@@ -18,18 +80,21 @@ void mspbwt_build(const std::string & binfile,
     if(mspbwtB == 32)
     {
         MSPBWT<uint32_t> msp(nindices);
+        msp.is_quilt_rhb = false;
         msp.build(vcfpanel, samples, region, maf);
         msp.save(binfile);
     }
     else if(mspbwtB == 64)
     {
         MSPBWT<uint64_t> msp(nindices);
+        msp.is_quilt_rhb = false;
         msp.build(vcfpanel, samples, region, maf);
         msp.save(binfile);
     }
     else if(mspbwtB == 128)
     {
         MSPBWT<unsigned __int128> msp(nindices);
+        msp.is_quilt_rhb = false;
         msp.build(vcfpanel, samples, region, maf);
         msp.save(binfile);
     }

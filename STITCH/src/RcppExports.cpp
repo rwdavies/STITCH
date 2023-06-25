@@ -605,6 +605,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// quilt_mspbwt_build
+List quilt_mspbwt_build(const std::string& binfile, const std::string& vcfpanel, const std::string& samples, const std::string& region, int nindices, int mspbwtB, double maf);
+RcppExport SEXP _STITCH_quilt_mspbwt_build(SEXP binfileSEXP, SEXP vcfpanelSEXP, SEXP samplesSEXP, SEXP regionSEXP, SEXP nindicesSEXP, SEXP mspbwtBSEXP, SEXP mafSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type vcfpanel(vcfpanelSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
+    Rcpp::traits::input_parameter< int >::type nindices(nindicesSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
+    Rcpp::traits::input_parameter< double >::type maf(mafSEXP);
+    rcpp_result_gen = Rcpp::wrap(quilt_mspbwt_build(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mspbwt_build
 void mspbwt_build(const std::string& binfile, const std::string& vcfpanel, const std::string& samples, const std::string& region, int nindices, int mspbwtB, double maf);
 RcppExport SEXP _STITCH_mspbwt_build(SEXP binfileSEXP, SEXP vcfpanelSEXP, SEXP samplesSEXP, SEXP regionSEXP, SEXP nindicesSEXP, SEXP mspbwtBSEXP, SEXP mafSEXP) {
@@ -1049,6 +1066,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_determine_where_to_stop", (DL_FUNC) &_STITCH_rcpp_determine_where_to_stop, 6},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
+    {"_STITCH_quilt_mspbwt_build", (DL_FUNC) &_STITCH_quilt_mspbwt_build, 7},
     {"_STITCH_mspbwt_build", (DL_FUNC) &_STITCH_mspbwt_build, 7},
     {"_STITCH_mspbwt_load", (DL_FUNC) &_STITCH_mspbwt_load, 2},
     {"_STITCH_mspbwt_report", (DL_FUNC) &_STITCH_mspbwt_report, 4},

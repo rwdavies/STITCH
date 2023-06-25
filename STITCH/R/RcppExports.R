@@ -162,6 +162,11 @@ rcpp_calculate_hwe_p <- function(reference_hap) {
 }
 
 #' @export
+quilt_mspbwt_build <- function(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf) {
+    .Call('_STITCH_quilt_mspbwt_build', PACKAGE = 'STITCH', binfile, vcfpanel, samples, region, nindices, mspbwtB, maf)
+}
+
+#' @export
 mspbwt_build <- function(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf) {
     invisible(.Call('_STITCH_mspbwt_build', PACKAGE = 'STITCH', binfile, vcfpanel, samples, region, nindices, mspbwtB, maf))
 }

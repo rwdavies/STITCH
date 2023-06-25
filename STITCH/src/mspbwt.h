@@ -57,7 +57,7 @@ struct QUILT_RHB
     Int1D pos, ac;
     String1D ref, alt;
     Bool1D snp_is_common;
-    int n_skipped = 0;
+    int n_skipped = 0, nhaps, nsnps, nGrids;
 };
 
 // C++11 compatible
@@ -246,8 +246,8 @@ class MSPBWT
         int k{0}, m{0}, i{0};
         vcfpp::BcfReader vcf(vcfpanel, samples, region);
         vcfpp::BcfRecord var(vcf.header);
-        N = vcf.nsamples * 2;
-        Mtotal = 0;
+        N = vcf.nsamples * 2, Mtotal = 0;
+        if(is_quilt_rhb) quilt.rare_per_hap_info.resize(N);
         {
             Bool1D gt;
             Bool2D allgts;
@@ -273,15 +273,17 @@ class MSPBWT
                     if(g && is_quilt_rhb) quilt.rare_per_hap_info[i].push_back(Mtotal + 1); // 1-based
                     i++;
                 }
-                af = (double)ac / N;
+                af = (double) ac / N;
                 if(af >= maf)
                 {
-                    keep.push_back(M);
+                    keep.push_back(Mtotal);
                     allgts.push_back(gt);
                 }
                 Mtotal++;
+                prev_pos = var.POS();
                 if(is_quilt_rhb)
                 {
+                    quilt.ac.push_back(ac);
                     quilt.pos.push_back(var.POS());
                     quilt.ref.push_back(var.REF());
                     quilt.alt.push_back(var.ALT());
@@ -290,15 +292,17 @@ class MSPBWT
                     else
                         quilt.snp_is_common.push_back(false);
                 }
-                prev_pos = var.POS();
             }
 
             if(is_quilt_rhb)
             {
+                quilt.nhaps = N;
+                quilt.nsnps = Mtotal;
                 quilt.n_skipped = n_skipped;
                 const int QB = 32;
                 const int n_common_snps = keep.size();
                 const int nGrids = (n_common_snps + QB - 1) / QB; // keep grids of common SNPs only
+                quilt.nGrids = nGrids;
                 quilt.rhb_t.resize(N, Int1D(nGrids));
                 int d32_times_bs, imax, ihap, k;
                 // check rcpp_int_contract
@@ -319,7 +323,7 @@ class MSPBWT
                         for(k = imax; k >= 0; k--)
                         {
                             itmp <<= 1;
-                            int j = X[d32_times_bs + k][ihap];
+                            int j = allgts[d32_times_bs + k][ihap];
                             itmp |= j & 0x1;
                         }
                         quilt.rhb_t[ihap][bs] = itmp;
@@ -330,8 +334,8 @@ class MSPBWT
             M = keep.size(); // common SNPs only
             G = (M + B - 1) / B;
             if(verbose)
-                std::cerr << "N:" << N << ",M:" << M << ",G:" << G << ",B:" << B << ",nindices:" << nindices
-                          << std::endl;
+                std::cerr << "N:" << N << ", M_total:" << Mtotal << ", M_common:" << M << ", G:" << G << ", B:" << B
+                          << ", nindices:" << nindices << std::endl;
             X.resize(G, GridVec(N));
             k = 0;
             for(m = 0; m < M; m++)
@@ -389,6 +393,7 @@ class MSPBWT
                 d0[0] = 1;
                 d0[N] = 1;
             }
+            if(verbose) std::cerr << "build_indices_k\n";
             for(ki = 0; ki < Gi; ki++)
             {
                 ni++;
