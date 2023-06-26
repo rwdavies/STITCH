@@ -651,8 +651,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mspbwt_report
-List mspbwt_report(SEXP xp_, const IntegerVector& z, int pbwtL, int mspbwtB);
-RcppExport SEXP _STITCH_mspbwt_report(SEXP xp_SEXP, SEXP zSEXP, SEXP pbwtLSEXP, SEXP mspbwtBSEXP) {
+List mspbwt_report(SEXP xp_, const IntegerVector& z, int pbwtL, int mspbwtB, bool aggregated);
+RcppExport SEXP _STITCH_mspbwt_report(SEXP xp_SEXP, SEXP zSEXP, SEXP pbwtLSEXP, SEXP mspbwtBSEXP, SEXP aggregatedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -660,7 +660,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerVector& >::type z(zSEXP);
     Rcpp::traits::input_parameter< int >::type pbwtL(pbwtLSEXP);
     Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
-    rcpp_result_gen = Rcpp::wrap(mspbwt_report(xp_, z, pbwtL, mspbwtB));
+    Rcpp::traits::input_parameter< bool >::type aggregated(aggregatedSEXP);
+    rcpp_result_gen = Rcpp::wrap(mspbwt_report(xp_, z, pbwtL, mspbwtB, aggregated));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1069,7 +1070,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_quilt_mspbwt_build", (DL_FUNC) &_STITCH_quilt_mspbwt_build, 7},
     {"_STITCH_mspbwt_build", (DL_FUNC) &_STITCH_mspbwt_build, 7},
     {"_STITCH_mspbwt_load", (DL_FUNC) &_STITCH_mspbwt_load, 2},
-    {"_STITCH_mspbwt_report", (DL_FUNC) &_STITCH_mspbwt_report, 4},
+    {"_STITCH_mspbwt_report", (DL_FUNC) &_STITCH_mspbwt_report, 5},
     {"_STITCH_rcpp_phase_sample_paths_method_3", (DL_FUNC) &_STITCH_rcpp_phase_sample_paths_method_3, 9},
     {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 15},
     {"_STITCH_rcpp_int_expand", (DL_FUNC) &_STITCH_rcpp_int_expand, 2},

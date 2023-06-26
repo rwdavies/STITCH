@@ -273,7 +273,7 @@ class MSPBWT
                     if(g && is_quilt_rhb) quilt.rare_per_hap_info[i].push_back(Mtotal + 1); // 1-based
                     i++;
                 }
-                af = (double) ac / N;
+                af = (double)ac / N;
                 if(af >= maf)
                 {
                     keep.push_back(Mtotal);
@@ -637,6 +637,82 @@ class MSPBWT
                                 }
                                 if(hapnindicies.count(n))
                                     hapnindicies[n] = iind >= hapnindicies[n] ? (iind + 1) : hapnindicies[n];
+                                break;
+                            }
+                        }
+                        if(zak_curr + l == N - 1) break;
+                    }
+                }
+                zak_prev = zak_curr;
+            }
+        }
+    }
+
+    void report_neighourings(Int1D & haps, Int1D & ends, Int1D & lens, Int1D & indices, const GridVec & zg, int L = 32)
+    {
+        int k, s, klen, j, n, l, Gi, ki, iind, ni{-1};
+        for(iind = 0; iind < nindices; iind++)
+        {
+            auto Gv = seq_by(iind, G - 1, nindices);
+            Gi = Gv.size();
+            int zak_prev, zak_curr, valid_grid_start = 0;
+            bool first_valid_grid_start = true;
+            for(ki = 0; ki < Gi; ki++)
+            {
+                k = Gv[ki];
+                ni++;
+                auto kzs = std::upper_bound(S[ni].begin(), S[ni].end(), zg[k]);
+                kzs = kzs == S[ni].begin() ? S[ni].begin() : std::prev(kzs);
+                s = std::distance(S[ni].begin(), kzs);
+                zak_curr = C[ni][s];
+
+                if(ki > valid_grid_start)
+                {
+                    if(zak_prev >= zak_curr)
+                    {
+                        auto kzi = std::upper_bound(W[ni][s].begin(), W[ni][s].end(), zak_prev);
+                        kzi = kzi == W[ni][s].begin() ? W[ni][s].begin() : std::prev(kzi);
+                        zak_curr += std::distance(W[ni][s].begin(), kzi);
+                    }
+
+                    for(l = 0; l < L; l++)
+                    {
+                        n = A[ni][std::fmax(zak_curr - l - 1, 0)];
+                        klen = 0;
+                        for(j = ki; j >= 0; j--)
+                        {
+                            if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            {
+                                klen++;
+                            }
+                            else
+                            {
+                                haps.push_back(n);
+                                lens.push_back(klen);
+                                ends.push_back(ki);
+                                indices.push_back(iind);
+                                break;
+                            }
+                        }
+                        if(zak_curr - l - 1 == 0) break;
+                    }
+
+                    for(l = 0; l < L; l++)
+                    {
+                        n = A[ni][std::fmin(zak_curr + l, N - 1)];
+                        klen = 0;
+                        for(j = ki; j >= 0; j--)
+                        {
+                            if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            {
+                                klen++;
+                            }
+                            else
+                            {
+                                haps.push_back(n);
+                                lens.push_back(klen);
+                                ends.push_back(ki);
+                                indices.push_back(iind);
                                 break;
                             }
                         }
