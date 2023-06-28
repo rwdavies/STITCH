@@ -333,6 +333,11 @@ class MSPBWT
 
             M = keep.size(); // common SNPs only
             G = (M + B - 1) / B;
+	    if (G < nindices) {
+	      std::cerr << "resize mspbwt_nindices from " << nindices << " to 1" << std::endl;
+	      nindices = 1;
+	    }
+	    
             if(verbose)
                 std::cerr << "N:" << N << ", M_total:" << Mtotal << ", M_common:" << M << ", G:" << G << ", B:" << B
                           << ", nindices:" << nindices << std::endl;
