@@ -31,6 +31,8 @@ using Bool1D = std::vector<bool>;
 using Bool2D = std::vector<Bool1D>;
 using String1D = std::vector<std::string>;
 
+const int MAXSYMBOLS = 1024;
+
 template<typename T>
 T reverseBits(T n, size_t B = sizeof(T) * 8)
 {
@@ -434,9 +436,9 @@ class MSPBWT
         std::sort(sk.begin(), sk.end());
         int sn = sk.size();
 
-        if(sk.size() > 256) // keep only maximum 256 symbols
+        if(sn > MAXSYMBOLS) // keep only maximum 256 symbols
         {
-            sk.erase(sk.end() - (sk.size() - 256), sk.end());
+            sk.erase(sk.end() - (sk.size() - MAXSYMBOLS), sk.end());
             sn = sk.size();
             for(n = 0; n < N; n++)
             {
@@ -591,7 +593,8 @@ class MSPBWT
                         klen = 0;
                         for(j = ki; j >= 0; j--)
                         {
-                            if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            // if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            if(X[Gv[j]][n] == zg[Gv[j]])
                             {
                                 klen++;
                             }
@@ -623,7 +626,7 @@ class MSPBWT
                         klen = 0;
                         for(j = ki; j >= 0; j--)
                         {
-                            if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            if(X[Gv[j]][n] == zg[Gv[j]])
                             {
                                 klen++;
                             }
@@ -686,7 +689,7 @@ class MSPBWT
                         klen = 0;
                         for(j = ki; j >= 0; j--)
                         {
-                            if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            if(X[Gv[j]][n] == zg[Gv[j]])
                             {
                                 klen++;
                             }
@@ -708,7 +711,7 @@ class MSPBWT
                         klen = 0;
                         for(j = ki; j >= 0; j--)
                         {
-                            if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
+                            if(X[Gv[j]][n] == zg[Gv[j]])
                             {
                                 klen++;
                             }
