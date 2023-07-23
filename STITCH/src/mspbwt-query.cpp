@@ -137,59 +137,38 @@ SEXP mspbwt_load(const std::string & binfile, int mspbwtB)
 
 //' @export
 // [[Rcpp::export]]
-List mspbwt_report(SEXP xp_, const IntegerVector & z, int pbwtL, int mspbwtB, bool aggregated = true)
+List mspbwt_report(SEXP xp_, int mspbwtB, const IntegerVector & z, int mspbwtL, int mspbwtM)
 {
     Timer tm;
     tm.clock();
 
     vector<int> zc = as<vector<int>>(z);
-    IntMapU haplens, hapends, hapnindicies;
     vector<int> haps, lens, ends, nindices;
     if(mspbwtB == 32)
     {
         Rcpp::XPtr<MSPBWT<uint32_t>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        if(aggregated)
-            xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
-        else
-            xp->report_neighourings(haps, ends, lens, nindices, zg, pbwtL);
+        xp->report_neighourings(haps, ends, lens, zg, mspbwtL, mspbwtM);
     }
     else if(mspbwtB == 64)
     {
         Rcpp::XPtr<MSPBWT<uint64_t>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        if(aggregated)
-            xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
-        else
-            xp->report_neighourings(haps, ends, lens, nindices, zg, pbwtL);
+        xp->report_neighourings(haps, ends, lens, zg, mspbwtL, mspbwtM);
     }
     else if(mspbwtB == 128)
     {
         Rcpp::XPtr<MSPBWT<unsigned __int128>> xp(xp_);
         auto zg = xp->encodezg(zc);
-        if(aggregated)
-            xp->report_neighourings(haplens, hapends, hapnindicies, zg, pbwtL);
-        else
-            xp->report_neighourings(haps, ends, lens, nindices, zg, pbwtL);
+        xp->report_neighourings(haps, ends, lens, zg, mspbwtL, mspbwtM);
     }
     else
     {
-        throw invalid_argument("mspbwtB must be one of 16, 32, 64 or 128\n");
-    }
-
-    if(aggregated)
-    {
-        for(auto const & h : haplens)
-        {
-            haps.push_back(h.first + 1); // return 1-based to R
-            lens.push_back(h.second);
-            ends.push_back(hapends[h.first]);
-            nindices.push_back(hapnindicies[h.first]);
-        }
+        throw invalid_argument("mspbwtB must be one of 32, 64 or 128\n");
     }
 
     Rcout << "elapsed time of mspbwt insert: " << tm.abstime() << " milliseconds" << endl;
-    List out = List::create(Named("haps", haps), Named("lens", lens), Named("ends", ends), Named("n", nindices));
+    List out = List::create(Named("haps", haps), Named("lens", lens), Named("ends", ends));
 
     return out;
 }

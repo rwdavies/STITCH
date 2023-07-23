@@ -651,17 +651,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // mspbwt_report
-List mspbwt_report(SEXP xp_, const IntegerVector& z, int pbwtL, int mspbwtB, bool aggregated);
-RcppExport SEXP _STITCH_mspbwt_report(SEXP xp_SEXP, SEXP zSEXP, SEXP pbwtLSEXP, SEXP mspbwtBSEXP, SEXP aggregatedSEXP) {
+List mspbwt_report(SEXP xp_, int mspbwtB, const IntegerVector& z, int mspbwtL, int mspbwtM);
+RcppExport SEXP _STITCH_mspbwt_report(SEXP xp_SEXP, SEXP mspbwtBSEXP, SEXP zSEXP, SEXP mspbwtLSEXP, SEXP mspbwtMSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xp_(xp_SEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type z(zSEXP);
-    Rcpp::traits::input_parameter< int >::type pbwtL(pbwtLSEXP);
     Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
-    Rcpp::traits::input_parameter< bool >::type aggregated(aggregatedSEXP);
-    rcpp_result_gen = Rcpp::wrap(mspbwt_report(xp_, z, pbwtL, mspbwtB, aggregated));
+    Rcpp::traits::input_parameter< const IntegerVector& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtL(mspbwtLSEXP);
+    Rcpp::traits::input_parameter< int >::type mspbwtM(mspbwtMSEXP);
+    rcpp_result_gen = Rcpp::wrap(mspbwt_report(xp_, mspbwtB, z, mspbwtL, mspbwtM));
     return rcpp_result_gen;
 END_RCPP
 }

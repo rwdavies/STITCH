@@ -13,6 +13,8 @@
 #include "vcfpp/vcfpp.h"
 #include <algorithm>
 #include <bitset>
+#include <cassert>
+#include <cstddef>
 #include <fstream>
 #include <iterator>
 #include <map>
@@ -49,6 +51,30 @@ inline Int1D seq_by(int start, int end, int by)
     Int1D seq(n);
     int i{0}, x;
     for(x = start; x <= end; x = x + by) seq[i++] = x;
+    return seq;
+}
+
+// 0-based
+inline Int1D seq_by2(int ichunk, int end, int nchunks)
+{
+    int end_one = end + 1;
+    int isize = end_one / nchunks; // size of chunks except the last chunk
+    int lsize = end_one - (nchunks - 1) * isize; // size of last chunk
+    Int1D seq;
+    if(ichunk == nchunks - 1)
+    {
+        seq.resize(lsize);
+        int j{0}, i;
+        for(i = isize * ichunk; i < end_one; i++) seq[j++] = i;
+        assert(j == lsize);
+    }
+    else
+    {
+        seq.resize(isize);
+        int j{0}, i;
+        for(i = isize * ichunk; i < isize * (1 + ichunk); i++) seq[j++] = i;
+        assert(j == isize);
+    }
     return seq;
 }
 
@@ -107,6 +133,11 @@ class MSPBWT
         Int1D z(M);
         for(int i = 0; i < M; i++) z[i] = dist(gen) > 95;
         return z;
+    }
+
+    int count1bits(T n)
+    {
+        return std::bitset<sizeof(T)>(n).count();
     }
 
     GridVec encodezg(const Int1D & z)
@@ -335,11 +366,12 @@ class MSPBWT
 
             M = keep.size(); // common SNPs only
             G = (M + B - 1) / B;
-	    if (G < nindices) {
-	      std::cerr << "resize mspbwt_nindices from " << nindices << " to 1" << std::endl;
-	      nindices = 1;
-	    }
-	    
+            if(G < nindices)
+            {
+                std::cerr << "resize mspbwt_nindices from " << nindices << " to 1" << std::endl;
+                nindices = 1;
+            }
+
             if(verbose)
                 std::cerr << "N:" << N << ", M_total:" << Mtotal << ", M_common:" << M << ", G:" << G << ", B:" << B
                           << ", nindices:" << nindices << std::endl;
@@ -526,208 +558,231 @@ class MSPBWT
         }
     }
 
-    void report_neighourings(IntMapU & haplens,
-                             IntMapU & hapends,
-                             IntMapU & hapnindicies,
-                             const GridVec & zg,
-                             int L = 32)
+    void report_neighourings(Int1D & haps, Int1D & ends, Int1D & lens, GridVec & zg, int mspbwtL = 32, int mspbwtM = 3)
     {
-        int k, s, klen, j, n, l, Gi, ki, iind, ni{-1};
+        int k, s, klen, j, n, l, Gi, ki, iind, ks{-1};
         for(iind = 0; iind < nindices; iind++)
         {
             auto Gv = seq_by(iind, G - 1, nindices);
             Gi = Gv.size();
-            int zak_prev, zak_curr, valid_grid_start = 0;
-            bool first_valid_grid_start = true;
+            int f, g, e, f1, g1, e1, fg, cur, prev, valid_grid_start{0};
+            Int1D hap_up_prev(mspbwtL, -1), hap_up_cur(mspbwtL, -1), len_up_prev(mspbwtL, -1), len_up_cur(mspbwtL, -1);
+            Int1D hap_down_prev(mspbwtL, -1), hap_down_cur(mspbwtL, -1), len_down_prev(mspbwtL, -1),
+                len_down_cur(mspbwtL, -1);
             for(ki = 0; ki < Gi; ki++)
             {
+                ks++;
                 k = Gv[ki];
-                ni++;
-                auto kzs = std::upper_bound(S[ni].begin(), S[ni].end(), zg[k]);
-                kzs = kzs == S[ni].begin() ? S[ni].begin() : std::prev(kzs);
-                s = std::distance(S[ni].begin(), kzs);
-                zak_curr = C[ni][s];
-
-                // if (zg[k] == S[ni][s])
-                // {
-                //     if (first_valid_grid_start)
-                //         valid_grid_start = ki;
-                //     first_valid_grid_start = false;
-                // }
-                // else
-                // {
-                //     if (verbose)
-                //         cerr << "skip: " << ki << endl;
-                //     // if zg[k] symbol not exists, skip this grid and start over.
-                //     first_valid_grid_start = true;
-                //     continue;
-                // }
-
-                if(ki > valid_grid_start)
+                auto kzs = std::lower_bound(S[ks].begin(), S[ks].end(), zg[k]);
+                s = std::fmin(std::distance(S[ks].begin(), kzs), S[ks].size() - 1);
+                if(S[ks][s] != zg[k])
                 {
-                    if(zak_prev >= zak_curr)
+                    if(verbose) std::cerr << "ghost symbol at k: " << k << std::endl;
+                    // coerce zg[k] to the closest symbol in S[ks]
+                    Int1D tmp(S[ks].size());
+                    for(size_t i = 0; i < S[ks].size(); i++) tmp[i] = count1bits(zg[k] ^ S[ks][i]);
+                    l = std::distance(tmp.begin(), std::min_element(tmp.begin(), tmp.end()));
+                    zg[k] = S[ks][l];
+                    auto kzs = std::lower_bound(S[ks].begin(), S[ks].end(), zg[k]);
+                    s = std::fmin(std::distance(S[ks].begin(), kzs), S[ks].size() - 1);
+                }
+
+                if(ki == valid_grid_start)
+                {
+                    f1 = C[ks][s];
+                    g1 = C[ks][s] + W[ks][s].size(); // could be N
+                    e1 = valid_grid_start;
+                    /* fg = (f1 + g1 - 1) / 2; */
+                    fg = std::fmin(f1 + mspbwtL, N - 1);
+                    // initilize prev haps/lens first
+                    for(l = 0; l < mspbwtL; l++)
                     {
-                        auto kzi = std::upper_bound(W[ni][s].begin(), W[ni][s].end(), zak_prev);
-                        kzi = kzi == W[ni][s].begin() ? W[ni][s].begin() : std::prev(kzi);
-                        zak_curr += std::distance(W[ni][s].begin(), kzi);
+                        n = A[ks][std::fmax(fg - l, 0)]; // go up
+                        hap_up_prev[l] = n;
+                        len_up_prev[l] = 0;
+                        if(fg - l == 0) break;
                     }
-
-                    // if ( zg[k] != S[ni][s] ) {
-                    //     // re-confirm new position with longest matches if symbol mis-match
-                    //     // should work with mis-match symbol at certain grid backwards?
-                    //     int i = 2;
-                    //     while (ki >= i && X[Gv[ki - i + 1]][A[ni][zak_curr]] == zg[Gv[ki - i + 1]] &&
-                    //            X[Gv[ki - i]][A[ni][zak_curr]] < zg[Gv[ki - i]])
-                    //     {
-                    //         zak_curr++;
-                    //         if (X[Gv[ki - i]][A[ni][zak_curr]] == zg[Gv[ki - i]])
-                    //             i++;
-                    //         if (zak_curr == N)
-                    //             break;
-                    //     }
-                    // }
-
-                    for(l = 0; l < L; l++)
+                    for(l = 0; l < mspbwtL; l++)
                     {
-                        n = A[ni][std::fmax(zak_curr - l - 1, 0)];
-                        klen = 0;
-                        for(j = ki; j >= 0; j--)
-                        {
-                            // if(X[Gv[j]][n] == zg[Gv[j]] || (zg[Gv[j]] > S[ni].back() && X[Gv[j]][n] > S[ni].back()))
-                            if(X[Gv[j]][n] == zg[Gv[j]])
-                            {
-                                klen++;
-                            }
-                            else
-                            {
-                                // TODO : update this with combining all nindicies
-                                if(haplens.count(n) == 0)
-                                {
-                                    haplens[n] = klen;
-                                    hapends[n] = ki;
-                                    hapnindicies[n] = 1;
-                                }
-                                else if(klen >= haplens[n])
-                                {
-                                    haplens[n] = klen;
-                                    hapends[n] = ki;
-                                }
-                                if(hapnindicies.count(n))
-                                    hapnindicies[n] = iind >= hapnindicies[n] ? (iind + 1) : hapnindicies[n];
-                                break;
-                            }
-                        }
-                        if(zak_curr - l - 1 == 0) break;
-                    }
-
-                    for(l = 0; l < L; l++)
-                    {
-                        n = A[ni][std::fmin(zak_curr + l, N - 1)];
-                        klen = 0;
-                        for(j = ki; j >= 0; j--)
-                        {
-                            if(X[Gv[j]][n] == zg[Gv[j]])
-                            {
-                                klen++;
-                            }
-                            else
-                            {
-                                if(haplens.count(n) == 0)
-                                {
-                                    haplens[n] = klen;
-                                    hapends[n] = ki;
-                                    hapnindicies[n] = 1;
-                                }
-                                else if(klen >= haplens[n])
-                                {
-                                    haplens[n] = klen;
-                                    hapends[n] = ki;
-                                }
-                                if(hapnindicies.count(n))
-                                    hapnindicies[n] = iind >= hapnindicies[n] ? (iind + 1) : hapnindicies[n];
-                                break;
-                            }
-                        }
-                        if(zak_curr + l == N - 1) break;
+                        n = A[ks][std::fmin(fg + l + 1, N - 1)]; // go down
+                        hap_down_prev[l] = n;
+                        len_down_prev[l] = 0;
+                        if(fg + l + 1 == N - 1) break;
                     }
                 }
-                zak_prev = zak_curr;
+                else if(ki > valid_grid_start)
+                {
+                    // assume symbol exists, then g1 >= f1 >= C[ks][s] if g >= f
+                    auto fzk = std::lower_bound(W[ks][s].begin(), W[ks][s].end(), f);
+                    auto gzk = std::lower_bound(W[ks][s].begin(), W[ks][s].end(), g);
+                    f1 = C[ks][s] + std::fmin(std::distance(W[ks][s].begin(), fzk), W[ks][s].size());
+                    g1 = C[ks][s] + std::fmin(std::distance(W[ks][s].begin(), gzk), W[ks][s].size());
+                    fg = f1;
+
+                    for(prev = 0, cur = 0; prev < mspbwtL; prev++)
+                    {
+                        n = A[ks][std::fmax(fg - cur, 0)]; // scan up
+                        if(n == hap_up_prev[prev])
+                        {
+                            // it is a match, save and increment
+                            hap_up_cur[cur] = n;
+                            len_up_cur[cur] = len_up_prev[prev] + 1;
+                            cur++;
+                        }
+                        else
+                        {
+                            // this is not a match, report it
+                            klen = len_up_prev[prev];
+                            if(klen >= mspbwtM)
+                            {
+                                haps.push_back(hap_up_prev[prev]);
+                                lens.push_back(klen);
+                                ends.push_back(ki - 1);
+                            }
+                        }
+                        if(fg - cur == 0) break;
+                    }
+
+                    for(cur = 0; cur < mspbwtL; cur++)
+                    {
+                        n = A[ks][std::fmax(fg - cur, 0)]; // scan up
+                        hap_up_cur[cur] = n;
+                        // go backwards to find the lens
+                        for(klen = 0, j = ki; j >= 0; j--)
+                        {
+                            if(X[Gv[j]][n] == zg[Gv[j]])
+                                klen++;
+                            else
+                                break;
+                        }
+                        len_up_cur[cur] = klen;
+                    }
+                    hap_up_prev = hap_up_cur; // next
+                    len_up_prev = len_up_cur; // next
+
+                    for(prev = 0, cur = 0; prev < mspbwtL; prev++)
+                    {
+                        n = A[ks][std::fmax(fg + cur + 1, N - 1)]; // scan down
+                        if(n == hap_down_prev[prev])
+                        {
+                            // it is a match, save and increment
+                            hap_down_cur[cur] = n;
+                            len_down_cur[cur] = len_down_prev[prev] + 1;
+                            cur++;
+                        }
+                        else
+                        {
+                            // this is not a match, report it
+                            klen = len_down_prev[prev];
+                            if(klen >= mspbwtM)
+                            {
+                                haps.push_back(hap_down_prev[prev]);
+                                lens.push_back(klen);
+                                ends.push_back(ki - 1);
+                            }
+                        }
+                        if(fg + cur + 1 == N - 1) break;
+                    }
+
+                    for(cur = 0; cur < mspbwtL; cur++)
+                    {
+                        n = A[ks][std::fmax(fg + cur + 1, N - 1)]; // scan down
+                        hap_down_cur[cur] = n;
+                        // go backwards to find the lens
+                        for(klen = 0, j = ki; j >= 0; j--)
+                        {
+                            if(X[Gv[j]][n] == zg[Gv[j]])
+                                klen++;
+                            else
+                                break;
+                        }
+                        len_down_cur[cur] = klen;
+                    }
+                    hap_down_prev = hap_down_cur; // next
+                    len_down_prev = len_down_cur; // next
+
+                    if(!(g1 > f1)) // g1==f1
+                    {
+                        // restart to find new f1 and g1
+                        bool matches_lower = false, matches_upper = false;
+                        if(is_save_D)
+                            e1 = D[ks][f1] - 1; // y[f1] and y[f1-1] diverge here, so upper bound for e
+                        else
+                            e1 = ki - 1; // without D, go backwards find the divergence
+                        // if there is a ghost symbol in zg, e1++ will continue forever so add e1 < k
+                        while((e1 < ki) && (!matches_lower) && (!matches_upper))
+                        {
+                            if(f1 > 0)
+                                matches_upper = (zg[Gv[e1]] == X[Gv[e1]][A[ks][f1 - 1]]);
+                            else
+                                matches_upper = false;
+                            if(f1 < N)
+                                matches_lower = (zg[Gv[e1]] == X[Gv[e1]][A[ks][f1]]);
+                            else
+                                matches_lower = false;
+                            // if matches neither y[f1] or y[f1-1], eg. symbol missing or just happens, e1++
+                            if((!matches_lower) && (!matches_upper)) ++e1;
+                        }
+                        // if ghost symbols exists and loop --e1 stops as it is
+                        // this will shorten the potential longest matches
+                        if(matches_upper)
+                        {
+                            --f1;
+                            // make sure e1 > 0
+                            while(e1 > valid_grid_start && zg[Gv[e1 - 1]] == X[Gv[e1 - 1]][A[ks][f1]]) --e1;
+                            if(is_save_D)
+                            {
+                                while(f1 > 0 && D[ks][f1] <= e1) --f1;
+                            }
+                            else
+                            {
+                                int ei = e1;
+                                while(f1 > 0 && ei <= e1)
+                                {
+                                    ei = ki;
+                                    while(ei > valid_grid_start && X[Gv[ei]][A[ks][f1 - 1]] == X[Gv[ei]][A[ks][f1]])
+                                        --ei;
+                                    --f1;
+                                }
+                            }
+                        }
+                        if(matches_lower)
+                        {
+                            ++g1;
+                            // make sure e1 > 0
+                            while(e1 > valid_grid_start && zg[Gv[e1 - 1]] == X[Gv[e1 - 1]][A[ks][f1]]) --e1;
+                            if(is_save_D)
+                            {
+                                while(g1 < N && D[ks][g1] <= e1) ++g1;
+                            }
+                            else
+                            {
+                                int ei = e1;
+                                while(g1 > N && ei <= e1)
+                                {
+                                    ei = ki;
+                                    while(ei > valid_grid_start && X[Gv[ei]][A[ks][g1]] == X[Gv[ei]][A[ks][g1 + 1]])
+                                        --ei;
+                                    ++g1;
+                                }
+                            }
+                        }
+                    }
+                }
+                // update for ext run
+                f = f1;
+                g = g1;
+                e = e1;
             }
-        }
-    }
-
-    void report_neighourings(Int1D & haps, Int1D & ends, Int1D & lens, Int1D & indices, const GridVec & zg, int L = 32)
-    {
-        int k, s, klen, j, n, l, Gi, ki, iind, ni{-1};
-        for(iind = 0; iind < nindices; iind++)
-        {
-            auto Gv = seq_by(iind, G - 1, nindices);
-            Gi = Gv.size();
-            int zak_prev, zak_curr, valid_grid_start = 0;
-            bool first_valid_grid_start = true;
-            for(ki = 0; ki < Gi; ki++)
+            // final report everything
+            for(l = 0; l < mspbwtL; l++)
             {
-                k = Gv[ki];
-                ni++;
-                auto kzs = std::upper_bound(S[ni].begin(), S[ni].end(), zg[k]);
-                kzs = kzs == S[ni].begin() ? S[ni].begin() : std::prev(kzs);
-                s = std::distance(S[ni].begin(), kzs);
-                zak_curr = C[ni][s];
-
-                if(ki > valid_grid_start)
-                {
-                    if(zak_prev >= zak_curr)
-                    {
-                        auto kzi = std::upper_bound(W[ni][s].begin(), W[ni][s].end(), zak_prev);
-                        kzi = kzi == W[ni][s].begin() ? W[ni][s].begin() : std::prev(kzi);
-                        zak_curr += std::distance(W[ni][s].begin(), kzi);
-                    }
-
-                    for(l = 0; l < L; l++)
-                    {
-                        n = A[ni][std::fmax(zak_curr - l - 1, 0)];
-                        klen = 0;
-                        for(j = ki; j >= 0; j--)
-                        {
-                            if(X[Gv[j]][n] == zg[Gv[j]])
-                            {
-                                klen++;
-                            }
-                            else
-                            {
-                                haps.push_back(n);
-                                lens.push_back(klen);
-                                ends.push_back(ki);
-                                indices.push_back(iind);
-                                break;
-                            }
-                        }
-                        if(zak_curr - l - 1 == 0) break;
-                    }
-
-                    for(l = 0; l < L; l++)
-                    {
-                        n = A[ni][std::fmin(zak_curr + l, N - 1)];
-                        klen = 0;
-                        for(j = ki; j >= 0; j--)
-                        {
-                            if(X[Gv[j]][n] == zg[Gv[j]])
-                            {
-                                klen++;
-                            }
-                            else
-                            {
-                                haps.push_back(n);
-                                lens.push_back(klen);
-                                ends.push_back(ki);
-                                indices.push_back(iind);
-                                break;
-                            }
-                        }
-                        if(zak_curr + l == N - 1) break;
-                    }
-                }
-                zak_prev = zak_curr;
+                haps.push_back(hap_up_cur[l]);
+                lens.push_back(len_up_cur[l]);
+                ends.push_back(ki - 1);
+                haps.push_back(hap_down_cur[l]);
+                lens.push_back(len_down_cur[l]);
+                ends.push_back(ki - 1);
             }
         }
     }

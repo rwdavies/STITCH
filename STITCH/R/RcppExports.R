@@ -177,8 +177,8 @@ mspbwt_load <- function(binfile, mspbwtB) {
 }
 
 #' @export
-mspbwt_report <- function(xp_, z, pbwtL, mspbwtB, aggregated = TRUE) {
-    .Call('_STITCH_mspbwt_report', PACKAGE = 'STITCH', xp_, z, pbwtL, mspbwtB, aggregated)
+mspbwt_report <- function(xp_, mspbwtB, z, mspbwtL, mspbwtM) {
+    .Call('_STITCH_mspbwt_report', PACKAGE = 'STITCH', xp_, mspbwtB, z, mspbwtL, mspbwtM)
 }
 
 rcpp_phase_sample_paths_method_3 <- function(alphaMatCurrent_tc, transMatRate_tc_H, alphaHat_t, betaHat_t, gamma_t, eMatGrid_t, c, phasing_n_votes, unifs_tc) {
