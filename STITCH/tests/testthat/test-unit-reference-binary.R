@@ -74,7 +74,17 @@ test_that("can re-order vector of symbols into reverse sorted prefix order", {
         vals <- as.integer(rownames(out)[rows])
         scrambled_vals <- sample(vals)
         expect_equal(vals, int_determine_rspo(scrambled_vals))
+        
+        a <- runif(length(scrambled_vals))
+        names(a) <- scrambled_vals
+        a <- a[match(int_determine_rspo(names(a)), names(a))]
 
+        q1 <- as.character(names(a))
+        q1[is.na(q1)] <- "blargh"
+        q2 <- as.character(vals)
+        q2[is.na(q2)] <- "blargh"
+        stopifnot(sum(q1 != q2)== 0)
+        
     }
     
 })
