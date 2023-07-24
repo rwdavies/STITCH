@@ -1,3 +1,41 @@
+test_that("can properly understand binary integer storage in R", {
+
+    to_change <- list(NULL, c(32), c(31), c(31, 32), c(30), 2:32, 1:32)
+
+    data.frame(t(sapply(1:length(to_change), function(i) {
+        x <- integer(32)
+        x[] <- 0L
+        x[to_change[[i]]] <- 1L
+        c(int_contract(x), paste0(x, collapse = ""))
+    })))
+
+    to_change <- list(NULL, c(1), c(32), c(3, 5, 7), c(3, 5, 7, 32))
+    
+    ## test the contraction
+    for(i in 1:length(to_change)) {
+
+        x <- integer(32)
+        x[] <- 0L
+
+        ## none, first, last, middle first, middle last
+        x[to_change[[i]]] <- 1L
+
+        expect_equal(int_contract(x), int_contract_manual(x))
+
+        print(x)
+        print(int_contract_x)
+
+        y <- 1L - x
+        int_contract_manual(y)
+        expect_equal(int_contract(y), int_contract_manual(y))
+
+    }
+
+    ## ok so that is the way!
+    
+
+})
+
 test_that("binary/integer storage format for reference haps makes sense", {
 
     set.seed(91)

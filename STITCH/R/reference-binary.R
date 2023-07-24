@@ -27,9 +27,40 @@ int_contract <- function(hap, check = TRUE) {
     return(hapc)
 }
 
+int_contract_manual <- function(hap, check = TRUE) {
+    if (length(hap) != 32) {
+        stop("manual check just for length 32")
+    }
+    if (sum(c(rep(0L, 31), 1L) == hap) == 32) {
+        return(as.integer(NA))
+    }
+    a <- 2 ** (0:30)
+    if (hap[32] == 1L ) {
+        -1 - sum((1L - hap[-32]) * a)
+    } else {
+        sum((hap[-32]) * a)
+    }
+}
 
 #' @export
 int_expand <- function(hapc, nSNPs = NULL) {
+    nbSNPs <- length(hapc)    
+    if (is.null(nSNPs)) {
+        nSNPs <- nbSNPs * 32
+    }
+    hap <- integer(nSNPs)
+    for(bs in 0:(nbSNPs - 1)) {
+        if (bs < (nbSNPs - 1)) {
+            hap[32 * bs + 1:32] <- as.integer(intToBits(hapc[bs + 1]))
+        } else {
+            hap[32 * bs + 1:(nSNPs - 32 * bs)] <- as.integer(intToBits(hapc[bs + 1]))[1:(nSNPs - 32 * bs)]
+        }
+    }
+    return(hap)
+}
+
+
+int_expand_manual <- function(hapc, nSNPs = NULL) {
     nbSNPs <- length(hapc)    
     if (is.null(nSNPs)) {
         nSNPs <- nbSNPs * 32
