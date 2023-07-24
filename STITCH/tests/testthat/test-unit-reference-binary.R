@@ -22,9 +22,6 @@ test_that("can properly understand binary integer storage in R", {
 
         expect_equal(int_contract(x), int_contract_manual(x))
 
-        print(x)
-        print(int_contract_x)
-
         y <- 1L - x
         int_contract_manual(y)
         expect_equal(int_contract(y), int_contract_manual(y))
@@ -35,6 +32,54 @@ test_that("can properly understand binary integer storage in R", {
     
 
 })
+
+test_that("can re-order vector of symbols into reverse sorted prefix order", {
+
+    ## edge cases:
+    ## all 0s
+    ## first 1, last 1
+    ## same as above, but with stuff
+
+    x <- rep(0L, 32)
+    out <- NULL
+    for(i1 in 1:2) {
+        for(i2 in 1:2) {
+            for(i3 in 1:2) {
+                for(i4 in 1:2) {
+                    x[] <- 0L
+                    if (i1 == 2) {x[1] <- 1L}
+                    if (i2 == 2) {x[31] <- 1L}
+                    if (i3 == 2) {x[32] <- 1L}
+                    if (i4 == 2) {x[c(3, 5, 7)] <- 1L}
+                    y <- 1L - x
+                    out <-  rbind(out, x)
+                    out <-  rbind(out, y)
+                }
+            }
+        }
+    }
+    rownames(out) <- apply(out, 1, int_contract)
+    ## meh, remove duplicates
+    out <- out[match(unique(rownames(out)), rownames(out)),]
+    ## order
+    for(i in 1:32) {
+         out <- out[order(out[, i]), ]
+    }
+ 
+    
+    ## now, choose some random length 6 subsets, make sure OK
+    for(i in 1:nrow(out)) {
+
+        rows <- sort(unique(c(i, sample(1:nrow(out), 6))))
+        vals <- as.integer(rownames(out)[rows])
+        scrambled_vals <- sample(vals)
+        expect_equal(vals, int_determine_rspo(scrambled_vals))
+
+    }
+    
+})
+
+
 
 test_that("binary/integer storage format for reference haps makes sense", {
 

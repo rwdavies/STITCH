@@ -42,6 +42,8 @@ int_contract_manual <- function(hap, check = TRUE) {
     }
 }
 
+
+
 #' @export
 int_expand <- function(hapc, nSNPs = NULL) {
     nbSNPs <- length(hapc)    
@@ -59,6 +61,14 @@ int_expand <- function(hapc, nSNPs = NULL) {
     return(hap)
 }
 
+
+#' @export
+int_determine_rspo <- function(scrambled_vals) {
+    m <- sapply(scrambled_vals, function(x) {
+        sum(int_expand(x) * 2 ** (1:32))
+    })
+    scrambled_vals[order(m)]
+}
 
 int_expand_manual <- function(hapc, nSNPs = NULL) {
     nbSNPs <- length(hapc)    
