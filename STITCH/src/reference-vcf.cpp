@@ -80,16 +80,11 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
                                 bool is_check = false,
                                 bool verbose = false)
 {
-    if(verbose)
-    {
-        std::cout << "inside" << std::endl;
-    }
     BcfReader br(vcffile, samples, region);
     BcfRecord var(br.header);
     int nhaps = br.nsamples * 2;
     int nsnps = 0;
     int n_common_snps = 0;
-    int n_rare_snps = 0;
     IntegerVector L;
     LogicalVector snp_is_common;
     double local_af;
@@ -100,13 +95,10 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
     // vector<string> ref, alt;
     CharacterVector ref, alt;
 
-    if(verbose)
-    {
-        std::cout << "process" << std::endl;
-    }
-
+    const int B = 32;
     int n_skipped = 0;
     int prev_pos = -1;
+    int pseudo_commons = 0;
     while(br.getNextVariant(var))
     {
         var.getGenotypes(gt);
@@ -137,10 +129,17 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
             n_common_snps++;
             X.push_back(gt);
         }
+        else if((snp_is_common.size() % B != 0) && pseudo_commons < 4)
+        {
+            // even if it is a rare, count it as pseudo common. max 4 rare snps in a grid
+            snp_is_common.push_back(true);
+            pseudo_commons++;
+            n_common_snps++;
+            X.push_back(gt);
+        }
         else
         {
             snp_is_common.push_back(false);
-            n_rare_snps++;
             // store the indices here
             for(int i = 0; i != gt.size(); ++i)
             {
@@ -152,15 +151,10 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
         }
         nsnps++;
         prev_pos = var.POS();
-    }
-
-    if(verbose)
-    {
-        std::cout << "reorder" << std::endl;
+        if(snp_is_common.size() % B == 0) pseudo_commons = 0; // reset pseudo common counts
     }
 
     // operate on common herre
-    const int B = 32;
     int nGrids = (n_common_snps + B - 1) / B;
     IntegerMatrix rhb_t(nhaps, nGrids); // X above stores efficiently this way
     int d32_times_bs, imax, ihap, k;
@@ -188,10 +182,6 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
             rhb_t(ihap, bs) = itmp;
         }
     }
-    if(verbose)
-    {
-        std::cout << "dataframe" << std::endl;
-    }
 
     Rcpp::DataFrame pos = Rcpp::DataFrame::create(Rcpp::Named("POS") = clone(L), Rcpp::Named("REF") = clone(ref),
                                                   Rcpp::Named("ALT") = clone(alt));
@@ -204,11 +194,6 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
         ref_alleleCount(is, 1) = nhapsd;
     }
     ref_alleleCount.column(2) = ref_alleleCount.column(0) / ref_alleleCount.column(1);
-
-    if(verbose)
-    {
-        std::cout << "return" << std::endl;
-    }
 
     return List::create(Named("pos") = pos, Named("rhb_t") = rhb_t, Named("rare_per_hap_info") = rare_per_hap_info,
                         Named("snp_is_common") = snp_is_common, Named("ref_alleleCount") = ref_alleleCount,
