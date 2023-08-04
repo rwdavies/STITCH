@@ -129,14 +129,6 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
             n_common_snps++;
             X.push_back(gt);
         }
-        else if((snp_is_common.size() % B != 0) && pseudo_commons < 4)
-        {
-            // even if it is a rare, count it as pseudo common. max 4 rare snps in a grid
-            snp_is_common.push_back(true);
-            pseudo_commons++;
-            n_common_snps++;
-            X.push_back(gt);
-        }
         else
         {
             snp_is_common.push_back(false);
