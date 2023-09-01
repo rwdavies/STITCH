@@ -50,8 +50,8 @@ git clone --recursive https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
 cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.6.8/STITCH_1.6.8.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.6.8.tar.gz
+wget https://github.com/rwdavies/stitch/releases/download/1.6.10/STITCH_1.6.10.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.6.10.tar.gz
 ```
 
 You can confirm the installation worked using the quick start run below.
