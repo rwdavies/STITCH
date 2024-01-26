@@ -43,6 +43,13 @@ get_and_initialize_from_reference <- function(
     plotHapSumDuringIterations
 ) {
 
+    ## quick validations of haps against sample file
+    ## some redunancy
+    validate_sample_file_vs_haplotype(
+        reference_sample_file,
+        reference_haplotype_file
+    )
+    
     print_message("Begin initializing paramters using reference haplotypes")
     ## get reference haplotypes matched to posfile
     ## NA's where there are no match
@@ -859,7 +866,19 @@ new_subset_of_single_reference_iteration <- function(
 
 
 
-
+validate_sample_file_vs_haplotype <- function(
+    reference_sample_file,
+    reference_haplotype_file
+) {
+    if (file.exists(reference_sample_file) & file.exists(reference_haplotype_file)) {
+        n1 <- nrow(read.table(reference_sample_file, header = TRUE))
+        n2 <- ncol(read.table(reference_haplotype_file, nrows = 1))
+        if (n1 != n2 / 2) {
+            stop(paste0("There are ", n1, " rows in the reference sample file and ", n2, " columns (i.e. ", n2 / 2, " samples) from the sample file. These files must match in a one to one fashion"))
+        }
+    }
+    NULL
+}
 
 
 

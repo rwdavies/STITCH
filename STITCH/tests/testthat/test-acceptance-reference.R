@@ -109,6 +109,33 @@ test_that("STITCH can initialize with reference data", {
 })
 
 
+test_that("STITCH throws an error if reference panel information not sized properly", {
+
+    new_sample_file <- tempfile()
+    simple_write(
+        rbind(refpack$reference_samples, tail(refpack$reference_samples)),
+        new_sample_file
+    )
+
+    expect_error(
+        STITCH(
+            chr = data_package$chr,
+            bamlist = data_package$bamlist,
+            posfile = data_package$posfile,
+            genfile = data_package$genfile,
+            outputdir = tempdir(),
+            reference_haplotype_file = refpack$reference_haplotype_file,
+            reference_legend_file = refpack$reference_legend_file,
+            reference_sample_file = new_sample_file,
+            K = 2,
+            nGen = 100,
+            reference_populations = "GBR"
+        )
+    )
+
+})
+
+
 test_that("STITCH can initialize with reference data for S > 1", {
 
     for(output_format in c("bgvcf", "bgen")) {
