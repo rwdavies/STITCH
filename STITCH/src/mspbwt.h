@@ -277,8 +277,7 @@ class MSPBWT
     void build(const std::string & vcfpanel, const std::string & samples, const std::string & region, double maf = 0)
     {
         int k{0}, m{0}, i{0};
-        vcfpp::BcfReader vcf(vcfpanel, samples, region);
-        vcfpp::BcfRecord var(vcf.header);
+        vcfpp::BcfReader br(vcffile, region, samples);
         N = vcf.nsamples * 2, Mtotal = 0;
         if(is_quilt_rhb) quilt.rare_per_hap_info.resize(N);
         {

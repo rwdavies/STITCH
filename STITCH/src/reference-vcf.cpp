@@ -13,7 +13,7 @@ using namespace std;
 // [[Rcpp::export]]
 List get_rhb_from_vcf(std::string vcffile, std::string region, std::string samples = "-", bool is_check = false)
 {
-    BcfReader br(vcffile, samples, region);
+    BcfReader br(vcffile, region, samples);
     BcfRecord var(br.header);
     int nhaps = br.nsamples * 2;
     int nsnps = 0;
@@ -80,7 +80,7 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
                                 bool is_check = false,
                                 bool verbose = false)
 {
-    BcfReader br(vcffile, samples, region);
+    BcfReader br(vcffile, region, samples);
     BcfRecord var(br.header);
     int nhaps = br.nsamples * 2;
     int nsnps = 0;
