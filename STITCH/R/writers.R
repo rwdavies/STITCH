@@ -950,6 +950,7 @@ get_output_filename <- function(
     } else {
         extension <- ".bgen"
     }
+    if (is.null(outputdir)) outputdir <- "."
     if (is.null(output_filename)) {
         return(
             file.path(
