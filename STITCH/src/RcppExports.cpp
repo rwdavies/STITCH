@@ -605,66 +605,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// quilt_mspbwt_build
-List quilt_mspbwt_build(const std::string& binfile, const std::string& vcfpanel, const std::string& samples, const std::string& region, int nindices, int mspbwtB, double maf);
-RcppExport SEXP _STITCH_quilt_mspbwt_build(SEXP binfileSEXP, SEXP vcfpanelSEXP, SEXP samplesSEXP, SEXP regionSEXP, SEXP nindicesSEXP, SEXP mspbwtBSEXP, SEXP mafSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type vcfpanel(vcfpanelSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
-    Rcpp::traits::input_parameter< int >::type nindices(nindicesSEXP);
-    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
-    Rcpp::traits::input_parameter< double >::type maf(mafSEXP);
-    rcpp_result_gen = Rcpp::wrap(quilt_mspbwt_build(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf));
-    return rcpp_result_gen;
-END_RCPP
-}
-// mspbwt_build
-void mspbwt_build(const std::string& binfile, const std::string& vcfpanel, const std::string& samples, const std::string& region, int nindices, int mspbwtB, double maf);
-RcppExport SEXP _STITCH_mspbwt_build(SEXP binfileSEXP, SEXP vcfpanelSEXP, SEXP samplesSEXP, SEXP regionSEXP, SEXP nindicesSEXP, SEXP mspbwtBSEXP, SEXP mafSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type vcfpanel(vcfpanelSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type samples(samplesSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type region(regionSEXP);
-    Rcpp::traits::input_parameter< int >::type nindices(nindicesSEXP);
-    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
-    Rcpp::traits::input_parameter< double >::type maf(mafSEXP);
-    mspbwt_build(binfile, vcfpanel, samples, region, nindices, mspbwtB, maf);
-    return R_NilValue;
-END_RCPP
-}
-// mspbwt_load
-SEXP mspbwt_load(const std::string& binfile, int mspbwtB);
-RcppExport SEXP _STITCH_mspbwt_load(SEXP binfileSEXP, SEXP mspbwtBSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type binfile(binfileSEXP);
-    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
-    rcpp_result_gen = Rcpp::wrap(mspbwt_load(binfile, mspbwtB));
-    return rcpp_result_gen;
-END_RCPP
-}
-// mspbwt_report
-List mspbwt_report(SEXP xp_, int mspbwtB, const IntegerVector& z, int mspbwtL, int mspbwtM);
-RcppExport SEXP _STITCH_mspbwt_report(SEXP xp_SEXP, SEXP mspbwtBSEXP, SEXP zSEXP, SEXP mspbwtLSEXP, SEXP mspbwtMSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type xp_(xp_SEXP);
-    Rcpp::traits::input_parameter< int >::type mspbwtB(mspbwtBSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type z(zSEXP);
-    Rcpp::traits::input_parameter< int >::type mspbwtL(mspbwtLSEXP);
-    Rcpp::traits::input_parameter< int >::type mspbwtM(mspbwtMSEXP);
-    rcpp_result_gen = Rcpp::wrap(mspbwt_report(xp_, mspbwtB, z, mspbwtL, mspbwtM));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rcpp_phase_sample_paths_method_3
 NumericMatrix rcpp_phase_sample_paths_method_3(arma::cube& alphaMatCurrent_tc, arma::cube& transMatRate_tc_H, NumericMatrix alphaHat_t, NumericMatrix betaHat_t, NumericMatrix gamma_t, NumericMatrix eMatGrid_t, NumericVector c, int phasing_n_votes, arma::cube unifs_tc);
 RcppExport SEXP _STITCH_rcpp_phase_sample_paths_method_3(SEXP alphaMatCurrent_tcSEXP, SEXP transMatRate_tc_HSEXP, SEXP alphaHat_tSEXP, SEXP betaHat_tSEXP, SEXP gamma_tSEXP, SEXP eMatGrid_tSEXP, SEXP cSEXP, SEXP phasing_n_votesSEXP, SEXP unifs_tcSEXP) {
@@ -1067,10 +1007,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_STITCH_rcpp_determine_where_to_stop", (DL_FUNC) &_STITCH_rcpp_determine_where_to_stop, 6},
     {"_STITCH_rcpp_make_smoothed_rate", (DL_FUNC) &_STITCH_rcpp_make_smoothed_rate, 4},
     {"_STITCH_rcpp_calculate_hwe_p", (DL_FUNC) &_STITCH_rcpp_calculate_hwe_p, 1},
-    {"_STITCH_quilt_mspbwt_build", (DL_FUNC) &_STITCH_quilt_mspbwt_build, 7},
-    {"_STITCH_mspbwt_build", (DL_FUNC) &_STITCH_mspbwt_build, 7},
-    {"_STITCH_mspbwt_load", (DL_FUNC) &_STITCH_mspbwt_load, 2},
-    {"_STITCH_mspbwt_report", (DL_FUNC) &_STITCH_mspbwt_report, 5},
     {"_STITCH_rcpp_phase_sample_paths_method_3", (DL_FUNC) &_STITCH_rcpp_phase_sample_paths_method_3, 9},
     {"_STITCH_Rcpp_rhb_reader_chunk_process", (DL_FUNC) &_STITCH_Rcpp_rhb_reader_chunk_process, 15},
     {"_STITCH_rcpp_int_expand", (DL_FUNC) &_STITCH_rcpp_int_expand, 2},

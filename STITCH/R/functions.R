@@ -2262,6 +2262,25 @@ loadBamAndConvert <- function(
     return(NULL)
 }
 
+## remove the above saved RData!
+## keep /tmp happy for thousands of bams
+
+#' @export
+removeTmpSamplesFile <- function(inputdir,
+                                 iBam,
+                                 regionName,
+                                 save_sampleReadsInfo = FALSE){
+  
+    ## these are saved once - can be compressed!
+  file.remove(file_sampleReads(inputdir, iBam, regionName))
+
+  if (save_sampleReadsInfo){
+    file.remove(file_sampleReadsInfo(inputdir, iBam, regionName))
+  }
+  return(NULL)
+}
+
+
 
 ##
 ## take a single, representative SNP from each - use this instead for position, etc.
