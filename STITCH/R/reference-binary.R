@@ -111,6 +111,235 @@ make_rhb_t_from_rhi_t <- function(rhi_t) {
     return(rhb_t)
 }
 
+#' @export
+make_rhb_t_equality <- function(
+    rhb_t,
+    nSNPs,
+    ref_error,
+    nMaxDH = NA,
+    verbose = TRUE,
+    use_hapMatcherR = FALSE,
+    zilong = FALSE
+) {
+    zilong = FALSE
+    ## this overrides everything else
+    if (is.na(nMaxDH)) {
+        if (!use_hapMatcherR) {
+            nMaxDH_default <- 2 ** 10 - 1
+        } else {
+            nMaxDH_default <- 2 ** 8 - 1
+        }
+        infer_nMaxDH <- TRUE
+    } else {
+        nMaxDH_default <- nMaxDH
+        infer_nMaxDH <- FALSE
+    }
+    K <- nrow(rhb_t)
+    nGrids <- ncol(rhb_t)
+    if (!use_hapMatcherR) {
+        ## --- hapMatcher
+        ## matrix K x nGrids
+        ## 0 = no match
+        ## i is match to ith haplotype in distinctHaps i.e. i
+        hapMatcher <- array(0L, c(K, nGrids))
+        hapMatcherR <- array(as.raw(0), c(K, 1))
+    } else {
+        ## --- hapMatcherR
+        ## same as above, but raw, and therefore 0 through 255, so use 255
+        hapMatcher <- array(0L, c(K, 1))
+        hapMatcherR <- array(as.raw(0), c(K, nGrids))
+    }
+    if (infer_nMaxDH) {
+        temp_counter <- array(0L, c(nMaxDH_default, nGrids))
+    }
+    ## --- distinctHapsB
+    ## matrix with nMaxDH x nGrids
+    ## matrix with the distinct haplotypes
+    distinctHapsB <- array(as.integer(0), c(nMaxDH_default, nGrids)) ## store encoded binary
+    ## --- all_symbols
+    ## list with nGrid entries
+    ## each entry is a matrix with each row containing the ID of a symbol, and the 1-based number of entries
+    all_symbols <- list(1:nGrids)
+    for(iGrid in 1:nGrids) {
+        ## can safely ignore the end, it will be zeros what is not captured
+        a <- table(rhb_t[, iGrid], useNA = "always")
+        if (zilong) {
+            a <- a[order(-a)]
+        } else {
+            ## from stitch
+            a <- a[match(int_determine_rspo(names(a)), names(a))]
+        }
+        a <- a[a > 0]
+        ## flip order to get conventional binary order
+        if (infer_nMaxDH) {
+            if (length(a) > nMaxDH_default) {
+                temp_counter[, iGrid] <- a[1:nMaxDH_default]
+            } else {
+                temp_counter[1:length(a), iGrid] <- a
+            }
+        }
+        names_a <- as.integer(names(a))
+        w <- names_a[1:min(length(names_a), nMaxDH_default)]
+        distinctHapsB[1:length(w), iGrid] <- w
+        ## match against
+        if (!use_hapMatcherR) {
+            hapMatcher[, iGrid] <- as.integer(match(rhb_t[, iGrid], distinctHapsB[, iGrid]))
+            hapMatcher[which(is.na(hapMatcher[, iGrid])), iGrid] <- 0L
+        } else {
+            m <- match(rhb_t[, iGrid], distinctHapsB[, iGrid])
+            hapMatcherR[is.na(m), iGrid] <- as.raw(0)
+            hapMatcherR[!is.na(m), iGrid] <- as.raw(m[!is.na(m)])
+        }
+        ##
+        a <- cbind(as.integer(names_a), as.integer(a))
+        rownames(a) <- NULL
+        colnames(a) <- c("symbol", "count")
+        all_symbols[[iGrid]] <- a
+    }
+    ##
+    ## now, if we're inferring this, choose appropriate re-value downwards
+    ##
+    if (infer_nMaxDH) {
+        running_count <- cumsum(as.numeric(rowSums(temp_counter)) / (as.numeric(nrow(rhb_t)) * as.numeric(nGrids)))
+        ## really need to tune this better
+        ## basically, larger K, important to set large
+        if (K > 50000) {
+            thresh <- 0.9999
+        } else if (K > 10000) {
+            thresh <- 0.9995
+        } else if (K > 1000) {
+            thresh <- 0.999
+        } else {
+            thresh <- 0.99
+        }
+        ## really want to almost never need this, within reason, for large K
+        if (sum(running_count > thresh) == 0) {
+            suggested_value <- length(running_count)
+        } else {
+            suggested_value <- which.max(running_count > thresh)
+        }
+        nMaxDH <- min(
+            max(c(2 ** 4 - 1, suggested_value)),
+            nMaxDH_default
+        )
+        if (use_hapMatcherR) {
+            if (nMaxDH > 255) {
+                nMaxDH <- 255
+            }
+        }
+        if (verbose) {
+            print_message(paste0("Using nMaxDH = ", nMaxDH))
+        }
+        distinctHapsB <- distinctHapsB[1:nMaxDH, , drop = FALSE]
+        if (!use_hapMatcherR) {
+            hapMatcher[hapMatcher > (nMaxDH)] <- 0L
+        } else {
+            hapMatcherR[hapMatcherR > (nMaxDH)] <- as.raw(0)
+        }
+    }
+    ##
+    ## inflate them too, they're pretty small
+    ##
+    distinctHapsIE <- array(0L, c(nMaxDH, nSNPs)) ## inflated, with ref_error
+    for(iGrid in 0:(nGrids - 1)) {
+        s <- 32 * iGrid + 1 ## 1-based start
+        e <- min(32 * (iGrid + 1), nSNPs) ## 1-based end
+        nSNPsLocal <- e - s + 1
+        for(k in 1:nMaxDH) {
+            distinctHapsIE[k, s:e] <- rcpp_int_expand(distinctHapsB[k, iGrid + 1], nSNPsLocal)
+        }
+    }
+    ##
+    distinctHapsIE[distinctHapsIE == 0] <- ref_error
+    distinctHapsIE[distinctHapsIE == 1] <- 1 - ref_error
+    ##
+    ## also, look specifically at the 0 matches
+    ##
+    if (!use_hapMatcherR) {
+        which_hapMatcher_0 <- which(hapMatcher == 0, arr.ind = TRUE) - 1
+    } else {
+        which_hapMatcher_0 <- which(hapMatcherR == 0, arr.ind = TRUE) - 1
+    }
+    special_grids <- unique(which_hapMatcher_0[, 2]) + 1 ## this-is-1-based
+    eMatDH_special_grid_which <- integer(nGrids)
+    eMatDH_special_grid_which[special_grids] <- as.integer(1:length(special_grids))
+    if (nrow(which_hapMatcher_0) > 0) {
+        ## now build list with them
+        x <- which_hapMatcher_0[, 2]
+        y <- which((x[-1] - x[-length(x)]) > 0) ## last entry that is OK
+        starts <- c(1, y + 1)
+        ends <- c(y, length(x))
+        ##
+        ## eMatDH_special_values
+        ##   list of length the number of special grids
+        ##   entries are which ones to re-do, and where they are in rhb_t
+        ##   entries inside this are 0-based
+        eMatDH_special_values_list <- lapply(1:length(starts), function(i) {
+            return(as.integer(which_hapMatcher_0[starts[i]:ends[i], 1]))
+        })
+        ##
+        ## eMatDH_special_symbols
+        ##   not great name, but these are the actual symbols
+        ##
+        eMatDH_special_symbols_list <- lapply(1:length(starts), function(i) {
+            rhb_t[
+                as.integer(which_hapMatcher_0[starts[i]:ends[i], 1]) + 1,
+                which_hapMatcher_0[starts[i], 2] + 1
+            ]
+        })
+        ##
+        ## make a new matrix version that doesn't need to be converted (ARGH!)
+        ## and an index into it
+        ##
+        eMatDH_special_matrix <- cbind(
+            unlist(eMatDH_special_values_list),
+            unlist(eMatDH_special_symbols_list)
+        )
+        eMatDH_special_matrix_helper <- array(as.integer(NA), c(length(eMatDH_special_grid_which > 0), 2))
+        eMatDH_special_matrix_helper[eMatDH_special_grid_which > 0, ] <- cbind(as.integer(starts),as.integer(ends))
+        ##
+        ## fix all_symbols
+        ##
+        for(iGrid in 1:nGrids) {
+            a <- all_symbols[[iGrid]]
+            if (nrow(a) > nMaxDH) {
+                ##
+                ## old behaviour - cap this to be the max
+                ## all_symbols[[iGrid]] <- a[1:nMaxDH, ]
+                ## 
+                ## new behaviour, if more than the max, make final entry the original, with number of missing
+                ## 
+                a_temp <- a[1:nMaxDH, ]
+                n_non_missing <- sum(a_temp[, 2])
+                n_missing <- K - n_non_missing
+                a_temp <- rbind(a_temp, c(a[1, 1], n_missing))
+                ## a_temp <- a_temp[order(-a_temp[, 2]), ]
+                all_symbols[[iGrid]] <- a_temp
+            }
+        }
+    } else {
+        eMatDH_special_values_list <- list()
+        eMatDH_special_matrix <- matrix()
+        eMatDH_special_matrix_helper <- matrix()
+    }
+    nrow_which_hapMatcher_0 <- nrow(which_hapMatcher_0) ## for testing
+    ##
+    return(
+        list(
+            distinctHapsB = distinctHapsB,
+            distinctHapsIE = distinctHapsIE,
+            hapMatcher = hapMatcher,
+            hapMatcherR = hapMatcherR,
+            eMatDH_special_values_list = eMatDH_special_values_list,
+            eMatDH_special_grid_which = eMatDH_special_grid_which,
+            eMatDH_special_matrix = eMatDH_special_matrix,
+            eMatDH_special_matrix_helper = eMatDH_special_matrix_helper,
+            nrow_which_hapMatcher_0 = nrow_which_hapMatcher_0,
+            all_symbols = all_symbols
+        )
+    )
+}
+
 ## where rows = SNPs, cols = K / hap
 make_rhb_from_rhi <- function(rhi) {
     nSNPs <- nrow(rhi)
