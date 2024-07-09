@@ -1,3 +1,5 @@
+* v1.6.11
+	* Export `make_rhb_t_equality` function for mspbwt
 * v1.6.10
 	* Further VCF parsing capabilities
 * v1.6.9
