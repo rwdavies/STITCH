@@ -60,10 +60,10 @@ test_that("STITCH diploid works under default parameters using CRAM files", {
     outputdir <- make_unique_tempdir()    
 
     set.seed(843)
-
+    
     file.copy(data_package_crams$ref, tempdir())
     
-    unlink(data_package_crams$ref)
+    ## unlink(data_package_crams$ref)
 
     for(ref_location in c("original", "moved")) {
         
