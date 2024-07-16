@@ -8,7 +8,7 @@ libhts = ${HTSLIB_DIR}/libhts.a
 CXX_STD = CXX11 # Required for C++11
 DEP_LIBS = -lz -lm -lbz2 -llzma -lcurl
 PKG_CPPFLAGS=-I${SEQLIB_DIR} -I${HTSLIB_DIR} -D_FILE_OFFSET_BITS=64 -fPIC
-PKG_LIBS = ${libhts} ${libseq}
+PKG_LIBS = ${libhts} ${libseq} $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
 
 ifeq (,$(shell pkg-config --version 2>/dev/null))
   LIBPSL = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libpsl.a),-lpsl),)
