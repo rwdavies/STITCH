@@ -45,9 +45,6 @@ jobs:
           needs: check
           working-directory: ./STITCH
 
-      - name: Install suggested dependencies
-        run: R -s -e  'install.packages("https://github.com/rwdavies/rrbgen/raw/master/releases/rrbgen_0.0.4.tar.gz", repos=NULL)'
-
       - uses: r-lib/actions/check-r-package@v2
         with:
           working-directory: ./STITCH

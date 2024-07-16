@@ -31,6 +31,7 @@ Getting started: A minimum run requires the following options to be
 Depends: parallel
 Imports: Rcpp, data.table
 Suggests: testthat, rrbgen (>= 0.0.4)
+Remotes: github::rwdavies/rrbgen/rrbgen
 LinkingTo: Rcpp, RcppArmadillo
 Packaged: 2017-02-14 13:27:59 UTC; rdavies
 RoxygenNote: 7.3.1
