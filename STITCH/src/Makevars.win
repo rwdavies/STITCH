@@ -6,7 +6,7 @@ libseq = ${SEQLIB_DIR}/libseq.a
 libhts = ${HTSLIB_DIR}/libhts.a
 
 DEP_LIBS = -lz -lm -lbz2 -llzma -lcurl
-PKG_CPPFLAGS=-I. -I${HTSLIB_DIR} -D_FILE_OFFSET_BITS=64 -fPIC
+PKG_CPPFLAGS=-I${SEQLIB_DIR} -I${HTSLIB_DIR} -D_FILE_OFFSET_BITS=64 -fPIC
 PKG_LIBS = ${libhts} ${libseq}
 
 ifeq (,$(shell pkg-config --version 2>/dev/null))

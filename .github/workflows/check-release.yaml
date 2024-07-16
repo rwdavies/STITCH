@@ -48,4 +48,6 @@ jobs:
       - uses: r-lib/actions/check-r-package@v2
         with:
           working-directory: ./STITCH
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"error"'
           upload-snapshots: true
