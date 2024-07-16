@@ -1,2 +1,62 @@
+HTSLIB_DIR=./htslib-1.19.1/
+SEQLIB_DIR=./SeqLib/
+VCFPP_DIR=./vcfpp/
 
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+libseq = ${SEQLIB_DIR}/libseq.a
+libhts = ${HTSLIB_DIR}/libhts.a
+
+DEP_LIBS = -lz -lm -lbz2 -llzma -lcurl
+PKG_CPPFLAGS=-I. -I${HTSLIB_DIR} -D_FILE_OFFSET_BITS=64 -fPIC
+PKG_LIBS = ${libhts} ${libseq}
+
+ifeq (,$(shell pkg-config --version 2>/dev/null))
+  LIBPSL = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libpsl.a),-lpsl),)
+  LIBBROTLI = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libbrotlidec.a),-lbrotlidec -lbrotlicommon),)
+  PKG_LIBS += ${libhts} $(DEP_LIBS) $(LIBPSL) $(LIBBROTLI) -lbcrypt -lidn2 -lunistring -liconv -lssl -lcrypto -lcrypt32 -lwsock32 -lwldap32 -lssh2 -lgcrypt -lgpg-error -lws2_32 -lzstd -lregex 
+else
+  PKG_LIBS += -llzma -lbz2 -lregex $(shell pkg-config --libs libcurl)
+  PKG_CPPFLAGS += $(shell pkg-config --cflags libcurl)
+endif
+
+.PHONY: all clean
+
+all : $(SHLIB)
+
+$(SHLIB): HTSLIB SEQLIB
+
+CC=$(shell "R CMD config CC")
+CXX=$(shell "R CMD config CXX")
+AR=$(shell "R CMD config AR")
+RANLIB=$(shell "R CMD config RANLIB")
+LDFLAGS=$(shell "R CMD config LDFLAGS")
+CFLAGS=$(shell "R CMD config CFLAGS")
+CPPFLAGS=$(shell "R CMD config CPPFLAGS") 
+
+OBJ = SeqLib/GenomicRegion.o \
+		SeqLib/RefGenome.o \
+		SeqLib/BamWriter.o \
+		SeqLib/BamReader.o \
+		SeqLib/BamRecord.o \
+		SeqLib/BamHeader.o
+
+
+SeqLib/%.o: SeqLib/%.cpp
+		${CXX} ${CPPFLAGS} ${PKG_CPPFLAGS} -o $@ -c $< ${DEP_LIBS}
+
+## stole makefile from vcfppR
+HTSLIB:
+	cd ${HTSLIB_DIR} && $(MAKE) -f Makefile.win libhts.a && cd ..
+
+
+SEQLIB: ${OBJ}
+		@-rm -f ${libseq}
+		$(AR) -rc ${libseq} $?
+		-$(RANLIB) ${libseq}
+
+clean:
+	$(RM) *.o
+	$(RM) *.dll
+	$(RM) *.so
+	$(RM) *.dylib
+	$(RM) ${libseq} ${OBJ}
+	(cd "${HTSLIB_DIR}" && $(MAKE) clean && cd -)

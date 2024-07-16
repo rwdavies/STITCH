@@ -1,5 +1,5 @@
-SEQLIB_DIR=./SeqLib/
 HTSLIB_DIR=./htslib-1.19.1/
+SEQLIB_DIR=./SeqLib/
 VCFPP_DIR=./vcfpp/
 
 libseq = ${SEQLIB_DIR}/libseq.a

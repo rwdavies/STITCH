@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rm -f src/SeqLib/*.o src/SeqLib/*.a src/htslib-1.19.1/config.h src/*.o src/*.so src/*.dll src/*.dylib 
+cd src/htslib-1.19.1/ && make clean && cd -
