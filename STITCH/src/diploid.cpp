@@ -205,7 +205,7 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
     for(kk = 0; kk < KK; kk++)
         check = check + alphaHat_t(kk, T - 1);
     if ((pow(check - 1, 2)) > 1e-4) {
-        std::cout << "BAD input assumption" << std::endl;
+        Rcpp::Rcout << "BAD input assumption" << std::endl;
         return(sampled_path_diploid_t);
     }
     //
@@ -250,9 +250,9 @@ arma::imat sample_diploid_path(const arma::mat & alphaHat_t, const arma::mat & t
         }
         norm = alphaHat_t(prev_state, t + 1) / eMatGrid_t(prev_state, t + 1) / c(t + 1);
         if ((pow(samp_vector_sum / norm - 1, 2)) > 1e-4) {
-             std::cout << "BAD COUNT on t=" << t << std::endl;
-             std::cout << "samp_vector_sum=" << samp_vector_sum << std::endl;
-             std::cout << "norm=" << norm << std::endl;
+             Rcpp::Rcout << "BAD COUNT on t=" << t << std::endl;
+             Rcpp::Rcout << "samp_vector_sum=" << samp_vector_sum << std::endl;
+             Rcpp::Rcout << "norm=" << norm << std::endl;
              return(sampled_path_diploid_t);
         }
         // sample state using crazy C++

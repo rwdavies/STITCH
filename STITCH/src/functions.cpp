@@ -133,9 +133,9 @@ double print_times(
 ) {
     if( suppressOutput == 0 ) {    
         double cur=clock();
-        std::cout << std::setw (40) << past_text;
+        Rcpp::Rcout << std::setw (40) << past_text;
         printf ("- %.6f cpu sec -", ((double)cur - (double)prev)* 1.0e-6);
-        std::cout << next_text << std::endl;
+        Rcpp::Rcout << next_text << std::endl;
         prev=cur;
     }
     return prev;
@@ -197,7 +197,7 @@ Rcpp::LogicalVector rcpp_evaluate_bxtag(
     int n_non_doub_zero;
     int cur_qnameInteger = qnameInteger_ord(0);
     for(int iCur = 0; iCur < n; iCur++) {
-        //std::cout << "iCur = " << iCur << " / " << n << std::endl;
+        //Rcpp::Rcout << "iCur = " << iCur << " / " << n << std::endl;
         perform_check = false;
         if (iCur == (n - 1)) {
             perform_check = true;
@@ -206,17 +206,17 @@ Rcpp::LogicalVector rcpp_evaluate_bxtag(
                 perform_check = true;
             }
         }
-        //std::cout << "perform_check = " << perform_check << std::endl;        
+        //Rcpp::Rcout << "perform_check = " << perform_check << std::endl;        
         if (perform_check) {
-            //std::cout << "------------------" << std::endl;
+            //Rcpp::Rcout << "------------------" << std::endl;
             first_bxtag = "";
             blank_local_bxtag = false;
             n_non_doub_zero = 0;
             for(int j = iStart; j <= iCur; j++) {
                 cur_bxtag = bxtag_ord(j);
-                //std::cout << "j = " << j << std::endl;
-                //std::cout << "first_bxtag = " << first_bxtag << std::endl;                
-                //std::cout << "cur_bxtag = " << cur_bxtag << std::endl;
+                //Rcpp::Rcout << "j = " << j << std::endl;
+                //Rcpp::Rcout << "first_bxtag = " << first_bxtag << std::endl;                
+                //Rcpp::Rcout << "cur_bxtag = " << cur_bxtag << std::endl;
                 if (cur_bxtag.find(doub_zero) == std::string::npos) {
                     // not found i.e. it has no double 00 so can use
                     n_non_doub_zero++;
@@ -228,7 +228,7 @@ Rcpp::LogicalVector rcpp_evaluate_bxtag(
                         }
                     }
                 }
-                //std::cout << "blank_local_bxtag = " << blank_local_bxtag << std::endl;        
+                //Rcpp::Rcout << "blank_local_bxtag = " << blank_local_bxtag << std::endl;        
             }
             // now afterwards, either blank out, or make the same
             if (blank_local_bxtag) {
@@ -239,7 +239,7 @@ Rcpp::LogicalVector rcpp_evaluate_bxtag(
             }
             // also, if only one is zero
             if ((n_non_doub_zero > 0) & ((iCur - iStart + 1) != n_non_doub_zero)) {
-                //std::cout << "apply rescue!" << std::endl;
+                //Rcpp::Rcout << "apply rescue!" << std::endl;
                 for(int j = iStart; j <= iCur; j++) {
                     bxtag_ord(j) = first_bxtag;
                 }
@@ -354,16 +354,16 @@ List cpp_read_reassign(
     iReadStart = 0;
     for (iRead = 0; iRead < nRawReads; iRead++ ) {
         // if ((206 <= iRead) & (iRead <= 212)) {
-        // std::cout << "------------------------" << std::endl;
-        // std::cout << "iRead = " << iRead << std::endl;
-        // std::cout << "iReadStart = " << iReadStart << std::endl;        
-        // std::cout << "curRead = " << curRead << std::endl;                        
-        // std::cout << "qnameInteger_ord[iRead + 1] = " << qnameInteger_ord[iRead + 1] << std::endl;
+        // Rcpp::Rcout << "------------------------" << std::endl;
+        // Rcpp::Rcout << "iRead = " << iRead << std::endl;
+        // Rcpp::Rcout << "iReadStart = " << iReadStart << std::endl;        
+        // Rcpp::Rcout << "curRead = " << curRead << std::endl;                        
+        // Rcpp::Rcout << "qnameInteger_ord[iRead + 1] = " << qnameInteger_ord[iRead + 1] << std::endl;
         // }
         //
         change_qname = qnameInteger_ord[iRead + 1] != curRead;
         // if ((206 <= iRead) & (iRead <= 212)) {        
-        //     std::cout << "change_qname = " << change_qname << std::endl;
+        //     Rcpp::Rcout << "change_qname = " << change_qname << std::endl;
         // }
         if (!use_bx_tag) {
             save_condition_met = change_qname;
@@ -379,21 +379,21 @@ List cpp_read_reassign(
             bx_tag_not_ok_to_continue = (change_bx_tag) | \
                 (bxtag_bad_ord[iRead]) | (bx_tag_distance_exceeded);
             save_condition_met = change_qname & bx_tag_not_ok_to_continue;
-            //std::cout << "                      iRead = " << iRead << std::endl;
-            //std::cout << "bxtagInteger_ord[iRead + 1] = " << bxtagInteger_ord[iRead + 1] << std::endl;            
-            //std::cout << "                   curbxtag = " << curbxtag << std::endl;                        
-            // std::cout << "change_bx_tag = " << change_bx_tag << std::endl;
-            // std::cout << "bxtag_bad_ord[iRead] = " << bxtag_bad_ord[iRead] << std::endl;
-            // std::cout << "bx_tag_distance_exceeded = " << bx_tag_distance_exceeded << std::endl;
-            //std::cout << "  bx_tag_not_ok_to_continue = " << bx_tag_not_ok_to_continue << std::endl;            
-            // std::cout << "change_qname = " << change_qname << std::endl;
-            //std::cout << "         save_condition_met = " << save_condition_met << std::endl;
+            //Rcpp::Rcout << "                      iRead = " << iRead << std::endl;
+            //Rcpp::Rcout << "bxtagInteger_ord[iRead + 1] = " << bxtagInteger_ord[iRead + 1] << std::endl;            
+            //Rcpp::Rcout << "                   curbxtag = " << curbxtag << std::endl;                        
+            // Rcpp::Rcout << "change_bx_tag = " << change_bx_tag << std::endl;
+            // Rcpp::Rcout << "bxtag_bad_ord[iRead] = " << bxtag_bad_ord[iRead] << std::endl;
+            // Rcpp::Rcout << "bx_tag_distance_exceeded = " << bx_tag_distance_exceeded << std::endl;
+            //Rcpp::Rcout << "  bx_tag_not_ok_to_continue = " << bx_tag_not_ok_to_continue << std::endl;            
+            // Rcpp::Rcout << "change_qname = " << change_qname << std::endl;
+            //Rcpp::Rcout << "         save_condition_met = " << save_condition_met << std::endl;
         }
         if (change_qname) {
             curRead = qnameInteger_ord[iRead + 1]; // + 1
         }
         if (save_condition_met) {
-            //std::cout << "SAVING WITH iReadStart = " << iReadStart << ", iRead = " << iRead << std::endl;
+            //Rcpp::Rcout << "SAVING WITH iReadStart = " << iReadStart << ", iRead = " << iRead << std::endl;
             nSNPsInRead = -1; // this is 0-based (why did I do this)
             minReadStart = 2147483647;
             maxReadEnd = -1;
@@ -403,7 +403,7 @@ List cpp_read_reassign(
             }
             for(j = iReadStart; j <= iRead; j++) {
                 // check if we should be saving this bit
-                //std::cout << "j = " << j << ", save_this_read_check(j) = " << save_this_read_check(j) << std::endl;
+                //Rcpp::Rcout << "j = " << j << ", save_this_read_check(j) = " << save_this_read_check(j) << std::endl;
                 if (save_this_read_check(j)) {
                     r = ord[j];
                     if (use_bx_tag) {
@@ -465,8 +465,8 @@ List cpp_read_reassign(
                     sri_strand[count] = strand_to_out;
                 }
                 // if ((206 <= iRead) & (iRead <= 212)) {
-                //     std::cout << " saving bit" << std::endl;
-                //     std::cout << "count = " << count << std::endl;                    
+                //     Rcpp::Rcout << " saving bit" << std::endl;
+                //     Rcpp::Rcout << "count = " << count << std::endl;                    
                 // }
                 count++;
             }

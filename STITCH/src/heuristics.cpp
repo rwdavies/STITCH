@@ -84,11 +84,11 @@ Rcpp::NumericVector rcpp_make_smoothed_rate(
     Rcpp::NumericVector smoothed_rate(nGrids - 1);
     for(iGrid = 0; iGrid < (nGrids - 1); iGrid++) {
         if (verbose) {
-            std::cout << "iGrid=" << iGrid << std::endl;
+            Rcpp::Rcout << "iGrid=" << iGrid << std::endl;
         }
         focal_point = (L_grid(iGrid) + L_grid(iGrid + 1)) / 2; // automatically rounded        
         if (verbose) {
-            std::cout << "focal_point=" << focal_point << std::endl;
+            Rcpp::Rcout << "focal_point=" << focal_point << std::endl;
         }
         //
         // left
