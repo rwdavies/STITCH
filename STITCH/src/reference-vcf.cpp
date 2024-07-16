@@ -4,7 +4,7 @@
 #include <Rcpp.h>
 #include <string>
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 
 using namespace Rcpp;
 using namespace vcfpp;
@@ -57,7 +57,7 @@ List get_rhb_from_vcf(std::string vcffile, std::string region, std::string sampl
             {
                 imax = nsnps - d32_times_bs - 1; // final one!
             }
-            std::uint32_t itmp = 0;
+            uint32_t itmp = 0;
             for(k = imax; k >= 0; k--)
             {
                 itmp <<= 1;
@@ -165,7 +165,7 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
             {
                 imax = n_common_snps - d32_times_bs - 1; // final one!
             }
-            std::uint32_t itmp = 0;
+            uint32_t itmp = 0;
             for(k = imax; k >= 0; k--)
             {
                 itmp <<= 1;
