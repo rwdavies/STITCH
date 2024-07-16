@@ -9,10 +9,6 @@ on:
   pull_request:
     branches: [master]
 
-defaults:
-  run:
-    working-directory: ./STITCH
-
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
@@ -47,10 +43,12 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+          working-directory: ./STITCH
 
       - name: Install suggested dependencies
         run: R -s -e  'install.packages("https://github.com/rwdavies/rrbgen/raw/master/releases/rrbgen_0.0.4.tar.gz", repos=NULL)'
 
       - uses: r-lib/actions/check-r-package@v2
         with:
+          working-directory: ./STITCH
           upload-snapshots: true
