@@ -1,22 +1,54 @@
-SEQLIB_ROOT=./SeqLib/
-PKG_CPPFLAGS = -I$(SEQLIB_ROOT)/ -I$(SEQLIB_ROOT)/htslib/
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a -fPIC -lz -lbz2 -llzma -lcurl
+SEQLIB_DIR=./SeqLib/
+HTSLIB_DIR=./htslib-1.19.1/
+VCFPP_DIR=./vcfpp/
 
-.PHONY: SeqLib all
+libseq = ${SEQLIB_DIR}/libseq.a
+libhts = ${HTSLIB_DIR}/libhts.a
+
+DEP_LIBS = -lz -lm -lbz2 -llzma -lcurl
+
+PKG_CPPFLAGS = -I${SEQLIB_DIR} -I${HTSLIB_DIR} -fPIC
+PKG_LIBS = ${libhts} ${libseq} ${DEP_LIBS} $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
+
+.PHONY: all clean
 
 all : $(SHLIB)
 
-$(SHLIB) : SeqLib
+$(SHLIB): HTSLIB SEQLIB
 
 CC=$(shell "R CMD config CC")
 CXX=$(shell "R CMD config CXX")
-CPPFLAGS=$(shell "R CMD config CPPFLAGS")
+AR=$(shell "R CMD config AR")
+RANLIB=$(shell "R CMD config RANLIB")
 LDFLAGS=$(shell "R CMD config LDFLAGS")
+CFLAGS=$(shell "R CMD config CFLAGS")
+CPPFLAGS=$(shell "R CMD config CPPFLAGS") 
 
-## 	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
+OBJ = SeqLib/GenomicRegion.o \
+		SeqLib/RefGenome.o \
+		SeqLib/BamWriter.o \
+		SeqLib/BamReader.o \
+		SeqLib/BamRecord.o \
+		SeqLib/BamHeader.o
 
-SeqLib:
-	(cd SeqLib && autoreconf -i && \
-	./configure CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && \
-	cd src && $(MAKE) libseqlib.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../ && \
-	cd htslib && autoreconf -i && ./configure --with-libdeflate=no && $(MAKE) libhts.a CXX="$(CXX)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS) -fPIC " && cd ../)
+
+SeqLib/%.o: SeqLib/%.cpp
+		${CXX} ${CPPFLAGS} ${PKG_CPPFLAGS} -o $@ -c $< ${DEP_LIBS}
+
+## stole makefile from vcfppR
+HTSLIB:
+		(cd ${HTSLIB_DIR} && $(MAKE) -f Makefile.vcfppR libhts.a && cd ..)
+
+SEQLIB: ${OBJ}
+		@-rm -f ${libseq}
+		$(AR) -rc ${libseq} $?
+		-$(RANLIB) ${libseq}
+
+clean:
+		$(RM) *.o
+		$(RM) *.dll
+		$(RM) *.so
+		$(RM) *.dylib
+		$(RM) ${libseq} ${OBJ}
+		(cd "${HTSLIB_DIR}" && $(MAKE) clean && cd -)
+
