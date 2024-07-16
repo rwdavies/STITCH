@@ -518,7 +518,7 @@ test_that("STITCH can get sample names from a file", {
             x <- system(paste0("gunzip -c ", shQuote(file), " | grep CHROM"), intern = TRUE)
             output_sample_names <- strsplit(x, "\t")[[1]][-c(1:9)]
         } else {
-            output_sample_names <- rrbgen_load_samples(file)
+            output_sample_names <- rrbgen::rrbgen_load_samples(file)
         }
 
         expect_equivalent(output_sample_names, newNames)

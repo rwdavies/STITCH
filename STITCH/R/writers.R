@@ -77,7 +77,7 @@ make_and_write_output_file <- function(
         )
     } else if (output_format == "bgen") {
         ## bgen header here
-        out <- rrbgen_write(
+        out <- rrbgen::rrbgen_write(
             to_use_output_filename,
             sample_names = sampleNames,
             B_bit_prob = B_bit_prob,
@@ -278,7 +278,7 @@ make_and_write_output_file <- function(
         } else if (output_format == "bgen") {
 
             var_info <- make_var_info(pos, c(first_snp_in_region, last_snp_in_region))
-            out <- rrbgen_write(
+            out <- rrbgen::rrbgen_write(
                 bgen_file_connection = bgen_file_connection,
                 previous_offset = previous_offset,
                 add_to_bgen_connection = TRUE,
