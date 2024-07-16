@@ -5,6 +5,7 @@ VCFPP_DIR=./vcfpp/
 libseq = ${SEQLIB_DIR}/libseq.a
 libhts = ${HTSLIB_DIR}/libhts.a
 
+CXX_STD = CXX11 # Required for C++11
 DEP_LIBS = -lz -lm -lbz2 -llzma -lcurl
 PKG_CPPFLAGS=-I${SEQLIB_DIR} -I${HTSLIB_DIR} -D_FILE_OFFSET_BITS=64 -fPIC
 PKG_LIBS = ${libhts} ${libseq}
