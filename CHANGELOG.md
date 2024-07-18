@@ -1,3 +1,6 @@
+* v1.7.0
+    * simplify dependencies a lot. remove recursive submodules!
+    * can be installed for all platforms
 * v1.6.11
 	* Export `make_rhb_t_equality` function for mspbwt
 * v1.6.10

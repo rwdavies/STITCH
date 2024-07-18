@@ -11,5 +11,5 @@ for(package in required_packages) {
     }
 }
 if (!suppressPackageStartupMessages(require("rrbgen")))
-    install.packages("https://github.com/rwdavies/rrbgen/raw/master/releases/rrbgen_0.0.4.tar.gz", repos=NULL)
+    install.packages("https://github.com/rwdavies/rrbgen/raw/master/releases/rrbgen_0.0.6.tar.gz", repos=NULL)
 

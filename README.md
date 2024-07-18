@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.6.11__**
-Release date: July 7, 2024
+**__Current Version: 1.7.0__**
+Release date: July 18, 2024
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -10,7 +10,8 @@ Release date: July 7, 2024
 
 Changes in latest version
 
-1. Export `make_rhb_t_equality` function for mspbwt
+- simplify dependencies a lot. remove recursive submodules!
+- **can be installed for all platforms**
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
@@ -47,13 +48,14 @@ STITCH is available to download either through this github repository, or throug
 ### github <a name="paragraph-installation-github"></a>
 
 A simple way to ensure dependencies are installed, and to install a release of STITCH is as follows. First, install R. Then, do the following 
+
 ```
-git clone --recursive https://github.com/rwdavies/STITCH.git
+git clone https://github.com/rwdavies/STITCH.git
 cd STITCH
 ./scripts/install-dependencies.sh
 cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.6.10/STITCH_1.6.10.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.6.10.tar.gz
+wget https://github.com/rwdavies/stitch/releases/download/1.7.0/STITCH_1.7.0.tar.gz ## or curl -O
+R CMD INSTALL STITCH_1.7.0.tar.gz
 ```
 
 You can confirm the installation worked using the quick start run below.
