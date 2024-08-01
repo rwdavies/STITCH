@@ -454,7 +454,7 @@ make_acceptance_test_data_package <- function(
 }
 
 
-Check_output_against_phase <- function(
+check_output_against_phase <- function(
     file,
     data_package,
     output_format,
@@ -685,11 +685,11 @@ make_reference_package <- function(
     }
 
     ## add a space in it
-    reference_vcf_file <- file.path(outputdir, paste0("ref_hap.", regionName, ".vcf.gz"))
-    reference_haplotype_file <- file.path(outputdir, paste0("ref_hap.", regionName, ".txt.gz"))
-    reference_legend_file <- file.path(outputdir, paste0("ref_legend.", regionName, ".txt.gz"))
-    reference_sample_file <- file.path(outputdir, paste0("ref_sample.", regionName, ".txt"))
-    reference_genetic_map_file <- file.path(outputdir, paste0("ref_gen.", regionName, ".txt.gz"))
+    reference_vcf_file <- file.path(outputdir, paste0("ref hap.", regionName, ".vcf.gz"))
+    reference_haplotype_file <- file.path(outputdir, paste0("ref hap.", regionName, ".txt.gz"))
+    reference_legend_file <- file.path(outputdir, paste0("ref legend.", regionName, ".txt.gz"))
+    reference_sample_file <- file.path(outputdir, paste0("ref sample.", regionName, ".txt"))
+    reference_genetic_map_file <- file.path(outputdir, paste0("ref gen.", regionName, ".txt.gz"))
     posfile <- file.path(outputdir, paste0("ref.", regionName, ".pos.txt"))
     
     ##     
