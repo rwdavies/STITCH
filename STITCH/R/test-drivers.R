@@ -84,12 +84,13 @@ make_simple_cram <- function(
         "samtools",
         args = c(
             "view", "-T", shQuote(paste0(file_stem, ".fa")), "-C",
+            "--output-fmt-option", "embed_ref=0",
             "-o", shQuote(paste0(file_stem, ".cram")),
             shQuote(paste0(file_stem, ".sam"))
         ),
         stderr = FALSE
     )
-    file.remove(paste0(file_stem, ".sam"))
+    ##file.remove(paste0(file_stem, ".sam"))
     system2("samtools", c("index", shQuote(paste0(file_stem, ".cram"))))
     return(
         list(
@@ -415,9 +416,17 @@ make_acceptance_test_data_package <- function(
         cramlist <- file.path(outputdir, paste0("cramlist.", regionName, ".txt"))
         bamlist <- NULL
         samplelist <- cramlist
+        ## move ref, get rid of the rest
         ref <- sample_files[[1]]$ref
+        new_ref <- file.path(outputdir, "ref.fa")
+        file.copy(ref, new_ref)
+        for(i in 1:length(sample_files)) {
+            unlink(sample_files[[i]]$ref)
+        }
+        ref <- new_ref
         sample_files <- sapply(sample_files, function(x) x$cram_file)
         bam_files <- NULL
+        cram_files <- sample_files
     } else {
         ref <- NULL
         cramlist <- NULL
@@ -425,6 +434,7 @@ make_acceptance_test_data_package <- function(
         samplelist <- bamlist
         sample_files <- sapply(sample_files, function(x) x)
         bam_files <- sample_files
+        cram_files <- NULL
     }
     write.table(
         matrix(sample_files, ncol = 1),
@@ -446,6 +456,7 @@ make_acceptance_test_data_package <- function(
             pos = pos,
             sample_names = sample_names,
             bam_files = bam_files,
+            cram_files = cram_files,
             nSNPs = as.integer(nrow(pos)),
             phasefile = phasefile
         )

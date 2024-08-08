@@ -1,5 +1,3 @@
-## -*- ess-indent-offset: 4; -*-
-
 #' @title Sequencing To Imputation Through Constructing Haplotypes
 #' @param chr What chromosome to run. Should match BAM headers
 #' @param posfile Where to find file with positions to run. File is tab seperated with no header, one row per SNP, with col 1 = chromosome, col 2 = physical position (sorted from smallest to largest), col 3 = reference base, col 4 = alternate base. Bases are capitalized. Example first row: 1<tab>1000<tab>A<tab>G<tab>

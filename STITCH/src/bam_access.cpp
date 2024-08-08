@@ -126,6 +126,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     SeqLib::BamReader reader;
     reader.Open(file_name);
     if (reference != "") {
+        //std::cout << "set reference = " << reference << std::endl;
         reader.SetCramReference(reference);
     }
     SeqLib::GenomicRegion gr(region, reader.Header());
