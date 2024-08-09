@@ -62,7 +62,6 @@ data_package_crams <- make_acceptance_test_data_package(
 
 test_that("STITCH diploid works under default parameters using CRAM files", {
 
-    skip("needs to be fixed")
     
     outputdir <- make_unique_tempdir()    
 

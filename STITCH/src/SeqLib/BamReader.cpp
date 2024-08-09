@@ -222,7 +222,7 @@ namespace SeqLib
         if (!m_cram_reference.empty())
         {
             int ret = hts_set_fai_filename(fp.get(), m_cram_reference.c_str());
-            if (ret < 0)
+            if (ret != 0)
                 throw std::invalid_argument("Could not read reference genome " + m_cram_reference + " for CRAM opt");
         }
 
