@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.7.0__**
-Release date: July 18, 2024
+**__Current Version: 1.7.1__**
+Release date: August 13, 2024
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -10,8 +10,7 @@ Release date: July 18, 2024
 
 Changes in latest version
 
-- simplify dependencies a lot. remove recursive submodules!
-- **can be installed for all platforms**
+- **can work with cram reference file**
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 

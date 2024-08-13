@@ -1,3 +1,5 @@
+* v1.7.1
+    * fix cram reference file not working
 * v1.7.0
     * simplify dependencies a lot. remove recursive submodules!
     * can be installed for all platforms

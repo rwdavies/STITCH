@@ -33,7 +33,7 @@ OBJ = SeqLib/GenomicRegion.o \
 
 
 SeqLib/%.o: SeqLib/%.cpp
-		${CXX} ${CPPFLAGS} ${PKG_CPPFLAGS} -o $@ -c $< ${DEP_LIBS}
+		${CXX} ${CPPFLAGS} ${PKG_CPPFLAGS} -o $@ -c $<
 
 ## stole makefile from vcfppR
 HTSLIB:

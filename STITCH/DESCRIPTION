@@ -2,10 +2,10 @@ Package: STITCH
 Type: Package
 Title: STITCH - Sequencing To Imputation Through Constructing
         Haplotypes
-Version: 1.7.0
-Date: 2024-07-18
+Version: 1.7.1
+Date: 2024-08-13
 Author: Robert William Davies
-Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
+Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>, Zilong Li <zilong.dk@gmail.com>
 Description: STITCH performs imputation of individuals sequenced to low coverage
     in a read aware fashion without a reference panel.
 Installation: To install, first install dependencies, then run the
@@ -28,13 +28,11 @@ Getting started: A minimum run requires the following options to be
         diploid or pseudoHaploid mode (method), and if run in
         pseudoHaploid mode, what iteration to switch from pseudoHaploid
         to diploid (switchModelIteration).
-Depends: parallel
-Imports: Rcpp, data.table
+Depends: R (>= 3.6.0)
+Imports: Rcpp (<= 1.0.12), data.table, parallel
 Suggests: testthat, rrbgen (>= 0.0.4)
 Remotes: github::rwdavies/rrbgen/rrbgen
 LinkingTo: Rcpp, RcppArmadillo
-Packaged: 2017-02-14 13:27:59 UTC; rdavies
 RoxygenNote: 7.3.2
 License: GPL | file LICENSE
-SystemRequirements: C++11
-NeedsCompilation: yes
+BugReports: https://github.com/rwdavies/STITCH/issues
