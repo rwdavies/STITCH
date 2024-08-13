@@ -28,7 +28,7 @@ Getting started: A minimum run requires the following options to be
         diploid or pseudoHaploid mode (method), and if run in
         pseudoHaploid mode, what iteration to switch from pseudoHaploid
         to diploid (switchModelIteration).
-Depends: R (>= 3.6.0), Rcpp (<= 1.0.12)
+Depends: R (>= 3.6.0)
 Imports: Rcpp, data.table, parallel
 Suggests: testthat, rrbgen (>= 0.0.4)
 Remotes: github::rwdavies/rrbgen/rrbgen
