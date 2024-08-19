@@ -6,6 +6,8 @@ Release date: August 13, 2024
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
 ![R-CMD-check](https://github.com/rwdavies/STITCH/actions/workflows/check-release.yaml/badge.svg)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/r-stitch/README.html)
+![](https://anaconda.org/bioconda/r-stitch/badges/version.svg)
 <!-- badges: end -->
 
 Changes in latest version
