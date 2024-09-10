@@ -51,17 +51,22 @@ STITCH is available to download either through this github repository, or throug
 A simple way to ensure dependencies are installed, and to install a release of STITCH is as follows. First, install R. Then, do the following 
 
 ```
-git clone https://github.com/rwdavies/STITCH.git
-cd STITCH
-./scripts/install-dependencies.sh
-cd releases
-wget https://github.com/rwdavies/stitch/releases/download/1.7.0/STITCH_1.7.0.tar.gz ## or curl -O
-R CMD INSTALL STITCH_1.7.0.tar.gz
+version=1.7.1
+wget -O STITCH.zip https://github.com/rwdavies/STITCH/archive/refs/tags/${version}.zip ## or curl
+unzip STITCH.zip && mv STITCH-${version} STITCH
+cd STITCH && ./scripts/install-dependencies.sh
+make install
 ```
 
 You can confirm the installation worked using the quick start run below.
 
-To install the latest development code in the repository, use `./scripts/build-and-install.sh`. To install alternative releases, either download other releases from Github like done above, or use the historical `releases` directory.
+To install the latest development from Github, do the following:
+
+```
+git clone --recursive https://github.com/rwdavies/STITCH.git
+cd STITCH && ./scripts/install-dependencies.sh
+./scripts/build-and-install.R
+```
 
 Note that STITCH as run in the original paper used version 3 of R. However STITCH should work fine with either version 3 or version 4 of R. If you have dependency problems, you can easier post an issue on github, or try the conda installation below.
 
