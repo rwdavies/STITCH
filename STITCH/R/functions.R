@@ -1972,6 +1972,9 @@ merge_reads_from_sampleReadsRaw <- function(
 
     sampleReads <- out$sampleReads
     sampleReadsInfo <- out$sampleReadsInfo
+  if(length(sampleReads)==0){
+    stop("0 reads passed the criteria for re-assigning reads in region! consider a bigger region")
+  }
     ## for security - cut these to size now!
     x <- sapply(sampleReads, is.null)
     if (sum(x) > 0) {    
