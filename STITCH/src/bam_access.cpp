@@ -22,10 +22,11 @@ int get_read_span(std::vector<int> cigarLengthVec, std::vector<std::string> ciga
     for(std::size_t iM=0; iM < cigarLengthVec.size(); iM++) {
         cigarLength = cigarLengthVec[iM];
         cigarType = cigarTypeVec[iM];
-	// keep if it is an M or a D. basically, 
-	if((cigarType == "M") | (cigarType == "D")) {
-	    readLength = readLength + cigarLength;
-	}
+	    // keep if it is an M or D. basically,
+        // keep X and = as well
+        if((cigarType == "M") || (cigarType == "D") || (cigarType == "=") || (cigarType == "X")) {
+	        readLength = readLength + cigarLength;
+	    }
     }
     return readLength;
 }
@@ -303,7 +304,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	      cigarLength = cigarLengthVec[iM];
 	      cigarType = cigarTypeVec[iM];
 	      // if its an M - scan
-	      if(cigarType == "M") {
+	    if(cigarType == "M" || cigarType == "=" || cigarType == "X") {
 		x1 = refPosition + refOffset; // left part of M
 		x2 = refPosition + refOffset + cigarLength-1; // right part of M
 		// determine whether that snps is spanned by the read
