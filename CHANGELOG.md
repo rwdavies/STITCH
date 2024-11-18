@@ -1,3 +1,5 @@
+* v1.7.2
+    * fix parsing reads with 'X'/'=' cigar operator
 * v1.7.1
     * fix cram reference file not working
 * v1.7.0

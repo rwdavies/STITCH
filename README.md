@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.7.1__**
-Release date: August 13, 2024
+**__Current Version: 1.7.2__**
+Release date: Nov 18, 2024
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -12,7 +12,7 @@ Release date: August 13, 2024
 
 Changes in latest version
 
-- **can work with cram reference file**
+- **can work with 'X'/'=' cigar type in BAM/CRAM**
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
