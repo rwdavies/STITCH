@@ -31,19 +31,19 @@ make_STITCH_cli <- function(
 
 
     ## manually specify types here
-    logical_params <- c("outputInputInVCFFormat", "readAware", "regenerateInput", "keepInterimFiles", "keepTempDir", "generateInputOnly", "useSoftClippedBases", "regenerateInputWithDefaultValues", "plotHapSumDuringIterations", "plotAfterImputation", "save_sampleReadsInfo", "plot_shuffle_haplotype_attempts", "keepSampleReadsInRAM", "useTempdirWhileWriting", "output_haplotype_dosages", "do_phasing")
+    logical_params <- c("outputInputInVCFFormat", "readAware", "regenerateInput", "keepInterimFiles", "keepTempDir", "generateInputOnly", "useSoftClippedBases", "regenerateInputWithDefaultValues", "plotHapSumDuringIterations", "plotAfterImputation", "save_sampleReadsInfo", "plot_shuffle_haplotype_attempts", "keepSampleReadsInRAM", "useTempdirWhileWriting", "output_haplotype_dosages", "do_phasing", "plotReferenceAlleleCount")
     integer_params <- c("K", "S", "chrStart", "chrEnd", "regionStart", "regionEnd", "buffer", "niterations", "nCores", "Jmax", "pseudoHaploidModel", "switchModelIteration", "outputBlockSize", "inputBundleBlockSize", "reference_phred", "reference_iterations", "gridWindowSize", "B_bit_prob", "shuffle_bin_nSNPs", "shuffle_bin_radius", "outputSNPBlockSize", "phasing_method", "phasing_n_votes")
     double_params <- c("nGen", "downsampleToCov", "downsampleFraction", "maxDifferenceBetweenReads", "maxEmissionMatrixDifference", "alphaMatThreshold", "emissionThreshold", "iSizeUpperLimit", "bqFilter", "expRate", "maxRate", "minRate", "downsampleSamples", "initial_min_hapProb", "initial_max_hapProb")
     character_params <- c("chr", "posfile", "outputdir", "tempdir", "bamlist", "cramlist", "sampleNames_file", "reference", "genfile", "method", "shuffleHaplotypeIterations", "splitReadIterations", "originalRegionName", "environment", "restartIterations", "refillIterations", "downsampleSamplesKeepList", "subsetSNPsfile", "reference_haplotype_file", "reference_legend_file", "reference_sample_file", "reference_populations", "vcf_output_name", "output_filename", "output_format", "reference_shuffleHaplotypeIterations", "genetic_map_file")
     ## deprecated
     integer_params <- c(integer_params, "diploidModel")
     logical_params <- c(logical_params, "outputHaplotypeProbabilities")
-    
+
     logical_params <- check_and_add_param(other_logical_params, logical_params, integer_params, double_params, character_params)
     integer_params <- check_and_add_param(other_integer_params, integer_params, logical_params, double_params, character_params)
     double_params <- check_and_add_param(other_double_params, double_params, logical_params, integer_params, character_params)
-    character_params <- check_and_add_param(other_character_params, character_params, logical_params, integer_params, double_params)    
-    
+    character_params <- check_and_add_param(other_character_params, character_params, logical_params, integer_params, double_params)
+
     param_type <- array(NA, length(param_names))
     param_type[match(logical_params, param_names)] <- "logical"
     param_type[match(integer_params, param_names)] <- "integer"
