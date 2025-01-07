@@ -2,7 +2,7 @@
  * @file        https://github.com/Zilong-Li/vcfpp/vcfpp.h
  * @author      Zilong Li
  * @email       zilong.dk@gmail.com
- * @version     v0.4.0
+ * @version     v0.6.1
  * @breif       a single C++ file for manipulating VCF
  * Copyright (C) 2022-2023.The use of this code is governed by the LICENSE file.
  ******************************************************************************/
@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <stdexcept>
 #ifndef VCFPP_H_
 #    define VCFPP_H_
 
@@ -47,6 +49,7 @@
 // make sure you have htslib installed
 extern "C"
 {
+#    include <htslib/hts.h>
 #    include <htslib/kstring.h>
 #    include <htslib/tbx.h>
 #    include <htslib/vcf.h>
@@ -91,6 +94,9 @@ using isFormatVector = typename std::enable_if<std::is_same<T, std::vector<float
                                                    || std::is_same<T, std::vector<char>>::value
                                                    || std::is_same<T, std::vector<int>>::value,
                                                bool>::type;
+
+namespace details
+{
 
 template<typename T>
 isScalar<T> isMissing(T const & v)
@@ -149,7 +155,7 @@ inline std::vector<std::string> split_string(const std::string & s, const std::s
 }
 
 // deleter for htsFile
-struct htsFile_close
+struct hts_file_close
 {
     void operator()(htsFile * x)
     {
@@ -157,8 +163,35 @@ struct htsFile_close
     }
 };
 
+// deleter for hts iterator
+struct hts_iter_close
+{
+    void operator()(hts_itr_t * x)
+    {
+        if(x) hts_itr_destroy(x);
+    }
+};
+
+// deleter for hts idx
+struct hts_idx_close
+{
+    void operator()(hts_idx_t * x)
+    {
+        if(x) hts_idx_destroy(x);
+    }
+};
+
+// deleter for tabix idx
+struct tabix_idx_close
+{
+    void operator()(tbx_t * x)
+    {
+        if(x) tbx_destroy(x);
+    }
+};
+
 // deleter for variant
-struct variant_close
+struct bcf_line_close
 {
     void operator()(bcf1_t * x)
     {
@@ -174,6 +207,8 @@ struct bcf_hdr_close
         if(x) bcf_hdr_destroy(x);
     }
 };
+
+} // namespace details
 
 /**
  * @class BcfHeader
@@ -372,8 +407,60 @@ class BcfHeader
     }
 
     /**
+     * @brief update the sample id in the header
+     * @param samples a comma-separated string for multiple new samples
+     * @note this only update the samples name in a given sequential order
+     * */
+    void updateSamples(const std::string & samples)
+    {
+        auto ss = details::split_string(samples, ",");
+        const int nsamples = nSamples();
+        if(nsamples != (int)ss.size())
+            throw std::runtime_error("You provide either too few or too many samples");
+        kstring_t htxt = {0, 0, 0};
+        bcf_hdr_format(hdr, 1, &htxt);
+        // Find the beginning of the #CHROM line
+        int i = htxt.l - 2, ncols = 0;
+        while(i >= 0 && htxt.s[i] != '\n')
+        {
+            if(htxt.s[i] == '\t') ncols++;
+            i--;
+        }
+        if(i < 0 || strncmp(htxt.s + i + 1, "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT", 45))
+        {
+            if(i > 0 && !strncmp(htxt.s + i + 1, "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO", 38))
+                throw std::runtime_error("Error: missing FORMAT fields, cowardly refusing to add samples\n");
+            throw std::runtime_error("Could not parse the header: " + std::string(htxt.s));
+        }
+
+        ncols = 0;
+        while(ncols != 9)
+        {
+            i++;
+            if(htxt.s[i] == '\t') ncols++;
+        }
+        htxt.l = i;
+
+        // Replace all samples
+        for(i = 0; i < nsamples; i++)
+        {
+            kputc('\t', &htxt);
+            kputs(ss[i].c_str(), &htxt);
+        }
+        kputc('\n', &htxt);
+
+        // destroy the old and make new header
+        bcf_hdr_destroy(hdr);
+        hdr = bcf_hdr_init("r");
+        if(bcf_hdr_parse(hdr, htxt.s) < 0)
+            throw std::runtime_error("An error occurred while parsing the header\n");
+        // free everything
+        free(htxt.s);
+    }
+
+    /**
      * @brief explicitly set samples to be extracted
-     * @param samples samples to include or exclude  as a comma-separated string
+     * @param samples samples to include or exclude as a comma-separated string
      * */
     inline void setSamples(const std::string & samples) const
     {
@@ -412,7 +499,7 @@ class BcfRecord
 
   private:
     BcfHeader * header;
-    std::shared_ptr<bcf1_t> line = std::shared_ptr<bcf1_t>(bcf_init(), variant_close()); // variant
+    std::shared_ptr<bcf1_t> line = std::shared_ptr<bcf1_t>(bcf_init(), details::bcf_line_close()); // variant
     bcf_hdr_t * hdr_d = NULL; // a dup header by bcf_hdr_dup(header->hdr)
     bcf_fmt_t * fmt = NULL;
     bcf_info_t * info = NULL;
@@ -952,7 +1039,8 @@ class BcfRecord
      * */
     void setPhasing(const std::vector<char> & v)
     {
-        assert((int)v.size() == nsamples);
+        if((int)v.size() != nsamples)
+            throw std::runtime_error("the size of input vector is not matching the size of genotypes");
         gtPhase = v;
     }
 
@@ -1231,9 +1319,9 @@ class BcfRecord
     }
 
     /** @brief modify CHROM value */
-    inline void setCHR(const char * chr)
+    inline void setCHR(const std::string & s)
     {
-        line->rid = bcf_hdr_name2id(header->hdr, chr);
+        line->rid = bcf_hdr_name2id(header->hdr, s.c_str());
     }
 
     /** @brief modify position given 1-based value */
@@ -1243,15 +1331,34 @@ class BcfRecord
     }
 
     /** @brief update ID */
-    inline void setID(const char * s)
+    inline void setID(const std::string & s)
     {
-        bcf_update_id(header->hdr, line.get(), s);
+        bcf_update_id(header->hdr, line.get(), s.c_str());
     }
 
     /** @brief set REF and ALT alleles given a string seperated by comma */
-    inline void setRefAlt(const char * alleles_string)
+    inline void setRefAlt(const std::string & s)
     {
-        bcf_update_alleles_str(header->hdr, line.get(), alleles_string);
+        bcf_update_alleles_str(header->hdr, line.get(), s.c_str());
+    }
+
+    /** @brief modify the QUAL value */
+    inline void setQUAL(float q)
+    {
+        line->qual = q;
+    }
+
+    /** @brief modify the QUAL value */
+    inline void setQUAL(char q)
+    {
+        bcf_float_set_missing(line->qual);
+    }
+
+    /** @brief modify the FILTER value */
+    inline void setFILTER(const std::string & s)
+    {
+        int32_t tmpi = bcf_hdr_id2int(header->hdr, BCF_DT_ID, s.c_str());
+        bcf_add_filter(header->hdr, line.get(), tmpi);
     }
 
     /** @brief return 0-base start of the variant (can be any type) */
@@ -1443,19 +1550,19 @@ class BcfReader
 {
   private:
     std::shared_ptr<htsFile> fp; // hts file
-    hts_idx_t * hidx = NULL; // hts index file
-    tbx_t * tidx = NULL; // .tbi .csi index file for vcf files
-    hts_itr_t * itr = NULL; // tabix iterator
+    std::shared_ptr<hts_idx_t> hidx; // hts index file
+    std::shared_ptr<tbx_t> tidx; // .tbi .csi index file for vcf files
+    std::shared_ptr<hts_itr_t> itr; // hts iterator
     kstring_t s = {0, 0, NULL}; // kstring
     std::string fname;
-    bool isBcf; // if the input file is bcf or vcf;
+    bool isBcf = false; // if the input file is bcf or vcf;
 
   public:
     /// a BcfHeader object
     BcfHeader header;
     /// number of samples in the VCF
     int nsamples;
-    /// number of samples in the VCF
+    /// a vector of samples name in the VCF
     std::vector<std::string> SamplesName;
 
     /// Construct an empty BcfReader
@@ -1501,24 +1608,28 @@ class BcfReader
 
     ~BcfReader()
     {
-        close();
-    }
-
-    /// close the BcfReader object.
-    void close()
-    {
-        if(fp) fp.reset();
-        if(itr) hts_itr_destroy(itr);
-        if(hidx) hts_idx_destroy(hidx);
-        if(tidx) tbx_destroy(tidx);
         if(s.s) free(s.s);
     }
 
-    /// open a VCF/BCF/STDIN file for streaming in
+    /// Close the VCF file and its associated files
+    void close()
+    {
+        if(fp) fp.reset();
+        if(hidx) hidx.reset();
+        if(itr) itr.reset();
+        if(tidx) tidx.reset();
+    }
+
+    /// Open a VCF/BCF/STDIN file for streaming in
     void open(const std::string & file)
     {
+        if(!fname.empty() && fname != file)
+            throw std::runtime_error("does not support re-open a file yet. " + fname);
         fname = file;
-        fp = std::shared_ptr<htsFile>(hts_open(file.c_str(), "r"), htsFile_close());
+        fp = std::shared_ptr<htsFile>(hts_open(fname.c_str(), "r"), details::hts_file_close());
+        if(!fp) throw std::invalid_argument("I/O error: input file is invalid");
+        enum htsExactFormat hts_format = hts_get_format(fp.get())->format;
+        if(hts_format == bcf) isBcf = true;
         header.hdr = bcf_hdr_read(fp.get());
         nsamples = bcf_hdr_nsamples(header.hdr);
         SamplesName = header.getSamples();
@@ -1536,12 +1647,44 @@ class BcfReader
         return header;
     }
 
-    /** @brief get the number of records of given region */
-    uint64_t getVariantsCount(BcfRecord & r, const std::string & region)
+    /**
+     * @brief query the status of a given region in the VCF
+     * @return -2: the region is not a valid bcftools-like format,
+     *             or it is not presenting in the VCF even though it's bcftols-like format. \n
+     *         -1: there is no index file found. \n
+     *          0: the region is valid but empty. \n
+     *          1: vaild and not empty. \n
+     */
+    int getStatus(const std::string & region)
     {
-        uint64_t c{0};
-        while(getNextVariant(r)) c++;
-        setRegion(region); // reset the region
+        try
+        {
+            setRegion(region);
+            BcfRecord v(header);
+            if(!getNextVariant(v)) return 0;
+        }
+        catch(const std::invalid_argument & e)
+        {
+            return -1;
+        }
+        catch(const std::runtime_error & e)
+        {
+            return -2;
+        }
+        return 1;
+    }
+
+    /**
+     * @brief count the number of variants by iterating through a given region.
+     * @note If you want to continue work on that region, remember to reset the region by setRegion()! \n
+     *        Also, check the status of the region first to handle the different cases!
+     */
+    int getVariantsCount(const std::string & region)
+    {
+        int c{0};
+        setRegion(region);
+        BcfRecord v(header);
+        while(getNextVariant(v)) c++;
         return c;
     }
 
@@ -1558,54 +1701,60 @@ class BcfReader
     }
 
     /**
-     * @brief explicitly stream to specific region
-     * @param region the string is samtools-like format which is chr:start-end
+     * @brief explicitly stream to specific region. throw invalid_argument error if index file not found.
+     * throw runtime_error if the region was not a valid bcftools-like format or was not presenting in the
+     * VCF.
+     * @param region the string for region is samtools-like format, which can be 'chr', 'chr:start' and
+     * 'chr:start-end'
      * */
     void setRegion(const std::string & region)
     {
         // 1. check and load index first
         // 2. query iterval region
         // 3. if region is empty, use "."
-        if(isEndWith(fname, "bcf") || isEndWith(fname, "bcf.gz"))
+        if(isBcf)
         {
-            isBcf = true;
-            hidx = bcf_index_load(fname.c_str());
-            if(itr) bcf_itr_destroy(itr); // reset current region.
+            hidx = std::shared_ptr<hts_idx_t>(bcf_index_load(fname.c_str()), details::hts_idx_close());
+            if(itr) itr.reset(); // reset current region.
             if(region.empty())
-                itr = bcf_itr_querys(hidx, header.hdr, ".");
+                itr = std::shared_ptr<hts_itr_t>(bcf_itr_querys(hidx.get(), header.hdr, "."),
+                                                 details::hts_iter_close());
             else
-                itr = bcf_itr_querys(hidx, header.hdr, region.c_str());
+                itr = std::shared_ptr<hts_itr_t>(bcf_itr_querys(hidx.get(), header.hdr, region.c_str()),
+                                                 details::hts_iter_close());
         }
         else
         {
-            isBcf = false;
-            tidx = tbx_index_load(fname.c_str());
-            assert(tidx != NULL && "error loading tabix index!");
-            if(itr) tbx_itr_destroy(itr); // reset current region.
+            tidx = std::shared_ptr<tbx_t>(tbx_index_load(fname.c_str()), details::tabix_idx_close());
+            if(tidx.get() == NULL) throw std::invalid_argument(" no tabix index found!");
+            if(itr) itr.reset(); // reset
             if(region.empty())
-                itr = tbx_itr_querys(tidx, ".");
+                itr = std::shared_ptr<hts_itr_t>(tbx_itr_querys(tidx.get(), "."), details::hts_iter_close());
             else
-                itr = tbx_itr_querys(tidx, region.c_str());
-            assert(itr != NULL && "no interval region found.failed!");
+                itr = std::shared_ptr<hts_itr_t>(tbx_itr_querys(tidx.get(), region.c_str()),
+                                                 details::hts_iter_close());
         }
+        if(itr.get() == NULL)
+            throw std::runtime_error("region was not found! make sure the region format is correct");
     }
 
     /** @brief read in the next variant
-     *  @param r r is a BcfRecord object to be filled in. */
+     *  @param r the BcfRecord object to be filled in. */
     bool getNextVariant(BcfRecord & r)
     {
         int ret = -1;
-        if(itr != NULL)
+        if(itr.get() != NULL)
         {
             if(isBcf)
             {
-                ret = bcf_itr_next(fp.get(), itr, r.line.get());
+                ret = bcf_itr_next(fp.get(), itr.get(), r.line.get());
+                bcf_subset_format(r.header->hdr, r.line.get()); // has to be called explicitly for bcf
                 bcf_unpack(r.line.get(), BCF_UN_ALL);
                 return (ret >= 0);
             }
             else
             {
-                int slen = tbx_itr_next(fp.get(), tidx, itr, &s);
+                int slen = tbx_itr_next(fp.get(), tidx.get(), itr.get(), &s);
                 if(slen > 0)
                 {
                     ret = vcf_parse1(&s, r.header->hdr, r.line.get()); // ret > 0, error
@@ -1632,7 +1781,7 @@ class BcfWriter
 {
   private:
     std::shared_ptr<htsFile> fp; // hts file
-    std::shared_ptr<bcf1_t> b = std::shared_ptr<bcf1_t>(bcf_init(), variant_close()); // variant
+    std::shared_ptr<bcf1_t> b = std::shared_ptr<bcf1_t>(bcf_init(), details::bcf_line_close()); // variant
     int ret;
     bool isHeaderWritten = false;
     const BcfHeader * hp;
@@ -1708,8 +1857,9 @@ class BcfWriter
      */
     void open(const std::string & fname)
     {
-        auto mode = getMode(fname, "w");
-        fp = std::shared_ptr<htsFile>(hts_open(fname.c_str(), mode.c_str()), htsFile_close());
+        auto mode = details::getMode(fname, "w");
+        fp = std::shared_ptr<htsFile>(hts_open(fname.c_str(), mode.c_str()), details::hts_file_close());
+        if(!fp) throw std::invalid_argument("I/O error: input file is invalid");
     }
 
     /**
@@ -1723,7 +1873,8 @@ class BcfWriter
      */
     void open(const std::string & fname, const std::string & mode)
     {
-        fp = std::shared_ptr<htsFile>(hts_open(fname.c_str(), mode.c_str()), htsFile_close());
+        fp = std::shared_ptr<htsFile>(hts_open(fname.c_str(), mode.c_str()), details::hts_file_close());
+        if(!fp) throw std::invalid_argument("I/O error: input file is invalid");
     }
 
     /// close the BcfWriter object.
@@ -1747,11 +1898,23 @@ class BcfWriter
         hp = &h;
     }
 
-    /// copy header of given VCF
-    void copyHeader(const std::string & vcffile)
+    /// copy header of given VCF and restrict on samples. if samples=="", FORMAT removed and only sites left
+    void copyHeader(const std::string & vcffile, std::string samples = "-")
     {
         htsFile * fp2 = hts_open(vcffile.c_str(), "r");
-        header.hdr = bcf_hdr_read(fp2);
+        if(!fp2) throw std::invalid_argument("I/O error: input file is invalid");
+        if(samples == "")
+        { // site-only
+            bcf_hdr_t * hfull = bcf_hdr_read(fp2);
+            header.hdr = bcf_hdr_subset(hfull, 0, 0, 0);
+            bcf_hdr_remove(header.hdr, BCF_HL_FMT, NULL);
+            bcf_hdr_destroy(hfull);
+        }
+        else
+        {
+            header.hdr = bcf_hdr_read(fp2);
+            header.setSamples(samples);
+        }
         hts_close(fp2);
         initalHeader(header);
     }
@@ -1783,7 +1946,7 @@ class BcfWriter
     }
 
     /// streams out the given variant of BcfRecord type
-    inline bool writeRecord(BcfRecord & v)
+    bool writeRecord(BcfRecord & v)
     {
         if(!isHeaderWritten) writeHeader();
         if(bcf_write(fp.get(), v.header->hdr, v.line.get()) < 0) return false;
