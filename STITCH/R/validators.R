@@ -717,3 +717,10 @@ validate_phasing <- function(do_phasing, S) {
     }
     NULL
 }
+
+validate_niterations_and_splitReadIterations <- function(niterations, splitReadIterations) {
+    if (niterations == splitReadIterations) {
+        stop("niterations and splitReadIterations are set to the same value, which can cause problems. Please set them to different values, possibly choosing to set splitReadIterations to NA to turn that off")
+    }
+    NULL
+}
