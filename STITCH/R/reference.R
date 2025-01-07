@@ -40,7 +40,8 @@ get_and_initialize_from_reference <- function(
     plot_shuffle_haplotype_attempts,
     shuffle_bin_radius,
     snps_in_grid_1_based,
-    plotHapSumDuringIterations
+    plotHapSumDuringIterations,
+    plotReferenceAlleleCount
 ) {
 
     ## quick validations of haps against sample file
@@ -93,7 +94,8 @@ get_and_initialize_from_reference <- function(
             alleleCount = alleleCount,
             ref_alleleCount = ref_alleleCount,
             outputdir = outputdir,
-            regionName = regionName
+            regionName = regionName,
+            plot_ref_allele_count = plotReferenceAlleleCount
         )
     }
 
@@ -424,7 +426,8 @@ compare_reference_haps_against_alleleCount <- function(
     alleleCount,
     ref_alleleCount,
     outputdir,
-    regionName
+    regionName,
+    plot_ref_allele_count
 ) {
 
     all_cor <- suppressWarnings(
@@ -452,11 +455,13 @@ compare_reference_haps_against_alleleCount <- function(
     print_message(paste0(round(high_maf_cor, 3), " for > 5% MAF SNPs"))
     print_message(paste0(round(low_maf_cor, 3), " for < 5% MAF SNPs"))
 
-    out_plot <- file.path(outputdir, "plots", paste0("alleleFrequency_pileup_vs_reference_haplotypes.", regionName, ".png"))
-    print_message(paste0("A plot of allele frequencies from sequencing pileup vs reference haplotype counts is at:", out_plot))
-    png(out_plot, height = 500, width = 500)
-    plot(alleleCount[, 3], ref_alleleCount[, 3], xlab = "Allele frequency from pileup", ylab = "Allele frequency from reference haplotypes")
-    dev.off()
+    if (plot_ref_allele_count) {
+        out_plot <- file.path(outputdir, "plots", paste0("alleleFrequency_pileup_vs_reference_haplotypes.", regionName, ".png"))
+        print_message(paste0("A plot of allele frequencies from sequencing pileup vs reference haplotype counts is at:", out_plot))
+        png(out_plot, height = 500, width = 500)
+        plot(alleleCount[, 3], ref_alleleCount[, 3], xlab = "Allele frequency from pileup", ylab = "Allele frequency from reference haplotypes")
+        dev.off()
+    }
 
     return(NULL)
 

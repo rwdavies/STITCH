@@ -150,6 +150,7 @@ STITCH <- function(
     plotHapSumDuringIterations = FALSE,
     plot_shuffle_haplotype_attempts = FALSE,
     plotAfterImputation = TRUE,
+    plotReferenceAlleleCount = TRUE,
     save_sampleReadsInfo = FALSE,
     gridWindowSize = NA,
     shuffle_bin_nSNPs = NULL,
@@ -537,7 +538,8 @@ STITCH <- function(
     ##
     ## initialize variables
     ##
-    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations, cM_grid = cM_grid)
+    out <- initialize_parameters(reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations, cM_grid = cM_grid,
+    plotReferenceAlleleCount = plotReferenceAlleleCount)
     eHapsCurrent_tc <- out$eHapsCurrent_tc
     alphaMatCurrent_tc <- out$alphaMatCurrent_tc
     hapSumCurrent_tc <- out$hapSumCurrent_tc
@@ -1318,7 +1320,8 @@ initialize_parameters <- function(
     shuffle_bin_radius,
     snps_in_grid_1_based,
     plotHapSumDuringIterations,
-    cM_grid
+    cM_grid,
+    plotReferenceAlleleCount
 ) {
 
     print_message("Begin parameter initialization")
@@ -1370,7 +1373,40 @@ initialize_parameters <- function(
             hapSumCurrent_tc = hapSumCurrent_tc,
             sigmaCurrent_m = sigmaCurrent_m,
             priorCurrent_m = priorCurrent_m,
-            reference_haplotype_file = reference_haplotype_file, reference_legend_file = reference_legend_file, reference_sample_file = reference_sample_file, reference_populations = reference_populations, reference_phred = reference_phred, reference_iterations = reference_iterations, nSNPs = nSNPs, K = K, S = S, L = L, pos = pos, inputBundleBlockSize = inputBundleBlockSize, nCores = nCores, regionName = regionName, alleleCount = alleleCount, expRate = expRate, nGen = nGen, tempdir = tempdir, outputdir = outputdir, pseudoHaploidModel = pseudoHaploidModel, emissionThreshold = emissionThreshold, alphaMatThreshold = alphaMatThreshold, minRate = minRate, maxRate = maxRate, regionStart = regionStart, regionEnd = regionEnd, buffer = buffer, niterations = niterations, grid = grid, grid_distances = grid_distances, nGrids = nGrids, reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations, L_grid = L_grid, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, shuffle_bin_radius = shuffle_bin_radius, snps_in_grid_1_based = snps_in_grid_1_based, plotHapSumDuringIterations = plotHapSumDuringIterations)
+            reference_haplotype_file = reference_haplotype_file,
+            reference_legend_file = reference_legend_file,
+            reference_sample_file = reference_sample_file,
+            reference_populations = reference_populations,
+            reference_phred = reference_phred,
+            reference_iterations = reference_iterations,
+            nSNPs = nSNPs,
+            K = K, S = S, L = L,
+            pos = pos,
+            inputBundleBlockSize = inputBundleBlockSize,
+            nCores = nCores,
+            regionName = regionName,
+            alleleCount = alleleCount,
+            expRate = expRate,
+            nGen = nGen,
+            tempdir = tempdir,
+            outputdir = outputdir,
+            pseudoHaploidModel = pseudoHaploidModel,
+            emissionThreshold = emissionThreshold,
+            alphaMatThreshold = alphaMatThreshold,
+            minRate = minRate,
+            maxRate = maxRate,
+            regionStart = regionStart,
+            regionEnd = regionEnd,
+            buffer = buffer,
+            niterations = niterations,
+            grid = grid, grid_distances = grid_distances, nGrids = nGrids,
+            reference_shuffleHaplotypeIterations = reference_shuffleHaplotypeIterations,
+            L_grid = L_grid,
+            plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts,
+            shuffle_bin_radius = shuffle_bin_radius,
+            snps_in_grid_1_based = snps_in_grid_1_based,
+            plotHapSumDuringIterations = plotHapSumDuringIterations,
+            plotReferenceAlleleCount = plotReferenceAlleleCount)
     }
 
     print_message("Done parameter initialization")	
