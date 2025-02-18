@@ -1,3 +1,7 @@
+* v1.7.3
+    * PR #105: new flag `plotReferenceAlleleCount`
+    * fix issue #106
+    * update vcfpp.h to v0.6.1 which fix issue for subsetting both samples and variants for BCF file
 * v1.7.2
     * fix parsing reads with 'X'/'=' cigar operator
 * v1.7.1
