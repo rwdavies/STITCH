@@ -1,6 +1,6 @@
 // -*- compile-command: "clang-format -i reference-vcf.cpp" -*-
 
-#include "vcfpp/vcfpp.h"
+#include "vcfpp.h"
 #include <Rcpp.h>
 #include <string>
 #include <vector>
