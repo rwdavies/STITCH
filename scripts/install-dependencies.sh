@@ -45,6 +45,7 @@ then
     cd samtools-${samv}
     ./configure
     make all
+    make install
     cd ../../
     ## add soft link
     dir=`pwd`
@@ -62,6 +63,7 @@ then
     tar -xvf bcftools-${bcftoolsv}.tar
     cd bcftools-${bcftoolsv}
     make all
+    make install
     cd ../../
     ## add soft link
     dir=`pwd`
@@ -81,6 +83,7 @@ then
     cd htslib-${htslibv}
     ./configure
     make all
+    make install
     cd ../../
     ## add soft link
     dir=`pwd`

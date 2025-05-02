@@ -1,7 +1,6 @@
 # include vcfpp.h from vcfppR
 # link against libhts.a from vcfppR
 HTSLIB = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'loc = system.file("libs", package = "vcfppR", mustWork = TRUE); files = dir(loc, pattern="libhts.a", full.names=TRUE); cat(files)')
-HTSLIB += -lcurl -lbz2 -llzma -lz
 
 HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
 
@@ -13,8 +12,17 @@ SEQLIB_DIR=./SeqLib/
 
 libseq = ${SEQLIB_DIR}/libseq.a
 
-PKG_CPPFLAGS = -I. -I$(SEQLIB_DIR) -I$(HTS_SRC) -I$(HTS_INCL) -I$(HTSLIB_CPPFLAGS) -fPIC
+PKG_CPPFLAGS = -I. -I$(SEQLIB_DIR) -I$(HTS_SRC) -I$(HTS_INCL) -I$(HTSLIB_CPPFLAGS) -D_FILE_OFFSET_BITS=64 -fPIC
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) ${HTSLIB} ${libseq}
+
+ifeq (,$(shell pkg-config --version 2>/dev/null))
+  LIBPSL = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libpsl.a),-lpsl),)
+  LIBBROTLI = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libbrotlidec.a),-lbrotlidec -lbrotlicommon),)
+  PKG_LIBS += ${libhts} $(DEP_LIBS) $(LIBPSL) $(LIBBROTLI) -lbcrypt -lidn2 -lunistring -liconv -lssl -lcrypto -lcrypt32 -lwsock32 -lwldap32 -lssh2 -lgcrypt -lgpg-error -lws2_32 -lzstd -lregex 
+else
+  PKG_LIBS += -llzma -lbz2 -lregex $(shell pkg-config --libs libcurl)
+  PKG_CPPFLAGS += $(shell pkg-config --cflags libcurl)
+endif
 
 .PHONY: all
 
