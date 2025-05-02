@@ -1,20 +1,24 @@
-HTSLIB_DIR=./htslib-1.19.1/
+# include vcfpp.h from vcfppR
+# link against libhts.a from vcfppR
+HTSLIB = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'loc = system.file("libs", package = "vcfppR", mustWork = TRUE); files = dir(loc, pattern="libhts.a", full.names=TRUE); cat(files)')
+HTSLIB += -lcurl -lbz2 -llzma -lz
+
+HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
+
+HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -I$(HTS_INCL)
+
 SEQLIB_DIR=./SeqLib/
-VCFPP_DIR=./vcfpp/
 
 libseq = ${SEQLIB_DIR}/libseq.a
-libhts = ${HTSLIB_DIR}/libhts.a
 
-DEP_LIBS = -lz -lm -lbz2 -llzma -lcurl
+PKG_CPPFLAGS = -I. -I$(SEQLIB_DIR) -I$(HTS_INCL) -I$(HTSLIB_CPPFLAGS) -fPIC
+PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) ${HTSLIB} ${libseq}
 
-PKG_CPPFLAGS = -I${SEQLIB_DIR} -I${HTSLIB_DIR} -fPIC
-PKG_LIBS = ${libhts} ${libseq} ${DEP_LIBS} $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
-
-.PHONY: all clean
+.PHONY: all
 
 all : $(SHLIB)
 
-$(SHLIB): HTSLIB SEQLIB
+$(SHLIB): SEQLIB
 
 CC=$(shell "R CMD config CC")
 CXX=$(shell "R CMD config CXX")
@@ -35,20 +39,15 @@ OBJ = SeqLib/GenomicRegion.o \
 SeqLib/%.o: SeqLib/%.cpp
 		${CXX} ${CPPFLAGS} ${PKG_CPPFLAGS} -o $@ -c $<
 
-## stole makefile from vcfppR
-HTSLIB:
-		(cd ${HTSLIB_DIR} && $(MAKE) -f Makefile.vcfppR libhts.a && cd ..)
-
 SEQLIB: ${OBJ}
 		@-rm -f ${libseq}
 		$(AR) -rc ${libseq} $?
 		-$(RANLIB) ${libseq}
 
 clean:
+		$(RM) ${libseq} ${OBJ}
 		$(RM) *.o
 		$(RM) *.dll
 		$(RM) *.so
 		$(RM) *.dylib
-		$(RM) ${libseq} ${OBJ}
-		(cd "${HTSLIB_DIR}" && $(MAKE) clean && cd -)
 

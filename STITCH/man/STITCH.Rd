@@ -75,6 +75,7 @@ STITCH(
   plotHapSumDuringIterations = FALSE,
   plot_shuffle_haplotype_attempts = FALSE,
   plotAfterImputation = TRUE,
+  plotReferenceAlleleCount = TRUE,
   save_sampleReadsInfo = FALSE,
   gridWindowSize = NA,
   shuffle_bin_nSNPs = NULL,

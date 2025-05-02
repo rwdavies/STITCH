@@ -2,8 +2,8 @@ Package: STITCH
 Type: Package
 Title: STITCH - Sequencing To Imputation Through Constructing
         Haplotypes
-Version: 1.7.3
-Date: 2025-01-18
+Version: 1.8.0
+Date: 2025-05-01
 Author: Robert William Davies
 Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>, Zilong Li <zilong.dk@gmail.com>
 Description: STITCH performs imputation of individuals sequenced to low coverage
@@ -31,8 +31,8 @@ Getting started: A minimum run requires the following options to be
 Depends: R (>= 3.6.0), parallel
 Imports: Rcpp, data.table
 Suggests: testthat, rrbgen (>= 0.0.4)
-Remotes: github::rwdavies/rrbgen/rrbgen
-LinkingTo: Rcpp, RcppArmadillo
+Remotes: github::Zilong-Li/vcfppR,github::rwdavies/rrbgen/rrbgen
+LinkingTo: Rcpp, RcppArmadillo, vcfppR (>= 0.7.7)
 RoxygenNote: 7.3.2
 License: GPL | file LICENSE
 BugReports: https://github.com/rwdavies/STITCH/issues
