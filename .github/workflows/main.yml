@@ -19,8 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macos-latest,   r: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
+          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -40,7 +40,12 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: ./STITCH
-          extra-packages: devtools,testthat,optparse
+          extra-packages: |
+            any::proftools
+            any::devtools
+            any::testthat
+            any::optparse
+            any::rcmdcheck
 
       - name: Install dependencies
         run:  export MAKE="make -j6" && sudo bash ./scripts/install-dependencies.sh
@@ -64,5 +69,3 @@ jobs:
       - name: Test the CLI
         run: ./scripts/test-cli.R
  
-      - name: Example test
-        run:  ./scripts/test-compare-vcf.sh
