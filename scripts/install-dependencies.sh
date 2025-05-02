@@ -3,7 +3,7 @@
 set -e
 script_dir=`dirname "$0"`
 cd "${script_dir}"/../
-./scripts/install-r-dependencies.R
+# ./scripts/install-r-dependencies.R
 
 export PATH=${PATH}:`pwd`/
 
