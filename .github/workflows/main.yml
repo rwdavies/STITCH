@@ -11,36 +11,47 @@ on:
 
 jobs:
   test-all:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: ubuntu-latest,   r: 'release'}
+          
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v3
  
-      - name: Manually install dependency
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libdeflate-dev libdeflate-tools
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libdeflate.so /usr/local/lib/libdeflate.so
-          ls -lth /usr/local/
-          ls -lth /usr/local/lib/
-          ls -lth /usr/local/lib/libdeflate.so
-          sudo apt-get install -y libcurl4-openssl-dev
-          sudo apt-get install -y libharfbuzz-dev
-          sudo apt-get install -y libfribidi-dev
-          which pkg-config
-
       - uses: r-lib/actions/setup-r@v2
         with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: ./STITCH
+          extra-packages: any::rcmdcheck
+          needs: check
+
       - name: Install dependencies
-        run: ./scripts/install-dependencies.sh
+        run:  export MAKE="make -j6" && sudo bash ./scripts/install-dependencies.sh
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: ./STITCH
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"error"'
+          upload-snapshots: true
 
       - name: Unit tests
         run: ./scripts/test-unit.sh
