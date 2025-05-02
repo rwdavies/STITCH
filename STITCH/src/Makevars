@@ -5,13 +5,15 @@ HTSLIB += -lcurl -lbz2 -llzma -lz
 
 HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
 
+HTS_SRC = ./htslib-1.21/
+
 HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -I$(HTS_INCL)
 
 SEQLIB_DIR=./SeqLib/
 
 libseq = ${SEQLIB_DIR}/libseq.a
 
-PKG_CPPFLAGS = -I. -I$(SEQLIB_DIR) -I$(HTS_INCL) -I$(HTSLIB_CPPFLAGS) -fPIC
+PKG_CPPFLAGS = -I. -I$(SEQLIB_DIR) -I$(HTS_SRC) -I$(HTS_INCL) -I$(HTSLIB_CPPFLAGS) -fPIC
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) ${HTSLIB} ${libseq}
 
 .PHONY: all
