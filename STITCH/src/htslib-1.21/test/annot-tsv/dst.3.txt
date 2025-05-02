@@ -1,3 +1,0 @@
-#chr	beg	end	smpl
-1	14	15	A
-1	35	45	A

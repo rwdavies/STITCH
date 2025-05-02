@@ -1,2 +1,0 @@
-#chr	start	end	assembly	mean_ratio	inheritance	sample
-2	111293958	113181927	hg19			sampleA
