@@ -1,12 +1,14 @@
 #ifndef SEQLIB_BAM_HEADER_H__
 #define SEQLIB_BAM_HEADER_H__
 
-#include <htslib/bgzf.h>
-#include <htslib/hts.h>
-#include <htslib/kstring.h>
-#include <htslib/sam.h>
+#include "htslib/bgzf.h"
+#include "htslib/hts.h"
+#include "htslib/kstring.h"
+#include "htslib/sam.h"
 
 #include "SeqLib/SeqLibUtils.h"
+#include <string>
+#include <vector>
 
 namespace SeqLib
 {

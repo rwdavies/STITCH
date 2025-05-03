@@ -2,7 +2,7 @@
 #define SEQLIB_THREAD_POOL_H
 
 #include "SeqLib/BamWalker.h"
-#include <htslib/thread_pool.h>
+#include "htslib/thread_pool.h"
 #include <stdexcept>
 
 namespace SeqLib
