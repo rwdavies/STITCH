@@ -1,6 +1,6 @@
 #include <vector>
 #include <string>
-#include <SeqLib/BamReader.h>
+#include "SeqLib/BamReader.h"
 
 
 //' @export

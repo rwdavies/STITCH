@@ -10,7 +10,7 @@ HTS_SRC = ./htslib-1.21/
 
 HTSLIB_CPPFLAGS = -I$(HTS_INCL) -D_FILE_OFFSET_BITS=64
 
-INCL = -I../inst/include/ -I$(HTS_INCL) -I.
+INCL = -I$(HTS_INCL) -I../inst/include/ -I.
 
 PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS)
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(HTSLIB)
