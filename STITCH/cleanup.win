@@ -1,3 +1,4 @@
 #!/bin/sh
 
 rm -f src/SeqLib/*.o src/SeqLib/*.a src/*.o src/*.so src/*.dll src/*.dylib 
+cd src/htslib-1.21/ && make clean

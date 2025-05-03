@@ -1,19 +1,20 @@
 # include vcfpp.h from vcfppR
-# link against libhts.a from vcfppR
-HTSLIB = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'loc = system.file("libs", package = "vcfppR", mustWork = TRUE); files = dir(loc, pattern="libhts.a", full.names=TRUE); cat(files)')
-HTSLIB += -lcurl -lbz2 -llzma -lz -ldeflate ## may need libdeflate as well
-
 HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
 
 HTS_SRC = ./htslib-1.21/
 
-HTSLIB_CPPFLAGS =  -I$(HTS_INCL) -D_FILE_OFFSET_BITS=64
+HTSLIB = $(HTS_SRC)/libhts.a -lz -lbz2 -llzma -lcurl
 
-INCL = -I$(HTS_INCL) -I../inst/include/ -I.
+ifeq ($(shell grep -wq "#define HAVE_LIBDEFLATE 1" $(HTS_SRC)/config.h && echo hasdeflate),hasdeflate)
+    HTSLIB += -ldeflate
+endif
+
+HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64
+
+INCL = -I../inst/include/ -I$(HTS_INCL) -I$(HTS_SRC) -I.
 
 PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS)
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(HTSLIB)
-
 
 SEQ_OBJECTS = SeqLib/GenomicRegion.o SeqLib/RefGenome.o SeqLib/BamWriter.o SeqLib/BamReader.o SeqLib/BamRecord.o SeqLib/BamHeader.o
 STITCH_SOURCES = bam_access.cpp diploid.cpp haploid.cpp hwe.cpp phasing.cpp reference-binary.cpp reference-vcf.cpp writers.cpp bam_linker.cpp functions.cpp heuristics.cpp obsolete.cpp reference.cpp speed_test.cpp

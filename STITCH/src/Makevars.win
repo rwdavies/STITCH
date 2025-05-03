@@ -1,16 +1,13 @@
 # include vcfpp.h from vcfppR
-# link against libhts.a from vcfppR
-HTSLIB = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'loc = system.file("libs", package = "vcfppR", mustWork = TRUE); files = dir(loc, pattern="libhts.a", full.names=TRUE); cat(files)')
-
-HTSLIB += -lz ## may need libdeflate as well
-
 HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
 
 HTS_SRC = ./htslib-1.21/
 
-HTSLIB_CPPFLAGS = -I$(HTS_INCL) -D_FILE_OFFSET_BITS=64
+HTSLIB = -lz ## may need libdeflate as well
 
-INCL = -I$(HTS_INCL) -I../inst/include/ -I.
+HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64
+
+INCL = -I../inst/include/ -I$(HTS_INCL) -I$(HTS_SRC) -I.
 
 PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS)
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(HTSLIB)

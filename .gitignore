@@ -2,6 +2,7 @@ test-data/
 test-results/
 *#*
 *~
+STITCH/src/htslib*
 samtools
 bgzip
 bcftools
