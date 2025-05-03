@@ -11,11 +11,11 @@
 
 extern "C"
 {
-#include "htslib/bgzf.h"
-#include "htslib/faidx.h"
-#include "htslib/hts.h"
-#include "htslib/kstring.h"
-#include "htslib/sam.h"
+#include <htslib/bgzf.h>
+#include <htslib/faidx.h>
+#include <htslib/hts.h>
+#include <htslib/kstring.h>
+#include <htslib/sam.h>
 }
 
 #include "SeqLib/GenomicRegion.h"
