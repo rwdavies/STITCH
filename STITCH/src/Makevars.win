@@ -3,7 +3,7 @@ HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("inc
 
 HTS_SRC = ./htslib-1.21/
 
-HTSLIB = -lz ## may need libdeflate as well
+HTSLIB = $(HTS_SRC)/libhts.a -lz 
 
 HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -fPIC -DNDEBUG
 
