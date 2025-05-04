@@ -5,15 +5,18 @@ HTS_SRC = ./htslib-1.21/
 
 HTSLIB = $(HTS_SRC)/libhts.a -lz -lbz2 -llzma -lcurl
 
-ifeq ($(shell grep -wq "#define HAVE_LIBDEFLATE 1" $(HTS_SRC)/config.h && echo hasdeflate),hasdeflate)
-    HTSLIB += -ldeflate
+HASDEFLATE := $(shell grep -wq "#define HAVE_LIBDEFLATE 1" $(HTS_SRC)/config.h && echo yes || echo no)
+
+ifeq ($(HASDEFLATE), yes)
+	HTSLIB += -ldeflate
 endif
 
-HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64
+
+HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -fPIC -DNDEBUG
 
 INCL = -I../inst/include/ -I$(HTS_INCL) -I$(HTS_SRC) -I.
 
-PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS)
+PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS) 
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(HTSLIB)
 
 SEQ_OBJECTS = SeqLib/GenomicRegion.o SeqLib/RefGenome.o SeqLib/BamWriter.o SeqLib/BamReader.o SeqLib/BamRecord.o SeqLib/BamHeader.o

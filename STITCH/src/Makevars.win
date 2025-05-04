@@ -5,20 +5,20 @@ HTS_SRC = ./htslib-1.21/
 
 HTSLIB = -lz ## may need libdeflate as well
 
-HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64
+HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -fPIC -DNDEBUG
 
 INCL = -I../inst/include/ -I$(HTS_INCL) -I$(HTS_SRC) -I.
 
-PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS)
+PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS) 
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(HTSLIB)
 
 ifeq (,$(shell pkg-config --version 2>/dev/null))
-  LIBPSL = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libpsl.a),-lpsl),)
-  LIBBROTLI = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libbrotlidec.a),-lbrotlidec -lbrotlicommon),)
-  PKG_LIBS += $(LIBPSL) $(LIBBROTLI) -lbcrypt -lidn2 -lunistring -liconv -lssl -lcrypto -lcrypt32 -lwsock32 -lwldap32 -lssh2 -lgcrypt -lgpg-error -lws2_32 -lzstd -lregex 
+	LIBPSL = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libpsl.a),-lpsl),)
+	LIBBROTLI = $(or $(and $(wildcard $(R_TOOLS_SOFT)/lib/libbrotlidec.a),-lbrotlidec -lbrotlicommon),)
+	PKG_LIBS += $(LIBPSL) $(LIBBROTLI) -lbcrypt -lidn2 -lunistring -liconv -lssl -lcrypto -lcrypt32 -lwsock32 -lwldap32 -lssh2 -lgcrypt -lgpg-error -lws2_32 -lzstd -lregex 
 else
-  PKG_LIBS += -llzma -lbz2 -lregex $(shell pkg-config --libs libcurl)
-  PKG_CPPFLAGS += $(shell pkg-config --cflags libcurl)
+	PKG_LIBS += -llzma -lbz2 -lregex $(shell pkg-config --libs libcurl)
+	PKG_CPPFLAGS += $(shell pkg-config --cflags libcurl)
 endif
 
 SEQ_OBJECTS = SeqLib/GenomicRegion.o SeqLib/RefGenome.o SeqLib/BamWriter.o SeqLib/BamReader.o SeqLib/BamRecord.o SeqLib/BamHeader.o
