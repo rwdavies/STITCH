@@ -215,7 +215,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	std::tie(cigarLengthVec, cigarTypeVec) = split_cigar(cigarRead);
 	// okay, probably want to clean this up at some point, might be wrong way of doing this
 	got_seq_already = false;
-	if ((cigarTypeVec[0] == "S") | (cigarTypeVec[cigarTypeVec.size() - 1] == "S")) {
+	if ((cigarTypeVec[0] == "S") || (cigarTypeVec[cigarTypeVec.size() - 1] == "S")) {
 	  // get seq. will get again later, am assuming most reads don't have clips!
 	  //std::cout << "inside clipping" << std::endl;
 	  //std::cout << "seq=" << seq << std::endl;
