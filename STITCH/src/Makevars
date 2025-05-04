@@ -5,7 +5,7 @@ HTS_SRC = ./htslib-1.21/
 
 HTSLIB = $(HTS_SRC)/libhts.a -lz -lbz2 -llzma -lcurl
 
-HASDEFLATE := $(shell grep -q "#define HAVE_LIBDEFLATE 1" 'htslib-1.21/config.h' && echo yes || echo no)
+HASDEFLATE := $(shell grep -q "define HAVE_LIBDEFLATE 1" 'htslib-1.21/config.h' && echo yes || echo no)
 ifeq ($(HASDEFLATE), yes)
 	HTSLIB += -ldeflate
 endif
