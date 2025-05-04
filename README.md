@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.7.3__**
-Release date: Jan 18, 2025
+**__Current Version: 1.8.0__**
+Release date: May 04, 2025
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -12,9 +12,8 @@ Release date: Jan 18, 2025
 
 Changes in latest version
 
-- PR #105: new flag `plotReferenceAlleleCount`
-- fix issue #106
-- update vcfpp.h to v0.6.1 fixing issue for subsetting both samples and variants for BCF file
+- **important release** refactor configuration/dependency so that it is accessible to other R package by simply adding `Remotes: rwdavies/STITCH/STITCH` in the DESCRIPTION
+- depends on [vcfppR](https://github.com/Zilong-Li/vcfppR) in DESCRIPTION
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 

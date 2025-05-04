@@ -1,3 +1,7 @@
+* v1.8.0
+    * **important release** refactor configuration/dependency so that it is accessible to other R package by simply adding `Remotes: rwdavies/STITCH/STITCH` in the DESCRIPTION
+    * depends on [vcfppR](https://github.com/Zilong-Li/vcfppR) in DESCRIPTION
+
 * v1.7.3
     * PR #105: new flag `plotReferenceAlleleCount`
     * fix issue #106
