@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.8.0__**
-Release date: May 04, 2025
+**__Current Version: 1.8.1__**
+Release date: May 05, 2025
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -26,7 +26,6 @@ For the old website, please see https://www.well.ox.ac.uk/~rwdavies/stitch.html
 1. [Installation](#paragraph-installation)
     1. [github](#paragraph-installation-github)
     2. [conda](#paragraph-installation-conda)
-    3. [missing libraries](#paragraph-installation-missing-library)
 2. [Quick start run](#paragraph-quickstartrun)
 3. [Interactive start](#paragraph-interactive-start)
 4. [Options and help](#paragraph-optionsandhelp)
@@ -47,12 +46,17 @@ For the old website, please see https://www.well.ox.ac.uk/~rwdavies/stitch.html
 
 STITCH is available to download either through this github repository, or through conda.
 
+```R
+## install.package("pak")
+pak::pkg_install("rwdavies/STITCH/STITCH")
+```
+
 ### github <a name="paragraph-installation-github"></a>
 
 A simple way to ensure dependencies are installed, and to install a release of STITCH is as follows. First, install R. Then, do the following 
 
 ```
-version=1.7.1
+version=1.8.1
 wget -O STITCH.zip https://github.com/rwdavies/STITCH/archive/refs/tags/${version}.zip ## or curl
 unzip STITCH.zip && mv STITCH-${version} STITCH
 cd STITCH && ./scripts/install-dependencies.sh
@@ -86,25 +90,6 @@ Note that currently the command like `STITCH.R` is not included with the biocond
 You can confirm the installation worked using the quick start run below.
 
 
-### missing libraries <a name="paragraph-installation-missing-libraries"></a>
-
-If you experience a problem with installation, you can either try conda above. Alternatively, if you see an error similar to ```error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory```, then either ask your system administrator to install gmp, mpfr and mpc for you, or try running the following before R CMD INSTALL
-```
-./scripts/install-package-dependencies.sh
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`/install/lib/
-```
-
-If you see an error similar to ```configure: error: liblzma not found, please install lzma```, then either ask your system administrator to install lzma or xz for you, or try running the following before R CMD INSTALL
-```
-./scripts/install-xz.sh
-echo "CPPFLAGS += -I`pwd`/install/include" >> ~/.R/Makevars
-echo "LDFLAGS += -L`pwd`/install/lib" >> ~/.R/Makevars
-```
-
-If you're on Mac you may see an error similar to ```ld: library not found for -lquadmath```, which is related to STITCH C++ compilation using Rcpp. This can be fixed by updating gfortran using a method such as [this](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/). If you experience other compilation issues, please raise an issue. To experiment with configuration options during compilation, you can edit ```STITCH/src/Makevars``` then build a package and install using ```./scripts/build-and-install.sh``` or test using ```./scripts/test-unit.sh```.
-
-
-
 ## Quick start run <a name="paragraph-quickstartrun"></a>
 
 A quick test on real data can be performed using 
@@ -116,9 +101,6 @@ tar -xzvf STITCH_example_2016_05_10.tgz
 ./STITCH.R --chr=chr19 --bamlist=bamlist.txt --posfile=pos.txt --genfile=gen.txt --outputdir=./ --K=4 --nGen=100 --nCores=1
 # if this works the file stitch.chr19.vcf.gz will be created
 ```
-
-
-
 
 ## Interactive start <a name="paragraph-interactive-start"></a>
 

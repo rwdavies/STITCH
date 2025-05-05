@@ -1,5 +1,6 @@
 * v1.8.1
     * use vcfppR on CRAN so that bioconda will work
+    * fix bam access
 
 * v1.8.0
     * **important release** refactor configuration/dependency so that it is accessible to other R package by simply adding `Remotes: rwdavies/STITCH/STITCH` in the DESCRIPTION
