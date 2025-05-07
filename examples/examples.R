@@ -117,6 +117,7 @@ human_reference_haplotype_file <- paste0(human_datadir, "1000GP_Phase3_chr20.hap
 
 ancillary_http <- "https://mus.well.ox.ac.uk/rwdavies/STITCH/"
 ancillary_http <- "https://www.well.ox.ac.uk/~rwdavies/ancillary/"
+ancillary_http <- "https://www.chg.ox.ac.uk/~rwdavies/ancillary/"
 
 get_and_untar_if_tgz_file <- function(file) {
     if (file.exists(file) == FALSE) {
