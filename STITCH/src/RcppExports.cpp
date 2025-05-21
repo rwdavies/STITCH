@@ -11,6 +11,20 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// query_region
+std::string query_region(const std::string& file_name, const std::string& chrom, int32_t p1, int32_t p2);
+RcppExport SEXP _STITCH_query_region(SEXP file_nameSEXP, SEXP chromSEXP, SEXP p1SEXP, SEXP p2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type chrom(chromSEXP);
+    Rcpp::traits::input_parameter< int32_t >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< int32_t >::type p2(p2SEXP);
+    rcpp_result_gen = Rcpp::wrap(query_region(file_name, chrom, p1, p2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_header_using_SeqLib
 std::string get_header_using_SeqLib(std::string file_name);
 RcppExport SEXP _STITCH_get_header_using_SeqLib(SEXP file_nameSEXP) {
@@ -975,6 +989,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_STITCH_query_region", (DL_FUNC) &_STITCH_query_region, 4},
     {"_STITCH_get_header_using_SeqLib", (DL_FUNC) &_STITCH_get_header_using_SeqLib, 1},
     {"_STITCH_get_read_span", (DL_FUNC) &_STITCH_get_read_span, 2},
     {"_STITCH_cpp_cigar_split_many", (DL_FUNC) &_STITCH_cpp_cigar_split_many, 1},

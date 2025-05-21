@@ -75,6 +75,7 @@ STITCH(
   plotHapSumDuringIterations = FALSE,
   plot_shuffle_haplotype_attempts = FALSE,
   plotAfterImputation = TRUE,
+  plotReferenceAlleleCount = TRUE,
   save_sampleReadsInfo = FALSE,
   gridWindowSize = NA,
   shuffle_bin_nSNPs = NULL,
@@ -83,7 +84,8 @@ STITCH(
   useTempdirWhileWriting = FALSE,
   output_haplotype_dosages = FALSE,
   use_bx_tag = TRUE,
-  bxTagUpperLimit = 50000
+  bxTagUpperLimit = 50000,
+  useIndels = FALSE
 )
 }
 \arguments{
@@ -240,6 +242,8 @@ STITCH(
 \item{use_bx_tag}{Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule}
 
 \item{bxTagUpperLimit}{When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules}
+
+\item{useIndels}{Allow (multi-allelic) indels and SNPs in posfile; for now, references must be non-overlapping}
 }
 \value{
 Results in properly formatted version

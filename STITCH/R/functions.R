@@ -1,3 +1,9 @@
+#'Todo: it seems indel processing works
+#'      check that if useIndels==FALSE there should nto be any indels, give error
+#'      conversion to multiple alleles works, but it results in 0 likelihood in alphaMatSum_tc matrix.  Is pos used to key the variant, and is only one computed?
+
+printsnps <- 1:8
+
 #' @title Sequencing To Imputation Through Constructing Haplotypes
 #' @param chr What chromosome to run. Should match BAM headers
 #' @param posfile Where to find file with positions to run. File is tab seperated with no header, one row per SNP, with col 1 = chromosome, col 2 = physical position (sorted from smallest to largest), col 3 = reference base, col 4 = alternate base. Bases are capitalized. Example first row: 1<tab>1000<tab>A<tab>G<tab>
@@ -76,6 +82,7 @@
 #' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
 #' @param use_bx_tag Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule
 #' @param bxTagUpperLimit When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules
+#' @param useIndels Allow (multi-allelic) indels and SNPs in posfile; for now, references must be non-overlapping
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -159,7 +166,8 @@ STITCH <- function(
     useTempdirWhileWriting = FALSE,
     output_haplotype_dosages = FALSE,
     use_bx_tag = TRUE,
-    bxTagUpperLimit = 50000
+    bxTagUpperLimit = 50000,
+    useIndels = FALSE
 ) {
 
     ## capture command line
@@ -289,6 +297,8 @@ STITCH <- function(
         genfile = genfile,
         phasefile = phasefile,
         chr = chr,
+        useIndels = useIndels,
+        reference = reference,
         verbose = TRUE
     )
     pos <- out$pos
@@ -3848,6 +3858,23 @@ subset_of_complete_iteration <- function(
             bundledSampleProbs <- out$bundledSampleProbs
         }
 
+        #printsnps
+        #print(paste0("subset of complete iteration, sample idx ",iiSample))
+        for (ridx in 1:10) {
+            if (5 %in% sampleReads[[ridx]][[4]] || 5 %in% sampleReads[[ridx]][[4]]) {
+               print(paste0("iiSample ",iiSample," readidx ",ridx," pR[] ",paste0(t(sampleReads[[ridx]][[4]]), collapse=" ")))
+            }
+        }
+        if (iiSample < 10) {
+            #print(paste0("iiSample ",iiSample,": iSnpsInRead CenterSnp qR[] pR[]"))
+            #for (idx in 1:5) {
+            #    print(paste0("-- read ",idx," pR[] ",paste0(t(sampleReads[[idx]][[4]]), collapse=" ")))
+            #    #print(sampleReads[[idx]])
+            #}
+            print("alphaMatSum_tc")
+            print(alphaMatSum_tc[ ,printsnps, ,drop=FALSE])
+        }
+
         fbsoL <- run_forward_backwards(
             sampleReads = sampleReads,
             method = method,
@@ -4428,6 +4455,9 @@ calculate_updates <- function(
 
     ## sum and sum
     for(i in 1:length(sampleRanges)) {
+        print("sum and sum")
+        print(i)
+        print( out2[[i]][["alphaMatSum_tc"]][, printsnps, , drop = FALSE])
         gammaSum0_tc <- gammaSum0_tc + out2[[i]][["gammaSum0_tc"]]
         gammaSum1_tc <- gammaSum1_tc + out2[[i]][["gammaSum1_tc"]]
         alphaMatSum_tc <- alphaMatSum_tc + out2[[i]][["alphaMatSum_tc"]]
@@ -4497,8 +4527,12 @@ calculate_updates <- function(
     gammaSum_tc[gammaSum_tc > (1 - emissionThreshold)] <- (1 - emissionThreshold)
     gammaSum_tc[gammaSum_tc < emissionThreshold] <- emissionThreshold
 
+    print("normalize so each col sum 1")
+    print(alphaMatSum_tc[, printsnps, , drop = FALSE])
+
     ## normalize so each column has sum 1
     for(s in 1:S) {
+        #alphaMatSum_tc[ , colSums(alphaMatSum_tc[, , s, drop = FALSE]) == 0, s ] <- 1
         alphaMatSum_tc[, , s] <-
             alphaMatSum_tc[, , s] / rep(colSums(alphaMatSum_tc[, , s, drop = FALSE]), each = K)
     }
@@ -4508,7 +4542,9 @@ calculate_updates <- function(
     ## if this happens, reset the averages of those columns
     ## to keep each column having sum 1, with minimum entry the thresold value
     for(s in 1:S) {
+        print("how many cols below 0")
         how_many_cols_below_0 <- colSums(alphaMatSum_tc[, , s, drop = FALSE] == 0)
+        print( how_many_cols_below_0[printsnps, s, drop = FALSE])
         if (sum(how_many_cols_below_0) > 0) {
             ## for columns with an entry below 0
             ## each 0 entry becomes threshold

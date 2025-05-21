@@ -134,6 +134,7 @@ validate_reference_sample_file <- function(samples, reference_sample_file) {
 validate_pos <- function(
     pos,
     chr,
+    reference = "",
     stop_file_name = "pos file"
 ) {
     if (sum(pos[,1] != chr) > 0) {
@@ -162,26 +163,53 @@ validate_pos <- function(
             "and row number ", w + 1, " has position ", pos[w + 1, 2]
         ))
     }
-    for(col in 3:4) {
-        x <- is.na(match(pos[, col], c("A", "C", "G", "T")))
-        if (sum(x) > 0) {
-            m <- which.max(x)
-            y <- c("", "", "ref", "alt")[col]
-            stop(paste0(
-                stop_file_name, " ", y, " column entry ", pos[m, col],
-                " in row ", m, " ",
-                "contains is not one or A, C, G or T. STITCH is ",
-                "only supported for bi-allelic SNPs"
-            ))
-        }
-    }
-    x <- as.character(pos[, 3]) == as.character(pos[,4])
-    if (sum(x) > 0) {
-        y <- which(x)[1]
+    if (sum(diff(pos[, 2]) < nchar(pos[-nrow(pos), 3])) > 0) {
+        w <- which.max(diff(pos[, 2]) < nchar(pos[-nrow(pos), 3]))
         stop(paste0(
-            stop_file_name, " row ", y, " has reference base ", pos[y, 3],
-            " which is the same as alternate base ", pos[y, 4], ", which is not a bi-allelic SNP"
+            stop_file_name, " reference alleles must not overlap, but on row numbers ",
+            w, " and ", w+1, " they do"
         ))
+    }
+    for(idx in seq_len(nrow(pos))) {
+        ref <- as.character(pos[idx, 3])
+        alt <- as.character(pos[idx, 4])
+        if (nchar(ref) == 0 | nchar(alt) == 0) {
+            stop(paste0(
+                stop_file_name, " has empty ref or alt column in row ", idx))
+        }
+        if (!grepl("^[ACGT]*$", ref)) {
+            stop(paste0(
+                stop_file_name, " ref column entry ", ref, " in row ", idx,
+                " contains characters other than A,C,G or T"))
+        }
+        if (!grepl("^[ACGT,]*$", alt)) {
+            stop(paste0(
+                stop_file_name, " alt column entry ", alt, " in row ", idx,
+                " contains characters other than A,C,G,T or ',' "))
+        }
+        alleles <- strsplit( alt, ",")[[1]]
+        if (any(nchar(alleles) == 0)) {
+            stop(paste0(
+                stop_file_name, " alt column entry ", alt, " in row ", idx,
+                " contains allele(s) of length 0"))
+        }
+        if (any(alleles == ref)) {
+            stop(paste0(
+                stop_file_name, " alt column entry ", alt, " in row ", idx,
+                " contains allele(s) that are identical to the reference allele"))
+        }
+        if (reference != "") {
+            locus = as.integer(pos[idx, 2])
+            # convert to 0-based inclusive.  Very creative choice that
+            p1 = locus - 1
+            p2 = locus - 2 + nchar(ref)
+            real_ref = toupper(query_region(reference, chr, p1, p2))
+            if (ref != real_ref) {
+                stop(paste0(
+                     stop_file_name," row ",idx," specifies reference ",ref," at chromosome ",
+                     chr," locus ",locus," (1-based) but reference ",reference," thinks it should be ",real_ref))
+            }
+        }
     }
     return(NULL)
 }
@@ -228,6 +256,19 @@ validate_phase_col <- function(col, i_samp) {
 }
 
 
+normalize_pos <- function(
+    pos
+) {
+    npos <- do.call(rbind, lapply(1:nrow(pos), function(i) {
+         values <- unlist(strsplit(pos[i, 4], ","))
+         other_cols <- pos[i, -4, drop=FALSE]
+         return( cbind(other_cols[rep(1, length(values)), , drop=FALSE], values))
+    }))
+    rownames(npos) <- NULL
+    colnames(npos) <- colnames(pos)
+    return(npos)
+}
+
 
 #' @export
 get_and_validate_pos_gen_and_phase <- function(
@@ -235,12 +276,21 @@ get_and_validate_pos_gen_and_phase <- function(
     genfile = "",
     phasefile = "",
     chr,
+    useIndels = FALSE,
+    reference = "",
     verbose = FALSE
 ) {
     if (verbose)
         print_message("Get and validate pos and gen")
-    pos <- get_and_validate_pos(posfile, chr)
-    gen <- get_and_validate_gen(genfile)
+    if (useIndels & (phasefile != ""))
+        stop("cannot use phasefile if useIndels is TRUE")
+    if (useIndels & reference == "")
+        stop("if using indels, you must supply a reference genome")
+    pos_multiallele <- get_and_validate_pos(posfile, chr, reference)
+    print(pos_multiallele[ 1:8, , ])
+    gen <- get_and_validate_and_normalize_gen(genfile, pos_multiallele)
+    pos <- normalize_pos(pos_multiallele)
+    print(pos[ 1:8, , ])
     phase <- get_and_validate_phase(phasefile)
     if (is.null(gen) == FALSE)
         if(nrow(gen) != nrow(pos))
@@ -271,15 +321,39 @@ get_and_validate_pos_gen_and_phase <- function(
     )
 }
 
-get_and_validate_gen <- function(genfile) {
+get_and_validate_and_normalize_gen <- function(genfile, pos_multiallele) {
     if (genfile == "")
         return(NULL)
-    gen2 <- read.table(genfile, header=TRUE, sep="\t")
+    gen2_multiallele <- read.table(genfile, header=TRUE, sep="\t", stringsAsFactors = FALSE)
+    if (dim(gen2_multiallele)[1] != dim(pos_multiallele)[1]) {
+        stop(paste0("Genfile ", genfile, " has ",dim(gen2_multiallele)[1],
+                    " rows (not counting the header), but the posfile has ",
+                    dim(pos_multiallele)[1], " rows"))
+    }
+    results_list <- vector("list", nrow(gen2_multiallele))
+    for (i in seq_len(nrow(gen2_multiallele))) {
+        expected_length <-length(unlist(strsplit(pos_multiallele[[4]][i], ",")))
+        row_splits <- lapply(gen2_multiallele[i, ], function(c) unlist(strsplit(as.character(c), ",")))
+        col_lengths <- vapply(row_splits, length, integer(1))
+        if (!all(col_lengths == expected_length)) {
+            stop(paste0("Did not find the expected number of comma-separated genotype in all columns in genfile ",
+                        genfile," on row ",i,"; expected genotypes for ",expected_length," alleles, but found ", paste0(col_lengths, collapse=",")))
+        }
+        if (!all(unlist(row_splits) %in% c("0","1","2","NA",NA))) {
+            stop(paste0("On row ",i," of genfile ",genfile," I encountered genotypes other than 0, 1, 2 or NA: ",paste0(unlist(row_splits),collapse=",")))
+        }
+        col_sums <- vapply(row_splits, function(c) sum(as.integer(c)), integer(1))
+        if (any(col_sums[!is.na(col_sums)] > 2)) {
+            stop(paste0("On row ",i," of genfile ",genfile," a genotype (or the sum of genotypes if a multi-allelic site) exceeds 2"))
+        }
+        results_list[[i]] <- as.data.frame(row_splits, StringsAsFactors=FALSE)
+    }
+    gen2 <- do.call(rbind, results_list)
     gen <- array(0, c(nrow(gen2), ncol(gen2)))
     for(i_col in 1:ncol(gen)) {
         col <- gen2[, i_col]
-        validate_gen_col(col, i_col)
-        gen[, i_col] <- as.integer(as.character(gen2[, i_col]))
+        gen[, i_col] <- as.integer(as.character(col))
+        validate_gen_col(gen[, i_col], i_col)
     }
     header <- as.character(unlist(read.table(genfile, sep="\t", nrows = 1)))
     validate_gen_header(header)
@@ -312,10 +386,10 @@ validate_gen_col <- function(col, i_col) {
     }
 }
 
-get_and_validate_pos <- function(posfile, chr) {
+get_and_validate_pos <- function(posfile, chr, reference) {
     pos <- read.table(posfile, header = FALSE, sep = "\t")
     colnames(pos) <- c("CHR", "POS", "REF", "ALT")
-    validate_pos(pos, chr)
+    validate_pos(pos, chr, reference)
     return(pos)
 }
 

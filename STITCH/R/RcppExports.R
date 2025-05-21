@@ -2,6 +2,11 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
+query_region <- function(file_name, chrom, p1, p2) {
+    .Call('_STITCH_query_region', PACKAGE = 'STITCH', file_name, chrom, p1, p2)
+}
+
+#' @export
 get_header_using_SeqLib <- function(file_name) {
     .Call('_STITCH_get_header_using_SeqLib', PACKAGE = 'STITCH', file_name)
 }

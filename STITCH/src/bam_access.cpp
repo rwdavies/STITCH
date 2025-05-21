@@ -1,6 +1,18 @@
 #include <vector>
 #include <string>
 #include <SeqLib/BamReader.h>
+#include <SeqLib/RefGenome.h>
+
+
+//' @export
+// [[Rcpp::export]]
+std::string query_region(const std::string& file_name, const std::string& chrom, int32_t p1, int32_t p2) {
+    SeqLib::RefGenome rg;
+    rg.LoadIndex(file_name);
+    if (rg.IsEmpty())
+        return "";
+    return rg.QueryRegion(chrom, p1, p2);
+}
 
 
 //' @export
@@ -159,7 +171,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     //
     // new variables
     //
-    int x1, x2, y, iM, iRead, t, tMin, tMax, readStart, readEnd, readLength;
+    int x1, x2, y, iM, t, tMin, tMax, readStart, readEnd, readLength;
     int nSNPInRead = -1;
     std::vector<int> cigarLengthVec;
     std::vector<int> cigarLengthVec_temp;    
@@ -191,9 +203,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     //
     // replaces for(iRead=0; iRead<=numberOfReads-1; iRead++)
     //
-    iRead = -1;
     while(reader.GetNextRecord(record)) {
-        iRead++;
         if (record.DuplicateFlag())
             continue;
 	// convert boolean to +, - used by Rsamtools
@@ -215,7 +225,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	std::tie(cigarLengthVec, cigarTypeVec) = split_cigar(cigarRead);
 	// okay, probably want to clean this up at some point, might be wrong way of doing this
 	got_seq_already = false;
-	if ((cigarTypeVec[0] == "S") | (cigarTypeVec[cigarTypeVec.size() - 1] == "S")) {
+	if ((cigarTypeVec[0] == "S") || (cigarTypeVec[cigarTypeVec.size() - 1] == "S")) {
 	  // get seq. will get again later, am assuming most reads don't have clips!
 	  //std::cout << "inside clipping" << std::endl;
 	  //std::cout << "seq=" << seq << std::endl;
