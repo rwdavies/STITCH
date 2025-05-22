@@ -37,7 +37,10 @@ assign_positions_to_grid <- function(
     } else if (is.na(gridWindowSize)) {
         ## simple case - no gridding
         grid <- 0:(length(L) - 1)
-        grid_distances <- diff(L)
+        ## make sure that some minimal recombination is allowed between grid points
+        ## representing multi-allelic sites, otherwise alphaMatSum_tc becomes zero
+        ## causing trouble
+        grid_distances <- pmax(diff(L), 1)
         L_grid <- L
         nGrids <- length(L)
         snps_in_grid_1_based <- cbind(
@@ -64,7 +67,7 @@ assign_positions_to_grid <- function(
             ## has 1-based SNPs starting from
             ## snps_in_grid_1_based[4 + 1, "grid_starts"]
             ## to
-            ## snps_in_grid_1_based[4 + 1, "grid_ends"]        
+            ## snps_in_grid_1_based[4 + 1, "grid_ends"]
             snps_in_grid_1_based <- cbind(
                 snps_start = match(unique(grid), grid),
                 snps_end = length(grid) - match(unique(grid), grid[length(grid):1]) + 1
@@ -106,7 +109,7 @@ attempt_to_better_grid <- function(
     }
     ## note - smoothed_rate_cM is the genetic distance between points
     smoothed_rate_cM[is.na(smoothed_rate_cM)] <- 0
-    dist <- L[length(L)] - L[1]    
+    dist <- L[length(L)] - L[1]
     total_smoothed_rate_cM <- sum(smoothed_rate_cM)
     nSNP <- length(smoothed_rate_cM) + 1
     nGrids <- round(dist / gridWindowSize) ## approximate number of grids we want
@@ -151,7 +154,7 @@ attempt_to_better_grid <- function(
     ## now - give back gridded genetic map, to use for sigmaCurrent later
     ##
     temp_genetic_map <- array(NA, c(length(L), 3))
-    colnames(temp_genetic_map) <- c("position", "COMBINED_rate.cM.Mb.", "Genetic_Map.cM.")    
+    colnames(temp_genetic_map) <- c("position", "COMBINED_rate.cM.Mb.", "Genetic_Map.cM.")
     temp_genetic_map[, "position"] <- L
     temp_genetic_map[, "Genetic_Map.cM."] <- cM
     cM_grid <- match_genetic_map_to_L(
@@ -194,14 +197,14 @@ assign_grid_variables <- function(grid, L) {
         print(sum(is.na(L_grid)))
         stop("Something has gone wrong with STITCH internals. Please report this")
     }
-    grid_distances <- diff(L_grid)    
+    grid_distances <- diff(L_grid)
     nGrids <- length(grid_distances) + 1
     ## this allows one to go from grid to start and end of SNPs in that grid
     ## so e.g. the fifth grid with 0-based index 4
     ## has 1-based SNPs starting from
     ## snps_in_grid_1_based[4 + 1, "grid_starts"]
     ## to
-    ## snps_in_grid_1_based[4 + 1, "grid_ends"]        
+    ## snps_in_grid_1_based[4 + 1, "grid_ends"]
     snps_in_grid_1_based <- cbind(
         snps_start = match(unique(grid), grid),
         snps_end = length(grid) - match(unique(grid), grid[length(grid):1]) + 1
@@ -236,7 +239,7 @@ get_new_grid <- function(nGen, sigmaCurrent, L, desired_gridWindowSize, shuffle_
     ) / (shuffle_bin_radius * 2)
     ##
     smoothed_rate_cM <- smoothed_rate_cM_per_Mb * grid_distances / 1e6
-    ##  
+    ##
     out <- attempt_to_better_grid(
         smoothed_rate_cM = smoothed_rate_cM,
         desired_gridWindowSize = desired_gridWindowSize,
@@ -292,7 +295,7 @@ make_new_sigmaCurrent_and_alphaMatCurrent_from_new_grid <- function(
         curRate <- sum(recombRate_cM[s2:e2])
         new_recombRate_cM[iGrid - 1] <- (curRate + prevRate) / 2
         prevRate <- curRate
-        ## 
+        ##
         curAlpha <- colSums(alphaMatCurrent[s2:e2, , drop = FALSE]) / (e2 - s2 + 1)
         new_alphaMatCurrent[iGrid - 1, ] <- (curAlpha + prevAlpha) / 2
         prevAlpha <- curAlpha

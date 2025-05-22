@@ -3865,15 +3865,6 @@ subset_of_complete_iteration <- function(
                print(paste0("iiSample ",iiSample," readidx ",ridx," pR[] ",paste0(t(sampleReads[[ridx]][[4]]), collapse=" ")))
             }
         }
-        if (iiSample < 10) {
-            #print(paste0("iiSample ",iiSample,": iSnpsInRead CenterSnp qR[] pR[]"))
-            #for (idx in 1:5) {
-            #    print(paste0("-- read ",idx," pR[] ",paste0(t(sampleReads[[idx]][[4]]), collapse=" ")))
-            #    #print(sampleReads[[idx]])
-            #}
-            print("alphaMatSum_tc")
-            print(alphaMatSum_tc[ ,printsnps, ,drop=FALSE])
-        }
 
         fbsoL <- run_forward_backwards(
             sampleReads = sampleReads,
@@ -4455,9 +4446,6 @@ calculate_updates <- function(
 
     ## sum and sum
     for(i in 1:length(sampleRanges)) {
-        print("sum and sum")
-        print(i)
-        print( out2[[i]][["alphaMatSum_tc"]][, printsnps, , drop = FALSE])
         gammaSum0_tc <- gammaSum0_tc + out2[[i]][["gammaSum0_tc"]]
         gammaSum1_tc <- gammaSum1_tc + out2[[i]][["gammaSum1_tc"]]
         alphaMatSum_tc <- alphaMatSum_tc + out2[[i]][["alphaMatSum_tc"]]
@@ -4527,9 +4515,6 @@ calculate_updates <- function(
     gammaSum_tc[gammaSum_tc > (1 - emissionThreshold)] <- (1 - emissionThreshold)
     gammaSum_tc[gammaSum_tc < emissionThreshold] <- emissionThreshold
 
-    print("normalize so each col sum 1")
-    print(alphaMatSum_tc[, printsnps, , drop = FALSE])
-
     ## normalize so each column has sum 1
     for(s in 1:S) {
         #alphaMatSum_tc[ , colSums(alphaMatSum_tc[, , s, drop = FALSE]) == 0, s ] <- 1
@@ -4542,9 +4527,7 @@ calculate_updates <- function(
     ## if this happens, reset the averages of those columns
     ## to keep each column having sum 1, with minimum entry the thresold value
     for(s in 1:S) {
-        print("how many cols below 0")
         how_many_cols_below_0 <- colSums(alphaMatSum_tc[, , s, drop = FALSE] == 0)
-        print( how_many_cols_below_0[printsnps, s, drop = FALSE])
         if (sum(how_many_cols_below_0) > 0) {
             ## for columns with an entry below 0
             ## each 0 entry becomes threshold

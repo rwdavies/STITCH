@@ -483,6 +483,7 @@ if (develop) {
         script_path <- normalizePath(sub("--file=", "", args[grep("--file=", args)]))
         script_dir <- dirname(script_path)
         load_all(file.path(script_dir, "STITCH"))
+        options(warn=2)
 } else {
         suppressPackageStartupMessages(library(STITCH))
 }

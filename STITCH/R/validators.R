@@ -287,6 +287,7 @@ get_and_validate_pos_gen_and_phase <- function(
     if (useIndels & reference == "")
         stop("if using indels, you must supply a reference genome")
     pos_multiallele <- get_and_validate_pos(posfile, chr, reference)
+    #printsnps
     print(pos_multiallele[ 1:8, , ])
     gen <- get_and_validate_and_normalize_gen(genfile, pos_multiallele)
     pos <- normalize_pos(pos_multiallele)
@@ -342,7 +343,7 @@ get_and_validate_and_normalize_gen <- function(genfile, pos_multiallele) {
         if (!all(unlist(row_splits) %in% c("0","1","2","NA",NA))) {
             stop(paste0("On row ",i," of genfile ",genfile," I encountered genotypes other than 0, 1, 2 or NA: ",paste0(unlist(row_splits),collapse=",")))
         }
-        col_sums <- vapply(row_splits, function(c) sum(as.integer(c)), integer(1))
+        col_sums <- vapply(row_splits, function(c) { c[c=="NA"]<-NA; sum(as.integer(c, na.rm=TRUE)) }, integer(1))
         if (any(col_sums[!is.na(col_sums)] > 2)) {
             stop(paste0("On row ",i," of genfile ",genfile," a genotype (or the sum of genotypes if a multi-allelic site) exceeds 2"))
         }
@@ -351,8 +352,9 @@ get_and_validate_and_normalize_gen <- function(genfile, pos_multiallele) {
     gen2 <- do.call(rbind, results_list)
     gen <- array(0, c(nrow(gen2), ncol(gen2)))
     for(i_col in 1:ncol(gen)) {
-        col <- gen2[, i_col]
-        gen[, i_col] <- as.integer(as.character(col))
+        col <- as.character(gen2[, i_col])
+        col[ col == "NA" ] <- NA
+        gen[, i_col] <- as.integer(col)
         validate_gen_col(gen[, i_col], i_col)
     }
     header <- as.character(unlist(read.table(genfile, sep="\t", nrows = 1)))
