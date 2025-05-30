@@ -1,3 +1,7 @@
+* v1.8.2
+    * add `do_phasing` option for experimental tests
+    * remove vcfppR dependency
+    
 * v1.8.1
     * use vcfppR on CRAN so that bioconda will work
     * fix bam access

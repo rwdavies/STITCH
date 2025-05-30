@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.8.1__**
-Release date: May 05, 2025
+**__Current Version: 1.8.2__**
+Release date: May 30, 2025
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -12,8 +12,8 @@ Release date: May 05, 2025
 
 Changes in latest version
 
-- **important release** refactor configuration/dependency so that it is accessible to other R package by simply adding `Remotes: rwdavies/STITCH/STITCH` in the DESCRIPTION
-- depends on [vcfppR](https://github.com/Zilong-Li/vcfppR) in DESCRIPTION
+- add `do_phasing` option for experimental tests
+- remove vcfppR dependency
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
