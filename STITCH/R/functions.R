@@ -76,6 +76,7 @@
 #' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
 #' @param use_bx_tag Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule
 #' @param bxTagUpperLimit When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules
+#' @param do_phasing Whether to try and output phasing (experimental)
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -159,7 +160,8 @@ STITCH <- function(
     useTempdirWhileWriting = FALSE,
     output_haplotype_dosages = FALSE,
     use_bx_tag = TRUE,
-    bxTagUpperLimit = 50000
+    bxTagUpperLimit = 50000,
+    do_phasing = FALSE
 ) {
 
     ## capture command line
@@ -172,7 +174,7 @@ STITCH <- function(
     print_message(paste0("Running ", command_line))
 
     ## disable as an option phasing for now
-    do_phasing = FALSE
+    ## do_phasing = FALSE
     phasing_method = 3
     phasing_n_votes = 20
     ## @param do_phasing Whether to perform phasing (experimental)

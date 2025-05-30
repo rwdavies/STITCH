@@ -1,5 +1,5 @@
 # include vcfpp.h from vcfppR
-HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
+# HTS_INCL = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'cat(system.file("include/", package = "vcfppR", mustWork = TRUE))')
 
 HTS_SRC = ./htslib-1.21/
 
@@ -13,7 +13,7 @@ endif
 
 HTSLIB_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -fPIC -DNDEBUG
 
-INCL = -I../inst/include/ -I$(HTS_INCL) -I$(HTS_SRC) -I.
+INCL = -I../inst/include/ -I$(HTS_SRC) -I.
 
 PKG_CPPFLAGS = $(INCL) $(HTSLIB_CPPFLAGS) 
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(HTSLIB)

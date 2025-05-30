@@ -84,7 +84,8 @@ STITCH(
   useTempdirWhileWriting = FALSE,
   output_haplotype_dosages = FALSE,
   use_bx_tag = TRUE,
-  bxTagUpperLimit = 50000
+  bxTagUpperLimit = 50000,
+  do_phasing = FALSE
 )
 }
 \arguments{
@@ -241,6 +242,8 @@ STITCH(
 \item{use_bx_tag}{Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule}
 
 \item{bxTagUpperLimit}{When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules}
+
+\item{do_phasing}{Whether to try and output phasing (experimental)}
 }
 \value{
 Results in properly formatted version

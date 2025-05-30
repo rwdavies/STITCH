@@ -1,10 +1,11 @@
 // -*- compile-command: "clang-format -i reference-vcf.cpp" -*-
 
-#include <vcfpp.h>
 #include <Rcpp.h>
 #include <string>
 #include <vector>
 #include <cstdint>
+
+#include "vcfpp/vcfpp.h"
 
 using namespace Rcpp;
 using namespace vcfpp;
