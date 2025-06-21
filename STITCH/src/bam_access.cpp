@@ -202,7 +202,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	//
 	isize = record.InsertSize();
 	mapq = record.MapQuality();
-	if ((mapq < bqFilter) | (abs(isize) > iSizeUpperLimit))
+	if ((mapq < bqFilter) || ((int)abs(isize) > iSizeUpperLimit))
 	  continue;
 	//
 	// okay, if we're here, we're considering this read
@@ -312,10 +312,10 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 		    y = L[t];
 		    // if this is true - have a SNP!
 		    if(x1 <= y && y <= x2) {
-		      s = seq[y-refPosition-refOffset+strandOffset];
+		      s = seq[y-refPosition+strandOffset];
 		      // check if ref or ALT - only keep if true
 		      // also only use if BQ at least bqFilter (17) (as in 17 or greater)
-		      localbq=int(qual[y-refPosition-refOffset+strandOffset])-33;
+		      localbq=int(qual[y-refPosition+strandOffset])-33;
 		      // also bound BQ above by MQ
 		      if(localbq > mapq) // if greater, than reduce
 			localbq = mapq;
@@ -342,10 +342,10 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 		strandOffset = strandOffset + cigarLength;
 	      } // end of if statement on whether cigar type is M
 	      // if it is an insertion - bump the strand offset
-	      if (cigarType == "I")
+	      if (cigarType == "I" || cigarType == "S")
 		strandOffset = strandOffset + cigarLength;
 	      // if it is a deletion - bump the reference position
-	      if (cigarType == "D")
+	      if (cigarType == "D" || cigarType == "N")
 		refOffset = refOffset + cigarLength;
 	    } // close loop on M
 	} // end of check on whether there can be results to run
