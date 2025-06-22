@@ -24,7 +24,7 @@ int get_read_span(std::vector<int> cigarLengthVec, std::vector<std::string> ciga
         cigarType = cigarTypeVec[iM];
 	    // keep if it is an M or D. basically,
         // keep X and = as well
-        if((cigarType == "M") || (cigarType == "D") || (cigarType == "=") || (cigarType == "X")) {
+        if((cigarType == "M") || (cigarType == "D") || (cigarType == "N") || (cigarType == "=") || (cigarType == "X")) {
 	        readLength = readLength + cigarLength;
 	    }
     }
@@ -298,7 +298,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	    refOffset = 0; // offset against the reference sequence
 	    strandOffset = 0; // offset in the strand
 	    //
-	    // now, loop over each part of the read (M, D=del, I=ins)
+	    // now, loop over each part of the read (M, D=del, I=ins, N=skip ref, S=softClip)
 	    //
 	    for(iM=0; iM < iNumOfMs; iM++) {
 	      cigarLength = cigarLengthVec[iM];
@@ -309,13 +309,14 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 		x2 = refPosition + refOffset + cigarLength-1; // right part of M
 		// determine whether that snps is spanned by the read
 		for(t=tMin; t<=tMax; t++) {
-		    y = L[t];
+		  y = L[t];
+          // std::cout << seq << ", " << refPosition << ", " << y << ", " << refOffset << ", " << strandOffset << ", " << x1 << "," << x2 << "\n" ;
 		    // if this is true - have a SNP!
 		    if(x1 <= y && y <= x2) {
-		      s = seq[y-refPosition+strandOffset];
+		      s = seq[y-x1+strandOffset];
 		      // check if ref or ALT - only keep if true
 		      // also only use if BQ at least bqFilter (17) (as in 17 or greater)
-		      localbq=int(qual[y-refPosition+strandOffset])-33;
+		      localbq=int(qual[y-x1+strandOffset])-33;
 		      // also bound BQ above by MQ
 		      if(localbq > mapq) // if greater, than reduce
 			localbq = mapq;
@@ -347,7 +348,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	      // if it is a deletion - bump the reference position
 	      if (cigarType == "D" || cigarType == "N")
 		refOffset = refOffset + cigarLength;
-	    } // close loop on M
+	    } // close loop on cigars
 	} // end of check on whether there can be results to run
 	//
 	// save result if it is worth saving!
