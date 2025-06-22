@@ -165,7 +165,7 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
     std::vector<int> cigarLengthVec_temp;    
     std::vector<std::string> cigarTypeVec;
     std::vector<std::string> cigarTypeVec_temp;
-    int maxnSNPInRead = 1000;
+    int maxnSNPInRead = 1024;
     std::vector<int> qualLocal(maxnSNPInRead);
     std::vector<int> posLocal(maxnSNPInRead); // there shouldnt be this many SNPs
     int refPosition, refOffset, strandOffset, refPosition_temp;
@@ -290,6 +290,12 @@ std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int
 	        seq = record.Sequence();
   	        qual = record.Qualities();
 	    }
+        // when QUAL is *, the qual is filled with ' ' with length=SEQ.
+        // This happens for ONT alignment with old chemistry and bad qualities
+        // TODO: give users the option to handle this 
+        if(qual[0]==' ') {
+          qual.assign(qual.length(), '+'); // BQ = 10
+        }
 	    //
 	    // do cigar stuff here
 	    //
