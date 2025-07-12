@@ -556,5 +556,5 @@ STITCH(
     output_haplotype_dosages = opt$output_haplotype_dosages,
     use_bx_tag = opt$use_bx_tag,
     bxTagUpperLimit = opt$bxTagUpperLimit,
-    doPhasing = opt$doPhasing)
+    doPhasing = opt$doPhasing
 )
