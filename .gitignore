@@ -25,3 +25,6 @@ pos.txt
 bamlist.txt
 STITCH_example_2016_05_10.tgz
 Rplots.pdf
+*.tar.gz
+*.swp
+STITCH.Rcheck/
