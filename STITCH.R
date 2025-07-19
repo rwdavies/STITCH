@@ -408,12 +408,6 @@ option_list <- list(
         default = TRUE
     ), 
     make_option(
-        "--plotReferenceAlleleCount",
-        type = "logical",
-        help = "Generate plot of reference allele counts, set to FALSE for systmems without x11 [default TRUE]",
-        default = TRUE
-    ),
-    make_option(
         "--save_sampleReadsInfo",
         type = "logical",
         help = "Experimental. Boolean TRUE/FALSE about whether to save additional information about the reads that were extracted [default FALSE] ",
@@ -466,12 +460,12 @@ option_list <- list(
         type = "integer",
         help = "When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules [default 50000] ",
         default = 50000
-    ),
+    ), 
     make_option(
         "--doPhasing",
         type = "logical",
-        default = FALSE,
-        help = "Return phased genotypes"
+        help = "Whether to try and output phasing (experimental) [default FALSE] ",
+        default = FALSE
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -546,7 +540,6 @@ STITCH(
     plotHapSumDuringIterations = opt$plotHapSumDuringIterations,
     plot_shuffle_haplotype_attempts = opt$plot_shuffle_haplotype_attempts,
     plotAfterImputation = opt$plotAfterImputation,
-    plotReferenceAlleleCount = opt$plotReferenceAlleleCount,
     save_sampleReadsInfo = opt$save_sampleReadsInfo,
     gridWindowSize = opt$gridWindowSize,
     shuffle_bin_nSNPs = opt$shuffle_bin_nSNPs,
