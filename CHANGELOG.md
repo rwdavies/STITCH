@@ -1,3 +1,7 @@
+* v1.8.4
+    * set BQ for reads with QUAL being '*' as 10. This helps with processing long reads, e.g. ONT data in CRAM files from 1000 Genomes.
+* v1.8.3
+    * small fix for handling complex cigars
 * v1.8.2
     * add `do_phasing` option for experimental tests
     * remove vcfppR dependency

@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.8.2__**
-Release date: May 30, 2025
+**__Current Version: 1.8.4__**
+Release date: June 22, 2025
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -12,8 +12,7 @@ Release date: May 30, 2025
 
 Changes in latest version
 
-- add `do_phasing` option for experimental tests
-- remove vcfppR dependency
+- set BQ for reads with QUAL being '*' as 10. This helps with processing long reads, e.g. ONT data in CRAM files from 1000 Genomes.
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 
