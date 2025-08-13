@@ -76,7 +76,7 @@
 #' @param output_haplotype_dosages Whether to output ancestral haplotype dosages, i.e. the expected number of ancestral haplotypes carried by that sample at that locus
 #' @param use_bx_tag Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule
 #' @param bxTagUpperLimit When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules
-#' @param do_phasing Whether to try and output phasing (experimental)
+#' @param doPhasing Whether to try and output phasing (experimental)
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -161,7 +161,7 @@ STITCH <- function(
     output_haplotype_dosages = FALSE,
     use_bx_tag = TRUE,
     bxTagUpperLimit = 50000,
-    do_phasing = FALSE
+    doPhasing = FALSE
 ) {
 
     ## capture command line
@@ -174,10 +174,10 @@ STITCH <- function(
     print_message(paste0("Running ", command_line))
 
     ## disable as an option phasing for now
-    ## do_phasing = FALSE
+    ## doPhasing = FALSE
     phasing_method = 3
     phasing_n_votes = 20
-    ## @param do_phasing Whether to perform phasing (experimental)
+    ## @param doPhasing Whether to perform phasing (experimental)
     ## @param phasing_method What phasing method to perform
     ## @param phasing_n_votes For voting phasing, how many votes to use
 
@@ -260,7 +260,7 @@ STITCH <- function(
     validate_hapProb(initial_min_hapProb, initial_max_hapProb)
 
 
-    validate_phasing(do_phasing, S)
+    validate_phasing(doPhasing, S)
 
     ##
     ##
@@ -615,7 +615,7 @@ STITCH <- function(
         ##
         ## fork out and get results
         ##
-        results <- completeSampleIteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N = N, tempdir = tempdir,chr=chr, maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, snps_in_grid_1_based = snps_in_grid_1_based, minimizeSwitchingIterations = minimizeSwitchingIterations, useTempdirWhileWriting = useTempdirWhileWriting, do_phasing = do_phasing, phasing_method = phasing_method, phasing_n_votes = phasing_n_votes)
+        results <- completeSampleIteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N = N, tempdir = tempdir,chr=chr, maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, snps_in_grid_1_based = snps_in_grid_1_based, minimizeSwitchingIterations = minimizeSwitchingIterations, useTempdirWhileWriting = useTempdirWhileWriting, do_phasing = doPhasing, phasing_method = phasing_method, phasing_n_votes = phasing_n_votes)
         ##
         if (iteration == niterations) {
             allPhasing <- results$allPhasing
@@ -708,7 +708,7 @@ STITCH <- function(
         Jmax = Jmax,
         useTempdirWhileWriting = useTempdirWhileWriting,
         output_haplotype_dosages = output_haplotype_dosages,
-        do_phasing = do_phasing
+        do_phasing = doPhasing
     )
 
     gen_imp <- out$gen_imp

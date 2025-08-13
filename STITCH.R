@@ -466,6 +466,12 @@ option_list <- list(
         type = "integer",
         help = "When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules [default 50000] ",
         default = 50000
+    ), 
+    make_option(
+        "--doPhasing",
+        type = "logical",
+        help = "Whether to try and output phasing (experimental) [default FALSE] ",
+        default = FALSE
     )
 )
 opt <- suppressWarnings(parse_args(OptionParser(option_list = option_list)))
@@ -549,5 +555,6 @@ STITCH(
     useTempdirWhileWriting = opt$useTempdirWhileWriting,
     output_haplotype_dosages = opt$output_haplotype_dosages,
     use_bx_tag = opt$use_bx_tag,
-    bxTagUpperLimit = opt$bxTagUpperLimit
+    bxTagUpperLimit = opt$bxTagUpperLimit,
+    doPhasing = opt$doPhasing
 )
