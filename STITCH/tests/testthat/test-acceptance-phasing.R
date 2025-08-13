@@ -21,7 +21,7 @@ if (1 == 0) {
 ## one single test, useful for basic acceptance tests
 test_that("simple diploid method can phase", {
 
-    skip("not currently exposed")
+    ## skip("not currently exposed")
     
     n_snps <- 50
     L <- 31:80
@@ -85,7 +85,7 @@ test_that("simple diploid method can phase", {
 
 test_that("something related to phasing", {
 
-    skip("not currently exposed")
+    ## skip("not currently exposed")
     ##
     ## simulate some data
     ##
@@ -127,8 +127,7 @@ test_that("something related to phasing", {
         K = K - 1, ## here we want to do using 3 not 4
         nGen = 100,
         nCores = 1,
-        do_phasing = TRUE,
-        phasing_method = 3
+        do_phasing = TRUE
     )
 
     check_output_against_phase(
