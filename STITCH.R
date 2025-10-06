@@ -468,7 +468,7 @@ option_list <- list(
         default = 50000
     ), 
     make_option(
-        "--doPhasing",
+        "--do_phasing",
         type = "logical",
         help = "Whether to try and output phasing (experimental) [default FALSE] ",
         default = FALSE
@@ -556,5 +556,5 @@ STITCH(
     output_haplotype_dosages = opt$output_haplotype_dosages,
     use_bx_tag = opt$use_bx_tag,
     bxTagUpperLimit = opt$bxTagUpperLimit,
-    doPhasing = opt$doPhasing
+    do_phasing = opt$do_phasing
 )
