@@ -275,6 +275,9 @@ make_and_write_output_file <- function(
                 nThread = nCores
             )
 
+            rm(vcf_matrix_to_out)
+            gc()
+
         } else if (output_format == "bgen") {
 
             var_info <- make_var_info(pos, c(first_snp_in_region, last_snp_in_region))
