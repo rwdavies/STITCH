@@ -103,11 +103,11 @@ isScalar<T> isMissing(T const & v)
 {
     if(std::is_same<T, float>::value)
     {
-        return bcf_float_is_missing(v);
+        return bcf_float_is_missing == v;
     }
     else if(std::is_same<T, int>::value)
     {
-        return bcf_int32_missing(v);
+        return bcf_int32_missing == v;
     }
 }
 
