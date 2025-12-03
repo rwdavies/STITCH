@@ -15,7 +15,7 @@
 using namespace Rcpp;
 
 
-
+#define ERROR_INT -1
 
 
 
@@ -32,6 +32,7 @@ int rcpp_simple_sample(
           return(i);
       }
     }
+  return ERROR_INT;
 }
 
 
