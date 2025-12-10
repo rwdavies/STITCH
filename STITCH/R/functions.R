@@ -5593,70 +5593,119 @@ downsample_snapped_sampleReads <- function(
 
 
 
+#' @title Mapping between output block and grid point assignments for each SNP
+#' @description Grid points are used to reduce the number of loci that the 
+#'  HMM calculations need to process.  At a given grid point, a set of nearby
+#'  SNPs are assigned to that grid point.  Any one SNP must belong to a single
+#'  grid point.  These grid points need to be compatible with the SNP output
+#'  block size, that is, the approximate number of SNPs to apply the HMM for
+#'  imputation.  For any one SNP output block, there must be at least two grid
+#'  points and any one grid point must belong to a single output block.  This
+#'  function applies these constraints to determine how grid points are mapped
+#'  to output blocks.  Note, a corollary of these constraints is that any one
+#'  grid point is mapped to a single outputblock.
+#' @param grid: a positive, including 0, integer vector with length N SNPs.  Each
+#'  element i is the grid point that SNP i is assigned.
+#' @param start_and_end_minus_buffer: a length 2 vector of positive integers.  The
+#'  elements 1:start_and_end_minus_buffer[1] and N-start_and_end_minus_buffer[2]:N
+#'  are considered buffer regions, with N being the number of SNPs.
+#' @param outputSNPBlockSize: the number of SNPs that are output by the step
+#'  where SNP genotypes are computed.
+#' @return to_out: (number of output block rows, 4 columns) array that specifies
+#'  the SNP indexes and grid point indexes per output block.
+#
 ## so want to determine what are the grid points and the SNPs in each output "block"
 determine_snp_and_grid_blocks_for_output <- function(
     grid,
     start_and_end_minus_buffer,
     outputSNPBlockSize = 1000
 ) {
+
     to_out <- array(NA, c(ceiling(length(grid) / outputSNPBlockSize) + 1, 4))
+
     ## yay! mixture of 0 and 1 based indexing
-    colnames(to_out) <- c("snp_start_1_based", "snp_end_1_based", "grid_start_0_based", "grid_end_0_based")
+    colnames(to_out) <- c("snp_start_1_based", "snp_end_1_based", 
+                          "grid_start_0_based", "grid_end_0_based")
+
     if (start_and_end_minus_buffer[1] == start_and_end_minus_buffer[2]) {
+
         ## only 1 SNP in output region!
         to_out[1, c("snp_start_1_based", "snp_end_1_based")] <- start_and_end_minus_buffer
+
+        # TODO: shouldn't this be start_and_end_minus_buffer - 1, because grid is 0 based.
+        # moreover, is zero based indexing on half-interval?
         to_out[1, c("grid_start_0_based", "grid_end_0_based")] <- start_and_end_minus_buffer
-        c2 <- 2
+        idx_block <- 2
+        
     } else {
-        c <- 1
-        c2 <- 1
+
+        count_snps <- 1
+        idx_block <- 1
+
         start <- start_and_end_minus_buffer[1] ## start SNP, 1-based
         prev_grid <- grid[start]
+
         for(iSNP in (start_and_end_minus_buffer[1] + 1):start_and_end_minus_buffer[2]) {
             ## so iSNP is 1-based here
-            c <- c + 1
-            if (iSNP == (start_and_end_minus_buffer[2])) {
-                to_out[c2, c("snp_start_1_based", "snp_end_1_based")] <- c(start, iSNP)
-                c2 <- c2 + 1
-            } else if (
-                (outputSNPBlockSize < c) &
-                (grid[iSNP - 1] < grid[iSNP]) &
-                ((prev_grid + 1) < (grid[iSNP]))
-            ) {
-                to_out[c2, c("snp_start_1_based", "snp_end_1_based")] <- c(start, iSNP - 1)
-                c <- 0
-                c2 <- c2 + 1
+            count_snps <- count_snps + 1
+
+            # Is SNP at the end of buffer region?
+            if (iSNP == start_and_end_minus_buffer[2]) {
+
+                to_out[idx_block, c("snp_start_1_based", "snp_end_1_based")] <- c(start,iSNP)
+                idx_block <- idx_block + 1
+                break
+
+            }
+
+            if (outputSNPBlockSize < count_snps # does number of SNPs exceed blocksize
+                && grid[iSNP - 1] < grid[iSNP]  # is beginning of new grid point
+                    && prev_grid + 1 < grid[iSNP]) { # >=2 grid points per output block
+
+                to_out[idx_block, c("snp_start_1_based", "snp_end_1_based")] <- c(start, iSNP - 1)
+                count_snps <- 0
+                idx_block <- idx_block + 1
                 start <- iSNP
                 prev_grid <- grid[start]
             }
         }
     }
-    to_out <- to_out[1:(c2 - 1), , drop = FALSE]
+
+    idx_last_block <- idx_block - 1
+    to_out <- to_out[1:idx_last_block, , drop = FALSE]
+
     to_out[, "grid_start_0_based"] <- grid[to_out[, "snp_start_1_based"]]
     to_out[, "grid_end_0_based"] <- grid[to_out[, "snp_end_1_based"]]
+
+
     ## now, if last output block has 1 grid in it, merge into previous
-    if ((2 <= nrow(to_out) )) {
-        c2 <- nrow(to_out) + 1
-        if ((to_out[(c2 - 1), "grid_end_0_based"] - to_out[(c2 - 1), "grid_start_0_based"]) == 0) {
-            to_out[(c2 - 2), "snp_end_1_based"] <-  to_out[(c2 - 1), "snp_end_1_based"]
-            to_out[(c2 - 2), "grid_end_0_based"] <-  to_out[(c2 - 1), "grid_end_0_based"]
-            c2 <- c2 - 1
-            to_out <- to_out[-nrow(to_out), , drop = FALSE]
-        }
+    ## can't merge the last output block with previous if there is zero
+    ## or only one output block
+    if (nrow(to_out) >= 2
+        && to_out[idx_last_block, "grid_end_0_based"] 
+            == to_out[idx_last_block, "grid_start_0_based"]) {
+
+        to_out[idx_last_block - 1, "snp_end_1_based"] <-  to_out[idx_last_block,
+                                                            "snp_end_1_based"]
+        to_out[idx_last_block - 1, "grid_end_0_based"] <-  to_out[idx_last_block,
+                                                             "grid_end_0_based"]
+        to_out <- to_out[-idx_last_block, , drop = FALSE]
     }
+
     ## if last region too small (smaller than 2 SNPs or 10%), merge back in
     ## print some stats
-    mess <- paste0(
-        "Outputting will be done in ", nrow(to_out), " blocks with on average ",
+    mess <- paste(
+        "Outputting will be done in", nrow(to_out), "blocks with on average",
         1 + round(mean(to_out[, "snp_end_1_based"] - to_out[, "snp_start_1_based"]), 1),
-        " SNPs in them"
+        "SNPs in them"
     )
+
     if (tail(grid, 1) != (length(grid) - 1)) {
-        mess <- paste0(
+        mess <- paste(
             mess,
-            " and ",
-            1 + round(mean(to_out[, "grid_end_0_based"] - to_out[, "grid_start_0_based"], 1)),
-            " grids"
+            "and",
+            1+round(mean(to_out[, "grid_end_0_based"] - to_out[, "grid_start_0_based"], 1)),
+            "grids"
         )
     }
     print_message(mess)

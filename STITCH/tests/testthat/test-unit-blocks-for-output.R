@@ -110,13 +110,15 @@ test_that("can determine how assign SNPs to blocks for output", {
 
     for(gridWindowSize in c(24, NA)) {
         L <- 1:1000
-        gridWindowSize <- 24
+
+        # NOTE: What is the point of this loop if gridWindowSize is set to 24 each time.
+        # gridWindowSize <- 24
         outputSNPBlockSize <- 57
         start_and_end_minus_buffer <- c(50, 950) ## 1-based which SNPs in region to output
     
         out <- assign_positions_to_grid(L, gridWindowSize)
         grid <- out$grid
-        
+
         blocks_for_output <- determine_snp_and_grid_blocks_for_output(
             grid = grid,
             start_and_end_minus_buffer = start_and_end_minus_buffer,
@@ -131,8 +133,18 @@ test_that("can determine how assign SNPs to blocks for output", {
         
         ## check that no grid spans blocks
         for(i in 0:(out$nGrids - 1)) {
-            w <- unique(temp[which(grid == i)])
-            expect(length(w), 1)
+            idx <- which(grid == i)
+
+            start = idx[1]
+            if (start < start_and_end_minus_buffer[1])
+                start <- start_and_end_minus_buffer[2]
+
+            end = tail(idx, 1)
+            if (end > start_and_end_minus_buffer[2])
+                end <- start_and_end_minus_buffer[2]
+
+            w <- unique(temp[idx[start:end]])
+            expect_equal(length(w), 1)
         }
         
         ## check things
