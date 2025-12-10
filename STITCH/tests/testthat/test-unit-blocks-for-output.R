@@ -135,13 +135,16 @@ test_that("can determine how assign SNPs to blocks for output", {
         for(i in 0:(out$nGrids - 1)) {
             idx <- which(grid == i)
 
-            start = idx[1]
-            if (start < start_and_end_minus_buffer[1])
-                start <- start_and_end_minus_buffer[2]
+            n_snps <- length(idx)
 
-            end = tail(idx, 1)
-            if (end > start_and_end_minus_buffer[2])
-                end <- start_and_end_minus_buffer[2]
+            start <- 1
+            end <- n_snps
+
+            while (start < end && idx[start] < start_and_end_minus_buffer[1])
+                start <- start + 1
+
+            while (end > 0 && idx[end] > start_and_end_minus_buffer[2])
+                end <- end - 1
 
             w <- unique(temp[idx[start:end]])
             expect_equal(length(w), 1)
