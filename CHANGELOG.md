@@ -1,3 +1,6 @@
+* v1.8.5
+    * add `make_genetic_map_file_from_vcf` function
+    * a few bug fix
 * v1.8.4
     * set BQ for reads with QUAL being '*' as 10. This helps with processing long reads, e.g. ONT data in CRAM files from 1000 Genomes.
 * v1.8.3
