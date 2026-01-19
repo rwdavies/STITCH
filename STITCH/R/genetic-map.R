@@ -187,4 +187,19 @@ match_genetic_map_to_L <- function(genetic_map, L, expRate = 0.5) {
 }
 
 
+#' @title Create a genetic map file from VCF assuming uniform recombination rate
+#' @param outfile path of output genetic map file
+#' @param vcffile a VCF/BCF file with single chromosome ideally
+#' @param region chromosome name if the VCF has multiple chromosome
+#' @export
+make_genetic_map_file_from_vcf <- function(outfile, vcffile, region = "", expRate = 0.5) {
+  print_message("take only a single chromsome from VCF")
+  res <- get_pos_from_reference_vcf(vcffile, region)
+  if(res[["n_skipped"]] > 0)
+    print_message(paste("there are",res[["n_skipped"]],"sites that are ignored, because they are non-SNPs or there is missing genotype or genotypes are not phased in VCF" ))
+  dat <- make_genetic_map_file(res[["pos"]], length(res[["pos"]] ), expRate)
+  write.table(dat, file = gzfile(outfile), sep = ' ',  quote = FALSE,  row.names = FALSE )
+}
+
+
 

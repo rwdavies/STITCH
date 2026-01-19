@@ -98,19 +98,6 @@ using isFormatVector = typename std::enable_if<std::is_same<T, std::vector<float
 namespace details
 {
 
-template<typename T>
-isScalar<T> isMissing(T const & v)
-{
-    if(std::is_same<T, float>::value)
-    {
-        return bcf_float_is_missing(v);
-    }
-    else if(std::is_same<T, int>::value)
-    {
-        return bcf_int32_missing == v;
-    }
-}
-
 // test if a string is end with another string
 inline bool isEndWith(std::string const & s, std::string const & e)
 {

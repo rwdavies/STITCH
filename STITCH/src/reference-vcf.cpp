@@ -193,3 +193,18 @@ List Rcpp_get_hap_info_from_vcf(std::string vcffile,
                         Named("snp_is_common") = snp_is_common, Named("ref_alleleCount") = ref_alleleCount,
                         Named("n_skipped") = n_skipped);
 }
+
+//' @export
+// [[Rcpp::export]]
+List get_pos_from_reference_vcf(std::string vcffile, std::string region = "", std::string samples = "-")
+{
+    IntegerVector L;
+    int n_skipped = 0;
+    BcfReader br(vcffile, region, samples);
+    BcfRecord var(br.header);
+    while(br.getNextVariant(var)){
+        L.push_back(var.POS());
+    }
+  
+    return List::create(Named("pos") = L, Named("n_skipped") = n_skipped);
+}

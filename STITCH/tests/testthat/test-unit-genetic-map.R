@@ -1,3 +1,5 @@
+library(testthat)
+
 test_that("can understand genetic map format", {
 
     ## from https://mathgen.stats.ox.ac.uk/impute/1000GP_Phase3_chrX.tgz
@@ -190,7 +192,7 @@ test_that("can assign grid positions when genetic map is given", {
         L_grid = L_grid,
         shuffle_bin_radius = 250
     )
-    
+
     ## optional - plot to verify manually
     if (1 == 0) {
 
@@ -208,7 +210,7 @@ test_that("can assign grid positions when genetic map is given", {
             col = "orange",
             lwd = 3
         )
-        
+
         ##
         ## cumsum
         ##
@@ -231,7 +233,120 @@ test_that("can assign grid positions when genetic map is given", {
         points(x = out$L_grid, y = out$cM_grid, col = "blue", type = "o")
 
     }
-    
+
+})
+
+
+test_that("can make genetic map file from VCF", {
+
+    ## create a test VCF file with known positions
+    n_snps <- 10
+    n_samples_per_pop <- 2
+    chr <- 1
+    L <- c(1000, 2000, 3500, 5000, 7500, 10000, 15000, 20000, 30000, 50000)
+    expRate <- 0.5
+
+    refpack <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = n_samples_per_pop,
+        L = L,
+        chr = chr,
+        expRate = expRate
+    )
+
+    ## call the function to test
+
+    genetic_map_file <- tempfile()
+    make_genetic_map_file_from_vcf(
+        outfile = genetic_map_file,
+        vcffile = refpack$reference_vcf_file,
+        region = as.character(chr),
+        expRate = expRate
+    )
+
+    ## verify the returned file path exists
+    expect_true(file.exists(genetic_map_file))
+
+    ## read the genetic map file
+    genetic_map <- read.table(genetic_map_file, header = TRUE)
+
+    ## verify structure: should have 3 columns
+    expect_equal(ncol(genetic_map), 3)
+    expect_equal(
+        colnames(genetic_map),
+        c("position", "COMBINED_rate.cM.Mb.", "Genetic_Map.cM.")
+    )
+
+    ## verify number of rows matches number of SNPs
+    expect_equal(nrow(genetic_map), n_snps)
+
+    ## verify positions match the VCF positions
+    expect_equal(genetic_map[, "position"], L)
+
+    ## verify the rate is set to expRate for all but the last SNP
+    expect_equal(
+        genetic_map[1:(n_snps - 1), "COMBINED_rate.cM.Mb."],
+        rep(expRate, n_snps - 1)
+    )
+    expect_equal(genetic_map[n_snps, "COMBINED_rate.cM.Mb."], 0)
+
+    ## verify the first position has genetic map value of 0
+    expect_equal(genetic_map[1, "Genetic_Map.cM."], 0)
+
+    ## verify genetic map values are calculated correctly
+    ## cM at position i = cM at position i-1 + (distance in Mb) * rate
+    for (i in 2:n_snps) {
+        distance_mb <- (L[i] - L[i - 1]) / 1e6
+        expected_cM <- genetic_map[i - 1, "Genetic_Map.cM."] +
+                       distance_mb * genetic_map[i - 1, "COMBINED_rate.cM.Mb."]
+        expect_equal(
+            genetic_map[i, "Genetic_Map.cM."],
+            expected_cM,
+            tolerance = 1e-10
+        )
+    }
+
+    ## verify the genetic map is valid
+    expect_null(validate_genetic_map(genetic_map, verbose = FALSE))
+
+    ## clean up
+    unlink(genetic_map_file)
+
+})
+
+
+
+test_that("can make genetic map file from VCF without specifying region", {
+
+    ## test calling without region parameter (should use default empty string)
+    n_snps <- 5
+    L <- c(100, 200, 300, 400, 500)
+
+    refpack <- make_reference_package(
+        n_snps = n_snps,
+        n_samples_per_pop = 2,
+        L = L,
+        chr = 1
+    )
+
+    ## call without region (uses default "")
+    genetic_map_file <- tempfile()
+    make_genetic_map_file_from_vcf(
+        outfile = genetic_map_file,
+        vcffile = refpack$reference_vcf_file
+    )
+
+    expect_true(file.exists(genetic_map_file))
+    genetic_map <- read.table(genetic_map_file, header = TRUE)
+
+    ## verify it still works correctly
+    expect_equal(nrow(genetic_map), n_snps)
+    expect_equal(genetic_map[, "position"], L)
+    expect_null(validate_genetic_map(genetic_map, verbose = FALSE))
+
+    ## clean up
+    unlink(genetic_map_file)
+
 })
 
 
