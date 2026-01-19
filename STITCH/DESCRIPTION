@@ -32,6 +32,6 @@ Imports: Rcpp, data.table
 Suggests: testthat
 Remotes: github::rwdavies/rrbgen/rrbgen
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 License: GPL | file LICENSE
 BugReports: https://github.com/rwdavies/STITCH/issues

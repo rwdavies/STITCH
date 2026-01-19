@@ -15,8 +15,7 @@
 using namespace Rcpp;
 
 
-
-
+#define ERROR_INT -1
 
 
 // suppose we have a vector prob of some length, summing to 1, and some single uniform
@@ -32,6 +31,7 @@ int rcpp_simple_sample(
           return(i);
       }
     }
+  return ERROR_INT;
 }
 
 

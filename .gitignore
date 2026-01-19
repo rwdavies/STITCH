@@ -28,3 +28,4 @@ Rplots.pdf
 *.tar.gz
 *.swp
 STITCH.Rcheck/
+*.tmp
