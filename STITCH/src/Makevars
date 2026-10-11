@@ -3,7 +3,12 @@
 
 HTS_SRC = ./htslib-1.21/
 
-HTSLIB = $(HTS_SRC)/libhts.a -lz -lbz2 -llzma -lcurl
+HTSLIB = $(HTS_SRC)/libhts.a -lz -lbz2 -llzma
+
+HASCURL := $(shell grep -q "define HAVE_LIBCURL 1" 'htslib-1.21/config.h' && echo yes || echo no)
+ifeq ($(HASCURL), yes)
+	HTSLIB += -lcurl
+endif
 
 HASDEFLATE := $(shell grep -q "define HAVE_LIBDEFLATE 1" 'htslib-1.21/config.h' && echo yes || echo no)
 ifeq ($(HASDEFLATE), yes)

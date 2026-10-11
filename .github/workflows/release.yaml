@@ -1,6 +1,8 @@
 # Build the R package and publish a GitHub release when a version tag is pushed.
 # Usage: bump Version in STITCH/DESCRIPTION, add a CHANGELOG.md entry, then
 #   git tag 1.8.6 && git push origin 1.8.6
+# To test the build without tagging, run it manually from the Actions tab
+# (or `gh workflow run release.yaml --ref <branch>`); the release step is skipped.
 
 name: Release
 
@@ -9,6 +11,7 @@ on:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -27,7 +30,7 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME#v}"
           version=$(grep '^Version:' STITCH/DESCRIPTION | awk '{print $2}')
-          if [ "$tag" != "$version" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$tag" != "$version" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match DESCRIPTION Version $version"
             exit 1
           fi
@@ -65,7 +68,17 @@ jobs:
           fi
           cat release-notes.md
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: STITCH_${{ env.VERSION }}
+          path: |
+            STITCH_${{ env.VERSION }}.tar.gz
+            STITCH_${{ env.VERSION }}.pdf
+            release-notes.md
+
       - name: Create GitHub release
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
