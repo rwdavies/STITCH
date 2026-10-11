@@ -88,7 +88,7 @@ namespace SeqLib
         K center;
 
         // jwala added destructor
-        ~TIntervalTree<T, K>()
+        ~TIntervalTree()
         {
             if (left)
                 delete left;
@@ -96,7 +96,7 @@ namespace SeqLib
                 delete right;
         }
 
-        TIntervalTree<T, K>(void) : left(NULL), right(NULL), center(0)
+        TIntervalTree() : left(NULL), right(NULL), center(0)
         {
         }
 
@@ -107,7 +107,7 @@ namespace SeqLib
         }
 
     public:
-        TIntervalTree<T, K>(const intervalTree& other)
+        TIntervalTree(const intervalTree& other)
             : intervals(other.intervals), left(other.left ? copyTree(*other.left) : NULL), right(other.right ? copyTree(*other.right) : NULL),
               center(other.center)
         {
@@ -124,7 +124,7 @@ namespace SeqLib
         }
 
         // Note: changes the order of ivals
-        TIntervalTree<T, K>(intervalVector& ivals, std::size_t depth = 16, std::size_t minbucket = 64, K leftextent = 0, K rightextent = 0,
+        TIntervalTree(intervalVector& ivals, std::size_t depth = 16, std::size_t minbucket = 64, K leftextent = 0, K rightextent = 0,
                             std::size_t maxbucket = 512)
             : left(NULL), right(NULL)
         {

@@ -1,7 +1,7 @@
 STITCH - Sequencing To Imputation Through Constructing Haplotypes
 =================================================================
-**__Current Version: 1.8.5__**
-Release date: Jan 19, 2026
+**__Current Version: 1.8.6__**
+Release date: Oct 11, 2026
 
 <!-- badges: start -->
 ![Build Status](https://github.com/rwdavies/STITCH/workflows/CI/badge.svg)
@@ -12,8 +12,7 @@ Release date: Jan 19, 2026
 
 Changes in latest version
 
-- add `make_genetic_map_file_from_vcf` function
-- a few bug fix
+- fix C++20 compilation and be compatible with R version >4.6.1
 
 For details of past changes please see [CHANGELOG](CHANGELOG.md).
 

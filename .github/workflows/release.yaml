@@ -1,0 +1,76 @@
+# Build the R package and publish a GitHub release when a version tag is pushed.
+# Usage: bump Version in STITCH/DESCRIPTION, add a CHANGELOG.md entry, then
+#   git tag 1.8.6 && git push origin 1.8.6
+
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches DESCRIPTION version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(grep '^Version:' STITCH/DESCRIPTION | awk '{print $2}')
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match DESCRIPTION Version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: ./STITCH
+
+      - uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Build package tarball
+        run: R CMD build --no-manual STITCH
+
+      - name: Install from tarball
+        run: R CMD INSTALL "STITCH_${VERSION}.tar.gz"
+
+      - name: Build PDF manual
+        run: R CMD Rd2pdf STITCH --batch --force --no-preview --output="STITCH_${VERSION}.pdf"
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          awk -v v="* v${VERSION}" '
+            $0 == v { found = 1; next }
+            found && /^\* v[0-9]/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Release ${VERSION}" > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "STITCH_${VERSION}.tar.gz" \
+            "STITCH_${VERSION}.pdf" \
+            --title "v${VERSION}" \
+            --notes-file release-notes.md

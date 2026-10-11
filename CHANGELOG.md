@@ -1,3 +1,5 @@
+* v1.8.6
+    * fix C++20 compilation
 * v1.8.5
     * add `make_genetic_map_file_from_vcf` function
     * a few bug fix
